@@ -32,11 +32,11 @@ const config: Config = {
   themes: [
     '@docusaurus/theme-mermaid',
     [
-      '@cmfcmf/docusaurus-search-local',
+      '@easyops-cn/docusaurus-search-local',
       {
-        indexDocs: true,
-        indexBlog: false,
-        language: 'en',
+        hashed: true,
+        language: ['en'],
+        docsRouteBasePath: '/docs',
       },
     ],
   ],
