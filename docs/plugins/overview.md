@@ -5,7 +5,7 @@ title: Plugin System Overview
 
 # Plugin System Overview
 
-Alfa Commerce is designed as a **marketplace platform** — third-party developers can extend it by writing plugins for payments, shipping, and custom fields without modifying core code.
+Alfa Commerce is designed as a **marketplace platform** — third-party developers can extend it by writing plugins for payments, shipping, and form fields without modifying core code.
 
 ## Plugin Types
 
@@ -13,7 +13,7 @@ Alfa Commerce is designed as a **marketplace platform** — third-party develope
 |------|-------|---------|---------|
 | **Payment** | `alfa-payments` | Payment gateway integrations | Offline, card gateway, wallet |
 | **Shipment** | `alfa-shipments` | Shipping method integrations | Flat-rate, zone, courier, locker |
-| **Custom Field** | `alfa-fields` | Custom form field types | Color picker, File upload |
+| **Form Field** | `alfa-fields` | Form field types | Color picker, file upload |
 | **Media** | `alfa-media` | Image processing (validate, resize, convert, thumbnail) | Resize, WebP, compress |
 
 :::note What ships in core
@@ -165,6 +165,6 @@ extract($displayData);
 
 - [Build a Payment Plugin →](/docs/plugins/payment-plugins)
 - [Build a Shipment Plugin →](/docs/plugins/shipment-plugins)
-- [Build a Custom Field Plugin →](/docs/plugins/custom-field-plugins)
+- [Build a Form Field Plugin →](/docs/plugins/custom-field-plugins)
 - [Conditional Field Visibility (showon) →](/docs/plugins/showon)
 - [Build a Media Plugin →](/docs/plugins/media-plugins)

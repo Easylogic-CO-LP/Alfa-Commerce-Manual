@@ -67,7 +67,7 @@ Alfa Commerce uses 60+ MySQL tables, all prefixed with `#__alfa_`. The schema is
 | `#__alfa_places` | Geographic locations/countries |
 | `#__alfa_currencies` | Currency definitions (200+ pre-loaded) |
 | `#__alfa_form_fields` | Custom form field definitions (+ `_form_field_groups`, `_form_fields_usergroups`, `_form_fields_users`) |
-| `#__alfa_customs` | Custom field instances |
+| `#__alfa_customs` | Form field entries (submitted values) |
 
 ### Users
 

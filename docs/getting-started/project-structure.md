@@ -59,7 +59,7 @@ Alfa-Commerce/
 │   │   └── standard/           # Offline payment (bank transfer / cash on delivery)
 │   ├── alfa-shipments/
 │   │   └── standard/           # Standard shipping (flat / zone rates)
-│   ├── alfa-fields/            # Custom field type plugins
+│   ├── alfa-fields/            # Form field type plugins
 │   │   ├── text/
 │   │   ├── textarea/
 │   │   ├── tel/
