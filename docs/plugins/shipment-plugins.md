@@ -36,7 +36,7 @@ plugins/alfa-shipments/<carrier>/
 ├── <carrier>.xml                  # manifest — group="alfa-shipments"
 ├── services/provider.php          # DI: boots the plugin from PluginHelper::getPlugin()
 ├── src/Extension/<Carrier>.php     # extends ShipmentsPlugin
-├── params/{shipment.xml, logs.xml}# method config (zones / API creds) + log-table schema
+├── params/{params.xml, logs.xml}# method config (zones / API creds) + log-table schema
 ├── tmpl/                          # layout fragments
 └── language/en-GB/plg_alfa-shipments_<carrier>.ini (+ .sys.ini)
 ```
