@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'plugins/shipment-plugins',
         'plugins/custom-field-plugins',
         'plugins/showon',
+        'plugins/media-plugins',
       ],
     },
     {

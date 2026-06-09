@@ -15,7 +15,6 @@ All endpoints support standard CRUD operations: `GET` (list/single), `POST` (cre
 | `/api/index.php/v1/alfa/categories` | Product categories |
 | `/api/index.php/v1/alfa/manufacturers` | Brands/manufacturers |
 | `/api/index.php/v1/alfa/itemsprices` | Product variant pricing |
-| `/api/index.php/v1/alfa/customs` | Custom field entries (the `#__alfa_customs` records) |
 
 ## Orders
 

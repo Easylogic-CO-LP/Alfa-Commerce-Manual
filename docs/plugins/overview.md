@@ -14,11 +14,12 @@ Alfa Commerce is designed as a **marketplace platform** — third-party develope
 | **Payment** | `alfa-payments` | Payment gateway integrations | Stripe, PayPal, Revolut |
 | **Shipment** | `alfa-shipments` | Shipping method integrations | FedEx, DHL, Box Now |
 | **Custom Field** | `alfa-fields` | Custom form field types | Color picker, File upload |
+| **Media** | `alfa-media` | Image processing (validate, resize, convert, thumbnail) | Resize, WebP, compress |
 
 :::note What ships in core
 The core package bundles only the **`standard`** payment and shipment reference plugins, plus the field plugins
-(`text`, `textarea`, `tel`, `choice`). The gateways/carriers in the *Example* column are illustrative — real
-integrations (Revolut, Viva, Box Now, …) are premium and distributed separately.
+(`text`, `textarea`, `tel`, `choice`). The gateways/carriers in the *Example* column are illustrative; real integrations
+(and image-processing plugins) are premium and distributed separately.
 :::
 
 ## Plugin Architecture
@@ -165,3 +166,5 @@ extract($displayData);
 - [Build a Payment Plugin →](/docs/plugins/payment-plugins)
 - [Build a Shipment Plugin →](/docs/plugins/shipment-plugins)
 - [Build a Custom Field Plugin →](/docs/plugins/custom-field-plugins)
+- [Conditional Field Visibility (showon) →](/docs/plugins/showon)
+- [Build a Media Plugin →](/docs/plugins/media-plugins)
