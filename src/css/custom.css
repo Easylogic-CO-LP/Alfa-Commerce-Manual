@@ -33,6 +33,12 @@
 .header-github-link {
   display: flex;
   align-items: center;
+  border-radius: var(--ifm-global-radius);
+  transition: background-color 200ms ease;
+}
+.header-github-link:hover {
+  background-color: var(--ifm-color-emphasis-200);
+  color: var(--ifm-navbar-link-color);
 }
 .header-github-link::before {
   content: '';
@@ -43,8 +49,9 @@
   background-color: var(--ifm-navbar-link-color);
   -webkit-mask: var(--gh-icon) center / contain no-repeat;
   mask: var(--gh-icon) center / contain no-repeat;
-  transition: background-color 200ms ease;
 }
-.header-github-link:hover::before {
-  background-color: var(--ifm-color-primary);
+
+/* Drop Docusaurus's external-link arrow on the GitHub navbar item (the GitHub mark is enough) */
+.header-github-link [class*='iconExternalLink'] {
+  display: none;
 }
