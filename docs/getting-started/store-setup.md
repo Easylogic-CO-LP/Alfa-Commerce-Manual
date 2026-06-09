@@ -8,7 +8,18 @@ title: Store Setup
 The day-1 path for building a store. Everything below lives under **Components → Alfa Commerce** — each is a
 list view with a New/Edit form.
 
-## 1. Products (Items)
+:::tip Setup wizard coming
+A guided **store-setup wizard** is planned for a future version. Until then, configure each area below manually.
+:::
+
+## 1. Categories
+
+**Components → Alfa Commerce → Categories → New.** Categories group your products and are **hierarchical** — each can
+have a parent, so you build a tree (e.g. *Electronics → Phones*). Key fields: **Name** + alias, **parent category**,
+image, publish state, and meta. Create categories first; every product is then assigned a **Default Category**
+(required) plus any additional categories.
+
+## 2. Products (Items)
 
 **Components → Alfa Commerce → Items → New.** An item is one product. Key fields: **Name** + **Default Category**
 (required), `SKU` / `GTIN` / `MPN`, stock + dimensions, the **Stock action** (no action / notify / hide when out of
@@ -18,7 +29,7 @@ stock), categories, manufacturers, images, and meta.
 combination of **currency · country/place · user group · user · quantity tier** (each defaults to *All*). Add one row
 per combination; an *All …* row is the catch-all. Price rows feed the price index, rebuilt on save.
 
-## 2. Payment & shipment methods — the key concept
+## 3. Payment & shipment methods — the key concept
 
 There are **two layers**, and new users must understand the split:
 
@@ -37,7 +48,7 @@ flowchart LR
 So: **enable the plugin first, then create a method record whose `Type` points at it.** Both forms scope the method by
 category / manufacturer / place / user-group / user (each defaults to *All*), with a "show on product" toggle.
 
-## 3. Currencies, taxes & discounts
+## 4. Currencies, taxes & discounts
 
 - **Currencies** (→ Currencies): ISO `code`, `symbol`, ISO `number` (e.g. 978 = EUR), decimals, and a format pattern.
   The **default currency is a component Option**, not a flag on a record — set it at **Options → Currencies → Default
@@ -48,13 +59,13 @@ category / manufacturer / place / user-group / user (each defaults to *All*), wi
 Taxes and discounts are **scoped** the same way as methods — multi-select category / manufacturer / place / user-group /
 user; leaving *All* makes the rule global.
 
-## 4. Coupons
+## 5. Coupons
 
 **Components → Alfa Commerce → Coupons → New.** Set `coupon_code`, number of uses, value type (% or amount), min/max,
 optional user association, and validity dates. A coupon a customer applies is carried on the cart as `applied_coupons`
 and written to the order's cart-rule rows at checkout (an after-tax discount — it isn't folded into item prices).
 
-## 5. Order statuses & emails
+## 6. Order statuses & emails
 
 **Components → Alfa Commerce → Order Statuses → New.** Each status has:
 
