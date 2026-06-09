@@ -1,18 +1,14 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
-
 .heroBanner {
-  padding: 4rem 0;
+  padding: 4.5rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  background-image: radial-gradient(60% 130% at 50% -20%, rgba(255, 255, 255, 0.18), transparent 60%);
 }
 
 @media screen and (max-width: 996px) {
   .heroBanner {
-    padding: 2rem;
+    padding: 2.5rem 1rem;
   }
 }
 
@@ -20,4 +16,113 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
+}
+
+.features {
+  padding: 4rem 0 5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+@media (max-width: 996px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: alfaFadeUp 0.5s ease both;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  color: var(--ifm-font-color-base);
+}
+
+.iconWrap {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 11px;
+  color: var(--ifm-color-primary);
+  background: color-mix(in srgb, var(--ifm-color-primary) 13%, transparent);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.iconWrap svg {
+  width: 24px;
+  height: 24px;
+}
+.card:hover .iconWrap {
+  background: var(--ifm-color-primary);
+  color: #fff;
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  margin: 0 0 0.4rem;
+}
+.cardDesc {
+  flex-grow: 1;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ifm-color-emphasis-700);
+}
+.cardArrow {
+  margin-top: 1rem;
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.card:hover .cardArrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes alfaFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+  .iconWrap,
+  .cardArrow {
+    transition: none;
+  }
 }

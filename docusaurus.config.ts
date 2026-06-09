@@ -83,9 +83,9 @@ const config: Config = {
         },
         {
           href: 'https://github.com/Easylogic-CO-LP/Alfa-Commerce',
+          label: 'GitHub',
           position: 'right',
           className: 'header-github-link',
-          'aria-label': 'GitHub repository',
         },
       ],
     },
@@ -118,7 +118,7 @@ const config: Config = {
             },
             {
               label: 'Contributing',
-              href: 'https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/CONTRIBUTING.md',
+              to: '/docs/getting-started/contributing',
             },
           ],
         },
@@ -130,8 +130,8 @@ const config: Config = {
               href: 'https://easylogic.gr',
             },
             {
-              label: 'Postman API Collection',
-              href: 'https://null.postman.co/collection/40562641-db6c701d-6cee-4955-96b3-d357447b9bfe',
+              label: 'REST API (Postman)',
+              to: '/docs/api/overview',
             },
           ],
         },
