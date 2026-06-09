@@ -14,6 +14,22 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Contributing',
+      items: [
+        {type: 'doc', id: 'getting-started/contributing', label: 'Overview'},
+        {
+          type: 'category',
+          label: 'Automated Checks',
+          items: [
+            'tooling/workflows',
+            'tooling/php-cs-fixer',
+            'tooling/phpstan',
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
       label: 'Architecture',
       items: [
         'architecture/overview',
@@ -51,22 +67,6 @@ const sidebars: SidebarsConfig = {
           type: 'category',
           label: 'Services',
           items: ['helpers/pricing', 'helpers/notifications'],
-        },
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Contributing',
-      items: [
-        {type: 'doc', id: 'getting-started/contributing', label: 'Overview'},
-        {
-          type: 'category',
-          label: 'Automated Checks',
-          items: [
-            'tooling/workflows',
-            'tooling/php-cs-fixer',
-            'tooling/phpstan',
-          ],
         },
       ],
     },
