@@ -58,7 +58,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: 'Pricing Engine',
     description: 'Multi-dimensional pricing with currency, user group, location, and quantity-based calculations.',
-    link: '/docs/architecture/pricing-engine',
+    link: '/docs/helpers/pricing',
   },
   {
     title: 'CI/CD & Tooling',

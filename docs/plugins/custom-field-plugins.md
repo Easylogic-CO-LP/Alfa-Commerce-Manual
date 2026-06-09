@@ -98,12 +98,29 @@ Two layers, both keyed off attributes you set in `prepareDom()`:
 
 `ValidateFieldEvent` exists as a class but is **not dispatched** — use the Rule + `validate-X` path.
 
-## Multilingual & conditional visibility
+## Multilingual
 
-- **Multilingual** is automatic: translatable values are stored as `{lang: value}` maps and collapsed to the current
-  language by the engine, so your `prepareDom()` and layout always see plain strings — you don't handle translations.
-- **`showon`** — the base emits `showonname`/`showontype`/`showonrule`; a custom widget registers its value reader in one
-  line. See [Conditional Field Visibility (showon)](./showon.md).
+Translatable values are stored as `{lang: value}` maps and collapsed to the current language by the engine, so your
+`prepareDom()` and layout always see plain strings — you don't handle translations.
+
+## Conditional visibility (showon)
+
+Show or hide a field based on the live values of *other* fields. The base `prepareDom()` emits `showonname` /
+`showontype` / `showonrule` attributes that the runtime engine (`media/js/site/cart/showon.js`) reads to toggle
+visibility — hidden fields are also disabled so `required` can't block submit.
+
+- **Authoring** — each field has a **ShowOn** tab (a visual builder): pick a switch field, an operator, and a value;
+  join rules with an **AND / OR** glue; nest groups for precedence. The builder stores canonical JSON in `params->showon`.
+- **Rule schema** — `{ "group": [ { "rule": { "field": "delivery_method", "op": "=", "values": ["courier"] }, "glue": "OR" }, … ] }` — evaluated left-to-right (no precedence; nest a group), **one value per rule**, empty = always shown.
+- **Operators** — `=` `!=` · `contains` · `startsWith`/`endsWith` · `regex` · `empty` · `>` `>=` `<` `<=` · `between` · `length` (each `!`-negatable).
+- **Custom widgets** register a value reader (load-order independent):
+  ```js
+  (window.alfaShowOn = window.alfaShowOn || []).push({ type: 'choice', value: (name, form) => currentValue });
+  ```
+  A widget that changes a value without firing native events should dispatch a bubbling `alfa:field-change`.
+
+**Gotchas:** one value per rule (use multiple OR-joined rules), no precedence (nest groups), a field can't gate on
+itself, and hidden ≠ removed (the input is disabled, so it submits nothing server-side).
 
 ## Minimal example
 

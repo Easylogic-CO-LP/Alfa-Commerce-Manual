@@ -106,6 +106,32 @@ changed columns and records the change to the order activity log automatically. 
 original `->refunded()`, then create a `->refund()->refundedPayment($id)->fullRefund()` audit record. Full API:
 [Order Payment Helper](../helpers/order-payment-helper.md).
 
+## Admin action buttons
+
+The admin order screen renders buttons your plugin registers. `onGetActions` adds them (conditional on the payment
+state); `onExecuteAction` handles the click.
+
+```php
+public function onGetActions($event): void
+{
+    if (($event->getPayment()->status ?? 'pending') !== 'completed') {
+        $event->add('mark_paid', Text::_('PLG_ALFA_PAYMENTS_YOURGATEWAY_MARK_PAID'))
+              ->icon('check')->css('btn-success')->confirm('Mark this payment as paid?')->priority(200);
+    }
+}
+
+public function onExecuteAction($event): void
+{
+    match ($event->getAction()) {
+        'mark_paid' => $this->paymentUpdate($event->getPayment()->id)->completed()->save(),
+        default     => $event->setError('Unknown action: ' . $event->getAction()),
+    };
+    // respond via $event->setMessage() / setError() / setRefresh(true); or a modal via setLayout() + setModalTitle()
+}
+```
+
+The fluent button API: `->icon()` `->css()` `->confirm()` `->modal('layout', 'Title', 'lg')` `->priority()`.
+
 ## Minimal example (online gateway)
 
 ```php
@@ -153,6 +179,3 @@ final class YourGateway extends PaymentsPlugin
     }
 }
 ```
-
-> Admin buttons: implement `onGetActions` (register with `$event->add('id', 'Label')->icon('truck')->css('btn-success')->confirm('…')`)
-> and `onExecuteAction` (route by `$event->getAction()`, respond with `setMessage()`/`setError()`/`setRefresh(true)`).

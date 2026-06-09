@@ -13,19 +13,20 @@ The bundled **`plg_alfashipments_standard`** plugin (flat / zone rates) is the r
 integrations (couriers, locker networks, flat-rate carriers, …) are premium and distributed separately; only `standard` ships in core.
 :::
 
-## Where it plugs in
+## Lifecycle
 
 ```mermaid
-flowchart LR
-    subgraph Checkout
-      A[Cart totals] -->|onCalculateShippingCost| B[setShippingCost / setShippingCostTaxExcl]
-      B --> C[feeds the grand total]
-      D[Place order] -->|onOrderAfterPlace| E[create the shipment record]
-    end
-    subgraph Admin
-      F[Order edit] -->|onGetActions| G[buttons]
-      G -->|onExecuteAction| H[Mark shipped / track]
-    end
+sequenceDiagram
+    participant B as Buyer
+    participant C as com_alfa
+    participant P as Your plugin
+    B->>C: Viewing cart / checkout
+    C->>P: onCalculateShippingCost — return the cost (cached per request)
+    B->>C: Place order
+    C->>P: onOrderAfterPlace — create the shipment record
+    Note over C,P: Admin order screen
+    C->>P: onGetActions — add buttons
+    P-->>C: onExecuteAction — mark shipped / add tracking
 ```
 
 ## Anatomy
@@ -103,7 +104,7 @@ Builder (`$this->shipment($order)` create · `$this->shipmentUpdate($id)` update
 `cost($incl, $excl)`; `trackingNumber($n)` / `trackingUrl($u)`; `save() → int|false`. `shipped()` stamps the shipped date;
 `delivered()` stamps both. It auto-fills weight, method-name snapshot, currency, and writes an activity-log entry.
 
-## Admin buttons
+## Admin action buttons
 
 ```php
 public function onGetActions($event): void
