@@ -52,7 +52,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'REST API',
-    description: '17 JSON-API endpoints for products, orders, payments, shipments, and more.',
+    description: 'JSON-API endpoints for products, orders, payments, shipments, and more.',
     link: '/docs/api/overview',
   },
   {

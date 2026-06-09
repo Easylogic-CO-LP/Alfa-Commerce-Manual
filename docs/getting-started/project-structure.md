@@ -50,7 +50,7 @@ Alfa-Commerce/
 │
 ├── api/                        # REST JSON-API
 │   └── src/
-│       ├── Controller/         # 17 API controllers
+│       ├── Controller/         # REST API controllers
 │       └── View/               # JSON response views
 │
 ├── plugins/                    # Core ships only the `standard` reference plugins;
