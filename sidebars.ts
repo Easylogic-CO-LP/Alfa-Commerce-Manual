@@ -11,6 +11,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/store-setup',
         'getting-started/project-structure',
         'getting-started/contributing',
+        'getting-started/export-package',
       ],
     },
     {
@@ -57,11 +58,10 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'CI/CD & Tooling',
+      label: 'Code Quality & CI',
       items: [
         'tooling/workflows',
         'tooling/php-cs-fixer',
-        'tooling/export-package',
         'tooling/phpstan',
       ],
     },
