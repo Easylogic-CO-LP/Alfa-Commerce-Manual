@@ -111,5 +111,3 @@ A `color` type: the manifest (`group="alfa-fields"`, namespace `…\Color`), a `
 above, a `params/params.xml` with `<field name="sql_type" type="hidden" default="varchar(7)"/>`, a `tmpl/default.php`, and
 the language files. Enable it — `color` appears as a new field type. Add `src/Rule/ColorRule.php` + `validate-color` only if
 you need validation, and `media/` + an `onBeforeCompileHead` subscriber only if you need CSS/JS.
-
-See [Event System](../architecture/event-system.md) for the event tiers.

@@ -19,11 +19,8 @@ const sidebars: SidebarsConfig = {
       items: [
         'architecture/overview',
         'architecture/database-schema',
-        'architecture/event-system',
         'architecture/pricing-engine',
         'architecture/pricing-examples',
-        'architecture/cart-system',
-        'architecture/order-system',
         'architecture/multilingual',
       ],
     },

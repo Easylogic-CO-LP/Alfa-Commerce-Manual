@@ -123,3 +123,20 @@ The `#__alfa_items_price_index` table is a denormalized index maintained by `Pri
 ## Migrations
 
 Database migrations are stored in `administrator/sql/updates/mysql/` with filenames matching version numbers (e.g., `1.0.9.sql`). On update, Joomla runs every file newer than the installed schema automatically.
+
+
+### Removing obsolete files
+
+SQL migrations only add or alter tables — **files** that a release no longer ships are removed by a parallel,
+version-keyed mechanism. List the old paths in `administrator/files/removed/<version>.json`:
+
+```json
+{
+  "files":   ["/components/com_alfa/old-controller.php"],
+  "folders": ["/media/com_alfa/js/legacy"]
+}
+```
+
+Paths are relative to the Joomla root. On update, `script.php` applies every list newer than the installed version
+(so a site that skipped several releases is still fully cleaned up). Joomla never removes files dropped between
+versions on its own, so add this list whenever you delete or rename a shipped file.

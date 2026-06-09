@@ -156,5 +156,3 @@ final class YourGateway extends PaymentsPlugin
 
 > Admin buttons: implement `onGetActions` (register with `$event->add('id', 'Label')->icon('truck')->css('btn-success')->confirm('…')`)
 > and `onExecuteAction` (route by `$event->getAction()`, respond with `setMessage()`/`setError()`/`setRefresh(true)`).
-
-See [Event System](../architecture/event-system.md) for the full tier model.
