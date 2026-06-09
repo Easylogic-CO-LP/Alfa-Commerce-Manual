@@ -12,11 +12,17 @@ users…) from the field-definition UI. It is a Joomla plugin in the **`alfa-fie
 A field plugin does three things: **build the input** (`prepareDom`), **render the stored value** (a `tmpl/` layout), and
 optionally **validate** it.
 
+## Lifecycle
+
 ```mermaid
-flowchart LR
-    A[Field definition<br/>#__alfa_form_fields] -->|FieldsHelper::prepareForm| B["prepareDom(): DOMElement"]
-    B --> C[Joomla renders the input]
-    D[Stored value] -->|FieldsHelper::render| E["tmpl/default.php → output"]
+flowchart TD
+    A[Field definition<br/>#__alfa_form_fields] -->|prepareDom| B[Plugin builds the input<br/>DOMElement + showon attrs]
+    B --> C[Joomla renders it in the form]
+    C --> D[User submits]
+    D --> E{FormRule · validate-X}
+    E -->|invalid| C
+    E -->|valid| F[(Stored value<br/>#__alfa_customs)]
+    F -->|tmpl/default.php| G[Rendered output]
 ```
 
 ## Anatomy
