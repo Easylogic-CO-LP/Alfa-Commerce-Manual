@@ -59,7 +59,7 @@ Fork the repo on GitHub, then in Desktop clone **your** fork instead of step 1 �
 
 1. **Clone (one-time).** *File → Clone repository* → on the **GitHub.com** tab pick `Easylogic-CO-LP/Alfa-Commerce`, choose a local folder, **Clone**.
 2. **Branch off `developer`.** Click **Current Branch** → select `developer` → **Fetch origin**. Then **Current Branch → New Branch**, name it `feat/short-description`, base it on `developer`, **Create Branch** → **Publish branch**.
-3. **Get your changed files in.** Do the [structural-changes](#before-you-commit-structural-changes) steps if relevant, then download your changes from **Tools → Contributing** (see the [Package Export Tool](../tooling/export-package)) and extract the zip **over** the repo folder. Extracting only adds/overwrites — so **delete any files you removed** by hand; the **Changes** tab then shows them as deletions. Don't delete a file just because it isn't in your install (the repo keeps things your install doesn't have, e.g. other-language files).
+3. **Get your changed files in.** Do the [structural-changes](#before-you-commit-structural-changes) steps if relevant, then download your changes from **Tools → Contributing** (see the [Package Export Tool](./export-package)) and extract the zip **over** the repo folder. Extracting only adds/overwrites — so **delete any files you removed** by hand; the **Changes** tab then shows them as deletions. Don't delete a file just because it isn't in your install (the repo keeps things your install doesn't have, e.g. other-language files).
 4. **Review.** The **Changes** tab lists every file — green = added, yellow = modified, red = removed. Click one to see its diff.
 5. **Commit.** Bottom-left, fill the **Summary** (short, imperative — "Add…", "Fix…") and optional Description, then **Commit to feat/short-description**.
 6. **Catch up to `developer`.** **Current Branch → Choose a branch to merge into…** → `developer` → merge. Resolve any conflicts now, not inside the PR.
@@ -143,7 +143,7 @@ Full conventions and namespaces live in [Project Structure](./project-structure)
 
 ## Automated checks
 
-Every Pull Request runs **PHP CS Fixer**, **PHPStan**, the **Claude AI reviewer**, and **security scans** (CodeQL, secret-scanning, dependency checks). Wait for every check to pass — and read the Claude review — before a PR is merged. What each does and how to run them locally: [CI/CD & Tooling](../tooling/workflows).
+Every Pull Request runs **PHP CS Fixer**, **PHPStan**, the **Claude AI reviewer**, and **security scans** (CodeQL, secret-scanning, dependency checks). Wait for every check to pass — and read the Claude review — before a PR is merged. What each does and how to run them locally: [Code Quality & CI](../tooling/workflows).
 
 ## Opening a pull request
 
