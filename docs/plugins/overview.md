@@ -11,8 +11,8 @@ Alfa Commerce is designed as a **marketplace platform** — third-party develope
 
 | Type | Group | Purpose | Example |
 |------|-------|---------|---------|
-| **Payment** | `alfa-payments` | Payment gateway integrations | Stripe, PayPal, Revolut |
-| **Shipment** | `alfa-shipments` | Shipping method integrations | FedEx, DHL, Box Now |
+| **Payment** | `alfa-payments` | Payment gateway integrations | Offline, card gateway, wallet |
+| **Shipment** | `alfa-shipments` | Shipping method integrations | Flat-rate, zone, courier, locker |
 | **Custom Field** | `alfa-fields` | Custom form field types | Color picker, File upload |
 | **Media** | `alfa-media` | Image processing (validate, resize, convert, thumbnail) | Resize, WebP, compress |
 

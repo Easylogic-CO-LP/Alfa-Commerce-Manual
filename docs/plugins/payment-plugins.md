@@ -12,7 +12,7 @@ return, and the admin order screen.
 :::tip Start from `standard`
 The bundled **`plg_alfapayments_standard`** plugin (offline: bank transfer / cash on delivery) is the
 heavily-documented reference — copy it as your skeleton. Being offline, it has **no** `onPaymentResponse`.
-Real gateways (Revolut, Viva, …) are premium and distributed separately — they are not in the core package.
+Real gateway integrations are premium and distributed separately — they are not in the core package.
 :::
 
 ## Lifecycle

@@ -17,7 +17,7 @@ $id = OrderShipmentHelper::for($order)
     ->withAllItems()
     ->cost(12.50, 10.00)  // tax incl, tax excl
     ->trackingNumber('TRACK123')
-    ->carrier('DHL')
+    ->carrier('My Carrier')
     ->save();
 ```
 
