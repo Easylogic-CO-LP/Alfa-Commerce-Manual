@@ -22,12 +22,6 @@ function HomepageHeader() {
             to="/docs/getting-started/installation">
             Get Started
           </Link>
-          <Link
-            className="button button--outline button--secondary button--lg"
-            to="/docs/plugins/overview"
-            style={{marginLeft: '1rem'}}>
-            Build Plugins
-          </Link>
         </div>
       </div>
     </header>

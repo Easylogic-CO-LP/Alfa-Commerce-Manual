@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'plugins/payment-plugins',
         'plugins/shipment-plugins',
         'plugins/custom-field-plugins',
+        'plugins/showon',
       ],
     },
     {

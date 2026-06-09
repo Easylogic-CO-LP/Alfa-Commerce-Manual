@@ -28,10 +28,10 @@ Alfa-Commerce/
 │   ├── sql/                    # Database schemas & migrations
 │   │   ├── install.mysql.utf8.sql
 │   │   ├── uninstall.mysql.utf8.sql
-│   │   └── updates/            # Version migration scripts
+│   │   └── updates/mysql/      # Version migration scripts (e.g. 1.0.9.sql)
 │   ├── services/               # DI container (provider.php)
 │   ├── layouts/                # Reusable template layouts
-│   ├── languages/              # Localization (en-GB, el-GR)
+│   ├── languages/              # Localization (en-GB)
 │   ├── config.xml              # Component configuration form
 │   └── access.xml              # ACL permissions
 │
@@ -50,21 +50,22 @@ Alfa-Commerce/
 │
 ├── api/                        # REST JSON-API
 │   └── src/
-│       ├── Controller/         # 18 API controllers
+│       ├── Controller/         # 17 API controllers
 │       └── View/               # JSON response views
 │
-├── plugins/
-│   ├── alfa-payments/          # Payment gateway plugins
-│   │   ├── standard/           # Offline/bank transfer payment
-│   │   ├── revolut/            # Revolut integration
-│   │   └── viva/               # Viva Wallet integration
-│   ├── alfa-shipments/         # Shipping method plugins
-│   │   ├── standard/           # Standard shipping (zone-based)
-│   │   └── boxnow/             # Box Now courier
+├── plugins/                    # Core ships only the `standard` reference plugins;
+│   │                           # real gateways/carriers are premium (distributed separately)
+│   ├── alfa-payments/
+│   │   └── standard/           # Offline payment (bank transfer / cash on delivery)
+│   ├── alfa-shipments/
+│   │   └── standard/           # Standard shipping (flat / zone rates)
 │   ├── alfa-fields/            # Custom field type plugins
-│   │   ├── text/               # Text input field
-│   │   └── textarea/           # Textarea field
-│   └── webservices/alfa/       # API route registration
+│   │   ├── text/
+│   │   ├── textarea/
+│   │   ├── tel/
+│   │   └── choice/
+│   ├── webservices/alfa/       # API route registration
+│   └── system/alfasync/        # Post-install integrity & per-language schema sync
 │
 ├── modules/
 │   ├── mod_alfa_cart/           # Shopping cart widget module
@@ -87,7 +88,7 @@ Alfa-Commerce/
 
 ## Namespaces
 
-Alfa Commerce follows PSR-4 autoloading with Joomla 4 namespace conventions:
+Alfa Commerce follows PSR-4 autoloading with Joomla 6/7 namespace conventions:
 
 | Component | Namespace |
 |-----------|-----------|

@@ -26,19 +26,28 @@ if ($status = 'active') {
 ## Configuration
 
 The config lives in `phpstan.neon`:
-- **Level 5** analysis
-- Scans all PHP source directories
-- Excludes templates, layouts, and language files
-- Ignores Joomla dynamic property patterns
+- **Level 5** over the PHP source directories (templates, layouts and language files are excluded).
+- **Resolves Joomla against the latest release.** CI downloads the latest Joomla into `./joomla` each run, and
+  `scanDirectories: [joomla]` makes PHPStan aware of the `Joomla\CMS\*` / `Joomla\*` framework classes the component
+  extends (the repo has **no** Composer dependencies). A small `bootstrapFiles` stub declares `_JEXEC` / the `JPATH_*` constants.
+- **Curated `ignoreErrors`** for Joomla's interface→concrete typing — methods that exist on the concrete runtime class
+  (`SiteApplication`, `ListModel`, `DatabaseDriver`, …) but not on the interface the type-hint declares. These are false
+  positives, not bugs.
+- **A baseline** (`phpstan-baseline.neon`) snapshots the genuine pre-existing findings so CI stays green and only **new**
+  regressions get flagged. Chip away at it and regenerate over time.
+
+> Docblock `@since` tags are normalised to `1.0.0` project-wide (the earlier mixed values were copy-paste artefacts).
 
 ## Running Locally
 
-```bash
-# Install
-composer global require phpstan/phpstan
+PHPStan needs a Joomla tree to resolve framework classes, so fetch one first:
 
-# Run analysis
-phpstan analyse --configuration=phpstan.neon --memory-limit=512M
+```bash
+# 1. Populate ./joomla (CI does this automatically)
+scripts/phpstan-fetch-joomla.sh
+
+# 2. Run analysis
+phpstan analyse --configuration=phpstan.neon --memory-limit=1G
 ```
 
 ## On GitHub

@@ -15,6 +15,12 @@ Alfa Commerce is designed as a **marketplace platform** — third-party develope
 | **Shipment** | `alfa-shipments` | Shipping method integrations | FedEx, DHL, Box Now |
 | **Custom Field** | `alfa-fields` | Custom form field types | Color picker, File upload |
 
+:::note What ships in core
+The core package bundles only the **`standard`** payment and shipment reference plugins, plus the field plugins
+(`text`, `textarea`, `tel`, `choice`). The gateways/carriers in the *Example* column are illustrative — real
+integrations (Revolut, Viva, Box Now, …) are premium and distributed separately.
+:::
+
 ## Plugin Architecture
 
 All Alfa Commerce plugins follow the same architecture:

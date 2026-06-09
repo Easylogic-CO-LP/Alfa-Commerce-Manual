@@ -23,7 +23,7 @@ title: PriceSettings
 
 ## Resolution Order
 
-1. **User group settings** (from `#__alfa_usergroup_price_settings`) — highest priority
+1. **User group settings** (JSON in `#__alfa_usergroups.prices_display`, gated by `prices_enable = 1`) — highest priority
 2. **Global component config** (from component parameters) — fallback
 
 ## Usage
