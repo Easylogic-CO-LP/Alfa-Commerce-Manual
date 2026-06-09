@@ -51,7 +51,8 @@
   mask: var(--gh-icon) center / contain no-repeat;
 }
 
-/* Drop Docusaurus's external-link arrow on the GitHub navbar item (the GitHub mark is enough) */
-.header-github-link [class*='iconExternalLink'] {
+/* Drop Docusaurus's external-link arrow on the GitHub navbar item.
+   The GitHub mark is the ::before, so the only real <svg> here is that arrow. */
+.header-github-link svg {
   display: none;
 }
