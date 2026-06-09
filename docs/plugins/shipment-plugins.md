@@ -10,7 +10,7 @@ shipment record on order placement, and adds buttons to the admin order screen.
 
 :::tip Start from `standard`
 The bundled **`plg_alfashipments_standard`** plugin (flat / zone rates) is the reference — copy it. Carrier
-integrations (Box Now, couriers, locker networks, …) are premium and distributed separately; only `standard` ships in core.
+integrations (couriers, locker networks, flat-rate carriers, …) are premium and distributed separately; only `standard` ships in core.
 :::
 
 ## Where it plugs in

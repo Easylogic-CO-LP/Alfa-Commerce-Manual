@@ -8,6 +8,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'getting-started/installation',
+        'getting-started/store-setup',
         'getting-started/project-structure',
         'getting-started/contributing',
       ],
@@ -23,6 +24,7 @@ const sidebars: SidebarsConfig = {
         'architecture/pricing-examples',
         'architecture/cart-system',
         'architecture/order-system',
+        'architecture/multilingual',
       ],
     },
     {

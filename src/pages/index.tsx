@@ -42,12 +42,12 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Payment Plugins',
-    description: 'Build payment gateway integrations — Stripe, PayPal, or any provider. Complete lifecycle guide.',
+    description: 'Build payment gateway integrations — offline or any hosted provider. Complete lifecycle guide.',
     link: '/docs/plugins/payment-plugins',
   },
   {
     title: 'Shipment Plugins',
-    description: 'Build shipping method integrations — FedEx, DHL, or custom carriers. Zone-based or API-based.',
+    description: 'Build shipping method integrations — flat-rate, zone-based, or carrier-API.',
     link: '/docs/plugins/shipment-plugins',
   },
   {

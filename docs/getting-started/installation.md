@@ -46,7 +46,7 @@ The installation script (`script.php`) automatically:
 
 :::note Gateways & carriers are distributed separately
 The core package ships only the **`standard`** payment and shipment reference plugins. Real gateway/carrier
-integrations (Revolut, Viva, Box Now, etc.) are premium and distributed separately — they are **not** bundled
+integrations are premium and distributed separately — they are **not** bundled
 in the core ZIP.
 :::
 
@@ -70,3 +70,9 @@ To update manually:
 1. Download the new version ZIP
 2. Install it over the existing installation (method="upgrade")
 3. Migration scripts in `/administrator/sql/updates/mysql/` run automatically
+
+## Verifying your installation
+
+Alfa Commerce can verify that the installed files match the officially published checksums for your release and shows
+the result in the admin **Security** area — for example **official** (matches the release exactly) or **modified**
+(one or more files differ). Use it to confirm an installation is pristine, or to spot unintended changes.
