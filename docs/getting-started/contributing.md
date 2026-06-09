@@ -143,7 +143,7 @@ Full conventions and namespaces live in [Project Structure](./project-structure)
 
 ## Automated checks
 
-Every Pull Request runs **PHP CS Fixer**, **PHPStan**, the **Claude AI reviewer**, and **security scans** (CodeQL, secret-scanning, dependency checks). Wait for every check to pass — and read the Claude review — before a PR is merged. What each does and how to run them locally: [Code Quality & CI](../tooling/workflows).
+Every Pull Request runs **PHP CS Fixer**, **PHPStan**, the **Claude AI reviewer**, and **security scans** (CodeQL, secret-scanning, dependency checks). Wait for every check to pass — and read the Claude review — before a PR is merged. What each does and how to run them locally: [Automated Checks](../tooling/workflows).
 
 ## Opening a pull request
 

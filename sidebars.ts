@@ -10,8 +10,6 @@ const sidebars: SidebarsConfig = {
         'getting-started/installation',
         'getting-started/store-setup',
         'getting-started/project-structure',
-        'getting-started/contributing',
-        'getting-started/export-package',
       ],
     },
     {
@@ -58,7 +56,15 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Code Quality & CI',
+      label: 'Contributing',
+      items: [
+        'getting-started/contributing',
+        'getting-started/export-package',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Automated Checks',
       items: [
         'tooling/workflows',
         'tooling/php-cs-fixer',

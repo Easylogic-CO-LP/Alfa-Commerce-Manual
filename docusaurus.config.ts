@@ -135,7 +135,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Easylogic CO LP. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Easylogic CO LP.`,
     },
     prism: {
       theme: prismThemes.github,
