@@ -19,9 +19,10 @@ const sidebars: SidebarsConfig = {
       items: [
         'architecture/overview',
         'architecture/database-schema',
-        'architecture/pricing-engine',
-        'architecture/pricing-examples',
         'architecture/multilingual',
+        'architecture/order-emails',
+        'architecture/notifications',
+        'architecture/seo',
       ],
     },
     {
@@ -32,7 +33,6 @@ const sidebars: SidebarsConfig = {
         'plugins/payment-plugins',
         'plugins/shipment-plugins',
         'plugins/custom-field-plugins',
-        'plugins/showon',
         'plugins/media-plugins',
       ],
     },
@@ -44,7 +44,8 @@ const sidebars: SidebarsConfig = {
         'helpers/order-place-helper',
         'helpers/order-payment-helper',
         'helpers/order-shipment-helper',
-        'helpers/price-settings',
+        'helpers/order-helpers',
+        'helpers/pricing',
       ],
     },
     {

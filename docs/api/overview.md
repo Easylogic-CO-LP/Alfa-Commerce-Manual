@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: REST API
+title: Overview
 ---
 
 # REST API

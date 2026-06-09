@@ -166,5 +166,4 @@ extract($displayData);
 - [Build a Payment Plugin →](/docs/plugins/payment-plugins)
 - [Build a Shipment Plugin →](/docs/plugins/shipment-plugins)
 - [Build a Form Field Plugin →](/docs/plugins/custom-field-plugins)
-- [Conditional Field Visibility (showon) →](/docs/plugins/showon)
 - [Build a Media Plugin →](/docs/plugins/media-plugins)
