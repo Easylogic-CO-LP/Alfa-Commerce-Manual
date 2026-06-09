@@ -21,8 +21,6 @@ const sidebars: SidebarsConfig = {
         'architecture/database-schema',
         'architecture/multilingual',
         'architecture/order-emails',
-        'architecture/notifications',
-        'architecture/seo',
       ],
     },
     {
@@ -40,12 +38,21 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Helpers & Services',
       items: [
-        'helpers/cart-helper',
-        'helpers/order-place-helper',
-        'helpers/order-payment-helper',
-        'helpers/order-shipment-helper',
-        'helpers/order-helpers',
-        'helpers/pricing',
+        {
+          type: 'category',
+          label: 'Cart & Checkout',
+          items: ['helpers/cart-helper', 'helpers/order-place-helper'],
+        },
+        {
+          type: 'category',
+          label: 'Orders',
+          items: ['helpers/order-helpers', 'helpers/order-payment-helper', 'helpers/order-shipment-helper'],
+        },
+        {
+          type: 'category',
+          label: 'Services',
+          items: ['helpers/pricing', 'helpers/notifications'],
+        },
       ],
     },
     {
