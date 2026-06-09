@@ -58,17 +58,16 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Contributing',
       items: [
-        'getting-started/contributing',
-        'getting-started/export-package',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Automated Checks',
-      items: [
-        'tooling/workflows',
-        'tooling/php-cs-fixer',
-        'tooling/phpstan',
+        {type: 'doc', id: 'getting-started/contributing', label: 'Overview'},
+        {
+          type: 'category',
+          label: 'Automated Checks',
+          items: [
+            'tooling/workflows',
+            'tooling/php-cs-fixer',
+            'tooling/phpstan',
+          ],
+        },
       ],
     },
   ],
