@@ -17,24 +17,29 @@ auxiliary tables `#__alfa_<entity>_<langtag>`. See [Multilingual & Translations]
 
 ## Core relationships
 
-```mermaid
-erDiagram
-    manufacturers ||--o{ items : brands
-    categories    ||--o{ items_categories : maps
-    items         ||--o{ items_categories : maps
-    items         ||--o{ items_prices : "priced by"
-    items         ||--o{ items_price_index : "indexed for filtering"
+**Catalog** — `items` is the hub; categories and manufacturers attach via M:N join tables:
 
-    orders ||--o{ order_items : contains
-    orders ||--o{ order_payments : "paid by"
-    orders ||--o{ order_shipments : "shipped by"
-    orders ||--o{ order_cart_rule : "discounted by"
-    orders ||--o{ order_activity_log : logs
-    orders ||--o{ order_slip : documents
-    items     ||--o{ order_items : "snapshotted in"
-    payments  ||--o{ order_payments : method
-    shipments ||--o{ order_shipments : method
+```mermaid
+flowchart TD
+    categories -. items_categories .-> items
+    manufacturers -. items_manufacturers .-> items
+    items --> items_prices
+    items --> items_price_index
 ```
+
+**Orders** — an order owns several child records (all linked by `id_order`):
+
+```mermaid
+flowchart TD
+    orders --> order_items
+    orders --> order_payments
+    orders --> order_shipments
+    orders --> aux["order_cart_rule · order_detail_tax<br/>order_activity_log · order_slip"]
+```
+
+Each order also references the customer (`id_user`), currency, status, and the chosen **method** records
+(`id_payment_method` → `#__alfa_payments`, `id_shipment_method` → `#__alfa_shipments`); `order_items` snapshot the
+`items` (`id_item`) they came from.
 
 ## Catalog
 
