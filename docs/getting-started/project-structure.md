@@ -81,7 +81,6 @@ Alfa-Commerce/
 ├── script.php                   # Install/update/uninstall script
 ├── .php-cs-fixer.php            # Code style configuration
 ├── phpstan.neon                 # Static analysis configuration
-├── CLAUDE.md                    # AI assistant context
 ├── CONTRIBUTING.md              # Contribution guide
 └── .github/workflows/           # CI/CD automation
 ```
