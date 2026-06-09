@@ -125,4 +125,55 @@ public function onExecuteAction($event): void
 }
 ```
 
+## Minimal example
+
+```php
+namespace Joomla\Plugin\AlfaShipments\YourCarrier\Extension;
+
+use Alfa\Component\Alfa\Administrator\Plugin\ShipmentsPlugin;
+use Joomla\CMS\Language\Text;
+
+defined('_JEXEC') or die;
+
+final class YourCarrier extends ShipmentsPlugin
+{
+    public function onItemView($event): void { $event->setLayout('default_item_view'); $event->setLayoutData(['method' => $event->getMethod(), 'item' => $event->getSubject()]); }
+    public function onCartView($event): void { $event->setLayout('default_cart_view'); $event->setLayoutData(['method' => $event->getMethod(), 'cart' => $event->getCart()]); }
+
+    public function onCalculateShippingCost($event): void          // REQUIRED — return the cost
+    {
+        $cost = $this->computeCost($event->getCart(), $event->getMethod());
+        $event->setShippingCost($cost);
+        $event->setShippingCostTaxExcl($cost);
+    }
+
+    public function onOrderAfterPlace($event): void                // create the shipment record
+    {
+        $order = $event->getOrder();
+        if (!$order || empty($order->id)) {
+            return;
+        }
+        $incl = is_object($order->total_shipping_tax_incl ?? null) ? $order->total_shipping_tax_incl->getAmount() : 0.0;
+        $excl = is_object($order->total_shipping_tax_excl ?? null) ? $order->total_shipping_tax_excl->getAmount() : 0.0;
+        $this->shipment($order)->pending()->withAllItems()->cost($incl, $excl)->save();
+    }
+
+    public function onGetActions($event): void                     // admin buttons
+    {
+        if (($event->getShipment()->status ?? 'pending') === 'pending') {
+            $event->add('mark_shipped', Text::_('PLG_ALFA_SHIPMENTS_YOURCARRIER_MARK_SHIPPED'))
+                  ->icon('truck')->css('btn-success')->priority(200);
+        }
+    }
+
+    public function onExecuteAction($event): void
+    {
+        match ($event->getAction()) {
+            'mark_shipped' => $this->shipmentUpdate($event->getShipment()->id)->shipped()->save(),
+            default        => $event->setError('Unknown action: ' . $event->getAction()),
+        };
+    }
+}
+```
+
 See [Order Shipment Helper](../helpers/order-shipment-helper.md).

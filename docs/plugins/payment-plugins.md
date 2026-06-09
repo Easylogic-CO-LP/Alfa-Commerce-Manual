@@ -32,6 +32,9 @@ sequenceDiagram
     C->>P: onPaymentResponse — verify (REDIRECT-ONLY)
     P-->>C: success → complete page · cancel/err → process page &result=
     G-->>C: webhook task=plugin.trigger&func=notify (source of truth)
+    Note over C,P: Admin order screen
+    C->>P: onGetActions — add buttons
+    P-->>C: onExecuteAction — capture / refund
 ```
 
 ## Anatomy
