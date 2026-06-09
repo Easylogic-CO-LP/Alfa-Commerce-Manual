@@ -22,12 +22,6 @@ function HomepageHeader() {
             to="/docs/getting-started/installation">
             Get Started
           </Link>
-          <Link
-            className="button button--outline button--secondary button--lg"
-            to="/docs/plugins/overview"
-            style={{marginLeft: '1rem'}}>
-            Build Plugins
-          </Link>
         </div>
       </div>
     </header>
@@ -58,7 +52,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'REST API',
-    description: '17 JSON-API endpoints for products, orders, payments, shipments, and more.',
+    description: 'JSON-API endpoints for products, orders, payments, shipments, and more.',
     link: '/docs/api/overview',
   },
   {

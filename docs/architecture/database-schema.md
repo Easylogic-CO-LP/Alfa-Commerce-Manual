@@ -56,7 +56,7 @@ Alfa Commerce uses 60+ MySQL tables, all prefixed with `#__alfa_`. The schema is
 | `#__alfa_order_detail_tax` | Per-item tax breakdown |
 | `#__alfa_order_cart_rule` | Applied discounts/coupons per order |
 | `#__alfa_orders_statuses` | Order status definitions |
-| `#__alfa_orders_statuses_templates` | Status notification email templates |
+| `#__alfa_orderstatus_recipients` | Order-status email recipients |
 
 ### Configuration
 
@@ -66,7 +66,7 @@ Alfa Commerce uses 60+ MySQL tables, all prefixed with `#__alfa_`. The schema is
 | `#__alfa_payments` | Payment method definitions |
 | `#__alfa_places` | Geographic locations/countries |
 | `#__alfa_currencies` | Currency definitions (200+ pre-loaded) |
-| `#__alfa_formfields` | Custom form field definitions |
+| `#__alfa_form_fields` | Custom form field definitions (+ `_form_field_groups`, `_form_fields_usergroups`, `_form_fields_users`) |
 | `#__alfa_customs` | Custom field instances |
 
 ### Users
@@ -74,8 +74,7 @@ Alfa Commerce uses 60+ MySQL tables, all prefixed with `#__alfa_`. The schema is
 | Table | Description |
 |-------|-------------|
 | `#__alfa_users` | Customer profiles (with B2B fields) |
-| `#__alfa_usergroups` | Customer segmentation groups |
-| `#__alfa_usergroup_price_settings` | Per-group price visibility config |
+| `#__alfa_usergroups` | Customer segmentation groups (per-group price visibility is stored as JSON in the `prices_display` column) |
 | `#__alfa_categories_usergroups` | Category visibility per group |
 | `#__alfa_categories_users` | Category visibility per user |
 
@@ -123,4 +122,4 @@ The `#__alfa_items_price_index` table is a denormalized index maintained by `Pri
 
 ## Migrations
 
-Database migrations are stored in `administrator/sql/updates/` with filenames matching version numbers (e.g., `1.0.2.sql`). Joomla runs these automatically during updates.
+Database migrations are stored in `administrator/sql/updates/mysql/` with filenames matching version numbers (e.g., `1.0.9.sql`). On update, Joomla runs every file newer than the installed schema automatically.

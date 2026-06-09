@@ -5,7 +5,7 @@ title: Architecture Overview
 
 # Architecture Overview
 
-Alfa Commerce is built on Joomla 4's modern MVC architecture with a service-oriented design, event-driven plugin system, and a professional pricing engine.
+Alfa Commerce is built on Joomla 6/7's modern MVC architecture with a service-oriented design, event-driven plugin system, and a professional pricing engine.
 
 ## Design Principles
 
@@ -29,7 +29,7 @@ Alfa Commerce is built on Joomla 4's modern MVC architecture with a service-orie
 ├─────────────────────────────────────────────────────────────┤
 │                        REST API                              │
 │  ApiControllers → Models → JSON Views                       │
-│  17 endpoints (items, orders, payments, shipments, etc.)    │
+│  JSON-API endpoints (items, orders, payments, shipments, …)    │
 ├─────────────────────────────────────────────────────────────┤
 │                      Plugin System                           │
 │  Payment Plugins ──── Event Dispatcher ──── Shipment Plugins│

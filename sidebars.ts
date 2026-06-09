@@ -33,6 +33,8 @@ const sidebars: SidebarsConfig = {
         'plugins/payment-plugins',
         'plugins/shipment-plugins',
         'plugins/custom-field-plugins',
+        'plugins/showon',
+        'plugins/media-plugins',
       ],
     },
     {
@@ -63,7 +65,6 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'api/overview',
-        'api/endpoints',
       ],
     },
   ],

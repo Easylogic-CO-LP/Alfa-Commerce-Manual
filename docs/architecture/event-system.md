@@ -30,7 +30,7 @@ Core Code (e.g., CartHelper)
 | `onOrderAfterPlace` | After order is committed | Create initial payment record |
 | `onOrderProcessView` | Order processing page | Redirect to gateway or show instructions |
 | `onOrderCompleteView` | Order completion page | Show confirmation message |
-| `onPaymentResponse` | Gateway webhook callback | Update payment status |
+| `onPaymentResponse` | Customer returns from the gateway | Verify payment, then **redirect** to the result page (redirect-only — no layout) |
 | `onGetActions` | Admin order edit | Register action buttons |
 | `onExecuteAction` | Admin clicks action | Handle the action |
 
@@ -64,18 +64,38 @@ Core Code (e.g., CartHelper)
 | `AdminOrderAfterSaveEvent` | Order saved in admin | Post-save logic |
 | `AdminOrderDeleteEvent` | Order deleted | Cleanup plugin data |
 
+## Capability tiers
+
+Events fall into three capability tiers, so a plugin hook can only do what its stage
+actually supports:
+
+| Tier | Base class | Can | Example hooks |
+|------|-----------|-----|---------------|
+| **Data** | `GeneralEvent` | the subject only | `onOrderBeforePlace`, `onOrderAfterPlace`, `onCalculateShippingCost`, `onAdminOrderAfterSave` |
+| **Redirect** | `RedirectEvent` | `setRedirectUrl()` | `onPaymentResponse` |
+| **View** | `LayoutEvent` | `setLayout()` **+** `setRedirectUrl()` | `onCartView`, `onItemView`, `onOrderProcessView`, `onOrderCompleteView`, admin order views |
+
+**Rule of thumb:** redirect and layout belong to the presentation/navigation layer — the
+HtmlView-rendered hooks (which render inline *or* redirect away) and the gateway-return
+controller (`onPaymentResponse`, redirect-only, no view). Everything fired from
+plugin/helper logic outside a view is a pure **data** hook and has neither capability —
+calling `setRedirectUrl()` or `setLayout()` on it is an error.
+
 ## Event Class Hierarchy
 
 ```
-Joomla\Event\AbstractImmutableEvent
-  └── GeneralEvent (abstract base)
-        ├── PaymentsLayoutEvent
-        │     ├── PaymentResponseEvent
-        │     └── PaymentsFormEvent
-        ├── ShipmentsLayoutEvent
-        │     └── CalculateShippingCostEvent
-        ├── FormEvent
-        └── FieldsEvent
+Joomla\CMS\Event\AbstractImmutableEvent
+  └── GeneralEvent ............ data only (the subject)
+        └── RedirectEvent ..... + setRedirectUrl() / setRedirectCode()
+              └── LayoutEvent .. + setLayout() / setLayoutData()
+```
+
+Each domain has thin bases extending those tiers:
+
+```
+GeneralEvent  →  PaymentsEvent / ShipmentsEvent           (data:     onOrderAfterPlace, onOrderBeforePlace, onCalculateShippingCost …)
+RedirectEvent →  PaymentsRedirectEvent / ShipmentsRedirectEvent   (redirect: onPaymentResponse)
+LayoutEvent   →  PaymentsLayoutEvent / ShipmentsLayoutEvent       (view:     onCartView, onItemView, onOrderProcessView, onOrderCompleteView …)
 ```
 
 ## Working with Events
@@ -92,8 +112,14 @@ public function onCartView($event): void
 
 ### Setting Event Results
 
+The available setters depend on the event's [tier](#capability-tiers): `setLayout()` exists
+only on **view** events, and `setRedirectUrl()` only on **view** and **redirect** events. Data
+events expose neither. The `setError()` / `setMessage()` / `setRefresh()` / shipping-cost setters
+below belong to specific events (the admin **action** events and `onCalculateShippingCost`) — not to
+every event.
+
 ```php
-// Set a template to render
+// Set a template to render (view events only)
 $event->setLayout('default_cart_view');
 $event->setLayoutData(['method' => $method, 'cart' => $cart]);
 
@@ -136,11 +162,14 @@ $event->setRefresh(true);
    │
 6. Clear cart
    │
-7. ──→ onOrderProcessView (payment plugin: redirect to gateway or show instructions)
+7. ──→ onOrderProcessView (payment plugin: redirect to the gateway, OR render the gateway form inline)
    │
-8. [Customer pays at gateway]
+8. [Customer pays at the gateway]
    │
-9. ──→ onPaymentResponse (payment plugin: update payment status)
+9. Gateway returns the customer → PaymentController (task=payment.response)
+   ──→ onPaymentResponse (verify payment; REDIRECT-ONLY — no layout here)
+        • success     → redirect to the complete page → onOrderCompleteView renders confirmation
+        • cancel/error → redirect to the process page (&<plugin>_result=…) → onOrderProcessView renders it
    │
-10. ──→ onOrderCompleteView (payment plugin: show confirmation)
+   (a server webhook — task=plugin.trigger&…&func=notify, no session — may also confirm payment out-of-band)
 ```
