@@ -56,6 +56,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'tooling/workflows',
         'tooling/php-cs-fixer',
+        'tooling/export-package',
         'tooling/phpstan',
       ],
     },

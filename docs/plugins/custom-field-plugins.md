@@ -1,11 +1,11 @@
 ---
 sidebar_position: 4
-title: Building Custom Field Plugins
+title: Building Form Field Plugins
 ---
 
-# Building Custom Field Plugins
+# Building Form Field Plugins
 
-A custom field plugin defines a new **field type** that admins can attach to Alfa records (checkout, cart, products,
+A form field plugin defines a new **field type** that admins can attach to Alfa records (checkout, cart, products,
 users…) from the field-definition UI. It is a Joomla plugin in the **`alfa-fields`** group, and **one plugin = one type**
 (plugin name == type name). Core ships four: `text`, `textarea`, `tel`, `choice`.
 
