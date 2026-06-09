@@ -107,5 +107,3 @@ final class YourMediaPlugin extends CMSPlugin implements SubscriberInterface
     public function onAlfaMediaBeforeDelete($event): void { /* remove your derivatives for $event->getPaths() */ }
 }
 ```
-
-See [Event System](../architecture/event-system.md) for the event model.

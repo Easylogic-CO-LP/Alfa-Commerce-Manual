@@ -124,4 +124,4 @@ public function onExecuteAction($event): void
 }
 ```
 
-See [Event System](../architecture/event-system.md) and [Order Shipment Helper](../helpers/order-shipment-helper.md).
+See [Order Shipment Helper](../helpers/order-shipment-helper.md).
