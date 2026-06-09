@@ -10,6 +10,10 @@ import TabItem from '@theme/TabItem';
 
 How to propose a change to Alfa Commerce — from a one-line fix to a new feature — and turn it into a pull request. For how the codebase is organized, see [Project Structure](./project-structure).
 
+:::note
+By contributing you agree to our [Code of Conduct](https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/CODE_OF_CONDUCT.md). To report a security vulnerability, use the [Security Policy](https://github.com/Easylogic-CO-LP/Alfa-Commerce/security/policy) — please don't open a public issue.
+:::
+
 ## Prerequisites
 
 | You'll need | Notes |
