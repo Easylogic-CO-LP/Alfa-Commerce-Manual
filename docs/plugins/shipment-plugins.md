@@ -41,7 +41,7 @@ plugins/alfa-shipments/<carrier>/
 └── language/en-GB/plg_alfa-shipments_<carrier>.ini (+ .sys.ini)
 ```
 
-- **Manifest:** `group="alfa-shipments"` and `<namespace path="src">Joomla\Plugin\AlfaShipments\<Carrier></namespace>`.
+- **Manifest:** `group="alfa-shipments"` and `<namespace path="src">Alfa\Plugin\AlfaShipments\<Carrier></namespace>`.
 - **Class:** `final class <Carrier> extends \Alfa\Component\Alfa\Administrator\Plugin\ShipmentsPlugin`.
 
 ## Hooks by capability tier
@@ -128,7 +128,7 @@ public function onExecuteAction($event): void
 ## Minimal example
 
 ```php
-namespace Joomla\Plugin\AlfaShipments\YourCarrier\Extension;
+namespace Alfa\Plugin\AlfaShipments\YourCarrier\Extension;
 
 use Alfa\Component\Alfa\Administrator\Plugin\ShipmentsPlugin;
 use Joomla\CMS\Language\Text;

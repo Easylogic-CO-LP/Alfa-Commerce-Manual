@@ -54,14 +54,14 @@ plugins/alfa-media/<name>/
 └── language/en-GB/plg_alfa-media_<name>.ini (+ .sys.ini)
 ```
 
-- **Manifest:** `group="alfa-media"` + `<namespace path="src">Joomla\Plugin\AlfaMedia\<Name></namespace>`.
+- **Manifest:** `group="alfa-media"` + `<namespace path="src">Alfa\Plugin\AlfaMedia\<Name></namespace>`.
 - **Per-context params:** optimisers typically expose a `contexts` subform in `params` so behaviour (max size, format,
   quality) differs per image context (catalog, category, …) — read via `$this->params->get('contexts', [])`.
 
 ## Minimal example
 
 ```php
-namespace Joomla\Plugin\AlfaMedia\YourMediaPlugin\Extension;
+namespace Alfa\Plugin\AlfaMedia\YourMediaPlugin\Extension;
 
 use Alfa\Component\Alfa\Administrator\Event\Media\ValidateEvent;
 use Alfa\Component\Alfa\Administrator\Event\Media\BeforeProcessEvent;

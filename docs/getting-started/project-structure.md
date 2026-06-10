@@ -94,9 +94,9 @@ Alfa Commerce follows PSR-4 autoloading with Joomla 6/7 namespace conventions:
 | Admin | `Alfa\Component\Alfa\Administrator\{Controller,Model,View,...}` |
 | Site | `Alfa\Component\Alfa\Site\{Controller,Model,View,...}` |
 | API | `Alfa\Component\Alfa\Api\{Controller,View}` |
-| Payment Plugins | `Joomla\Plugin\AlfaPayments\{PluginName}\Extension` |
-| Shipment Plugins | `Joomla\Plugin\AlfaShipments\{PluginName}\Extension` |
-| Field Plugins | `Joomla\Plugin\AlfaFields\{PluginName}\Extension` |
+| Payment Plugins | `Alfa\Plugin\AlfaPayments\{PluginName}\Extension` |
+| Shipment Plugins | `Alfa\Plugin\AlfaShipments\{PluginName}\Extension` |
+| Field Plugins | `Alfa\Plugin\AlfaFields\{PluginName}\Extension` |
 | Cart Module | `Alfa\Module\AlfaCart` |
 | Search Module | `Alfa\Module\AlfaSearch` |
 

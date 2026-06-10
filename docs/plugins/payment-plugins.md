@@ -49,7 +49,7 @@ plugins/alfa-payments/<gateway>/
 └── language/en-GB/plg_alfa-payments_<gateway>.ini (+ .sys.ini)
 ```
 
-- **Manifest:** `group="alfa-payments"` (mandatory) and `<namespace path="src">Joomla\Plugin\AlfaPayments\<Gateway></namespace>`.
+- **Manifest:** `group="alfa-payments"` (mandatory) and `<namespace path="src">Alfa\Plugin\AlfaPayments\<Gateway></namespace>`.
 - **Class:** `final class <Gateway> extends \Alfa\Component\Alfa\Administrator\Plugin\PaymentsPlugin`.
 - **Provider:** copy the standard `services/provider.php` and swap the class import + the `getPlugin('alfa-payments', '<gateway>')` strings.
 
@@ -138,7 +138,7 @@ The fluent button API: `->icon()` `->css()` `->confirm()` `->modal('layout', 'Ti
 ## Minimal example (online gateway)
 
 ```php
-namespace Joomla\Plugin\AlfaPayments\YourGateway\Extension;
+namespace Alfa\Plugin\AlfaPayments\YourGateway\Extension;
 
 use Alfa\Component\Alfa\Administrator\Plugin\PaymentsPlugin;
 use Joomla\CMS\Factory;

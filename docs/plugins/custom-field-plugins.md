@@ -39,7 +39,7 @@ plugins/alfa-fields/<type>/
 └── language/en-GB/plg_alfa-fields_<type>.ini (+ .sys.ini)
 ```
 
-- **Manifest:** `group="alfa-fields"` + `<namespace path="src">Joomla\Plugin\AlfaFields\<Type></namespace>`.
+- **Manifest:** `group="alfa-fields"` + `<namespace path="src">Alfa\Plugin\AlfaFields\<Type></namespace>`.
 - **Class:** `final class <Type> extends \Alfa\Component\Alfa\Administrator\Plugin\FieldsPlugin`.
 - **Provider:** instantiate from `PluginHelper::getPlugin('alfa-fields', '<type>')` and `setApplication()`; do **not** pass a
   dispatcher (deprecated). Follow the `tel`/`choice` providers.
@@ -79,7 +79,7 @@ maps to the current language, and emits the `showon*` attributes — so a minima
 subclass**, and others just override and mutate the returned node.
 
 > Custom widget? Ship `src/Field/<X>Field.php` and register it from `prepareDom()`:
-> `FormHelper::addFieldPrefix('Joomla\\Plugin\\AlfaFields\\Color\\Field'); $node->setAttribute('type', 'mywidget');`
+> `FormHelper::addFieldPrefix('Alfa\\Plugin\\AlfaFields\\Color\\Field'); $node->setAttribute('type', 'mywidget');`
 
 ## Rendering the value — `tmpl/default.php`
 
