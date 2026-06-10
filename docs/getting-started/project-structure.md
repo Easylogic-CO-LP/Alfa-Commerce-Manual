@@ -16,14 +16,14 @@ Alfa-Commerce/
 │   │   ├── Extension/          # Component bootstrap (AlfaComponent.php)
 │   │   ├── Controller/         # Admin controllers (Form + List)
 │   │   ├── Model/              # Admin models (CRUD, queries)
-│   │   ├── View/               # Admin views (36+ view classes)
+│   │   ├── View/               # Admin views
 │   │   ├── Table/              # Database table classes
 │   │   ├── Field/              # Custom form field types
 │   │   ├── Helper/             # Business logic helpers
 │   │   ├── Service/            # Services (PriceIndexSyncService)
-│   │   ├── Event/              # Event classes (40+ events)
+│   │   ├── Event/              # Event classes
 │   │   └── Plugin/             # Base plugin classes
-│   ├── forms/                  # XML form definitions (39 forms)
+│   ├── forms/                  # XML form definitions
 │   ├── tmpl/                   # Admin HTML templates
 │   ├── sql/                    # Database schemas & migrations
 │   │   ├── install.mysql.utf8.sql
