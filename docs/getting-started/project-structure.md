@@ -59,7 +59,7 @@ Alfa-Commerce/
 │   │   └── standard/           # Offline payment (bank transfer / cash on delivery)
 │   ├── alfa-shipments/
 │   │   └── standard/           # Standard shipping (flat / zone rates)
-│   ├── alfa-fields/            # Form field type plugins
+│   ├── alfa-form-fields/            # Form field type plugins
 │   │   ├── text/
 │   │   ├── textarea/
 │   │   ├── tel/
@@ -96,7 +96,7 @@ Alfa Commerce follows PSR-4 autoloading with Joomla 6/7 namespace conventions:
 | API | `Alfa\Component\Alfa\Api\{Controller,View}` |
 | Payment Plugins | `Alfa\Plugin\AlfaPayments\{PluginName}\Extension` |
 | Shipment Plugins | `Alfa\Plugin\AlfaShipments\{PluginName}\Extension` |
-| Field Plugins | `Alfa\Plugin\AlfaFields\{PluginName}\Extension` |
+| Field Plugins | `Alfa\Plugin\AlfaFormFields\{PluginName}\Extension` |
 | Cart Module | `Alfa\Module\AlfaCart` |
 | Search Module | `Alfa\Module\AlfaSearch` |
 

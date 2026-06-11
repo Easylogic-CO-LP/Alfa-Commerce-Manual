@@ -6,7 +6,7 @@ title: Building Form Field Plugins
 # Building Form Field Plugins
 
 A form field plugin defines a new **field type** that admins can attach to Alfa records (checkout, cart, products,
-users…) from the field-definition UI. It is a Joomla plugin in the **`alfa-fields`** group, and **one plugin = one type**
+users…) from the field-definition UI. It is a Joomla plugin in the **`alfa-form-fields`** group, and **one plugin = one type**
 (plugin name == type name). Core ships four: `text`, `textarea`, `tel`, `choice`.
 
 A field plugin does three things: **build the input** (`prepareDom`), **render the stored value** (a `tmpl/` layout), and
@@ -28,24 +28,24 @@ flowchart TD
 ## Anatomy
 
 ```
-plugins/alfa-fields/<type>/
-├── <type>.xml                    # manifest — group="alfa-fields"
+plugins/alfa-form-fields/<type>/
+├── <type>.xml                    # manifest — group="alfa-form-fields"
 ├── services/provider.php         # DI provider
 ├── src/Extension/<Type>.php       # extends FieldsPlugin
 ├── src/Field/<X>Field.php         # optional: custom JForm input widget
 ├── src/Rule/<X>Rule.php           # optional: server-side validation
 ├── params/params.xml             # the field's admin settings (incl. sql_type for the DB column)
 ├── tmpl/default.php              # display layout (renders the stored value)
-└── language/en-GB/plg_alfa-fields_<type>.ini (+ .sys.ini)
+└── language/en-GB/plg_alfa-form-fields_<type>.ini (+ .sys.ini)
 ```
 
-- **Manifest:** `group="alfa-fields"` + `<namespace path="src">Alfa\Plugin\AlfaFields\<Type></namespace>`.
+- **Manifest:** `group="alfa-form-fields"` + `<namespace path="src">Alfa\Plugin\AlfaFormFields\<Type></namespace>`.
 - **Class:** `final class <Type> extends \Alfa\Component\Alfa\Administrator\Plugin\FieldsPlugin`.
-- **Provider:** instantiate from `PluginHelper::getPlugin('alfa-fields', '<type>')` and `setApplication()`; do **not** pass a
+- **Provider:** instantiate from `PluginHelper::getPlugin('alfa-form-fields', '<type>')` and `setApplication()`; do **not** pass a
   dispatcher (deprecated). Follow the `tel`/`choice` providers.
 
 :::note Type discovery — no `onGetTypes`
-Types are found by **enumerating enabled `alfa-fields` plugins** (`AlfaHelper::getFieldTypes()`), not via an event. Enable
+Types are found by **enumerating enabled `alfa-form-fields` plugins** (`AlfaHelper::getFieldTypes()`), not via an event. Enable
 your plugin and it appears in the "Type" dropdown automatically; its `params/params.xml` becomes the field's settings form.
 :::
 
@@ -79,7 +79,7 @@ maps to the current language, and emits the `showon*` attributes — so a minima
 subclass**, and others just override and mutate the returned node.
 
 > Custom widget? Ship `src/Field/<X>Field.php` and register it from `prepareDom()`:
-> `FormHelper::addFieldPrefix('Alfa\\Plugin\\AlfaFields\\Color\\Field'); $node->setAttribute('type', 'mywidget');`
+> `FormHelper::addFieldPrefix('Alfa\\Plugin\\AlfaFormFields\\Color\\Field'); $node->setAttribute('type', 'mywidget');`
 
 ## Rendering the value — `tmpl/default.php`
 
@@ -130,7 +130,7 @@ itself, and hidden ≠ removed (the input is disabled, so it submits nothing ser
 
 ## Minimal example
 
-A `color` type: the manifest (`group="alfa-fields"`, namespace `…\Color`), a `services/provider.php`, the `Color` class
+A `color` type: the manifest (`group="alfa-form-fields"`, namespace `…\Color`), a `services/provider.php`, the `Color` class
 above, a `params/params.xml` with `<field name="sql_type" type="hidden" default="varchar(7)"/>`, a `tmpl/default.php`, and
 the language files. Enable it — `color` appears as a new field type. Add `src/Rule/ColorRule.php` + `validate-color` only if
 you need validation, and `media/` + an `onBeforeCompileHead` subscriber only if you need CSS/JS.
