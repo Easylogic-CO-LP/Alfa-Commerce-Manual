@@ -61,7 +61,7 @@ Controllers orchestrate; the real work is in helpers/services so it can be reuse
 
 The component boots plugins by group and dispatches typed events to them; a plugin's capability is set by the **event
 class** it receives (data → redirect → layout). See [Plugin Development](../plugins/overview.md). Groups: `alfa-payments`,
-`alfa-shipments`, `alfa-fields`, `alfa-media`, plus the `webservices` and `system` plugins.
+`alfa-shipments`, `alfa-form-fields`, `alfa-media`, plus the `webservices` and `system` plugins.
 
 ## Dependency injection
 
