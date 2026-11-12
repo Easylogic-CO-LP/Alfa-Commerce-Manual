@@ -51,8 +51,8 @@ These events hand it to you with `getCart()`:
 | Event | Who receives it | Page |
 |---|---|---|
 | `onCartTotals` | Each admitted plugin of the `alfa` group | [Order and cart events](../events/order-and-cart-events.md#oncarttotals) |
-| `onCalculateShippingCost` | The shipping plugin of a method | [Shipping plugins](../plugins/shipment-plugins.md#oncalculateshippingcost) |
-| `onCartView` | The payment or shipping plugin of an offered method | [Payment plugins](../plugins/payment-plugins.md#oncartview), [Shipping plugins](../plugins/shipment-plugins.md#oncartview) |
+| `onCalculateShippingCost` | The shipping plugin of a method | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
+| `onCartView` | The payment or shipping plugin of an offered method | [Payment plugins](../plugins/payment-plugin-events.md#oncartview), [Shipping plugins](../plugins/shipment-plugin-events.md#oncartview) |
 
 ### What you are given
 

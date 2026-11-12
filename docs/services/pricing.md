@@ -573,7 +573,7 @@ with tax", "take 10 percent off the net price". Alfa applies the lines in order 
 discounts as for any item. Each line appears as a step of the price breakdown.
 
 The event and the methods of a price line are described on
-[Item field plugins](../plugins/item-field-plugins.md#oncalculateitemprice).
+[Item field plugins](../plugins/item-field-plugin-events.md#oncalculateitemprice).
 
 ## A shipping charge's tax chain
 

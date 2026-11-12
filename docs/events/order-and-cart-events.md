@@ -80,7 +80,7 @@ and a warning is written to the log.
 
 The plugin's other files (the manifest, `services/provider.php`, the language files) are the same as for any
 feature plugin. A complete one is printed in
-[Extending Admin Screens](../plugins/admin-screen-plugins.md#a-complete-plugin).
+[Extending Admin Screens](../plugins/admin-screen-example.md).
 
 The texts in the samples are language keys of the plugin's own language file. Your plugin loads that file itself, see
 [Plugin overview](../plugins/overview.md#each-extension-owns-its-language).
