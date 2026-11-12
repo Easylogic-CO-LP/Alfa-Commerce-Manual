@@ -73,23 +73,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Helpers & Services',
+      label: 'Services',
       items: [
-        {
-          type: 'category',
-          label: 'Cart & Checkout',
-          items: ['helpers/cart-helper', 'helpers/order-place-helper'],
-        },
-        {
-          type: 'category',
-          label: 'Orders',
-          items: ['helpers/order-helpers', 'helpers/order-payment-helper', 'helpers/order-shipment-helper'],
-        },
-        {
-          type: 'category',
-          label: 'Services',
-          items: ['helpers/pricing', 'helpers/notifications'],
-        },
+        'services/overview',
+        'services/cart-and-checkout',
+        'services/orders',
+        'services/payments-and-shipments',
+        'services/documents',
+        'services/pricing',
+        'services/stock',
+        'services/notifications',
       ],
     },
     {
