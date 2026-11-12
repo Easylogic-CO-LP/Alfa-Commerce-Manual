@@ -694,5 +694,4 @@ The base class loads the plugin's language file by itself (`$autoloadLanguage`).
   the helper classes `LanguageTag`, `SearchScope`, `QueryNormalizer` and `PlainText`.
 - The search module (`mod_alfa_search`) and the JSON format of the search endpoint.
 - Running a rebuild from the command line. No console command for it ships in 2.2.0.
-- The background work engine. It will be described on the page "Background work"
-  (../architecture/background-work.md), which is not written yet.
+- The background work engine is described on its own page, [Background work](../architecture/background-work.md).
