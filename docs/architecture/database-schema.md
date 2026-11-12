@@ -21,6 +21,9 @@ The install file creates **111 tables**. Every name starts with `#__alfa_` (Joom
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
+A fresh 2.2.0 site with one content language (English) holds 126 tables: these 111, fourteen more language tables
+and the standard shipping plugin's log table. This was counted on a test installation.
+
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
 that holds the link. The database enforces only three of these links with a foreign key (they are marked "foreign
 key" in the text). All the others are id columns that the code keeps in step.

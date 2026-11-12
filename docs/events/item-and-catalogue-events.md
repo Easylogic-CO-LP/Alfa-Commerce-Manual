@@ -191,7 +191,7 @@ repeated.
 There is a second "after" event on an item's save, `onAlfaAdminAfterSave`, which every administrator screen has. For
 an item it is announced right after the item itself is written, before its prices and the rest. A listener that needs
 the finished item uses `onItemAfterSave`. See
-[Extending Admin Screens](../plugins/admin-screen-plugins.md#onalfaadminaftersave).
+[Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminaftersave).
 
 ## Showing an item
 
@@ -213,7 +213,7 @@ contributes to the same event object.
 
 The places are the cases of `ItemSurface`: `Title`, `Image`, `ShortDescription`, `FullDescription`, `BuyForm`,
 `PaymentMethods`, `ShipmentMethods`, `NearAddToCart` and `Specifications`. They are the same places an item field
-uses, see [Item field plugins](../plugins/item-field-plugins.md#onitemview).
+uses, see [Item field plugins](../plugins/item-field-plugin-events.md#onitemview).
 
 **What you are expected to do.** Name yourself, choose a place, name a layout and hand it its data. The layout is a
 file of your plugin, `tmpl/<name>.php`. Never return HTML from the handler.
@@ -239,7 +239,7 @@ part without a layout is not drawn.
 ### onItemsListPrepare
 
 The event for a whole list of items is described with the item fields, whose base class subscribes to it:
-[Item field plugins](../plugins/item-field-plugins.md#onitemslistprepare).
+[Item field plugins](../plugins/item-field-plugin-events.md#onitemslistprepare).
 
 ## When stored prices change
 
@@ -341,7 +341,7 @@ public function onAlfaPricesChanged(PricesChangedEvent $event): void
 - The prices the item page and the cart calculate live from their rules.
 - Whether a place may buy.
 - The rows of a deleted place. Learn of the place from `onAlfaAdminAfterDelete`
-  ([Extending Admin Screens](../plugins/admin-screen-plugins.md#onalfaadminafterdelete)).
+  ([Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete)).
 - The rows of a customer group set that no customer holds any more.
 
 **What happens next.** Nothing depends on your answer.
