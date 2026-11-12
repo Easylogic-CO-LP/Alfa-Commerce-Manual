@@ -73,7 +73,8 @@ libraries. A one line fix and a new feature follow the same path.
 
 What the repository shows about these branches: the automated checks run for pull requests into `main` and into
 `developer`, and again when either branch receives new commits. The latest commit on `main` is a merge of
-`developer`. The rules that protect the two branches are set on GitHub and are not part of the code.
+`developer`. The rules that protect the two branches are set on GitHub, not in the code:
+see [Branch rules](../tooling/workflows#branch-rules).
 
 ### Changes that need more than the code
 
@@ -459,7 +460,6 @@ Joomla itself are reported to Joomla's security team.
 
 ## Not documented yet
 
-- Which checks are required for a merge, and who may merge. These are settings of the repository on GitHub.
 - Whether PHP CS Fixer can commit its fixes to a pull request that comes from a fork, and whether the AI review runs
   for one. The workflow files do not settle it.
 - How the `developer` branch becomes a release. The code holds `main` only.

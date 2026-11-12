@@ -16,16 +16,32 @@ pull request as one check, green or red.
 
 | Check (workflow, job) | Runs on | Can a finding block a merge |
 |---|---|---|
-| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Depends on the repository's branch rules, which are not part of the code. It turns red only when the tool or its commit step breaks. |
-| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Depends on the repository's branch rules, which are not part of the code. Any finding turns it red. |
+| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). It turns red only when the tool or its commit step breaks. |
+| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
 | Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | No. It reports and does not fail the check. |
-| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Depends on the repository's branch rules, which are not part of the code. |
+| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
 | Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. |
-| Security Scan, **secret scan** (job `secret-scanning`) | Same | Depends on the repository's branch rules, which are not part of the code. A secret confirmed as live turns it red. |
+| Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
 | Claude PR Review, **AI review** (job `claude-review`) | Every pull request when it is opened, updated or reopened, and any comment that contains `@claude` | No. It posts comments. |
 
-Which checks are required before a merge is set in the repository's branch rules on GitHub. Those rules are not
-visible in the code, so this page can only say what makes each check turn red.
+Whether a red check stops a merge is decided by the repository's branch rules on GitHub, not by the workflow files.
+
+### Branch rules
+
+The rules of the two branches are settings of the repository (two rulesets), read on 13 November 2026. They can
+change without a change in the code.
+
+| | `developer` | `main` |
+|---|---|---|
+| Changes only through a pull request | Yes | Yes |
+| Approving reviews needed | 1 | 0 |
+| The last push must be approved by someone else | No | Yes |
+| Force push | Refused | Refused |
+| Linear history | Not asked | Required |
+| Required checks | None | None |
+
+So today no automated check has to be green for a merge. The checks inform the people who review and merge.
+Organisation and repository administrators may bypass these rules.
 
 No workflow runs a test suite, builds the installable package or publishes a release.
 
@@ -195,7 +211,6 @@ On the pull request page:
 
 ## Not documented yet
 
-- Which checks are required before a merge, and who may merge. These are settings of the repository on GitHub.
 - Whether PHP CS Fixer can commit to a pull request that comes from a fork, and whether the AI review's secret is
   available to such a pull request.
 - What the AI review answers when a comment with `@claude` asks a question. The workflow passes the same review
