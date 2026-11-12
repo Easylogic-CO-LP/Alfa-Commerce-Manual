@@ -179,7 +179,9 @@ the item's `SearchDocument` in every content language and calls the **configured
 3. `delete()` on each generation, for a language in which the item must not be found (unpublished, or nothing to
    search).
 
-You do not listen to any event for this. A failure in one generation is recorded and does not stop the save.
+Your writer needs no event for this: Alfa calls it. The same save also announces `onCatalogVisibilityChanged` and
+`onCollectCatalogProjections`, described below, for an engine that keeps more than the item's document. A failure in
+one generation is recorded and does not stop the save.
 
 ### The whole index is rebuilt
 

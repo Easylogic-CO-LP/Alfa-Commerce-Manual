@@ -62,6 +62,13 @@ const sidebars: SidebarsConfig = {
       label: 'Events',
       items: [
         'events/how-events-reach-a-plugin',
+        'events/flows',
+        'events/order-and-cart-events',
+        'events/item-and-catalogue-events',
+        'events/stock-events',
+        'events/document-events',
+        'events/notification-and-setup-events',
+        'events/event-index',
       ],
     },
     {
