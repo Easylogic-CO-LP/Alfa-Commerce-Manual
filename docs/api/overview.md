@@ -281,7 +281,7 @@ will name the release when one ships.
 | 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce does not ship it. | Install `lib_dompdf`, or use the `html` route | Planned for 2.2.1: a setup warning, and 503 with the reason |
 | 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Not decided. A candidate for 2.2.1. |
 | 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | A candidate for 2.2.1 |
-| 12 | `fulfillment_status` and `fulfillment_percentage` of an order are not filled by the API | Do not rely on them. Read the order's `shipments`. | A candidate for 2.2.1 |
+| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | A candidate for 2.2.1 |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.
