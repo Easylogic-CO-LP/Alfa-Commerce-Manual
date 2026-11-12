@@ -1,125 +1,138 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: Project Structure
+description: How the Alfa Commerce repository is laid out, with its namespaces and the files worth knowing.
 ---
 
 # Project Structure
 
-Understanding how Alfa Commerce is organized is essential before contributing or extending it.
+<AlfaVersion verified="2.2.0" />
 
-## Directory Overview
+How the Alfa Commerce repository is organised. Read it before contributing or writing an extension.
+
+## Directory overview
 
 ```
 Alfa-Commerce/
-├── administrator/              # Backend admin panel
+├── administrator/              # The administrator side, and most of the shop's logic
 │   ├── src/
 │   │   ├── Extension/          # Component bootstrap (AlfaComponent.php)
-│   │   ├── Controller/         # Admin controllers (Form + List)
-│   │   ├── Model/              # Admin models (CRUD, queries)
-│   │   ├── View/               # Admin views
+│   │   ├── Controller/         # Administrator controllers
+│   │   ├── Model/              # Administrator models
+│   │   ├── View/               # Administrator views
 │   │   ├── Table/              # Database table classes
-│   │   ├── Field/              # Custom form field types
-│   │   ├── Helper/             # Business logic helpers
-│   │   ├── Service/            # Services (PriceIndexSyncService)
-│   │   ├── Event/              # Event classes
-│   │   └── Plugin/             # Base plugin classes
+│   │   ├── Field/  Rule/  Filter/   # Form field types, validation rules, input filters
+│   │   ├── Service/            # The shop's services (orders, documents, stock, tasks, ...)
+│   │   ├── Helper/             # Smaller shared helpers
+│   │   ├── Event/              # Event classes, in one folder per area
+│   │   ├── Plugin/             # Base classes for plugins, and AlfaPluginHelper
+│   │   ├── Panel/  Card/  Setup/  Toolbar/  Menu/   # Screens plugins can add to
+│   │   ├── Dispatcher/         # Request dispatcher
+│   │   └── Provider/           # Interfaces a plugin implements to provide document types or stock rules
 │   ├── forms/                  # XML form definitions
-│   ├── tmpl/                   # Admin HTML templates
-│   ├── sql/                    # Database schemas & migrations
-│   │   ├── install.mysql.utf8.sql
-│   │   ├── uninstall.mysql.utf8.sql
-│   │   └── updates/mysql/      # Version migration scripts (e.g. 1.0.9.sql)
-│   ├── services/               # DI container (provider.php)
-│   ├── layouts/                # Reusable template layouts
-│   ├── languages/              # Localization (en-GB)
-│   ├── config.xml              # Component configuration form
-│   └── access.xml              # ACL permissions
+│   ├── tmpl/                   # Administrator templates
+│   ├── layouts/                # Reusable layouts
+│   ├── sql/
+│   │   ├── install.mysql.utf8.sql   # The complete schema
+│   │   └── updates/mysql/           # One file per release since 2.0.0 (2.0.0.sql ... 2.2.0.sql)
+│   ├── tours/                  # Guided tours (JSON)
+│   ├── languages/en-GB/        # com_alfa.ini, com_alfa.sys.ini, com_alfa.tours.ini
+│   ├── services/provider.php   # Registers the component with Joomla
+│   ├── menu.xml                # The administrator menu
+│   ├── config.xml              # The Options form
+│   └── access.xml              # Permissions
 │
-├── site/                       # Frontend customer-facing
+├── site/                       # The storefront
 │   ├── src/
-│   │   ├── Controller/         # Frontend controllers
-│   │   ├── Model/              # Frontend models
-│   │   ├── View/               # Frontend views
-│   │   ├── Service/            # Pricing engine
-│   │   │   └── Pricing/        # Money, PriceResult, PriceContext, etc.
-│   │   ├── Helper/             # CartHelper, OrderPlaceHelper, PriceSettings
-│   │   └── Dispatcher/         # Request dispatcher
-│   ├── forms/                  # Frontend forms
-│   ├── tmpl/                   # Frontend templates
-│   └── languages/              # Frontend localization
+│   │   ├── Controller/  Model/  View/
+│   │   ├── Service/            # Cart, CartRules, Checkout, Pricing, Shipping, Order, Place, ...
+│   │   ├── Helper/  Field/  Pagination/  Dispatcher/
+│   ├── forms/  tmpl/  layouts/
+│   └── languages/en-GB/        # com_alfa.ini
 │
-├── api/                        # REST JSON-API
-│   └── src/
-│       ├── Controller/         # REST API controllers
-│       └── View/               # JSON response views
+├── api/                        # The REST API
+│   └── src/                    # Controller/  Model/  View/  Dispatcher/
 │
-├── plugins/                    # Core ships only the `standard` reference plugins;
-│   │                           # real gateways/carriers are premium (distributed separately)
-│   ├── alfa-payments/
-│   │   └── standard/           # Offline payment (bank transfer / cash on delivery)
-│   ├── alfa-shipments/
-│   │   └── standard/           # Standard shipping (flat / zone rates)
-│   ├── alfa-form-fields/            # Form field type plugins
-│   │   ├── text/
-│   │   ├── textarea/
-│   │   ├── tel/
-│   │   └── choice/
-│   ├── webservices/alfa/       # API route registration
-│   └── system/alfasync/        # Post-install integrity & per-language schema sync
+├── plugins/                    # Only what ships with core
+│   ├── alfa-payments/standard/      # The reference payment plugin
+│   ├── alfa-shipments/standard/     # The reference shipping plugin
+│   ├── alfa-form-fields/            # text, textarea, tel, choice, country
+│   ├── alfa-item-fields/choice/     # The reference item field
+│   ├── webservices/alfa/            # Registers the REST API's routes
+│   ├── console/alfa/                # Console commands (alfa:tasks:run, alfa:tasks:prune, alfa:inventory:audit)
+│   └── system/alfasync/             # Keeps Alfa in step with Joomla (users, languages, tour texts)
 │
 ├── modules/
-│   ├── mod_alfa_cart/           # Shopping cart widget module
-│   └── mod_alfa_search/         # Product search module
+│   ├── mod_alfa_cart/          # Cart
+│   ├── mod_alfa_search/        # Search
+│   ├── mod_alfa_filters/       # Filters
+│   ├── mod_alfa_items/         # Items
+│   └── mod_easy_articles/      # Joomla articles
 │
-├── media/com_alfa/              # Static assets
-│   ├── css/                     # Stylesheets (admin + site)
-│   ├── js/                      # JavaScript (admin + site)
-│   ├── images/                  # Component images
-│   └── joomla.asset.json        # Joomla asset registry
+├── libraries/                  # lib_libphonenumber, lib_giggsey_locale
 │
-├── alfa.xml                     # Package manifest
-├── script.php                   # Install/update/uninstall script
-├── .php-cs-fixer.php            # Code style configuration
-├── phpstan.neon                 # Static analysis configuration
-├── CONTRIBUTING.md              # Contribution guide
-└── .github/workflows/           # CI/CD automation
+├── media/                      # Installed as media/com_alfa
+│   ├── css/  js/               # Each with admin/, site/ and libraries/
+│   ├── images/
+│   └── joomla.asset.json       # Joomla's asset registry
+│
+├── scripts/                    # Tools for the automated checks
+├── alfa.xml                    # The component's manifest
+├── script.php                  # Install, update and uninstall script
+├── changelog.xml               # The public changelog
+├── .php-cs-fixer.php           # Code style configuration
+├── phpstan.neon                # Static analysis configuration (with phpstan-baseline.neon)
+├── CONTRIBUTING.md  README.md  SECURITY.md  CODE_OF_CONDUCT.md  LICENSE
+└── .github/workflows/          # code-quality.yml, security-scan.yml, claude-pr-review.yml
 ```
+
+`alfa.xml` is a component manifest, not a Joomla package manifest. It lists the plugins, modules and libraries, and
+`script.php` installs them.
+
+There is no uninstall SQL file. Uninstalling keeps the shop's tables and data; see
+[Installation](./installation.md#uninstalling).
 
 ## Namespaces
 
-Alfa Commerce follows PSR-4 autoloading with Joomla 6/7 namespace conventions:
+Alfa Commerce follows PSR-4 autoloading with Joomla's namespace conventions:
 
-| Component | Namespace |
-|-----------|-----------|
-| Admin | `Alfa\Component\Alfa\Administrator\{Controller,Model,View,...}` |
-| Site | `Alfa\Component\Alfa\Site\{Controller,Model,View,...}` |
-| API | `Alfa\Component\Alfa\Api\{Controller,View}` |
-| Payment Plugins | `Alfa\Plugin\AlfaPayments\{PluginName}\Extension` |
-| Shipment Plugins | `Alfa\Plugin\AlfaShipments\{PluginName}\Extension` |
-| Field Plugins | `Alfa\Plugin\AlfaFormFields\{PluginName}\Extension` |
-| Cart Module | `Alfa\Module\AlfaCart` |
-| Search Module | `Alfa\Module\AlfaSearch` |
+| Part | Namespace |
+|---|---|
+| Administrator | `Alfa\Component\Alfa\Administrator\{Controller,Model,Service,...}` |
+| Site | `Alfa\Component\Alfa\Site\{Controller,Model,Service,...}` |
+| API | `Alfa\Component\Alfa\Api\{Controller,Model,View,Dispatcher}` |
+| Payment plugins | `Alfa\Plugin\AlfaPayments\{PluginName}\Extension` |
+| Shipping plugins | `Alfa\Plugin\AlfaShipments\{PluginName}\Extension` |
+| Form field plugins | `Alfa\Plugin\AlfaFormFields\{PluginName}\Extension` |
+| Item field plugins | `Alfa\Plugin\AlfaItemFields\{PluginName}\Extension` |
+| System plugin | `Alfa\Plugin\System\Alfasync` |
+| Web services plugin | `Alfa\Plugin\WebServices\Alfa` |
+| Console plugin | `Alfa\Plugin\Console\Alfa` |
+| Modules | `Alfa\Module\AlfaCart`, `Alfa\Module\AlfaSearch`, `Alfa\Module\AlfaFilters`, `Alfa\Module\AlfaItems`, `Easy\Module\EasyArticles` |
 
-## Naming Conventions
+## Naming conventions
 
-| Pattern | Example |
-|---------|---------|
+| Kind | Example |
+|---|---|
 | Controllers | `ItemController`, `ItemsController` |
 | Models | `ItemModel`, `CategoriesModel` |
 | Views | `Items\HtmlView`, `Items\JsonapiView` |
 | Tables | `ItemTable` |
-| Events | `AdminOrderViewEvent`, `PaymentResponseEvent` |
-| Helpers | `CartHelper`, `OrderPaymentHelper` |
+| Events | `OrderStatusChangeEvent`, `PaymentResponseEvent` |
+| Services | `OrderCreator`, `PaymentLedger`, `CartService` |
+| Helpers | `OrderHelper`, `OrderTotalHelper` |
 
-## Key Files to Know
+## Key files to know
 
-| File | Purpose |
-|------|---------|
-| `administrator/services/provider.php` | DI container — registers all component services |
-| `administrator/src/Extension/AlfaComponent.php` | Component bootstrap class |
-| `site/src/Helper/CartHelper.php` | Shopping cart logic |
-| `site/src/Helper/OrderPlaceHelper.php` | Order placement flow |
-| `site/src/Service/Pricing/` | Complete pricing engine |
-| `administrator/src/Event/` | All event classes |
-| `administrator/src/Plugin/` | Base plugin classes (Plugin, PaymentsPlugin, ShipmentsPlugin) |
-| `administrator/sql/install.mysql.utf8.sql` | Complete database schema |
+| File or folder | What it is |
+|---|---|
+| `administrator/src/Extension/AlfaComponent.php` | The component's bootstrap class |
+| `administrator/services/provider.php` | Registers the component with Joomla |
+| `administrator/src/Plugin/` | The plugin base classes (`PaymentsPlugin`, `ShipmentsPlugin`, `FormFieldsPlugin`, `ItemFieldsPlugin`, `SearchEnginePlugin`, `Plugin`) and `AlfaPluginHelper` |
+| `administrator/src/Event/` | Every event class, in 22 folders by area |
+| `administrator/src/Service/Order/` | Orders: `OrderCreator`, `Transition`, `PaymentLedger`, `ShipmentLedger` |
+| `site/src/Service/Cart/` | The cart (`CartService`) |
+| `site/src/Service/Checkout/OrderPlacement.php` | Placing an order |
+| `site/src/Service/Pricing/` | The pricing engine |
+| `administrator/sql/install.mysql.utf8.sql` | The complete database schema |
+| `plugins/webservices/alfa/src/Extension/Alfa.php` | The REST API's routes |

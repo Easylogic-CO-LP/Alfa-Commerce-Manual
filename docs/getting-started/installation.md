@@ -1,49 +1,114 @@
 ---
 sidebar_position: 1
 title: Installation
+description: What Alfa Commerce 2.2.0 needs, how to install and update it, and what the installer does and refuses.
 ---
 
 # Installation
 
-Alfa Commerce is a Joomla eCommerce component distributed as a single installable ZIP package.
+<AlfaVersion verified="2.2.0" />
+
+Alfa Commerce is a Joomla component. One ZIP file installs the component together with its plugins, modules and
+libraries.
 
 ## Requirements
 
-- **Joomla** 6 or 7
-- **PHP** 8.2 or higher
-- **MySQL** 5.7+ or MariaDB 10.3+ (utf8mb4 encoding)
-- **Web Server** Apache or Nginx
+| | Needed |
+|---|---|
+| **Joomla** | 6.1 or a later Joomla 6 release. Joomla 6.0 is refused; update Joomla first. Joomla 7 is not supported yet and is refused. |
+| **PHP** | 8.3 or newer (8.4 recommended), with the extensions `bcmath`, `intl`, `mbstring`, `gd` and `openssl` |
+| **Database** | MySQL 8.0.13 or newer, or MariaDB 10.6 or newer (utf8mb4) |
 
-## Installing Alfa Commerce
+The installer checks Joomla, PHP and the PHP extensions itself and names what is missing. It does not check the
+database version, so check that one yourself.
 
-1. Get the latest release ZIP from [alfacommerce.gr](https://www.alfacommerce.gr) — click **Download**
-2. Log in to your Joomla administrator panel
-3. Navigate to **System → Install → Extensions**
-4. Upload the ZIP file
-5. Click **Upload & Install**
+Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which is installed separately.
 
-The installation script (`script.php`) installs the bundled modules and plugins automatically.
+## Installing
 
-## Post-Installation
+1. Download the latest release ZIP from [alfacommerce.gr](https://www.alfacommerce.gr) (**Download**). The archive
+   GitHub offers for a branch is the source tree, not a release.
+2. In the Joomla administrator go to **System**, **Install**, **Extensions**.
+3. Upload the ZIP file.
 
-After installing, navigate to **Components → Alfa Commerce** in the admin panel to:
+### What the installer does
 
-1. **Configure currencies** — Set your default currency
-2. **Set up tax rules** — Define tax rates by category, region, and user group
-3. **Create categories** — Organize your product catalog
-4. **Add products** — Start adding items to your store
-5. **Configure payment methods** — Enable and configure at least one payment plugin
-6. **Configure shipping methods** — Enable and configure at least one shipment plugin
-7. **Set up order statuses** — Customize your order workflow
+It installs, in this order, the libraries, the plugins and the modules that come in the ZIP, then enables every
+plugin it brought:
+
+| Kind | What is installed |
+|---|---|
+| Component | Alfa Commerce (`com_alfa`), with its 33 guided tours |
+| Payment and shipping | `alfa-payments/standard`, `alfa-shipments/standard` |
+| Form fields | `alfa-form-fields`: `text`, `textarea`, `tel`, `choice`, `country` |
+| Item fields | `alfa-item-fields/choice` |
+| Platform | `system/alfasync`, `webservices/alfa` (the REST API), `console/alfa` (the console commands) |
+| Modules | `mod_alfa_cart`, `mod_alfa_search`, `mod_alfa_filters`, `mod_alfa_items`, `mod_easy_articles` |
+| Libraries | libphonenumber and its locale data |
+
+Alfa Commerce ships in English. Every other language is a separate language pack.
+
+No search engine plugin is included. The catalogue search works without one.
+
+### What the installer refuses
+
+The installer checks before it changes any file or table. If it refuses, nothing was touched, and the message says
+why:
+
+1. Joomla is older than 6.1.
+2. Joomla is 7.0 or newer.
+3. PHP is older than 8.3.
+4. A required PHP extension is missing (each one is named).
+5. An Alfa Commerce older than 2.0.0 is installed (see [From a 1.x beta](#from-a-1x-beta)).
+6. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
+
+## After installing
+
+Open **Components**, **Alfa Commerce**. The Dashboard shows a setup checklist that leads you through the first
+steps. See [Your first shop](./store-setup.md).
+
+The shop's background work (sending e-mails, issuing documents, rebuilding the catalogue's stored data) needs no
+cron job: visits to the shop, staff using the administrator and API requests keep it running. A server can also run
+it from cron with the console command `alfa:tasks:run`.
 
 ## Updating
 
-Alfa Commerce supports Joomla's built-in update system. Updates are checked automatically via the update server at `https://cdn.alfacommerce.gr/com_alfa/update.xml`.
+From 2.0.0 on, Alfa Commerce updates in place through Joomla's own update system (update server
+`https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new ZIP over the installed version. Joomla
+runs each release's database changes itself.
 
-To update manually, install the new version ZIP over your existing installation — the same steps as [Installing Alfa Commerce](#installing-alfa-commerce) (`method="upgrade"`). Migration scripts run automatically.
+An update also removes the files the new version no longer ships, cleans Joomla's page cache and Alfa Commerce's
+own caches, and pauses the shop's background work while it runs (at most ten minutes).
 
-## Verifying your installation
+Before updating:
 
-Alfa Commerce can verify that the installed files match the officially published checksums for your release and shows
-the result in the admin **Security** area — for example **official** (matches the release exactly) or **modified**
-(one or more files differ). Use it to confirm an installation is pristine, or to spot unintended changes.
+- Read the release's notes in the changelog. Some updates rebuild large tables and are best done at a quiet hour.
+- Update every Alfa Commerce extension you have installed to the same release together with core.
+
+The same Joomla and PHP checks run on an update as on an installation.
+
+### From a 1.x beta
+
+2.0.0 was the first stable release. It cannot be installed over any 1.x beta, and the installer refuses before
+anything is changed. To move from a beta:
+
+1. Back up the site.
+2. Uninstall the beta.
+3. Delete every database table whose name still starts with your table prefix followed by `alfa_`. The beta's
+   uninstaller leaves some behind.
+4. Install the current release.
+
+The beta's data is not carried over.
+
+## Uninstalling
+
+Uninstalling removes the component, its plugins, modules, guided tours and any Alfa Commerce language packs. It
+keeps every Alfa Commerce table and its data. Installing the same version again reconnects that data.
+
+To remove the shop's data as well, use **Tools**, **Reset and clear** before uninstalling.
+
+## Verifying the installed files
+
+**Tools**, **Security** compares the installed files with the signed list of checksums published for your release
+and says whether the installation is verified, modified, or ahead of the latest release, or why the comparison
+could not be made. Use it to confirm that an installation is as released, or to find files that were changed.

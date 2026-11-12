@@ -1,80 +1,38 @@
 ---
 sidebar_position: 2
-title: Store Setup
+title: Your first shop
+description: Where to start after installing. The Dashboard's setup checklist and the guided tours lead the way.
 ---
 
-# Store Setup
+# Your first shop
 
-The day-1 path for building a store. Everything below lives under **Components → Alfa Commerce** — each is a
-list view with a New/Edit form.
+<AlfaVersion verified="2.2.0" />
 
-:::tip Setup wizard coming
-A guided **store-setup wizard** is planned for a future version. Until then, configure each area below manually.
-:::
+This manual is written for developers. Setting up a shop is explained inside Alfa Commerce itself, on the live
+screens, so this page only says where to start.
 
-## 1. Categories
+## Follow the setup checklist
 
-**Components → Alfa Commerce → Categories → New.** Categories group your products and are **hierarchical** — each can
-have a parent, so you build a tree (e.g. *Electronics → Phones*). Key fields: **Name** + alias, **parent category**,
-image, publish state, and meta. Create categories first; every product is then assigned a **Default Category**
-(required) plus any additional categories.
+Open **Components**, **Alfa Commerce**. The Dashboard shows a **setup checklist**. Each row is one thing a shop
+needs, checked against the shop as it is now, and each row opens the screen where it is done or starts a guided tour
+of it.
 
-## 2. Products (Items)
+The checklist covers, in the order you would do them: the store's name and contact e-mail, the default currency, a
+tax, the checkout form, a payment method, a shipping method, the storefront menu and the customer pages, a category,
+an item, item fields, document series, mail, the media folder, search-friendly addresses and HTTPS.
 
-**Components → Alfa Commerce → Items → New.** An item is one product. Key fields: **Name** + **Default Category**
-(required), `SKU` / `GTIN` / `MPN`, stock + dimensions, the **Stock action** (no action / notify / hide when out of
-stock), categories, manufacturers, images, and meta.
+For the storefront menu the checklist can create the shop, cart and account pages for you with one click.
 
-**Pricing is a list, not a single field.** The **Prices** subform holds one or more rows; each row sets a price for a
-combination of **currency · country/place · user group · user · quantity tier** (each defaults to *All*). Add one row
-per combination; an *All …* row is the catch-all. Price rows feed the price index, rebuilt on save.
+## Take the guided tours
 
-## 3. Payment & shipment methods — the key concept
+Alfa Commerce installs 33 guided tours. A tour walks through one screen step by step, on the screen itself:
+categories, items, payments, shipping, currencies, taxes, discounts, cart rules, order statuses, stock and the
+others. Start one from the tour menu in the administrator's header, or from a row of the checklist.
 
-There are **two layers**, and new users must understand the split:
+The tours are kept up to date with each release and are translated by the language packs.
 
-```mermaid
-flowchart LR
-    P["1 · Enable the plugin<br/>System → Plugins<br/>(alfa-payments / alfa-shipments)"] --> M["2 · Create a method record<br/>Components → Alfa Commerce → Payments / Shipments<br/>Type = the plugin"]
-    M --> C[Customer sees it at checkout]
-```
+## One idea a developer needs
 
-1. **The plugin** does the work (the bundled `standard` plugin, or a gateway). It lives in the `alfa-payments` /
-   `alfa-shipments` plugin group — enable it under **System → Plugins**.
-2. **The method record** is what the customer picks at checkout (**Components → Alfa Commerce → Payments** or
-   **Shipments → New**). Its **`Type`** field lists every *enabled* plugin in that group; the value you pick **is the
-   plugin** that runs the method (default `standard`). The chosen plugin's own settings then appear inline on the form.
-
-So: **enable the plugin first, then create a method record whose `Type` points at it.** Both forms scope the method by
-category / manufacturer / place / user-group / user (each defaults to *All*), with a "show on product" toggle.
-
-## 4. Currencies, taxes & discounts
-
-- **Currencies** (→ Currencies): ISO `code`, `symbol`, ISO `number` (e.g. 978 = EUR), decimals, and a format pattern.
-  The **default currency is a component Option**, not a flag on a record — set it at **Options → Currencies → Default
-  currency** (by ISO number).
-- **Taxes** (→ Taxes): `value` + a **Behavior** (only this / combined / one-after-another).
-- **Discounts** (→ Discounts): amount-or-percentage, add/subtract, apply before/after tax, behavior, optional tag, dates.
-
-Taxes and discounts are **scoped** the same way as methods — multi-select category / manufacturer / place / user-group /
-user; leaving *All* makes the rule global.
-
-## 5. Coupons
-
-**Components → Alfa Commerce → Coupons → New.** Set `coupon_code`, number of uses, value type (% or amount), min/max,
-optional user association, and validity dates. A coupon a customer applies is carried on the cart as `applied_coupons`
-and written to the order's cart-rule rows at checkout (an after-tax discount — it isn't folded into item prices).
-
-## 6. Order statuses & emails
-
-**Components → Alfa Commerce → Order Statuses → New.** Each status has:
-
-- an internal **Name** + the customer-facing **`name_customer`**, colors, and a **Stock operation** toggle
-  (*remove from stock* vs *keep in stock*) applied when an order enters the status;
-- **roles** — `is_initial` / `is_cancelled` / `is_completed` (mutually exclusive, one status each);
-- **Customer email** — a *Notify customer* toggle + an **email layout** picker and per-language content positions;
-- **Admin email** — **recipients** (a multi-select of Joomla users, stored in `#__alfa_orderstatus_recipients`) who
-  are notified when an order transitions into the status.
-
-Emails are sent on transition **into** a status; per-language subject/body live in the
-`#__alfa_orders_statuses_<langtag>` tables (see [Multilingual & Translations](../architecture/multilingual.md)).
+A **payment method** or **shipping method** is a record that a shopper picks at checkout. Each method belongs to one
+**plugin**, which does the work, and carries that plugin's settings. The plugin is the code; the method is one
+configured use of it. See [Method](../reference/glossary.md#plugins-and-events) in the glossary.

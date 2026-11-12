@@ -1,41 +1,38 @@
-# Website
+# Alfa Commerce Manual
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+The developer manual of [Alfa Commerce](https://github.com/Easylogic-CO-LP/Alfa-Commerce), published at
+[manual.alfacommerce.gr](https://manual.alfacommerce.gr). It is built with [Docusaurus](https://docusaurus.io/).
 
-## Installation
+## Working on it
 
-```bash
-yarn
-```
-
-## Local Development
+Node.js 20 or newer.
 
 ```bash
-yarn start
+npm ci          # install the dependencies
+npm start       # local preview with live reload
+npm run build   # the production build, into build/
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+Run `npm run build` before opening a pull request. The build fails on a broken internal link.
 
-## Build
+## Where things are
 
-```bash
-yarn build
-```
+| Path | What it holds |
+|---|---|
+| `docs/` | The pages, in Markdown |
+| `sidebars.ts` | The order of the pages in the sidebar |
+| `docusaurus.config.ts` | Site settings, and the Alfa Commerce release the manual documents (`customFields.alfaVersion`) |
+| `src/components/AlfaVersion.tsx` | The version line under each page's title |
+| `src/pages/index.tsx` | The landing page |
+| `static/` | Images and other static files |
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+## Versions
 
-## Deployment
+The manual documents one Alfa Commerce release, set once in `docusaurus.config.ts`. Each page states the release it
+was last checked against, with `<AlfaVersion verified="2.2.0" />` under its title. Change a page's value only when
+the page has been checked against that release's code.
 
-Using SSH:
+## Publishing
 
-```bash
-USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+A push to `main` builds the site and uploads it to manual.alfacommerce.gr (`.github/workflows/deploy.yml`). Changes
+reach the site by merging a pull request; nothing is copied to the server by hand.
