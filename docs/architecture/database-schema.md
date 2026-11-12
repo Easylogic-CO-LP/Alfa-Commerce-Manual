@@ -107,7 +107,7 @@ Each order also references the customer (`id_user`), currency, status, and the c
 | Table | Purpose |
 |-------|---------|
 | `#__alfa_media` | Product / category / manufacturer images (path, dominant colour) |
-| `#__alfa_notifications` | Backend [notification centre](../helpers/notifications.md) store |
+| `#__alfa_notifications` | Backend [notification centre](../services/notifications.md) store |
 | `#__alfa_<plugin>_logs` | Per-plugin log tables (auto-created from each plugin's `logs.xml`) |
 
 ## Price index
@@ -116,7 +116,7 @@ Each order also references the customer (`id_user`), currency, status, and the c
 every (currency, location, user group) combination so the catalog can filter by price in SQL. Columns: `base_price`,
 `discount_amount`, `base_price_with_discounts`, `tax_amount`, `base_price_with_tax` (the "was" price), `final_price`
 (the primary filter column), `discount_percent`. Synced on item save and discount/tax change — see
-[Pricing](../helpers/pricing.md).
+[Pricing](../services/pricing.md).
 
 ## Migrations
 
