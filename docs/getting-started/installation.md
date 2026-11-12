@@ -117,8 +117,11 @@ The beta's data is not carried over.
 
 ## Uninstalling
 
-Uninstalling removes the component, its plugins, modules, guided tours and any Alfa Commerce language packs. It
-keeps every Alfa Commerce table and its data. Installing the same version again reconnects that data.
+Uninstalling removes the component, its plugins, modules, libraries, guided tours and any Alfa Commerce language
+packs. It keeps every Alfa Commerce table and its data. Installing the same version again reconnects that data.
+
+Two things stay: plugins of other authors that were written for Alfa Commerce, and the storefront menu items.
+Remove them yourself if you do not install again.
 
 To remove the shop's data as well, use **Tools**, **Reset and clear** before uninstalling.
 
