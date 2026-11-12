@@ -51,6 +51,13 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Events',
+      items: [
+        'events/how-events-reach-a-plugin',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Helpers & Services',
       items: [
         {
@@ -68,6 +75,13 @@ const sidebars: SidebarsConfig = {
           label: 'Services',
           items: ['helpers/pricing', 'helpers/notifications'],
         },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Reference',
+      items: [
+        'reference/glossary',
       ],
     },
   ],

@@ -56,3 +56,11 @@
 .header-github-link svg {
   display: none;
 }
+
+/* The version line under a page's title (src/components/AlfaVersion.tsx). */
+.alfa-version {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-700);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  padding-bottom: 0.5rem;
+}
