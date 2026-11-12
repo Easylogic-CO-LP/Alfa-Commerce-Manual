@@ -17,11 +17,22 @@ Open **Components**, **Alfa Commerce**. The Dashboard shows a **setup checklist*
 needs, checked against the shop as it is now, and each row opens the screen where it is done or starts a guided tour
 of it.
 
-The checklist covers, in the order you would do them: the store's name and contact e-mail, the default currency, a
-tax, the checkout form, a payment method, a shipping method, the storefront menu and the customer pages, a category,
-an item, item fields, document series, mail, the media folder, search-friendly addresses and HTTPS.
+The checklist has 17 rows in three groups, and says how many are done:
 
-For the storefront menu the checklist can create the shop, cart and account pages for you with one click.
+| Group | Rows |
+|---|---|
+| **Required** | Store name and contact e-mail, default currency, at least one active tax, storefront menu items, at least one published category, at least one published item |
+| **Recommended** | Checkout form fields, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
+| **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
+
+The shop cannot take orders until every required row is done.
+
+Two rows have a **Create for me** button. On "Storefront menu items" it creates the Shop and Cart pages. On
+"Customer pages" it creates the account page and the sign-up page. In both you choose the menu they go in: a new
+menu named Alfa Commerce, made for you, or an existing one.
+
+The first time you open the Dashboard, a short welcome tour starts by itself. You can close it and start it again
+later from the tour menu.
 
 ## Take the guided tours
 
