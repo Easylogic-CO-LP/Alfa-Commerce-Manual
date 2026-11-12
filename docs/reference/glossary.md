@@ -76,8 +76,9 @@ while a shipment is booked (`ShipmentBookingLock`).
 **Background work.** Follow-up work that Alfa records together with a change and carries out afterwards, so that a
 slow mail server or a closed browser cannot lose it. Staff see it under Tools > Tasks.
 
-**Task.** One small piece of background work: send this e-mail, issue this document. If it fails it is tried again
-later.
+**Task.** One small piece of background work: send this e-mail, issue this document. A task that fails is tried again
+later when trying again is safe. Where it is not (an e-mail that may already have left, or the plugins' reaction to a
+status change), it waits for staff, who run it again or mark it resolved under Tools > Tasks.
 
 **Job.** Long background work over many records, done a part at a time, which continues from where it stopped: for
 example, rebuilding the search entry of every item.
