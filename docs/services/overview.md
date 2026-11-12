@@ -76,13 +76,13 @@ section when you need to understand what a service guarantees, so that your plug
 | `CartRules` | Works out which cart rules and coupons apply to a cart (`CartRulesEngine`) | No, core's own | [Cart and checkout](./cart-and-checkout.md#cart-rules) |
 | `Checkout` | Placing an order from a cart (`OrderPlacement`) | No, core's own. A plugin takes part through the placement events. | [Cart and checkout](./cart-and-checkout.md#placing-an-order) |
 | `Data` | One reader for the data a plugin keeps on a payment or shipment row (`PluginPayload`) | Read only | [Shipping plugins: Facts of your own on a parcel](../plugins/shipment-plugins.md#facts-of-your-own-on-a-parcel) |
-| `Facet` | Sorts item field values into the groups a filter shows (`FacetGroupResolver`) | Yes, through an item field plugin's event `onItemFieldValueFacetGroups` | [Item field plugins](../plugins/item-field-plugins.md#onitemfieldvaluefacetgroups) |
+| `Facet` | Sorts item field values into the groups a filter shows (`FacetGroupResolver`) | Yes, through an item field plugin's event `onItemFieldValueFacetGroups` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemfieldvaluefacetgroups) |
 | `FieldState` | The state a page builds once for fields that depend on each other (`StateBag`) | No, core's own | |
 | `Order` | The order, the payment and the shipment as a plugin reads them (`Order`, `Payment`, `Shipment`) | Read only | [Orders](./orders.md#the-order-reader) |
 | `Place` | The tree of countries, regions and towns, read once per request (`PlaceTree`) | No, core's own | |
 | `Pricing` | Price calculation, and the `Money` object every amount is handed over as | Read only: plugins receive and pass `Money` | [Pricing](./pricing.md) |
 | `Router.php` | The storefront's address routing | No, core's own | |
-| `Shipping` | A shipping charge with its tax (`ShippingCharge`), and which tax rules a charge carries | No, core's own. A shipping plugin answers the price in `onCalculateShippingCost`. | [Shipping plugins](../plugins/shipment-plugins.md#oncalculateshippingcost) |
+| `Shipping` | A shipping charge with its tax (`ShippingCharge`), and which tax rules a charge carries | No, core's own. A shipping plugin answers the price in `onCalculateShippingCost`. | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
 | `ShowOn` | Decides on the server whether a conditional field is shown | No, core's own | |
 | `Summary` | One labelled line of a money summary (`SummaryRow`) | No, core's own | |
 | `Variant` | Finds the combination that matches a shopper's choice of field values (`CombinationResolver`) | No, core's own | |

@@ -186,7 +186,7 @@ side is on [Order and cart events](../events/order-and-cart-events.md#onordersta
 
 | You are | Use |
 |---|---|
-| A payment or shipping plugin, and the move follows a payment or parcel status | Nothing. The method's settings `status_on_<status>` move the order. See [The order's status](../plugins/payment-plugins.md#the-orders-status) and [A parcel's status can move the order](../plugins/shipment-plugins.md#a-parcels-status-can-move-the-order). |
+| A payment or shipping plugin, and the move follows a payment or parcel status | Nothing. The method's settings `status_on_<status>` move the order. See [The order's status](../plugins/payment-plugin-money.md#the-orders-status) and [A parcel's status can move the order](../plugins/shipment-plugins.md#a-parcels-status-can-move-the-order). |
 | A payment plugin, for a moment the settings cannot express | `$this->orderTransition($orderId)->to($statusId)->save()` |
 | A feature plugin | `Transition::for($orderId)->to($statusId)->byPlugin($element)->save()`. The class comment counts a plugin that is not a payment plugin among its callers. No plugin that ships with Alfa makes this call, and no base class offers it, so there is no shipped example. |
 | A shipping plugin, for a moment the settings cannot express | The code does not settle it. `ShipmentsPlugin` has no `orderTransition()`. This manual documents only the settings for a shipping plugin. |
@@ -455,7 +455,7 @@ There is no shipped example of either.
 **A refund needs no such lock.** A refund is set aside in the books before the provider is asked
 (`reserveRefund()`), and no lock is held while the provider is called. The class comment adds that a gateway may
 still hold `OrderMoneyLock` around its own log write and booking, never across the call to the provider. See
-[A refund through a provider](../plugins/payment-plugins.md#a-refund-through-a-provider).
+[A refund through a provider](../plugins/payment-plugin-money.md#a-refund-through-a-provider).
 
 ### What you must provide
 

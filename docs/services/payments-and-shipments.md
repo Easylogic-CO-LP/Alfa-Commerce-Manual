@@ -61,20 +61,20 @@ Extend the base class of your plugin type and call its methods. Nothing else.
 
 | I want to | Use | Documented at |
 |---|---|---|
-| Know how much to charge | `amountToCollect($order)` | [The verbs](../plugins/payment-plugins.md#the-verbs) |
-| Record a new payment attempt | `payment($order)->pending()->save()` | [Recording and settling a payment](../plugins/payment-plugins.md#recording-and-settling-a-payment) |
-| Change a payment row | `paymentUpdate($paymentId)` and the builder | [Recording and settling a payment](../plugins/payment-plugins.md#recording-and-settling-a-payment) |
-| Mark a payment paid when the provider confirms, once | `paymentUpdate($id)->expectStatus(...)->completed()` written with `settleAttempt()` | [The verbs](../plugins/payment-plugins.md#the-verbs), [Callbacks arrive twice](../plugins/payment-plugins.md#callbacks-arrive-twice) |
-| Close an attempt nobody will pay | `supersedeAttempt($paymentId, $reason)` | [The verbs](../plugins/payment-plugins.md#the-verbs) |
-| Find my own rows on an order | `gatewayPayments()`, `latestPendingPayment()`, `gatewayPaymentByReference()` | [Reading](../plugins/payment-plugins.md#reading) |
-| Know whether the order is settled | `orderBalance($orderId)` | [Reading](../plugins/payment-plugins.md#reading) |
-| Know what may still be refunded | `refundableNow()`, `refundableRemainder()`, `refundFormMaximum()` | [Before the refund](../plugins/payment-plugins.md#before-the-refund-what-may-be-refunded) |
-| Refund when my method has no provider | `refundPayment($paymentId, $amount, $options)` | [A refund with no provider](../plugins/payment-plugins.md#a-refund-with-no-provider) |
-| Refund through a provider | `reserveRefund()`, then `settleRefund()`, `holdRefund()` or `releaseRefund()` | [A refund through a provider](../plugins/payment-plugins.md#a-refund-through-a-provider) |
-| Tell Alfa about a refund made outside the shop | `unbookedProviderRefunds($paymentId)` | [Telling Alfa about refunds it does not hold](../plugins/payment-plugins.md#telling-alfa-about-refunds-it-does-not-hold) |
-| Record a chargeback, or a refund that did not stand | `recordChargeback()`, `recordReversal()` | [The verbs](../plugins/payment-plugins.md#the-verbs) |
-| Move the order when a payment changes | Nothing in code. The method's settings `status_on_<status>` do it. | [The order's status](../plugins/payment-plugins.md#the-orders-status) |
-| Move the order at a moment the settings cannot express | `orderTransition($orderId)->to($statusId)->save()` | [The verbs](../plugins/payment-plugins.md#the-verbs) |
+| Know how much to charge | `amountToCollect($order)` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Record a new payment attempt | `payment($order)->pending()->save()` | [Recording and settling a payment](../plugins/payment-plugin-money.md#recording-and-settling-a-payment) |
+| Change a payment row | `paymentUpdate($paymentId)` and the builder | [Recording and settling a payment](../plugins/payment-plugin-money.md#recording-and-settling-a-payment) |
+| Mark a payment paid when the provider confirms, once | `paymentUpdate($id)->expectStatus(...)->completed()` written with `settleAttempt()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs), [Callbacks arrive twice](../plugins/payment-plugin-money.md#callbacks-arrive-twice) |
+| Close an attempt nobody will pay | `supersedeAttempt($paymentId, $reason)` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Find my own rows on an order | `gatewayPayments()`, `latestPendingPayment()`, `gatewayPaymentByReference()` | [Reading](../plugins/payment-plugin-money.md#reading) |
+| Know whether the order is settled | `orderBalance($orderId)` | [Reading](../plugins/payment-plugin-money.md#reading) |
+| Know what may still be refunded | `refundableNow()`, `refundableRemainder()`, `refundFormMaximum()` | [Before the refund](../plugins/payment-plugin-money.md#before-the-refund-what-may-be-refunded) |
+| Refund when my method has no provider | `refundPayment($paymentId, $amount, $options)` | [A refund with no provider](../plugins/payment-plugin-money.md#a-refund-with-no-provider) |
+| Refund through a provider | `reserveRefund()`, then `settleRefund()`, `holdRefund()` or `releaseRefund()` | [A refund through a provider](../plugins/payment-plugin-money.md#a-refund-through-a-provider) |
+| Tell Alfa about a refund made outside the shop | `unbookedProviderRefunds($paymentId)` | [Telling Alfa about refunds it does not hold](../plugins/payment-plugin-money.md#telling-alfa-about-refunds-it-does-not-hold) |
+| Record a chargeback, or a refund that did not stand | `recordChargeback()`, `recordReversal()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Move the order when a payment changes | Nothing in code. The method's settings `status_on_<status>` do it. | [The order's status](../plugins/payment-plugin-money.md#the-orders-status) |
+| Move the order at a moment the settings cannot express | `orderTransition($orderId)->to($statusId)->save()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
 
 ### I want to, for a shipping plugin
 
