@@ -240,7 +240,9 @@ the parcel.
 {"status": "shipped", "tracking_number": "TRK-1002"}
 ```
 
-In 2.2.0 each shipment also shows `note` and `created`, which are always null (known defect, row 10).
+In 2.2.0 each shipment also shows `note` and `created`, which are always null (known defect, row 10). The order's
+`fulfillment_status` is not filled by the API in 2.2.0 (row 12), and each payment's `created` is always null
+(row 11).
 
 ### The status
 
