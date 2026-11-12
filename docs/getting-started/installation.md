@@ -67,6 +67,21 @@ why:
 Open **Components**, **Alfa Commerce**. The Dashboard shows a setup checklist that leads you through the first
 steps. See [Your first shop](./store-setup.md).
 
+### The download store check
+
+Files that shoppers buy as downloads are kept in the folder `alfa-downloads` inside the site, unless **Options**,
+**Downloads**, **Downloads storage path** names a folder outside the public web root. Alfa Commerce puts deny rules
+for Apache and IIS in that folder. At installation, at every update and when the path changes, it then tests the
+result: it places a test file in the folder and asks the site for it at its public address.
+
+- If the test file is refused, nothing is shown.
+- If the test file is served, or the site could not request its own address, a security warning stays on Alfa
+  Commerce's administrator screens until a later check passes. Press **Check again** after fixing the cause. In 2.2.0
+  the warning cannot be dismissed.
+
+nginx ignores the deny rules in the folder. There, refuse the folder in the server configuration (the warning prints
+the rule), or move the store outside the public web root.
+
 The shop's background work (sending e-mails, issuing documents, rebuilding the catalogue's stored data) needs no
 cron job: visits to the shop, staff using the administrator and API requests keep it running. A server can also run
 it from cron with the console command `alfa:tasks:run`.
