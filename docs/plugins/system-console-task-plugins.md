@@ -367,8 +367,7 @@ A plugin's code can still run inside work that Alfa queues, without queuing anyt
 listener of `onOrderStatusChange`: Alfa records each listener's run as part of a task, and staff can run a failed
 one again.
 
-The background work engine will be described on the page "Background work"
-(../architecture/background-work.md), which is not written yet.
+The background work engine is described on its own page, [Background work](../architecture/background-work.md).
 
 ## Changed in 2.2.0
 
