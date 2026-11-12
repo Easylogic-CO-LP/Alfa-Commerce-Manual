@@ -45,8 +45,16 @@ const sidebars: SidebarsConfig = {
         'plugins/overview',
         'plugins/payment-plugins',
         'plugins/shipment-plugins',
-        'plugins/custom-field-plugins',
+        'plugins/form-field-plugins',
+        'plugins/item-field-plugins',
         'plugins/media-plugins',
+        'plugins/search-plugins',
+        {
+          type: 'category',
+          label: 'Feature plugins',
+          items: ['plugins/admin-screen-plugins', 'plugins/admin-panels'],
+        },
+        'plugins/system-console-task-plugins',
       ],
     },
     {
