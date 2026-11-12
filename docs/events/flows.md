@@ -139,10 +139,10 @@ What the picture means:
 | Event | Who receives it | Documented on |
 |---|---|---|
 | `onOrderPlaceValidate` | Each admitted plugin of the `alfa` group in turn | [Order and cart events](./order-and-cart-events.md) |
-| `onOrderBeforePlace` | The payment plugin of the chosen method, then the shipping plugin of the chosen method | [Payment plugins](../plugins/payment-plugins.md#onorderbeforeplace), [Shipping plugins](../plugins/shipment-plugins.md#onorderbeforeplace) |
+| `onOrderBeforePlace` | The payment plugin of the chosen method, then the shipping plugin of the chosen method | [Payment plugins](../plugins/payment-plugin-events.md#onorderbeforeplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderbeforeplace) |
 | `onInventoryBeforeReserve`, `onInventoryBeforeCommit` | Everyone who listens | [Stock events](./stock-events.md) |
 | `onCollectStockAllocationProviders` | Everyone who listens | [Stock events](./stock-events.md) |
-| `onOrderAfterPlace` | The payment plugin, then the shipping plugin | [Payment plugins](../plugins/payment-plugins.md#onorderafterplace), [Shipping plugins](../plugins/shipment-plugins.md#onorderafterplace) |
+| `onOrderAfterPlace` | The payment plugin, then the shipping plugin | [Payment plugins](../plugins/payment-plugin-events.md#onorderafterplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderafterplace) |
 | `onInventoryReserved`, `onInventoryCommitted` | Everyone who listens | [Stock events](./stock-events.md) |
 | `onAlfaNotificationPushed` | Everyone who listens | [Notification and setup events](./notification-and-setup-events.md) |
 | `onAlfaOrderPlaced` | Everyone who listens | [Order and cart events](./order-and-cart-events.md) |
@@ -295,10 +295,10 @@ What the picture means:
 
 | Event | Who receives it | Documented on |
 |---|---|---|
-| `onOrderAfterPlace` | The payment plugin of the order's method | [Payment plugins](../plugins/payment-plugins.md#onorderafterplace) |
-| `onOrderProcessView`, `onOrderCompleteView` | The payment plugin recorded on the order | [Payment plugins](../plugins/payment-plugins.md#onorderprocessview) |
-| `onPaymentWebhook`, `onPaymentResponse` | The payment plugin named in the address | [Payment plugins](../plugins/payment-plugins.md#onpaymentwebhook) |
-| `onGetActions`, `onExecuteAction` | The payment plugin recorded on the payment row | [Payment plugins](../plugins/payment-plugins.md#ongetactions) |
+| `onOrderAfterPlace` | The payment plugin of the order's method | [Payment plugins](../plugins/payment-plugin-events.md#onorderafterplace) |
+| `onOrderProcessView`, `onOrderCompleteView` | The payment plugin recorded on the order | [Payment plugins](../plugins/payment-plugin-events.md#onorderprocessview) |
+| `onPaymentWebhook`, `onPaymentResponse` | The payment plugin named in the address | [Payment plugins](../plugins/payment-plugin-events.md#onpaymentwebhook) |
+| `onGetActions`, `onExecuteAction` | The payment plugin recorded on the payment row | [Payment plugins](../plugins/payment-plugin-events.md#ongetactions) |
 | `onOrderStatusChange` | Everyone who listens, when the order moves | [Order and cart events](./order-and-cart-events.md) |
 
 ## Booking a shipment
@@ -361,10 +361,10 @@ What the two pictures mean:
 
 | Event | Who receives it | Documented on |
 |---|---|---|
-| `onCalculateShippingCost` | The shipping plugin of the method chosen in the cart | [Shipping plugins](../plugins/shipment-plugins.md#oncalculateshippingcost) |
-| `onOrderBeforePlace`, `onOrderAfterPlace` | The shipping plugin of the order's method | [Shipping plugins](../plugins/shipment-plugins.md#onorderafterplace) |
-| `onShipmentWebhook`, `onShipmentResponse` | The shipping plugin named in the address | [Shipping plugins](../plugins/shipment-plugins.md#onshipmentwebhook) |
-| `onGetActions`, `onExecuteAction` | The shipping plugin recorded on the parcel | [Shipping plugins](../plugins/shipment-plugins.md#ongetactions) |
+| `onCalculateShippingCost` | The shipping plugin of the method chosen in the cart | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
+| `onOrderBeforePlace`, `onOrderAfterPlace` | The shipping plugin of the order's method | [Shipping plugins](../plugins/shipment-plugin-events.md#onorderafterplace) |
+| `onShipmentWebhook`, `onShipmentResponse` | The shipping plugin named in the address | [Shipping plugins](../plugins/shipment-plugin-events.md#onshipmentwebhook) |
+| `onGetActions`, `onExecuteAction` | The shipping plugin recorded on the parcel | [Shipping plugins](../plugins/shipment-plugin-events.md#ongetactions) |
 
 ## Stock
 
@@ -546,7 +546,7 @@ What the picture means:
 
 | Event | Who receives it | Documented on |
 |---|---|---|
-| `onAlfaAdminValidate`, `onAlfaAdminBeforeSave`, `onAlfaAdminAfterSave` | Everyone who listens | [Extending Admin Screens](../plugins/admin-screen-plugins.md#the-save-and-delete-events) |
+| `onAlfaAdminValidate`, `onAlfaAdminBeforeSave`, `onAlfaAdminAfterSave` | Everyone who listens | [Extending Admin Screens](../plugins/admin-screen-events.md#the-save-and-delete-events) |
 | `onCatalogVisibilityChanged`, `onAlfaCatalogEntityChanged` | Everyone who listens | [Search engine plugins](../plugins/search-plugins.md#oncatalogvisibilitychanged) |
 | `onCollectCatalogProjections` | Everyone who listens | [Search engine plugins](../plugins/search-plugins.md#oncollectcatalogprojections) |
 | `onAlfaPricesChanged` | Everyone who listens | [Item and catalogue events](./item-and-catalogue-events.md) |
