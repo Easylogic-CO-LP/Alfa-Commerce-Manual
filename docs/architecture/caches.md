@@ -64,7 +64,11 @@ The update does not clean the caches of the items module, and it does not clean 
 ### The page cache rule
 
 Joomla's page cache stores a whole page under its address and gives the same stored page to the next visitor who is
-not logged in. That is wrong for a page that shows something personal.
+not logged in. That is wrong for a page that shows something personal: a stored copy of one visitor's cart could be
+given to the next visitor.
+
+**Who this concerns.** Only a shop that has switched on Joomla's plugin "System - Page Cache". Joomla installs that
+plugin disabled. A shop that does not use it stores no whole pages, and nothing in this section applies to it.
 
 **Since 2.2.0:** the cart page, and every page of a visitor whose session holds a cart or typed checkout details,
 are never stored. Such a visitor is also never given a stored page. Every other page is cached as before.
@@ -110,9 +114,18 @@ Two more kinds of page keep themselves out of the page cache, whatever the visit
 
 :::warning Keep "System - Alfa Commerce Sync" enabled
 The rule about the cart lives in the plugin "System - Alfa Commerce Sync" (`plugins/system/alfasync`), and nothing
-else in Alfa Commerce replaces it. With the plugin disabled and Joomla's page cache on, those pages are stored and
-served like any other page. The warning that Alfa shows on its administrator pages while the plugin is disabled does
-not say so in 2.2.0. Installing or updating Alfa Commerce enables the plugin again.
+else in Alfa Commerce replaces it. With the plugin disabled, nobody answers Joomla's two questions, so a shop that
+also has Joomla's page cache on would store and serve those pages like any other page. This follows from the code
+(`Alfasync.php`, the two page cache handlers). It was not reproduced on a shop for this manual, and it does not
+arise while the plugin is enabled or the page cache is off.
+
+What to do:
+
+- Keep "System - Alfa Commerce Sync" enabled. Installing or updating Alfa Commerce enables it again.
+- If it must be disabled for a time, switch "System - Page Cache" off for that time.
+
+The warning that Alfa shows on its administrator pages while the plugin is disabled does not mention the page cache
+in 2.2.0.
 :::
 
 ## When it is used
@@ -239,5 +252,9 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
   described here.
 - The exact keys under which each group files its entries.
 - How Joomla's page cache itself works, and its options. See Joomla's own documentation.
+- Caches outside Joomla, such as a reverse proxy or a content delivery network that stores whole pages. They do not
+  ask Joomla's two questions. Which of Alfa's pages tell such a cache not to store them was read only for the
+  order-completed page, so set such a cache up to pass the cart, the checkout and every page of a visitor with a
+  session cookie through to the site.
 - The caching settings of the filters module and the search module. Their forms have Joomla's standard caching
   fields; what they store was not read for this page.
