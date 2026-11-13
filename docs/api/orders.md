@@ -27,7 +27,9 @@ flowchart LR
 
 ## Orders
 
-`v1/alfa/orders`, the five standard routes.
+`v1/alfa/orders`, the five standard routes. The filters of the list are in
+[The filters of each list](./overview.md#the-filters-of-each-list); planned for 2.2.1, which is not released, it
+gains filters by payment, fulfilment, date, item and customer.
 
 **Create.** An order made through the API has the source `api` and starts empty. Give it a status, a currency and
 the customer's details. The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On

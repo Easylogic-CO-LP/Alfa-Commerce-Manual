@@ -241,9 +241,10 @@ $other   = $context->withCurrency(2);        // the same visitor, another curren
 | `customerGroups(User $customer): array`, `groupLineage(int $groupId): array`, `groupLineages(array $groupIds): array` (static) | The groups a customer holds, and a group with every group above it | |
 
 The session keys are `alfa.currency_id` and `alfa.location_id`. A plugin that detects the visitor's country sets
-the second one to the id of the place. Planned for 2.2.1, which is not released: a visitor whose session holds
-either key is kept out of Joomla's page cache, while "System - Alfa Commerce Sync" runs for visitors who are not
-logged in. See [Caches](../architecture/caches.md#the-page-cache-rule).
+the second one to the id of the place. Planned for 2.2.1, which is not released: a page priced for a visitor whose
+session holds either key is kept out of Joomla's page cache, whatever the state of "System - Alfa Commerce Sync".
+While that plugin runs for visitors who are not logged in, such a visitor is also never given a page stored for
+another visitor. See [Caches](../architecture/caches.md#the-page-cache-rule).
 
 ### Saying which quantities a list is priced at: PricingIntent
 

@@ -306,7 +306,9 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 are never changed or deleted: a correction is a new movement in the other direction, so there is nothing to write
 here.
 
-Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`.
+Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`. Planned for 2.2.1, which is not released:
+also `filter[date_start]` and `filter[date_end]` (the movement's date), and `filter[item_id]` (the movements of one
+item).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,
 `source_id`, `source_line_id`, `transfer_id`, `operation_id`, `correlation_id`, `note`, `created`,

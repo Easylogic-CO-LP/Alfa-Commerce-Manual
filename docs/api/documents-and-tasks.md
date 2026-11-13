@@ -25,7 +25,9 @@ shop itself, for example when an order reaches a status that issues one. See
 | `GET v1/alfa/documents/:id/pdf` | The same as a PDF |
 | `POST v1/alfa/documents/:id/void` | Voids the document |
 
-Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`.
+Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`. Planned for 2.2.1,
+which is not released: also `filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days
+included).
 
 **A list row holds:** `id`, `doc_type`, `status`, `number`, `number_formatted`, `issue_date_local`, `id_order`,
 `id_shipment`, `id_corrects`, `buyer_name`, `buyer_vat_number`, `currency_code`, `total_tax_excl`, `total_tax`,

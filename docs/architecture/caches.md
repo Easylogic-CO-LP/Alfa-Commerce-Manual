@@ -118,14 +118,19 @@ Two more kinds of page keep themselves out of the page cache, whatever the visit
   page itself, so it is not stored either.
 - **A listing whose search engine marked its result as belonging to this visitor alone.** See below.
 
-Planned for 2.2.1, which is not released: three more keep themselves out, also without "System - Alfa Commerce
-Sync":
+Planned for 2.2.1, which is not released: these keep themselves out too, whatever the state of "System - Alfa
+Commerce Sync":
 
-- **The order process page**, the order's page shown before payment, also when it is opened again by a reload or by
-  Try again.
+- **The cart page in every form:** the cart with the checkout form, the empty cart, the order process page (the
+  order's page shown before payment, also when it is opened again by a reload or by Try again) and the
+  order-completed page.
+- **Any page while the cart module on it shows items.** A page whose cart module is empty can still be stored.
 - **Alfa's registration page while it shows a refusal**, for example two passwords that differ. The typed passwords
   are not kept at all. The other typed fields re-fill that one page and are then cleared.
-- **A page on which the items module shows a visitor's own, non-empty "recently viewed" list.**
+- **A page on which the items module shows a visitor's own "recently viewed" list, or the easy articles module a
+  visitor's own "recently read" list.** With an empty list the page can still be stored.
+- **Any page priced in a currency or a place of the visitor's own** (the session keys `alfa.currency_id` and
+  `alfa.location_id`).
 
 :::warning Keep "System - Alfa Commerce Sync" enabled
 The rule about the cart lives in the plugin "System - Alfa Commerce Sync" (`plugins/system/alfasync`), and nothing
@@ -139,6 +144,13 @@ pages of a visitor with a cart were not stored. With the plugin disabled they we
 asked for the cart page was shown the stored cart of another visitor. It does not arise while the plugin is
 enabled or the page cache is off.
 
+Planned for 2.2.1, which is not released: without the plugin (disabled, not installed, or not run for visitors who
+are not logged in), the pages listed above still keep themselves out, so no visitor's cart, typed details, order or
+own prices reach another visitor. What only the plugin does is the other half: it keeps a visitor with items in the
+cart, typed checkout details, or a currency or place of their own from being given a page stored for another
+visitor. Without it, such a shopper can be shown a stored page with an empty cart module and the shop's own prices,
+until the cache time ends. The advice below stays, for that reason.
+
 What to do:
 
 - Keep "System - Alfa Commerce Sync" enabled, with its Access set to Public. Installing or updating Alfa Commerce
@@ -148,11 +160,11 @@ What to do:
 The warning that Alfa shows on its administrator pages while the plugin is disabled does not mention the page cache
 in 2.2.0.
 
-Planned for 2.2.1, which is not released: that warning names the page cache first, and a plugin enabled with an
-Access that visitors who are not logged in do not hold gets a warning of its own. The setup checklist gains the
-recommended row "Joomla page cache": it passes while "System - Page Cache" is off, warns while it runs beside
-"System - Alfa Commerce Sync" (saying what Alfa keeps out and what the page cache still stores), and fails while
-"System - Alfa Commerce Sync" is disabled, not installed, or enabled with such an Access.
+Planned for 2.2.1, which is not released: that warning, and a warning of its own for a plugin enabled with an Access
+that visitors who are not logged in do not hold, say first what still keeps itself out of the page cache and what is
+lost. The setup checklist gains the recommended row "Joomla page cache": it passes while "System - Page Cache" is off,
+and warns while it is on, with or without "System - Alfa Commerce Sync", saying what Alfa keeps out and what the page
+cache can still store or serve.
 :::
 
 ## When it is used
@@ -160,7 +172,8 @@ recommended row "Joomla page cache": it passes while "System - Page Cache" is of
 - You write a module, a template override or a plugin whose output differs from one visitor to the next.
 - A figure on the dashboard, or a category in the menu, does not change right after you changed your data.
 - You are asked why a shopper saw somebody else's cart. On 2.1 with the page cache on, that could happen. 2.2.0
-  closes it.
+  closes it while "System - Alfa Commerce Sync" runs for visitors who are not logged in. Planned for 2.2.1, which is
+  not released: closed for Alfa's own pages whatever the plugin's state.
 
 ## What you must provide
 
@@ -168,6 +181,11 @@ recommended row "Joomla page cache": it passes while "System - Page Cache" is of
 
 Nothing. A visitor with a cart or typed checkout details is already kept out of the page cache on every page, so a
 module or template that shows the cart is safe.
+
+That holds while "System - Alfa Commerce Sync" runs for visitors who are not logged in. Planned for 2.2.1, which is
+not released: without it, Alfa's cart page and cart module still keep themselves out, but your own output that shows
+the cart is kept out only when the page also carries Alfa's cart module showing items, or when you tell the page
+cache yourself, as below.
 
 ### If your output is personal for another reason
 
@@ -177,7 +195,8 @@ cache does not know. You must tell it, the same way Alfa does: with a **system p
 page cache events.
 
 Planned for 2.2.1, which is not released: Alfa's rule also covers a currency or a place set in the session under
-`alfa.currency_id` or `alfa.location_id`. A personal price kept anywhere else is still yours to report.
+`alfa.currency_id` or `alfa.location_id`, and a page priced that way keeps itself out whatever the plugin's state. A
+personal price kept anywhere else is still yours to report.
 
 ```php
 namespace Acme\Plugin\System\Wishlist\Extension;
@@ -253,14 +272,17 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
 ## What happens next
 
 - A cleared group is filled again by the next request that needs it. Nothing has to be warmed up.
-- A visitor who empties the cart, and has typed no checkout details, is served stored pages again.
+- A visitor who empties the cart, and has typed no checkout details, is served stored pages again. Planned for 2.2.1,
+  which is not released: without "System - Alfa Commerce Sync" running for them, every visitor can be served stored
+  pages.
 - After an update, the first request for each page draws it fresh.
 
 ## What can go wrong
 
 | What you see | The usual cause |
 |---|---|
-| A shopper sees another shopper's cart or details | The shop is on 2.1 with the page cache on, or on 2.2.0 with "System - Alfa Commerce Sync" disabled or with an Access that visitors who are not logged in do not hold. Or the content is your own extension's and you have not answered the two page cache events. |
+| A shopper sees another shopper's cart or details | The shop is on 2.1 with the page cache on, or on 2.2.0 with "System - Alfa Commerce Sync" disabled or with an Access that visitors who are not logged in do not hold. Or the content is your own extension's and you have not answered the two page cache events. Planned for 2.2.1, which is not released: not through Alfa's own pages and modules, whatever the plugin's state. |
+| Planned for 2.2.1, which is not released: a shopper with items in the cart is shown a page whose cart module is empty | "System - Alfa Commerce Sync" is disabled, not installed, or not run for visitors who are not logged in, so the page cache gave that shopper a page stored for another visitor. Enable it with its Access set to Public, or switch "System - Page Cache" off. |
 | Your module shows the same personal content to everybody | Joomla's page cache or the module's own cache stored it. Answer the two events, and do not cache personal output in the module. |
 | A new category does not appear in the storefront's menu | It was written to the database directly, past Alfa's own save. Clear the group `com_alfa.categories` under System > Clear Cache. |
 | A figure on the dashboard is a few minutes old | The cards are kept for 5 minutes. Use `live()` only if that is not acceptable. |

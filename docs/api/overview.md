@@ -166,7 +166,8 @@ The examples in these pages are answers of a 2.2.0 test shop, shortened where ma
 
 Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each.
 Planned for 2.2.1, which is not released: a list sent where one value is expected (for example
-`filter[state][]=1`) is answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take a list.
+`filter[state][]=1`) is answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take a list, and
+the added `filter[fields]` of `items` takes a map (below).
 
 | List | Filters besides `filter[search]` |
 |---|---|
@@ -183,6 +184,29 @@ Planned for 2.2.1, which is not released: a list sent where one value is expecte
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
 
+Planned for 2.2.1, which is not released: four lists take the filters their administrator screens apply, with the
+same meaning as there.
+
+| List | Filters added | What they keep |
+|---|---|---|
+| `orders` | `filter[payment]` | `paid`: a completed payment. `unpaid`: none, and not cancelled. `failed`: a failed or cancelled attempt. `refunded`: a refund that was not reversed. For `failed` and `refunded` the dates below apply to the payment's date. |
+| `orders` | `filter[fulfilment]` | `shipped`: in a completed status. `unshipped`: neither completed nor cancelled. |
+| `orders` | `filter[waiting]` | `placed_48`: placed more than 48 hours ago. `untouched_48`: not changed for 48 hours. |
+| `orders` | `filter[reconciliation]=1`, `filter[overpaid]=1` | The orders the order page says need reconciliation (and the orders that name no currency); the orders that hold more than they ask |
+| `orders` | `filter[date_start]`, `filter[date_end]` | The order's date |
+| `orders` | `filter[item_id]` | The orders with a line of that item |
+| `orders` | `filter[id_user]` | The orders of that Joomla user. A guest's order has none. |
+| `orders` | `filter[email]` | The orders that carry that e-mail address, matched whole (a part of an address finds nothing), a guest's included |
+| `documents` | `filter[date_start]`, `filter[date_end]` | The document's legal date, `Y-m-d`, both days included |
+| `inventorymovements` | `filter[date_start]`, `filter[date_end]` | The movement's date |
+| `inventorymovements` | `filter[item_id]` | The movements of that item |
+| `items` | `filter[stock]` | `in`, `low` or `out`, as the dashboard counts them |
+| `items` | `filter[fields]` | `filter[fields][<field id>][]=<value id>`. An item must match every field sent, and any one of the values sent for a field. A field sent with no value keeps the items that use it. |
+
+The date bounds are the shop's local time, as the screens' calendars hold them (`Y-m-d` or `Y-m-d H:i:s`). A bound
+that cannot be read is left out. The screens' date presets ("Today", "This week") are not read by the API. A value a
+list does not know narrows nothing, as on the screen.
+
 `filter[search]` also takes a short form for an exact match:
 
 | In the list | Send | Finds |
@@ -197,9 +221,12 @@ Two questions that come up often:
   `payments`, `shipments`, `lines` and `history`. There is no separate list of an order's payments or parcels.
 - **The stock movements of one item.** `GET v1/alfa/inventorymovements?filter[search]=id:123`, where 123 is the
   item's id. A text in `filter[search]` is matched against the item's SKU, the movement's note and its source.
+  Planned for 2.2.1, which is not released: `filter[item_id]=123` as well.
+- **The orders of one customer.** Planned for 2.2.1, which is not released: `filter[id_user]` for an account, and
+  `filter[email]` for the e-mail on the order, which finds a guest's orders too.
 
 Not offered by the API in 2.2.0: a filter by date on any list, a filter of orders by customer or by item, and a
-filter of items by stock.
+filter of items by stock. Planned for 2.2.1, which is not released: all of these, in the table above.
 
 **Money.** On orders and documents an amount is an object with exact decimal text, the formatted text and the
 amount in the currency's smallest unit:
@@ -276,7 +303,7 @@ it under `meta.tasks`, each with its state and its own address. See
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request. The answer says which. |
-| 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money. |
+| 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money. Planned for 2.2.1, which is not released: also a write of an item that carries its options, combinations or item field values. |
 | 500 | A fault. Four cases are known in 2.2.0, below. Planned for 2.2.1, which is not released: none of the four answers 500. |
 | 503 | Planned for 2.2.1, which is not released: a PDF is asked for and the dompdf library is not installed. The answer says so in words. |
 
@@ -328,7 +355,8 @@ The payments and shipments of one order are under that order: see [Orders](./ord
 
 These are faults of 2.2.0, found by running the collection against the published release. They are listed here so
 that a program written today behaves correctly. Rows 1 to 3, 5 to 9 and 11 to 13 are fixed in 2.2.1, which is not
-released. Rows 4, 10 and 14 are open and not in 2.2.1. This table will name the release when one ships.
+released. Rows 4 and 10 are open and not in 2.2.1. Row 14 is planned for 2.2.1, which is not released. This table
+will name the release when one ships.
 
 | | What 2.2.0 does | What to do today | Fix |
 |---|---|---|---|
@@ -345,7 +373,7 @@ released. Rows 4, 10 and 14 are open and not in 2.2.1. This table will name the 
 | 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | Fixed in 2.2.1, not yet released: `created` is gone, and each payment carries `added` and `refund_reason` |
 | 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | Fixed in 2.2.1, not yet released: one order carries `fulfillment_status` and `fulfillment_percentage` |
 | 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | Fixed in 2.2.1, not yet released: the stored name is kept |
-| 14 | A write of an item that carries its options, combinations or item field values (`fields`, `options`, `combinations`, `informational`, or the item form's keys for them, such as `deleted_option_value_ids`) is not refused. Those values reach the option and combination writers in a shape they do not read: a list of options sent as a read returns it is taken by its positions, so it can change another option of the item, and `deleted_option_value_ids` deletes options. The write answers 200 (row 3), although it was partial and not checked. | Never send them in a write. Set them in the administrator. | Open; not in 2.2.1 |
+| 14 | A write of an item that carries its options, combinations or item field values (`fields`, `options`, `combinations`, `informational`, or the item form's keys for them, such as `deleted_option_value_ids`) is not refused. Those values reach the option and combination writers in a shape they do not read: a list of options sent as a read returns it is taken by its positions, so it can change another option of the item, and `deleted_option_value_ids` deletes options. The write answers 200 (row 3), although it was partial and not checked. | Never send them in a write. Set them in the administrator. | Planned for 2.2.1, which is not released: 422 naming the keys, and nothing is saved |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.

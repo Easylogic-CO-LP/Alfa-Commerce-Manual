@@ -32,7 +32,8 @@ Planned for 2.2.1, which is not released: the checklist has 20 rows. Three join 
 - **PDF library for sales documents.** It says that the dompdf library is installed separately, where to get it,
   and opens Joomla's extension installer.
 - **Joomla page cache.** It passes while "System - Page Cache" is off, warns while it runs beside "System - Alfa
-  Commerce Sync", and fails while that plugin is disabled, missing, or not run for visitors who are not logged in.
+  Commerce Sync", and also warns while that plugin is disabled, missing, or not run for visitors who are not logged
+  in, saying what Alfa still keeps out of the page cache and what is lost.
   See [Caches](../architecture/caches.md#the-page-cache-rule).
 
 The shop cannot take orders until every required row is done.

@@ -296,7 +296,7 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | Joomla's registration page is opened | Sends the visitor to Alfa's own registration page. Login, profile and password pages are not touched. |
 | A storefront page, or an administrator page of staff who manage the shop, is drawn | Lets that page start the shop's background work when work is waiting. |
 | An API request has been answered | Runs waiting background work for a moment. |
-| Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart or typed checkout details, out of the cache. Planned for 2.2.1, which is not released: also every page of a visitor whose session holds a currency or a place of their own. |
+| Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart or typed checkout details, out of the cache. Planned for 2.2.1, which is not released: also every page of a visitor whose session holds a currency or a place of their own. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
 | An administrator page starts | Loads the texts of Alfa's guided tours. |
 | A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. A payment or shipping plugin enabled or disabled from the Plugins list does not. Planned for 2.2.1, which is not released: also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library is installed, updated or uninstalled. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
@@ -317,12 +317,15 @@ other than Public or Guest), Joomla does not run it for them, and its page cache
 
 Planned for 2.2.1, which is not released:
 
-- The warning for a disabled or missing plugin names the page cache first: without the plugin, Joomla's "System -
-  Page Cache" can show the cart page, the checkout details a visitor typed and the cart on every page to the next
-  visitors.
+- The warning for a disabled or missing plugin says first that the cart, the checkout, the order pages and any page
+  that shows a cart with items still keep themselves out of Joomla's "System - Page Cache", and then what is lost: a
+  shopper with items in the cart, or priced in a currency or place of their own, can be shown a page the page cache
+  stored for another visitor, with an empty cart and the shop's own prices. It also names one more thing that stops:
+  the setup checklist no longer updates at once when a payment or shipping plugin is saved or switched.
 - A third case gets its own warning on every Alfa Commerce administrator page: the plugin is enabled, but its Access
-  is a level that visitors who are not logged in do not hold. The warning says to set its Access to Public.
-- The setup checklist's row "Joomla page cache" fails in each of the three cases while "System - Page Cache" is
+  is a level that visitors who are not logged in do not hold. It says the same about the page cache, and to set the
+  Access to Public.
+- The setup checklist's row "Joomla page cache" warns in each of the three cases while "System - Page Cache" is
   enabled. See [Your first shop](../getting-started/store-setup.md).
 
 ## The console plugin that ships: three commands
