@@ -64,9 +64,12 @@ still be undone; after it, nothing can.
 **After the commit.** Work that Alfa starts only once the save is final: e-mails, documents, plugin reactions,
 notifications. It never runs for a change that was undone.
 
-**Lock.** A short reservation that makes a second request wait, so that two requests cannot change the same thing at
-the same moment. Alfa holds one on an order's money while a payment or refund is written (`OrderMoneyLock`) and one
-while a shipment is booked (`ShipmentBookingLock`).
+**Lock.** A short reservation that keeps two requests from changing the same thing at the same moment. Alfa locks an
+order's row while it writes a payment or a refund (`PaymentLedger`). The shipment ledger takes no lock on the order:
+its conditional write (`updateIfStatus()`) holds the shipment's own row. Two further locks exist for plugins: a
+payment plugin may hold `OrderMoneyLock` around its own capture or release, and for a refund never across the call
+to the provider. A shipping plugin may hold `ShipmentBookingLock` around a booking. See
+[Orders](../services/orders.md).
 
 **Ledger.** The one place that writes an order's payments and refunds (`PaymentLedger`) or its shipments
 (`ShipmentLedger`). Plugins reach the ledgers through their base class, never directly.
@@ -102,9 +105,10 @@ In 2.2.0 only Alfa Commerce itself creates tasks and jobs. A plugin cannot regis
 
 **Customer group.** A Joomla user group with Alfa's own settings on it, used to give some customers their own prices, taxes and discounts.
 
-**Price index.** The prices of every item, worked out in advance and stored, so that lists and filters do not have to
-calculate them on each page. Alfa updates it when an item, a discount, a tax or a category changes, and announces the
-change with the event `onAlfaPricesChanged`.
+**Price index.** The prices of every item, worked out in advance and stored, so that the price and discount filters and
+sorting by price do not have to calculate them. The prices shown on a page are still worked out when the page is
+drawn. Core alone writes the index: when an item, a discount or a tax changes, and when a category or a manufacturer is
+deleted. It announces each write with the event `onAlfaPricesChanged`. See [Pricing](../services/pricing.md).
 
 **Projection.** Stored data that is derived from the catalogue and can always be rebuilt from it, such as the search
 entry of an item. Tools > Database Sync rebuilds projections.

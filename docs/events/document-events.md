@@ -38,7 +38,8 @@ Every document is issued by one method, `DocumentIssuer::issue()`, whoever asked
 fire the same way for a document issued by staff and for one issued automatically.
 
 If the shop's setting says an outside system issues its documents (`documents_issuer` set to `external`), Alfa issues
-nothing automatically and none of these events fire for a status change.
+nothing automatically, and the order screen's own issue, correction and void and replace actions do nothing either.
+None of these events fire for a status change. See [Documents](../services/documents.md).
 
 ## When it is used
 

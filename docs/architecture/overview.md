@@ -54,8 +54,8 @@ adds Form XML + Table CRUD.
 Controllers orchestrate; the real work is in helpers/services so it can be reused by the site, admin and API alike:
 
 - **Cart & checkout** — `CartHelper`, `OrderPlaceHelper` (atomic, transactional order placement)
-- **Orders** — [Order Helpers](../helpers/order-helpers.md) (items, totals, stock, statuses)
-- **Pricing** — the [Pricing](../helpers/pricing.md) engine + `PriceIndexSyncService`
+- **Orders** — [Order Helpers](../services/orders.md) (items, totals, stock, statuses)
+- **Pricing** — the [Pricing](../services/pricing.md) engine + `PriceIndexSyncService`
 
 ## Plugins & events
 
