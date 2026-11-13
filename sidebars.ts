@@ -43,10 +43,50 @@ const sidebars: SidebarsConfig = {
       label: 'Plugin Development',
       items: [
         'plugins/overview',
-        'plugins/payment-plugins',
-        'plugins/shipment-plugins',
-        'plugins/custom-field-plugins',
+        {
+          type: 'category',
+          label: 'Payment plugins',
+          items: [
+            {type: 'doc', id: 'plugins/payment-plugins', label: 'Guide'},
+            {type: 'doc', id: 'plugins/payment-plugin-events', label: 'Events'},
+            {type: 'doc', id: 'plugins/payment-plugin-money', label: 'Payments, refunds and webhooks'},
+            {type: 'doc', id: 'plugins/payment-plugin-example', label: 'Complete example'},
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Shipping plugins',
+          items: [
+            {type: 'doc', id: 'plugins/shipment-plugins', label: 'Guide'},
+            {type: 'doc', id: 'plugins/shipment-plugin-events', label: 'Events'},
+            {type: 'doc', id: 'plugins/shipment-plugin-example', label: 'Complete example'},
+          ],
+        },
+        'plugins/form-field-plugins',
+        {
+          type: 'category',
+          label: 'Item field plugins',
+          items: [
+            {type: 'doc', id: 'plugins/item-field-plugins', label: 'Guide'},
+            {type: 'doc', id: 'plugins/item-field-plugin-events', label: 'Events'},
+            {type: 'doc', id: 'plugins/item-field-plugin-example', label: 'Complete example'},
+          ],
+        },
         'plugins/media-plugins',
+        'plugins/search-plugins',
+        {
+          type: 'category',
+          label: 'Feature plugins',
+          items: [
+            {type: 'doc', id: 'plugins/admin-screen-plugins', label: 'Extending admin screens'},
+            {type: 'doc', id: 'plugins/admin-screen-events', label: 'Admin screen events'},
+            {type: 'doc', id: 'plugins/admin-screen-example', label: 'Complete example'},
+            {type: 'doc', id: 'plugins/admin-screen-ajax', label: 'Calling your plugin from the browser'},
+            {type: 'doc', id: 'plugins/admin-panels', label: 'Creating an admin panel'},
+            {type: 'doc', id: 'plugins/admin-panel-example', label: 'Complete admin panel example'},
+          ],
+        },
+        'plugins/system-console-task-plugins',
       ],
     },
     {
