@@ -10,7 +10,7 @@ description: How to write a payment plugin for Alfa Commerce 2.2.0, what it must
 
 **The pages of this guide:**
 
-- [Payment plugins](./payment-plugins.md): the guide itself
+- **Payment plugins** (this page)
 - [Payment plugin events](./payment-plugin-events.md)
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
 - [A complete payment plugin](./payment-plugin-example.md)

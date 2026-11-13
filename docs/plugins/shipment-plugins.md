@@ -10,7 +10,7 @@ description: How to write a shipping plugin for a carrier, the events it receive
 
 **The pages of this guide:**
 
-- [Shipping plugins](./shipment-plugins.md): the guide itself
+- **Shipping plugins** (this page)
 - [Shipping plugin events](./shipment-plugin-events.md)
 - [A complete shipping plugin](./shipment-plugin-example.md)
 
