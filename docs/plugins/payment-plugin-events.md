@@ -392,9 +392,9 @@ Event class: `PaymentCheckupEvent`. Optional.
 | `isInUse()` | Whether this variant is the one new payments use. Always `false` for `'general'`. |
 | `isCheck()` | `true` only when staff pressed "Check connection". Call your provider only then. |
 | `offerCheck()` | Shows the "Check connection" button |
-| `addStep(string $title, string $status, string $help = '', string $detail = '')` | Adds a step. `$status` is `PaymentCheckupEvent::DONE`, `TODO`, `FAILED`, `MANUAL` or `UNAVAILABLE`. In `$help`, `{webhook}` and `{return}` are replaced by this site's addresses. |
+| `addStep(string $title, string $status, string $help = '', string $detail = '')` | Adds a step. `$status` is `PaymentCheckupEvent::DONE`, `TODO`, `FAILED`, `MANUAL` or `UNAVAILABLE`. In `$help`, `{webhook}` and `{return}` are replaced by this site's addresses. Planned for 2.2.1, which is not released: `{webhook}` is the plain address, the one your plugin's `$this->webhookUrl()` builds for the card's set. |
 | `setLastChecked(string)` | One line shown beside the button |
-| `webhookUrl()`, `returnUrl()` | Your addresses in the form a provider can reach |
+| `webhookUrl()`, `returnUrl()` | Your addresses in the form a provider can reach. `webhookUrl()` names the card's set (sandbox or live) when the card has one. Planned for 2.2.1, which is not released: `webhookUrl()` is the plain address of [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses), and `returnUrl()` is unchanged. |
 
 **What you are expected to do.** Add your setup steps in order. A checkup only reads: it never moves money and never
 changes the method.

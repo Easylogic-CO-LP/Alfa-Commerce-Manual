@@ -253,8 +253,29 @@ $order = $this->orderFromReturnLink();   // the order, or null when the link pro
 - The **webhook address** carries no order and no secret. It is one fixed address you give your provider.
   `webhookUrl('sandbox')` or `webhookUrl('live')` adds `&environment=...` so that test and live callbacks arrive at
   different addresses (see [Sandbox and live](./payment-plugins.md#sandbox-and-live)).
-- Give your provider the address exactly as the setup checkup prints it (`PaymentCheckupEvent::webhookUrl()`). On a
-  multilingual site with friendly addresses, the plain `index.php` form is redirected and the callback is lost.
+- Give your provider the address exactly as the setup checkup prints it (`PaymentCheckupEvent::webhookUrl()`). In
+  2.2.0, on a site with friendly addresses, that is the friendly form (`component/alfa?task=...`), with the default
+  language's prefix where Joomla's language filter adds one. A GET to the plain `index.php` form is redirected on a
+  multilingual site with friendly addresses, and on a site with URL rewriting and Joomla's "Remove index.php" option
+  on. A provider that checks the address with a GET and does not follow the redirect does not reach your plugin. A
+  POST to the plain form reaches it.
+
+Planned for 2.2.1, which is not released:
+
+- The webhook address is always the plain form: the site root, `https`, and `index.php` with the query in the table
+  above, with no language and no friendly path. `$this->webhookUrl()` builds it and the setup checkup prints the
+  same address, in every language of the site, and also when it is built in the administrator. The return address is
+  unchanged.
+- A POST to the plain address reaches your plugin. A GET reaches it too, without a redirect, while "System - Alfa
+  Commerce Sync" is enabled with its Access set to Public: that plugin marks the request before Joomla routes it. See
+  [System, console and task plugins](./system-console-task-plugins.md#the-system-plugin-that-ships-alfa-commerce-sync).
+- An address a provider already holds in the friendly form keeps reaching the same plugin. Nothing needs to be
+  registered again. If your plugin compares the address registered at the provider with the one it builds, the two
+  differ in text for such a registration, although both reach your plugin.
+- `PaymentsPlugin::webhookUrlFor(element: 'offline', environment: 'live')` builds the same address for any payment
+  plugin by its element, and `PaymentsPlugin::webhookTask()` answers `payment.webhook`. `ShipmentsPlugin` has the same
+  two for `shipment.webhook`. `PaymentCheckupEvent::siteUrl()` is removed: use `webhookUrlFor()`, or the event's
+  `webhookUrl()` and `returnUrl()`.
 
 ### Authenticating a callback
 

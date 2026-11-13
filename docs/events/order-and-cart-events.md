@@ -234,7 +234,7 @@ complete:
 | Where | What staff see |
 |---|---|
 | The cart's totals | The totals without that plugin's charges, and under them a line naming the plugin as Extensions: Plugins names it |
-| Placing the order | Refused before anything is saved, with the same message |
+| Placing the order | Refused before anything is saved and before any plugin checks the order, with the same message |
 
 The message is: "(plugin name) adds charges or checks to this customer's cart, but your account's Access does not
 include the plugin's, so it cannot run here. These totals lack its part, and the order cannot be placed from this
@@ -282,7 +282,10 @@ The event announced after a placement is `onAlfaOrderPlaced`. No event named `on
 and shipping plugins are asked. Nothing is written yet.
 
 **Who receives it.** Addressed to each admitted plugin of the `alfa` group, in turn, each once. All receive the same
-event object, so refusals add up (`dispatchToEach()` in the code).
+event object, so refusals add up (`dispatchToEach()` in the code). Planned for 2.2.1, which is not released: Alfa
+first reads which plugins take part (`participants()` in the code), and refuses the order there for a plugin that is
+not loaded for the member of staff, before any plugin is asked. It then hands the event to each of them in turn, one
+call of `dispatchToEach()` for each, so that a plugin that throws an error can be named.
 
 **What you are given.** `OrderPlaceValidateEvent` (`administrator/src/Event/Orders/OrderPlaceValidateEvent.php`).
 
@@ -325,7 +328,7 @@ is also written to the log (category `com_alfa.orders`) with the plugin's name.
 |---|---|
 | Your plugin is disabled or not installed | The order is placed without your check. |
 | Your handler throws an error | The placement is refused, nothing is saved, the plugins after you are not asked, and the error is written to the log (category `com_alfa.orders`). This is a "before" event: a failure stops the operation. To refuse with a sentence the customer can read, call `reject()`. Planned for 2.2.1, which is not released: you may also throw `Alfa\Component\Alfa\Administrator\Event\Orders\OrderPlaceRefusedException` with a sentence for the shopper, which is read as a `reject()` is. Any other error, or that exception with no words, is reported to the shopper as "... could not check this order, so it was not placed. Please try again, or contact the shop if it happens again.", naming your plugin; its words stay in the log. |
-| Your plugin is admitted for the customer but not loaded for the member of staff | The placement is refused with the message of "When staff operate a customer's cart". |
+| Your plugin is admitted for the customer but not loaded for the member of staff | The placement is refused with the message of "When staff operate a customer's cart", before any plugin is asked. |
 
 ### onAlfaOrderPlaced
 

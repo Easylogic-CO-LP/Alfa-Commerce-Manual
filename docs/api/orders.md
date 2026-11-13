@@ -29,7 +29,7 @@ flowchart LR
 
 `v1/alfa/orders`, the five standard routes. The filters of the list are in
 [The filters of each list](./overview.md#the-filters-of-each-list); planned for 2.2.1, which is not released, it
-gains filters by payment, fulfilment, date, item and customer.
+gains filters by payment, fulfilment, waiting time, reconciliation, overpayment, date, item and customer.
 
 **Create.** An order made through the API has the source `api` and starts empty. Give it a status, a currency and
 the customer's details. The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
@@ -80,6 +80,9 @@ The answer, status 200, shortened:
 **One record holds also:** `id_user`, `conversion_rate`, `invoice_number`, `invoice_date`, `delivery_date`,
 `id_address_delivery`, `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`,
 `payments`, `shipments`, `contributions`, `history`, `delivery_address`, `invoice_address`.
+
+The lists `payments` and `shipments` are where a program reads an order's payments and parcels. The routes under
+[Operations on an order](#operations-on-an-order) write them; none of them reads.
 
 **Change.** `PATCH v1/alfa/orders/:id` changes the customer's details. It does not change the status:
 

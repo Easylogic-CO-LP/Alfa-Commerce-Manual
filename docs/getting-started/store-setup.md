@@ -29,8 +29,9 @@ Planned for 2.2.1, which is not released: the checklist has 20 rows. Three join 
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
   no enabled plugin of Public access, and names each such field.
-- **PDF library for sales documents.** It says that the dompdf library is installed separately, where to get it,
-  and opens Joomla's extension installer.
+- **PDF library for sales documents.** It says that the dompdf library ships with Alfa Commerce and is installed
+  with it, together with the libraries it needs. It fails only when one of them has been removed, says that installing
+  the Alfa Commerce package again restores it, and opens Joomla's extension installer.
 - **Joomla page cache.** It passes while "System - Page Cache" is off, warns while it runs beside "System - Alfa
   Commerce Sync", and also warns while that plugin is disabled, missing, or not run for visitors who are not logged
   in, saying what Alfa still keeps out of the page cache and what is lost.
