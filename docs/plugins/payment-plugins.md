@@ -339,7 +339,8 @@ Your plugin carries its own texts and loads them.
 | The plugin does not load at all after you added a method | You typed the `$event` parameter of a method the base class declares untyped, or you wrote a private method with the name of a base class method |
 | The provider's callbacks are answered 503 | The plugin is disabled, or its Access is not Public |
 | The provider's callbacks are answered 404 | Your class has no `onPaymentWebhook`, the element in the address is wrong, or the plugin is disabled and no method of the shop uses it |
-| Callbacks never arrive on a multilingual site | The provider was given the plain `index.php` address. Give it the address the setup checkup prints. |
+| The provider's check of the webhook address fails, on a multilingual site with friendly addresses or with URL rewriting and "Remove index.php" on | In 2.2.0 the provider was given the plain `index.php` address and checks it with a GET, which Joomla redirects. Give it the address the setup checkup prints. A POST to the plain address reaches your plugin. |
+| Planned for 2.2.1, which is not released: a provider that checks the address with a GET gets a redirect | "System - Alfa Commerce Sync" is disabled, or its Access is not Public. Enable it with its Access set to Public. A POST reaches your plugin either way. See [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses). |
 | The payment is completed but the order did not move | The row was created as completed instead of changed to completed, or the method has no `status_on_completed` setting |
 | `getPaymentMethod()` returns `null` | The order records another plugin, or the method id you passed is not one of your plugin's. There is no fallback since 2.2.0. |
 | A setting is always empty in `onCartView` | You read `$method->params[...]`. There the method is an object: use `->param('key')`. |

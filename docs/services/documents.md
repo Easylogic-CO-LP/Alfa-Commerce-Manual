@@ -311,17 +311,17 @@ state it; the issuer takes it from where the line's money comes from:
 A document issued before 2.2.0 has no tax names. A credit that corrects such a document has none either. The tax
 rules are never read again at issue, so renaming a tax later does not change a document.
 
-## A PDF needs a library that is installed separately
+## A PDF needs the dompdf library
 
 `PdfRenderer::pdfBytes(int $documentId): string` returns a document as PDF bytes. It draws the same page as the
 print view (`DocumentRenderer::render(int $documentId): string`) and hands it to the **dompdf** library.
 
 | | |
 |---|---|
-| **What you must provide** | The Joomla library `lib_dompdf`, installed so that `libraries/dompdf/autoload.inc.php` exists. It is not part of the Alfa Commerce package. |
-| **What happens without it** | `pdfBytes()` throws a `RuntimeException`: "the dompdf library is not installed (install lib_dompdf)". The print view still works. Planned for 2.2.1, which is not released: the library is asked for before anything is drawn, and `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), which PDF documents need, is not installed." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library. `PdfRenderer::libraryInstalled()` says whether it is installed. |
+| **What you must provide** | In 2.2.0, the Joomla library `lib_dompdf`, installed so that `libraries/dompdf/autoload.inc.php` exists. It is not part of the 2.2.0 package. Planned for 2.2.1, which is not released: nothing. dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) are installed with Alfa Commerce, each a Joomla library of its own, and Joomla's autoloader loads their classes. |
+| **What happens without it** | `pdfBytes()` throws a `RuntimeException`: "the dompdf library is not installed (install lib_dompdf)". The print view still works. Planned for 2.2.1, which is not released: the libraries are asked for before anything is drawn. `PdfRenderer::libraryInstalled()` asks for one class of each library in `PdfRenderer::LIBRARIES`. When one of them has been removed, `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores it. |
 | **What it guarantees** | Nothing is stored. The PDF is made again from the stored document on every request, so it cannot differ from the document. A voided document is drawn with its "voided" mark. |
-| **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. |
+| **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. Planned for 2.2.1, which is not released: a font that the page declares with `@font-face` is written to the renderer's temporary folder (`com_alfa_dompdf` in Joomla's temporary folder), never into the library's own fonts folder, which the file check under Tools > Security covers. The fonts that come with dompdf are still read from the library. |
 
 Both renderers are core's own. They read; they change nothing.
 
@@ -384,7 +384,7 @@ All of it only after the save is final. A listener that throws there is logged, 
 | "the draft was changed after onDocumentBeforeIssue answered it" | The answered draft was changed before it was handed to `issue()` |
 | "an onDocumentBeforeIssue subscriber left a database transaction changed" | A listener opened a transaction and did not close it. Alfa undid it and refused the issue. |
 | A document is issued and the stock did not move | The stock step failed after the save was final. It stays owed. Staff find it under Tools > Database Sync. Planned for 2.2.1, which is not released: when a stock plugin refused it on purpose, a task "Stock movement of a document that a stock plugin refused" stands in Tools > Tasks with Run again; any other failure is tried again by itself. See [Stock events](../events/stock-events.md). |
-| "the dompdf library is not installed" | `lib_dompdf` is missing. Planned for 2.2.1, which is not released: the message is "The dompdf library (lib_dompdf), which PDF documents need, is not installed." |
+| "the dompdf library is not installed" | `lib_dompdf` is missing. Planned for 2.2.1, which is not released: the message is "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." One of the libraries that ship with Alfa Commerce has been removed. Install the Alfa Commerce package again. |
 | A document type cannot be issued automatically | The type has no default series |
 | `onDocumentIssued` did not fire | The save the document belonged to was undone, or the shop's documents are issued by an outside system |
 
@@ -402,5 +402,5 @@ All of it only after the save is final. A listener that throws there is logged, 
   `CorrectionStrategies`) and the order screen's void and replace workflow (`VoidAndReplace`).
 - Automatic issue on a status (`AutoIssuePolicy`) beyond what [Document events](../events/document-events.md) says.
 - Document layouts: where a layout file goes and how a series chooses one.
-- How the `lib_dompdf` library is obtained and installed. Planned for 2.2.1, which is not released: the setup
-  checklist's row "PDF library for sales documents" says it.
+- How the `lib_dompdf` library is obtained and installed in 2.2.0. Planned for 2.2.1, which is not released: it is
+  installed with Alfa Commerce, so there is nothing to obtain.

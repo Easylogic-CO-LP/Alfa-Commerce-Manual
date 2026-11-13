@@ -264,7 +264,7 @@ list is worked out, the check looks at what is true now.
 the administrator that may change it, and when staff refresh the card. Planned for 2.2.1, which is not released:
 also after a payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" is enabled or
 disabled from the Plugins list, after "System - Page Cache" or "System - Alfa Commerce Sync" is saved, and after
-the dompdf library is installed, updated or uninstalled.
+the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Alfa's own checks are already in the
 event when you receive it.

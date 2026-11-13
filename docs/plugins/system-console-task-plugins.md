@@ -294,11 +294,12 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | A content language is added, saved or published | Makes that language's Alfa tables. |
 | An Alfa language pack is installed or updated | Has Alfa name its order statuses and system fields in the new language. |
 | Joomla's registration page is opened | Sends the visitor to Alfa's own registration page. Login, profile and password pages are not touched. |
+| A request on the site calls a payment or shipping webhook task (`task=payment.webhook` or `task=shipment.webhook` of `com_alfa`) | Planned for 2.2.1, which is not released: marks the request before Joomla routes it, so that Joomla's language filter and its SEF plugin leave it alone and a provider's GET to the plain webhook address reaches the plugin without a redirect. See [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses). |
 | A storefront page, or an administrator page of staff who manage the shop, is drawn | Lets that page start the shop's background work when work is waiting. |
 | An API request has been answered | Runs waiting background work for a moment. |
 | Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart or typed checkout details, out of the cache. Planned for 2.2.1, which is not released: also every page of a visitor whose session holds a currency or a place of their own. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
 | An administrator page starts | Loads the texts of Alfa's guided tours. |
-| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. A payment or shipping plugin enabled or disabled from the Plugins list does not. Planned for 2.2.1, which is not released: also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library is installed, updated or uninstalled. |
+| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. A payment or shipping plugin enabled or disabled from the Plugins list does not. Planned for 2.2.1, which is not released: also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
 | An Alfa extension is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
 | The administrator menu is built | Hides the Tools entry from staff without the permission for it. |
@@ -307,9 +308,10 @@ Its one setting is Debug Logging, which writes what it does to the file `alfa_sy
 
 **If it is disabled or missing.** Every Alfa Commerce administrator page shows a warning that Alfa Commerce needs
 it, and says what stops: the guided tours show language keys, Alfa no longer follows Joomla's users and user groups,
-pages outside Alfa Commerce no longer start the background work, and a language pack installed meanwhile takes
-effect only after Language tables is run under Tools > Database Sync. Staff who may manage plugins get a link to the
-plugin.
+the storefront and the administrator pages outside Alfa Commerce no longer start the background work, which then runs
+only from Alfa Commerce's own administrator pages, Tools > Tasks, the cron command and the web-cron address, and a
+language pack installed meanwhile takes effect only after Language tables is run under Tools > Database Sync. Staff
+who may manage plugins get a link to the plugin.
 
 The plugin must also run for visitors who are not logged in. Enabled with an Access that they do not hold (a level
 other than Public or Guest), Joomla does not run it for them, and its page cache rule does not apply to them. See
@@ -317,14 +319,16 @@ other than Public or Guest), Joomla does not run it for them, and its page cache
 
 Planned for 2.2.1, which is not released:
 
-- The warning for a disabled or missing plugin says first that the cart, the checkout, the order pages and any page
-  that shows a cart with items still keep themselves out of Joomla's "System - Page Cache", and then what is lost: a
-  shopper with items in the cart, or priced in a currency or place of their own, can be shown a page the page cache
-  stored for another visitor, with an empty cart and the shop's own prices. It also names one more thing that stops:
-  the setup checklist no longer updates at once when a payment or shipping plugin is saved or switched.
+- The warning for a disabled or missing plugin says first that Alfa Commerce's own pages and modules still keep a
+  visitor's cart, checkout details and order out of Joomla's "System - Page Cache", and then what is lost: a shopper
+  with items in the cart, or priced in a currency or place of their own, can be shown a page the page cache stored for
+  another visitor, with an empty cart and the shop's own prices. It then names what stops, as above, and one more
+  thing: the setup checklist no longer updates at once when a payment or shipping plugin is saved or switched. Its
+  last sentence before what to do says that a payment or shipping provider that checks its notification address with
+  a GET is redirected instead of reaching its plugin, and that a POST still reaches it.
 - A third case gets its own warning on every Alfa Commerce administrator page: the plugin is enabled, but its Access
-  is a level that visitors who are not logged in do not hold. It says the same about the page cache, and to set the
-  Access to Public.
+  is a level that visitors who are not logged in do not hold. It says the same about the page cache and about a
+  provider's GET, and to set the Access to Public.
 - The setup checklist's row "Joomla page cache" warns in each of the three cases while "System - Page Cache" is
   enabled. See [Your first shop](../getting-started/store-setup.md).
 

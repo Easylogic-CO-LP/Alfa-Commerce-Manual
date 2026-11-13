@@ -23,7 +23,7 @@ and template or layout overrides, never by changing a file inside Alfa's own fol
 |---|---|
 | 1. Fetch | Alfa downloads the list for the installed version, `checksums-<version>.json`, from `https://cdn.alfacommerce.gr/com_alfa/integrity/`, and with it a signature file of the same name ending in `.sig`. The address is fixed in the code (`administrator/src/Helper/IntegrityHelper.php`) and is not a setting. |
 | 2. Check the signature | The signature must match the downloaded list, checked with the public keys that ship inside Alfa. The matching private keys are never on the site. A list that fails this check is not used at all. |
-| 3. Compare | For every file the list names, Alfa computes the file's **checksum** (a fingerprint of its content) and compares it with the list. Then it walks Alfa's own folders and looks for files the list does not name. |
+| 3. Compare | For every file the list names, Alfa computes the file's **checksum** (a fingerprint of its content) and compares it with the list. Then it walks Alfa's own folders and looks for files the list does not name. Planned for 2.2.1, which is not released: it also walks the folder of each library that Alfa Commerce installs. |
 
 A **checksum** changes when the content changes. For text files (`php`, `js`, `css`, `ini`, `xml`, `json`, `html`,
 `htm`, `sql`, `svg`, `txt`, `md`, and files with no extension) runs of spaces, tabs and line breaks count as one
@@ -36,7 +36,7 @@ The comparison finds three kinds of difference:
 |---|---|---|
 | Changed | A file the list names has different content | "Files that differ from the official release (expected if you edited them; otherwise investigate)" |
 | Missing | A file the list names is not there | "Files the official release ships that are missing here (deleted or moved: investigate)" |
-| Extra | A file is inside one of Alfa's own folders and the list does not name it | "Injected files inside the core (not part of the official release). ..." |
+| Extra | A file is inside one of Alfa's own folders (planned for 2.2.1, which is not released: or the folder of a library that Alfa Commerce installs) and the list does not name it | "Injected files inside the core (not part of the official release). ..." |
 
 ### Which folders are searched for extra files
 
@@ -55,6 +55,16 @@ extra files. This is how the two language rules below come about.
 | A language file placed inside Alfa's own folders (for example `administrator/components/com_alfa/language/`) | Reported as an extra file, like any other file the release does not list | 2.1.2 |
 | Your own plugin or module, in its own folder | Not looked at. The check covers only what ships with Alfa Commerce. | |
 | A template override in a template's `html` folder | Not looked at | |
+| A file changed, removed or added in the folder of a library that Alfa Commerce installs (for example `libraries/dompdf/src/`) | Not looked at in 2.2.0. Planned for 2.2.1, which is not released: reported. | 2.2.1, not released |
+| Another extension's library | Not looked at | |
+
+Planned for 2.2.1, which is not released: the list also names the files of the seven libraries that Alfa Commerce
+installs, at their places on the site, and each library's manifest (`administrator/manifests/libraries/`). The seven
+are libphonenumber, giggsey/locale, dompdf and the four libraries dompdf needs. A changed or missing file of theirs is
+reported like a file of Alfa's own, and the folder of each is searched for extra files: `libraries/libphonenumber`,
+`libraries/giggsey/locale`, `libraries/dompdf`, `libraries/php-font-lib`, `libraries/php-svg-lib`,
+`libraries/masterminds/html5` and `libraries/sabberworm/php-css-parser`. The `libraries` folder itself, a vendor
+folder in it (such as `libraries/giggsey`) and the libraries of other extensions are still never searched.
 
 ### The outcomes
 
@@ -120,6 +130,9 @@ The check never changes, removes or disables a file. It only reports.
 | Change how something looks with a template or layout override | Add a file of your own inside those folders |
 | Ship your translations as a language pack in Joomla's language folders | Put language files inside Alfa's own folders |
 
+Planned for 2.2.1, which is not released: do not edit or add files in the folders of the libraries that Alfa
+Commerce installs either (listed under "Which folders are searched for extra files"). The check reports them.
+
 A site that needs a real change in core should send it upstream. The tab "GitHub - Commit & Pull Request" exports
 the files for that.
 
@@ -149,7 +162,7 @@ registry of tool actions, so a plugin's own tool looks and behaves like core's. 
 | Media | Find and delete media entries whose record or file no longer exists, and create missing or all thumbnails. Planned for 2.2.1, which is not released: a row whose image is not a file a thumbnail may be made from gets no thumbnail, and the job's report names it. | The view `toolsmedia`; the thumbnail actions in `administrator/src/Service/Tools/CoreToolProvider.php` |
 | Database Sync | Actions listed in the order to run them: users and groups, language tables, backfill of empty translations, catalogue projections, list prices for customer groups, outstanding stock movements, the search index | `administrator/src/Service/Tools/CoreToolProvider.php` |
 | Tasks | Failed and held tasks, the jobs, the deletion of finished tasks, and how background work runs. See [Background work](./background-work.md). | `administrator/src/Controller/TasksController.php`, `administrator/src/Service/Task/TaskStaff.php` |
-| GitHub - Commit & Pull Request | A guide for contributing, and two downloads: the whole package, or only the files the integrity check reports as changed | `ToolsController::exportPackage()` in `administrator/src/Controller/ToolsController.php`, `administrator/src/Helper/PackageHelper.php` |
+| GitHub - Commit & Pull Request | A guide for contributing, and two downloads: the whole package, or only the files the integrity check reports as changed. Planned for 2.2.1, which is not released: neither download carries the files of the bundled libraries, so a changed library file is shown on the Security tab only. | `ToolsController::exportPackage()` in `administrator/src/Controller/ToolsController.php`, `administrator/src/Helper/PackageHelper.php` |
 | Security | The integrity check of this page | `administrator/src/Helper/IntegrityHelper.php`, `administrator/src/View/Tools/_integrity.php` |
 | Reset and clear | **Reset to default** gives Alfa's Options back their installation values. **Clear everything** removes the shop's data and makes a fresh installation. Each opens its own page that lists what would change before anything changes. | `administrator/src/Service/Maintenance/ResetToDefault.php`, `administrator/src/Service/Maintenance/FactoryReset.php` |
 | Extensions | The separately installed Alfa extensions: **Clear Data** of an extension, remove it, or remove it with its data | `administrator/src/Controller/ExtensionsController.php` |

@@ -22,9 +22,11 @@ libraries.
 The installer checks Joomla, PHP and the PHP extensions itself and names what is missing. It does not check the
 database version, so check that one yourself.
 
-Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which is installed separately. Planned for
-2.2.1, which is not released: the setup checklist has a recommended row, "PDF library for sales documents", which
-says that the library is to be had from Easylogic and is installed in **System**, **Install**, **Extensions**.
+Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which 2.2.0 does not ship: it is installed
+separately. Planned for 2.2.1, which is not released: dompdf ships with Alfa Commerce and is installed and updated
+with it, together with the four libraries it needs, so PDFs work with no extra step. The setup checklist has a
+recommended row, "PDF library for sales documents", which fails only when one of these libraries has been removed,
+and says that installing the Alfa Commerce package again restores it.
 
 ## Installing
 
@@ -46,7 +48,7 @@ plugin it brought:
 | Item fields | `alfa-item-fields/choice` |
 | Platform | `system/alfasync`, `webservices/alfa` (the REST API), `console/alfa` (the console commands) |
 | Modules | `mod_alfa_cart`, `mod_alfa_search`, `mod_alfa_filters`, `mod_alfa_items`, `mod_easy_articles` |
-| Libraries | libphonenumber and its locale data |
+| Libraries | libphonenumber and its locale data. Planned for 2.2.1, which is not released: also dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser). |
 
 Alfa Commerce ships in English. Every other language is a separate language pack.
 
@@ -121,6 +123,8 @@ The same Joomla and PHP checks run on an update as on an installation.
 Planned for 2.2.1, which is not released:
 
 - The update also cleans the caches of the bundled items module (`mod_alfa_items`).
+- The update installs dompdf and the four libraries it needs. A `lib_dompdf` that was installed on its own before is
+  updated to the package's copy. PDFs then work with no extra step.
 - The update lists the files among the item images that are not images, with the records that name them: one
   warning on the update page, and one line per file in the media log (`com_alfa_media.php` in Joomla's log folder).
   Nothing is deleted. Look at each file, delete by hand those that are not yours to publish, and choose a new

@@ -38,12 +38,14 @@ included).
 `vehicle_number`, `movement_start`, `ship_from`, `ship_to`), `payment_method_name`, `authority_uid`, `qr_url`,
 `note`, `print_note`, `voided_at`, `voided_by`, `void_reason`, and the lists `series`, `lines`, `taxes`.
 
-**The PDF** needs the dompdf library (`lib_dompdf`) on the site. Alfa Commerce does not ship it. Without it the
-route answers 500 in 2.2.0 ([Known defects](./overview.md#known-defects-in-220), row 9). The HTML route does not
+**The PDF** needs the dompdf library (`lib_dompdf`) on the site. Alfa Commerce 2.2.0 does not ship it. Without it
+the route answers 500 in 2.2.0 ([Known defects](./overview.md#known-defects-in-220), row 9). The HTML route does not
 need it.
 
-Planned for 2.2.1, which is not released: without the library the route answers 503 with a sentence that names the
-library, and the setup checklist has a row, "PDF library for sales documents", that says where to get it.
+Planned for 2.2.1, which is not released: the library ships with Alfa Commerce and is installed with it, together
+with the four libraries it needs, so the route works with no extra step. If one of them has been removed, the route
+answers 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores
+it, and the setup checklist's row "PDF library for sales documents" fails.
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:
