@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Alfa Commerce',
   tagline: 'Developer Documentation for Alfa Commerce, Joomla eCommerce',
-  favicon: 'img/alfa-mark.svg',
+  favicon: 'img/alfa-commerce-logo.svg',
 
   future: {
     v4: true,
@@ -70,7 +70,7 @@ const config: Config = {
       title: 'Alfa Commerce',
       logo: {
         alt: 'Alfa Commerce',
-        src: 'img/alfa-mark.svg',
+        src: 'img/alfa-commerce-logo.svg',
         width: 28,
         height: 28,
       },
