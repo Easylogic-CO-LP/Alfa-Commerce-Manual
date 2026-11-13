@@ -20,7 +20,7 @@ shop rules.
 |---|---|---|
 | Storefront (site) | `site/` | What the shopper sees: listings, the item page, the cart and checkout, the customer's details, downloads |
 | Back office (administrator) | `administrator/` | What staff use: the catalogue, orders, stock, documents, settings, Tools. Most of the code lives here, and the other two sides use it |
-| REST API | `api/` | The same data for other programs, as JSON. Its addresses are registered by the `webservices` plugin in `plugins/webservices/alfa` |
+| REST API | `api/` | The same data for other programs, as JSON. Its addresses are registered by the `webservices` plugin in `plugins/webservices/alfa`. See [REST API](../api/overview.md). |
 
 Each side has its own entry class, `src/Dispatcher/Dispatcher.php`, which Joomla calls first. Around the component
 the package ships plugins (`plugins/`), modules (`modules/`) and two libraries (`libraries/`). The folder by folder
