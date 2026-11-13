@@ -18,7 +18,7 @@ pull request as one check, green or red.
 |---|---|---|
 | Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). It turns red only when the tool or its commit step breaks. |
 | Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
-| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | No. It reports and does not fail the check. |
+| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | On `main` (2.2.0): no, it reports and does not fail the check. On `developer` since 13 November 2026: a finding turns the check red, but no check is required for a merge yet. See [PHPStan](./phpstan). |
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
 | Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. |
 | Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
