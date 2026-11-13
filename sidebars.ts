@@ -34,8 +34,11 @@ const sidebars: SidebarsConfig = {
       items: [
         'architecture/overview',
         'architecture/database-schema',
-        'architecture/multilingual',
+        'architecture/background-work',
         'architecture/order-emails',
+        'architecture/multilingual',
+        'architecture/caches',
+        'architecture/integrity-and-security',
       ],
     },
     {
