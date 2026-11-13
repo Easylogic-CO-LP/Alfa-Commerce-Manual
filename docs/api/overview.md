@@ -321,7 +321,7 @@ will name the release when one ships.
 | 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | A candidate for 2.2.1 |
 | 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | A candidate for 2.2.1 |
 | 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | A candidate for 2.2.1 |
-| 14 | A write of an item that carries `options`, `combinations` or item field values answers 200 and does not write them | Set them in the administrator. Do not rely on the answer. | A candidate for 2.2.1: the fields are refused |
+| 14 | A write of an item that carries `options` answers 200 and does not write them. Combinations and item field values were not tried. | Set them in the administrator. Do not rely on the answer. | A candidate for 2.2.1: the fields are refused |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.
