@@ -61,7 +61,7 @@ const TEMPLATES = [
     ],
   },
   {
-    type: 'adminscreen', label: 'Feature plugin (admin screens)', group: 'alfa', element: 'keeplist', mode: 'global',
+    type: 'adminscreen', label: 'Feature plugin: extend existing admin screens', group: 'alfa', element: 'keeplist', mode: 'global',
     page: 'admin-screen-example.md', guide: 'admin-screen-plugins',
     demo: 'Adds a "Kept" column to the Manufacturers list and refuses to delete the manufacturers whose ids are typed in the plugin\'s options.',
     starter: 'The column and the refusal are a demonstration on one screen.',
@@ -72,7 +72,7 @@ const TEMPLATES = [
     ],
   },
   {
-    type: 'adminpanel', label: 'Feature plugin (admin panel)', group: 'alfa', element: 'storenotes', mode: 'global',
+    type: 'adminpanel', label: 'Feature plugin: add a screen of its own', group: 'alfa', element: 'storenotes', mode: 'global',
     page: 'admin-panel-example.md', guide: 'admin-panels',
     demo: 'Adds its own screen to Alfa Commerce\'s menu: a list of notes with search, New, edit and Delete, stored in the plugin\'s own table.',
     starter: 'The notes are a demonstration. The table is created at installation and removed at uninstallation.',

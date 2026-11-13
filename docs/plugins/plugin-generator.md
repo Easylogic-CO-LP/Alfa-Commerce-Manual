@@ -40,9 +40,14 @@ and it does what its example does.
 | Item field plugin | [A complete item field plugin](./item-field-plugin-example.md) | Draws a field's values as radio buttons on the item page |
 | Form field plugin | [Form field plugins](./form-field-plugins.md#a-complete-minimal-plugin) | Adds a one line text field to registration and checkout |
 | Media plugin | [Media plugins](./media-plugins.md#a-complete-media-plugin) | Stores uploaded pictures as WebP and refuses very large ones |
-| Feature plugin (admin screens) | [A complete feature plugin](./admin-screen-example.md) | Adds a column to the Manufacturers list and refuses some deletes |
-| Feature plugin (admin panel) | [A complete admin panel](./admin-panel-example.md) | Adds its own screen with a list, a form and a table |
+| Feature plugin: extend existing admin screens | [A complete feature plugin](./admin-screen-example.md) | Adds a column to the Manufacturers list and refuses some deletes |
+| Feature plugin: add a screen of its own | [A complete admin panel](./admin-panel-example.md) | Adds its own screen with a list, a form and a table |
 | System plugin | [System, console and task plugins](./system-console-task-plugins.md#a-complete-system-plugin) | Logs completed orders and adds a button to Tools |
+
+The two feature plugin starters are the same kind of plugin: both are in the group `alfa`, and one plugin may do
+both things. They are offered apart because the manual has one tested example of each. To have both in one
+plugin, generate one and copy the event handlers of the other into its class, with their entries in
+`getSubscribedEvents()` and their files.
 
 ## What it is not
 
