@@ -55,8 +55,29 @@ empty there:
 {"links": {"self": ".../v1/alfa/documents?filter[id_order]=1"}, "data": [], "meta": {"total-pages": 0}}
 ```
 
-The document routes were not called with a real document for this page. What is said about them comes from the
-route table and from the Postman collection, whose run against 2.2.0 passes on these routes except the PDF.
+With a series in place, an invoice issued by a status change reads like this in the list (shortened):
+
+```json
+{
+  "type": "documents",
+  "id": "1",
+  "attributes": {
+    "id": 1, "doc_type": "core.invoice", "status": 1, "number": 1, "number_formatted": "INV-000001",
+    "issue_date_local": "2026-11-13", "id_order": 2, "currency_code": "EUR", "buyer_name": "Maria Example",
+    "total_tax_excl": "24.40", "total_tax": "0.00", "total_tax_incl": "24.40", "series_code": "A"
+  }
+}
+```
+
+After a void, `status` is 2 and `voided_at`, `voided_by` and `void_reason` are filled. The two refusals of a void:
+
+```json
+{"errors":[{"title":"reason is required to void a document","code":400}]}
+```
+
+```json
+{"errors":[{"title":"DocumentIssuer: void failed: document #1 is not issued; only issued documents can be voided.","code":409}]}
+```
 
 ## Document types
 
