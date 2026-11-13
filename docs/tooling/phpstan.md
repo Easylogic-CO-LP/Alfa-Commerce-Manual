@@ -84,6 +84,10 @@ of the repository. The setting `scanDirectories` points PHPStan at that folder. 
 - On your computer the script `scripts/phpstan-fetch-joomla.sh` does the same. It needs `curl`, `python3` and
   `unzip`, and it replaces the `joomla` folder each time.
 
+From the next promotion of `developer` to `main` (with 2.2.1, which is not released), the job and the script both
+download Joomla 6.2.0 by its address and check it against the sha256 that Joomla publishes, instead of the latest
+release. The script then needs `curl`, `unzip` and `sha256sum` or `shasum`, and no longer `python3`.
+
 A small file, `.github/phpstan-bootstrap.php`, defines the constants that Joomla defines only when it runs:
 `_JEXEC`, `DS`, `JDEBUG` and the `JPATH_` constants.
 
@@ -126,6 +130,9 @@ scripts/phpstan-fetch-joomla.sh
 phpstan analyse --configuration=phpstan.neon --memory-limit=1G
 ```
 
+From the next promotion of `developer` to `main`, the job installs PHPStan 2.3.5 and checks the file against the
+release's sha256. A PHPStan on your own computer is still yours to choose; use 2.3.5 to see what the job sees.
+
 The job on GitHub runs the same second command with one more option, which formats the output for GitHub:
 
 ```bash
@@ -145,14 +152,18 @@ What this means for you:
 - PHPStan fixes nothing by itself. A finding in code you changed is yours to fix and push.
 - The AI review is told not to flag findings of this kind.
 
+From the next promotion of `developer` to `main`: the job runs on PHP 8.3 and has no `continue-on-error`, so any
+finding turns the check red. A green check then means PHPStan found nothing. The level, the paths, the ignored
+messages and the baseline do not change.
+
 ## What can go wrong
 
 | What you see | Why | What to do |
 |---|---|---|
 | Very many "class not found" findings on your computer | The `joomla` folder is missing or empty. | Run `scripts/phpstan-fetch-joomla.sh` first. |
 | The script stops | `curl`, `python3` or `unzip` is missing, or the download failed. | Install the missing tool, check the connection, run it again. |
-| The check is red | A step other than the analysis broke, for example the Joomla download. PHPStan's findings cannot turn it red. | Open the run and read the failing step. |
-| Findings changed although the code did not | A new Joomla release or a new PHPStan version. Neither is pinned. | Read the new findings as you would any other. |
+| The check is red | A step other than the analysis broke, for example the Joomla download. PHPStan's findings cannot turn it red. From the next promotion of `developer` to `main`: also any finding. | Open the run and read the failing step. |
+| Findings changed although the code did not | A new Joomla release or a new PHPStan version. Neither is pinned. From the next promotion of `developer` to `main` both are pinned (PHPStan 2.3.5, Joomla 6.2.0). | Read the new findings as you would any other. |
 | A mistyped property name is not reported | "Access to an undefined property" is ignored everywhere. | Test the code path. PHPStan will not catch this one. |
 
 ## A note on @since tags
@@ -162,6 +173,7 @@ The `@since` tags in the analysed folders name many versions. 2.0.0 is the most 
 
 ## Not documented yet
 
-- Which version of PHPStan a run installs. The workflow names none.
+- Which version of PHPStan a run installs. The workflow names none. From the next promotion of `developer` to `main`:
+  2.3.5.
 - Whether the findings also show as notes on the changed lines of a pull request. The workflow asks PHPStan for
   GitHub's output format; what GitHub then shows is not part of the code.

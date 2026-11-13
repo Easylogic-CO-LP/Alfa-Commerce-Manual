@@ -88,6 +88,13 @@ The answer, status 200, shortened:
 `customer_note` or `state` in a `PATCH` is answered 200 and not written in 2.2.0
 ([Known defects](./overview.md#known-defects-in-220), row 7).
 
+Planned for 2.2.1, which is not released: `customer_note` in a `PATCH` is written. The order edit screen neither
+shows nor changes it. `state` (the order's trash flag, not its status) is refused:
+
+```json
+{"errors":[{"title":"state cannot be changed via PATCH: an order is not trashed; its status changes through POST v1/alfa/orders/:id/status.","code":422}]}
+```
+
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.
 
@@ -244,6 +251,13 @@ In 2.2.0 each shipment also shows `note` and `created`, which are always null (k
 `fulfillment_status` is not filled by the API in 2.2.0 (row 12), and each payment's `created` is always null
 (row 11).
 
+Planned for 2.2.1, which is not released:
+
+- One order carries `fulfillment_status` and `fulfillment_percentage`, worked out as in the list of orders.
+- Each payment carries `added` (when the payment was recorded) and `refund_reason` (the reason staff gave for a
+  refund). `created` is no longer in a payment's entry, so a program that reads it finds no such field.
+- A shipment's `note` and `created` stay as in 2.2.0 (row 10 is open).
+
 ### The status
 
 `POST v1/alfa/orders/:id/status` is the only way to change an order's status through the API.
@@ -300,7 +314,11 @@ A status can issue sales documents when an order reaches it. Such a status carri
 }
 ```
 
-Deleting a status that orders are in answers 204 in 2.2.0 and deletes nothing (known defect, row 2).
+Planned for 2.2.1, which is not released: the rules are kept with or without `issues_delivery_note`.
+
+Deleting a status that orders are in answers 204 in 2.2.0 and deletes nothing (known defect, row 2). Planned for
+2.2.1, which is not released: such a delete is refused with 409 and the reason, and so is the delete of the last
+status that holds a role. Nothing is deleted.
 
 ## Not documented yet
 

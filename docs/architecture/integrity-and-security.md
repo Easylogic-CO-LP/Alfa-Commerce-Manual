@@ -146,7 +146,7 @@ registry of tool actions, so a plugin's own tool looks and behaves like core's. 
 
 | Tab | What it is for | The code behind it |
 |---|---|---|
-| Media | Find and delete media entries whose record or file no longer exists, and create missing or all thumbnails | The view `toolsmedia`; the thumbnail actions in `administrator/src/Service/Tools/CoreToolProvider.php` |
+| Media | Find and delete media entries whose record or file no longer exists, and create missing or all thumbnails. Planned for 2.2.1, which is not released: a row whose image is not a file a thumbnail may be made from gets no thumbnail, and the job's report names it. | The view `toolsmedia`; the thumbnail actions in `administrator/src/Service/Tools/CoreToolProvider.php` |
 | Database Sync | Actions listed in the order to run them: users and groups, language tables, backfill of empty translations, catalogue projections, list prices for customer groups, outstanding stock movements, the search index | `administrator/src/Service/Tools/CoreToolProvider.php` |
 | Tasks | Failed and held tasks, the jobs, the deletion of finished tasks, and how background work runs. See [Background work](./background-work.md). | `administrator/src/Controller/TasksController.php`, `administrator/src/Service/Task/TaskStaff.php` |
 | GitHub - Commit & Pull Request | A guide for contributing, and two downloads: the whole package, or only the files the integrity check reports as changed | `ToolsController::exportPackage()` in `administrator/src/Controller/ToolsController.php`, `administrator/src/Helper/PackageHelper.php` |

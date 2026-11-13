@@ -88,8 +88,23 @@ Two things differ from what many expect:
   on the image's tile), `onAlfaMediaThumbnail` fires first, before `onAlfaMediaValidate`, and not again afterwards.
   In that case it also fires before Alfa's own check of the file, so check the source yourself before you read it.
 
+Planned for 2.2.1, which is not released: Alfa checks a thumbnail's source before it hands it to
+`onAlfaMediaThumbnail`, resizes it or copies it. The source must lie inside one of the Media folders (Joomla's
+Media file and image paths, and Alfa's own save folder, `images/commerce` unless Options say otherwise), carry one of
+Media's image extensions, and be an image of that type. A source that fails never reaches the event. This rule is
+not the main image's check, which uses the types allowed in Alfa's Options. A save of an item, category,
+manufacturer or variant that names such a thumbnail is refused before anything is written, and the REST API answers
+400 with the reason.
+
 The events run while the record is being saved. A media event does not tell you whether the record's own save is
 final.
+
+Planned for 2.2.1, which is not released: an item's save is one transaction, and the media events of its images
+(`onAlfaMediaValidate`, `onAlfaMediaBeforeProcess`, `onAlfaMediaAfterProcess`, and `onAlfaMediaThumbnail` for a
+thumbnail made in that save) run inside it. What your listener writes to the shop's database there is undone with a
+save that fails, and your listener is not told. A file you write, or a call to another service, stays. Work that
+must not be undone belongs in an event heard after the save is final: `onContentAfterSave`, `onAlfaAdminAfterSave`
+or `onItemAfterSave`.
 
 ## What all media events carry
 
@@ -185,7 +200,8 @@ image.
 
 **What happens next.** When a listener set `processed`, Alfa uses the file at `getFinalPath()` if that file exists.
 If it does not exist, the image gets no thumbnail. When no listener did, Alfa resizes the image itself, in the
-source's own format, and falls back to a plain copy only when the server cannot resize it.
+source's own format, and falls back to a plain copy only when the server cannot resize it. Planned for 2.2.1, which
+is not released: the plain copy is made only of a source that passed the thumbnail check above.
 
 **If you are missing or you fail.** Alfa's own resize makes the thumbnail.
 

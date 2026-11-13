@@ -155,6 +155,11 @@ To show staff a translated sentence, throw
 message, a language key and the key's values. The order's screen shows the translated key and the log keeps the
 message.
 
+Planned for 2.2.1, which is not released: the notice of an automatic issue that failed says why. It reads "The
+document could not be issued: ... Correct the cause, then issue it from the order.", with your
+`DocumentRefusedException`'s translated sentence in place of the dots. Without one, it says that a database error
+stopped it, or gives the first line of the failure, or says that the reason is in the documents log.
+
 ## The events that only report
 
 Alfa announces both with `AlfaPluginHelper::dispatchIsolated()`, only after the whole save the document belongs to is

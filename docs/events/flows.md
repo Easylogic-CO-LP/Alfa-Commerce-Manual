@@ -99,7 +99,8 @@ What the picture means:
 - **Step 9 is skipped** when the order's first status only sets the stock aside. Most shops work that way.
 - While it sets the stock aside (step 8), Alfa may ask `onCollectStockAllocationProviders` which location the stock
   comes from. It asks once for each stock service object it works with, so the event can be announced more than
-  once in a request.
+  once in a request. Planned for 2.2.1, which is not released: it asks once per request, and a provider is given
+  the reservation's own context (who placed the order and why).
 - The cart's own events (`onCartTotals`, `onCalculateShippingCost`, `onCartView`) belong to drawing and totalling
   the cart. They are not part of this picture.
 
@@ -202,7 +203,9 @@ What the two pictures mean:
 - **The steps run in this order:** stock, download access, documents, e-mail, `onOrderStatusChange`.
 - **Which stock events fire** depends on what the new status asks of the stock. See [Stock](#stock).
 - **A refusal in a stock or document "before" event stops that step only.** The stock movement stays owed and is
-  tried again. A refused document raises an alert for staff.
+  tried again. A refused document raises an alert for staff. Planned for 2.2.1, which is not released: a stock
+  plugin that refuses on purpose (`InventoryRefusedException`) is not asked again by itself; any other failure is
+  tried again up to seven times. See [Stock events](./stock-events.md).
 - **`onOrderStatusChange` is delivered listener by listener.** Each listener's result is recorded. A listener that
   failed can be run again by staff, alone, without the others running twice. It is never run again automatically.
 - **When the change comes from inside another save** (a payment being settled, for example), the steps wait until
@@ -412,15 +415,20 @@ What the picture means:
   never announced.
 - **Three statuses, three outcomes.** A status that takes the goods runs `commitReservation()`. A status that keeps
   them set aside puts back what was taken. A cancelled status puts back what was taken and runs `release()`.
-- **Putting goods back announces nothing in 2.2.0.** `restore()` and `releaseLine()` have no event.
+- **Putting goods back announces nothing in 2.2.0.** `restore()` and `releaseLine()` have no event. Planned for
+  2.2.1, which is not released: `restore()` (an order cancelled or a line cut, a credit note's return) and
+  `reverseRestores()` (a credit note voided) announce `onInventoryRestored` after the save is final. `releaseLine()`
+  still has none.
 - **`onCollectStockAllocationProviders` is asked while the command writes**, the first time a stock service object
   (`InventoryService`) must choose a location. One object keeps the answer. A request that uses several objects
-  announces the event several times.
+  announces the event several times. Planned for 2.2.1, which is not released: the answer is kept for the request,
+  so the event is announced once however many objects are used.
 
 | Event | Who receives it | Documented on |
 |---|---|---|
 | `onInventoryBeforeReserve`, `onInventoryBeforeCommit`, `onInventoryBeforeRelease` | Everyone who listens | [Stock events](./stock-events.md) |
 | `onInventoryReserved`, `onInventoryCommitted`, `onInventoryReleased`, `onInventoryAdjusted`, `onInventoryTransferred` | Everyone who listens | [Stock events](./stock-events.md) |
+| `onInventoryRestored` (planned for 2.2.1, which is not released) | Everyone who listens | [Stock events](./stock-events.md#oninventoryrestored) |
 | `onCollectStockAllocationProviders` | Everyone who listens, after the group `alfa-inventory` is loaded | [Stock events](./stock-events.md) |
 
 ## Documents
@@ -512,6 +520,38 @@ What the picture means:
   the background job `catalogue.rebuild` rebuilds it later. `onAlfaPricesChanged` then carries the cause `rebuild`.
 - Joomla's own `onContentBeforeSave` and `onContentAfterSave` fire inside step 3, as for any Joomla record.
 
+Planned for 2.2.1, which is not released: an item is saved as one unit.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Staff
+    participant Alfa as Alfa Commerce
+    participant L as Plugins that listen
+    Staff->>Alfa: Saves an item
+    Alfa->>L: onAlfaAdminValidate, then onAlfaAdminBeforeSave (may refuse)
+    Alfa->>Alfa: Writes the row, prices, images, categories, who may see it and its stock, as one save
+    Note over Alfa: The save is final here
+    Alfa->>L: onContentAfterSave, then onAlfaAdminAfterSave
+    Alfa->>L: onCatalogVisibilityChanged
+    Alfa->>L: onCollectCatalogProjections
+    Alfa->>Alfa: Rebuilds the price index, the field values and the search entry
+    Note over Alfa: The save is final here
+    Alfa->>L: onAlfaPricesChanged, then onItemAfterSave
+    Alfa->>Staff: Shows the saved item
+```
+
+- **All of step 3 is final at once, or none of it.** If the save stops part way, nothing of it is kept, and staff
+  are told that the item was not saved, that nothing of it was kept, and to try again.
+- **Steps 4 to 8 wait for step 3 to be final**, and none of them is announced for a save that was undone. A listener
+  of `onAlfaAdminAfterSave` sees the new prices, images and categories.
+- **Joomla's `onContentBeforeSave`, Joomla's table events and the media events of the item's images run inside step
+  3.** What a listener writes to the shop's database there is undone with a save that fails, and the listener is not
+  told. Work that must not be undone belongs in an event heard after the save: `onContentAfterSave`,
+  `onAlfaAdminAfterSave` or `onItemAfterSave`.
+- An image removed in the save has its files deleted only after step 3 is final. An image uploaded by a save that was
+  undone stays in the images folder, and Tools > Media lists it among the files that have no database record.
+
 ### A discount, a tax or a category changes
 
 ```mermaid
@@ -543,6 +583,16 @@ What the picture means:
   entry), not only the price rows. Alfa announces `onCollectCatalogProjections` first, as in step 7 of an item save.
 - **Publishing, unpublishing or deleting** a discount or a tax runs steps 7 and 8 as well.
 - **A manufacturer** announces `onAlfaCatalogEntityChanged` when it is saved, renamed, published or deleted.
+
+Planned for 2.2.1, which is not released:
+
+- **A discount or a tax** writes its row and what it applies to as one save (steps 3 and 5 together). Its
+  `onAlfaAdminAfterSave`, and Joomla's `onContentAfterSave`, follow that save and read the record with what it applies
+  to. The rebuild (step 7) follows them.
+- **A category** announces `onCatalogVisibilityChanged` and `onAlfaCatalogEntityChanged` after the rebuild of its
+  items, once the save is final. A plugin that reads an item then sees the new audience.
+- **A cart rule, a payment method or a shipping method** is saved as one unit too: its row, texts, conditions and what
+  it applies to. Its after events follow that save.
 
 | Event | Who receives it | Documented on |
 |---|---|---|

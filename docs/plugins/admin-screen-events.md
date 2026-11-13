@@ -62,7 +62,9 @@ All eight events below are announced to everyone. Each card says "you" for your 
   `rowData()` and `rowValues()`.
 - **What you are expected to do.** Declare your column (see "Declaring a column" below). Do not run a query for each
   row. Read what `onAlfaAdminListRowData` stored.
-- **What happens next.** The list gets one more header cell and one more cell on every row.
+- **What happens next.** The list gets one more header cell and one more cell on every row. Planned for 2.2.1,
+  which is not released: each of your cells carries your column's title as `data-alfa-label`, so that on a phone
+  the row folds and your value is shown under its name.
 - **If you are missing or you fail.** The column is not shown. Your error is logged.
 
 ### onAlfaAdminListRowActions

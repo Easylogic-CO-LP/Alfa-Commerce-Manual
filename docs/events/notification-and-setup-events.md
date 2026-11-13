@@ -261,7 +261,10 @@ list is worked out, the check looks at what is true now.
 ### onAlfaCollectSetupChecks
 
 **When it fires.** When the checklist is worked out: when its stored result is older than six hours, after a save in
-the administrator that may change it, and when staff refresh the card.
+the administrator that may change it, and when staff refresh the card. Planned for 2.2.1, which is not released:
+also after a payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" is enabled or
+disabled from the Plugins list, after "System - Page Cache" or "System - Alfa Commerce Sync" is saved, and after
+the dompdf library is installed, updated or uninstalled.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Alfa's own checks are already in the
 event when you receive it.
@@ -284,6 +287,7 @@ On the check, a `SetupCheck` (`administrator/src/Setup/SetupCheck.php`), you go 
 | `priority($number)` | The position in the list, higher first. |
 | `tour($uid)` | The id of a guided tour that teaches the task. |
 | `provision($function)` and `choice($name, $label, $options)` | A one-click fix and the questions it asks first. See "Not documented yet". |
+| `reasonArguments($arguments, $unnamed)` | Planned for 2.2.1, which is not released. Names what the reason is about. `$arguments` is a function that returns the values for the placeholders of the reason's language string, as plain text; the checklist escapes them. `$unnamed` is a language key without placeholders, said instead when the values cannot be read. `reasonFor()` and `reasonArgumentsNow()` are for Alfa: do not call them. |
 
 **What you are expected to do.** Add a check only for something the shop owner must set up for your plugin to work.
 

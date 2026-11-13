@@ -202,9 +202,9 @@ echo $results[15]->getTotal()->format();
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `__construct(?PriceDataLoader $loader = null, ?PriceComputationEngine $calculator = null)` | Builds the calculator. Core passes no arguments. | | |
-| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException` |
+| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Planned for 2.2.1, which is not released: also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
 | `calculateVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null, ?ExplicitPriceInstruction $price = null): PriceResult` | Prices one item for a chosen combination or chosen options | The item's own taxes and discounts apply as for the plain item. An empty selection gives the same as `calculate()`. | |
-| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | |
+| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | Planned for 2.2.1, which is not released: a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
 | `tierStarts(int $itemId, ?int $combinationId, PriceContext $context): array` | Lists the quantities at which the unit price of a line may change | Ascending, without repeats. It may list more quantities than really change the price. | |
 | `breakdownVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null): array` | Gives the net base and one line for each adjustment of a variant | The keys `base_net`, `base_sale`, `tax_factor` and `lines` | |
 
@@ -241,7 +241,9 @@ $other   = $context->withCurrency(2);        // the same visitor, another curren
 | `customerGroups(User $customer): array`, `groupLineage(int $groupId): array`, `groupLineages(array $groupIds): array` (static) | The groups a customer holds, and a group with every group above it | |
 
 The session keys are `alfa.currency_id` and `alfa.location_id`. A plugin that detects the visitor's country sets
-the second one to the id of the place.
+the second one to the id of the place. Planned for 2.2.1, which is not released: a visitor whose session holds
+either key is kept out of Joomla's page cache, while "System - Alfa Commerce Sync" runs for visitors who are not
+logged in. See [Caches](../architecture/caches.md#the-page-cache-rule).
 
 ### Saying which quantities a list is priced at: PricingIntent
 

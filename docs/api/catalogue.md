@@ -142,6 +142,9 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 
 **Related lists you can send:** `categories`, `values`.
 
+Planned for 2.2.1, which is not released: deleting an item field that items still use (their combinations, offered
+options or specifications) is refused with 409 and the reason, and nothing is deleted.
+
 ## The storefront's view
 
 Two routes, read only:

@@ -29,6 +29,9 @@ Every route is also in a public Postman collection, with a test on each request:
 The collection is generated from the 2.2.0 code. Run it against a test or demo shop only, never a live one: it
 creates records, places an order, issues an invoice and voids it.
 
+Planned for 2.2.1, which is not released: some answers change (a create answers 201, see
+[Status codes](#status-codes)), so this 2.2.0 collection reports failures when it is run against 2.2.1.
+
 ## What you need
 
 | | |
@@ -162,6 +165,8 @@ The examples in these pages are answers of a 2.2.0 test shop, shortened where ma
 ### The filters of each list
 
 Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each.
+Planned for 2.2.1, which is not released: a list sent where one value is expected (for example
+`filter[state][]=1`) is answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take a list.
 
 | List | Filters besides `filter[search]` |
 |---|---|
@@ -230,6 +235,10 @@ only `{"state": 0}` is refused:
 This is a known defect of 2.2.0 ([row 13](#known-defects-in-220)). Until it is fixed, send the required translated
 fields again with every `PATCH`. The name may be sent as the flat key or inside the `translations` object.
 
+Planned for 2.2.1, which is not released: a `PATCH` that names a required translated field in no language keeps
+the stored texts of that field, so `{"state": 0}` alone is accepted. A create without the name, and a `PATCH` that
+sends the name empty, are still refused.
+
 **Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
 `values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
 
@@ -246,6 +255,10 @@ An entry you do not send stays. To remove one, send it with `"delete": 1`. A `pa
 site; to upload a new file, send it to Joomla's own route `v1/media/files` first. An `alt` longer than 75
 characters is refused.
 
+Planned for 2.2.1, which is not released: an entry's `thumbnail` must be an image file, of a type Joomla's Media
+allows, inside one of the Media folders (or Alfa Commerce's own image folder). Otherwise the write is refused with
+400 and the reason, and nothing is written.
+
 **Background work.** When a save leaves work for later (a price rebuild, an e-mail, a document), the answer lists
 it under `meta.tasks`, each with its state and its own address. See
 [Tasks](./documents-and-tasks.md#tasks).
@@ -255,15 +268,17 @@ it under `meta.tasks`, each with its state and its own address. See
 | Status | Meaning |
 |---|---|
 | 200 | Done. Also the answer to a create (see [Known defects](#known-defects-in-220)). |
+| 201 | Planned for 2.2.1, which is not released: the answer to a create. The body is the new record, and the header `Location` holds its address. The operations on an order keep 200. |
 | 202 | A task is still working. See [Tasks](./documents-and-tasks.md#tasks). |
 | 204 | Deleted. No body. |
-| 400 | The input cannot be used: a required field is missing, an amount is finer than the currency. |
+| 400 | The input cannot be used: a required field is missing, an amount is finer than the currency. Planned for 2.2.1, which is not released: also a list sent where one value is expected. |
 | 401 | No token, or a token that is not valid. |
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request. The answer says which. |
 | 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money. |
-| 500 | A fault. Four cases are known in 2.2.0, below. |
+| 500 | A fault. Four cases are known in 2.2.0, below. Planned for 2.2.1, which is not released: none of the four answers 500. |
+| 503 | Planned for 2.2.1, which is not released: a PDF is asked for and the dompdf library is not installed. The answer says so in words. |
 
 A refusal carries its reason in words:
 
@@ -273,6 +288,15 @@ A refusal carries its reason in words:
 
 Deletes that a rule refuses with 409: a category that still has sub-categories or is the default category of an
 item, an order that has sales documents, a record whose removal would widen a discount, a tax or a cart rule.
+
+Planned for 2.2.1, which is not released: these deletes are refused with 409 too, with the reason, and nothing is
+deleted:
+
+- an order status that orders are in, or the last status that holds a role;
+- a payment or shipping method that orders, payments, parcels or stored payment references use, and a shipping
+  method that a payment method's list of shipping methods names;
+- a currency that orders, item prices or places use;
+- an item field that items still use.
 
 An item that was sold is not removed by a delete. The answer is 204 and the item stays, archived, for the orders
 that hold it.
@@ -303,25 +327,25 @@ The payments and shipments of one order are under that order: see [Orders](./ord
 ## Known defects in 2.2.0
 
 These are faults of 2.2.0, found by running the collection against the published release. They are listed here so
-that a program written today behaves correctly. Fixes are planned for 2.2.1, which is not released. This table
-will name the release when one ships.
+that a program written today behaves correctly. Rows 1 to 3, 5 to 9 and 11 to 13 are fixed in 2.2.1, which is not
+released. Rows 4, 10 and 14 are open and not in 2.2.1. This table will name the release when one ships.
 
 | | What 2.2.0 does | What to do today | Fix |
 |---|---|---|---|
-| 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Planned for 2.2.1: 404 |
-| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Planned for 2.2.1: 409 with the reason |
-| 3 | A create answers 200, not 201 | Accept 200 | Planned for 2.2.1 |
-| 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Planned for 2.2.1 |
-| 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Planned for 2.2.1 |
-| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Planned for 2.2.1 |
-| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Planned for 2.2.1 |
-| 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Planned for 2.2.1 |
-| 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce does not ship it. | Install `lib_dompdf`, or use the `html` route | Planned for 2.2.1: a setup warning, and 503 with the reason |
-| 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Not decided. A candidate for 2.2.1. |
-| 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | A candidate for 2.2.1 |
-| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | A candidate for 2.2.1 |
-| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | A candidate for 2.2.1 |
-| 14 | A write of an item that carries `options` answers 200 and does not write them. Combinations and item field values were not tried. | Set them in the administrator. Do not rely on the answer. | A candidate for 2.2.1: the fields are refused |
+| 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Fixed in 2.2.1, not yet released: 404 |
+| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Fixed in 2.2.1, not yet released: 409 with the reason, and nothing is deleted |
+| 3 | A create answers 200, not 201 | Accept 200 | Fixed in 2.2.1, not yet released: 201, with the new record's address in the header `Location` |
+| 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Open; not in 2.2.1 |
+| 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Fixed in 2.2.1, not yet released: each is refused with 400 and the reason |
+| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Fixed in 2.2.1, not yet released: none of them is needed, and a part of `prices_display` sent alone changes only that part |
+| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Fixed in 2.2.1, not yet released: `customer_note` is written, and `state` is refused with 422 |
+| 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Fixed in 2.2.1, not yet released |
+| 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce does not ship it. | Install `lib_dompdf`, or use the `html` route | Fixed in 2.2.1, not yet released: a setup warning, and 503 with the reason |
+| 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Not decided. Open; not in 2.2.1. |
+| 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | Fixed in 2.2.1, not yet released: `created` is gone, and each payment carries `added` and `refund_reason` |
+| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | Fixed in 2.2.1, not yet released: one order carries `fulfillment_status` and `fulfillment_percentage` |
+| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | Fixed in 2.2.1, not yet released: the stored name is kept |
+| 14 | A write of an item that carries `options` answers 200 and does not write them. Combinations and item field values were not tried. | Set them in the administrator. Do not rely on the answer. | Open; not in 2.2.1 |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.

@@ -110,6 +110,10 @@ At registration, steps 6 and 7 decide whether the form is accepted, but in 2.2.0
 the ones the browser sent, not the ones the filters returned. A value sent for a field that a condition hides is
 stored there too.
 
+Planned for 2.2.1, which is not released: registration stores what the filters returned, as the other forms do, and
+nothing for a field that a condition hides. "System - Alfa Commerce Sync" no longer reads customer details from the
+request when a Joomla account is saved. Details stored before stay as they are.
+
 ## What you must provide
 
 ### The folder
@@ -198,9 +202,23 @@ the `filter` and the `validate` attributes you left on the element.
 
 A field that is left out is not asked for and not stored, even when staff marked it required.
 
+Planned for 2.2.1, which is not released: a field whose plugin cannot be used (missing, disabled, not loaded for the
+visitor because of its Access, failing to start, or a `prepareDom()` that threw before the field was added) is
+handled by whether the form must ask for it:
+
+| The field | What Alfa does |
+|---|---|
+| Required in that form and shown to that customer (system fields included) | It is added as a hidden field whose rule refuses every submission, naming the field: "... cannot be filled in right now, so this form cannot be sent. Please try again later." The log (category `com_alfa`, level ERROR) names the plugin and the reason, and an administrator screen shows the message too. |
+| Optional | It is left out, as in 2.2.0, and a warning is written to the log (category `com_alfa`) once for each field type in the request |
+
+This holds for the checkout, registration, the customer's saved details, and the customer and order forms staff use.
+The setup checklist's row "Required form fields can be filled in" fails while such a required field has no enabled
+plugin of Public access.
+
 :::warning Access must be Public
 A guest fills the checkout. A form field plugin whose Access (Extensions: Plugins) is not Public is not loaded
-for guests, and its fields silently disappear from their forms.
+for guests, and its fields silently disappear from their forms. Planned for 2.2.1, which is not released: a required
+field of such a plugin stops the form with a message instead, and an optional one is left out and logged.
 :::
 
 ### Assets and other events
@@ -268,7 +286,8 @@ Joomla offers two tools, and they do different jobs:
 | A **filter** (`FormFilterInterface`) | `filter="name"` | Change the value. What the filter returns is what is stored. |
 
 Joomla runs the filters first and the rules second, and keeps what the filters returned (registration is the
-exception in 2.2.0, see "The life of a form field"). A rule that rewrites the
+exception in 2.2.0, see "The life of a form field"; planned for 2.2.1, which is not released, it is no exception). A
+rule that rewrites the
 value therefore checks correctly and stores the value exactly as it was typed. If your type has one right shape
 for storage, put the reshaping in a filter and let the rule beside it only say yes or no.
 
@@ -334,7 +353,8 @@ How it behaves:
   the server, which has the last word when the form is sent.
 - A field that a condition hides is taken out of the form on the server before filters and rules run. A hidden
   required field therefore does not block the form, and a value sent for a hidden field is not stored
-  (registration is the exception in 2.2.0, see "The life of a form field").
+  (registration is the exception in 2.2.0, see "The life of a form field"; planned for 2.2.1, which is not
+  released, it is no exception).
 - In the browser, the inputs of a hidden field are disabled.
 - The delivery section and the invoice section are separate. A condition reads only the fields of its own section.
 - A comparison whose other field is not part of the form is skipped. If every comparison is skipped, the field

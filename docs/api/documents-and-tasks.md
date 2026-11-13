@@ -40,6 +40,9 @@ Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `fi
 route answers 500 in 2.2.0 ([Known defects](./overview.md#known-defects-in-220), row 9). The HTML route does not
 need it.
 
+Planned for 2.2.1, which is not released: without the library the route answers 503 with a sentence that names the
+library, and the setup checklist has a row, "PDF library for sales documents", that says where to get it.
+
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:
 a second void is refused with 409. The token's user needs the documents' Change State permission.
