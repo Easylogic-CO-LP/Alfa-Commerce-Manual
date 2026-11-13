@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Alfa Commerce',
-  tagline: 'Developer Documentation for Alfa Commerce — Joomla eCommerce',
+  tagline: 'Developer Documentation for Alfa Commerce, Joomla eCommerce',
   favicon: 'img/favicon.ico',
 
   future: {
