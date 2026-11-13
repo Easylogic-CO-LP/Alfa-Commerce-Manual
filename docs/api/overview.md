@@ -190,7 +190,8 @@ only `{"state": 0}` is refused:
 {"errors":[{"title":"Field required: Name"}]}
 ```
 
-So send the required translated fields again with every `PATCH`.
+This is a known defect of 2.2.0 ([row 13](#known-defects-in-220)). Until it is fixed, send the required translated
+fields again with every `PATCH`. The name may be sent as the flat key or inside the `translations` object.
 
 **Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
 `values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
@@ -271,17 +272,18 @@ will name the release when one ships.
 | | What 2.2.0 does | What to do today | Fix |
 |---|---|---|---|
 | 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Planned for 2.2.1: 404 |
-| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used. | Read the record after the delete to see whether it is gone | Planned for 2.2.1: 409 with the reason |
+| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Planned for 2.2.1: 409 with the reason |
 | 3 | A create answers 200, not 201 | Accept 200 | Planned for 2.2.1 |
 | 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Planned for 2.2.1 |
 | 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Planned for 2.2.1 |
-| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group, `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Planned for 2.2.1 |
-| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` answers 200 and writes nothing | Do not rely on it | Planned for 2.2.1 |
+| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Planned for 2.2.1 |
+| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Planned for 2.2.1 |
 | 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Planned for 2.2.1 |
 | 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce does not ship it. | Install `lib_dompdf`, or use the `html` route | Planned for 2.2.1: a setup warning, and 503 with the reason |
 | 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Not decided. A candidate for 2.2.1. |
 | 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | A candidate for 2.2.1 |
 | 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | A candidate for 2.2.1 |
+| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | A candidate for 2.2.1 |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.

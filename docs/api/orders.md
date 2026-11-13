@@ -85,7 +85,7 @@ The answer, status 200, shortened:
 {"errors":[{"title":"id_order_status cannot be changed via PATCH; use POST v1/alfa/orders/:id/status.","code":422}]}
 ```
 
-`customer_note` in a `PATCH` is answered 200 and not written in 2.2.0
+`customer_note` or `state` in a `PATCH` is answered 200 and not written in 2.2.0
 ([Known defects](./overview.md#known-defects-in-220), row 7).
 
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
