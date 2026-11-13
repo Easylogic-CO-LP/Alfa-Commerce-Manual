@@ -115,9 +115,12 @@ Two more kinds of page keep themselves out of the page cache, whatever the visit
 :::warning Keep "System - Alfa Commerce Sync" enabled
 The rule about the cart lives in the plugin "System - Alfa Commerce Sync" (`plugins/system/alfasync`), and nothing
 else in Alfa Commerce replaces it. With the plugin disabled, nobody answers Joomla's two questions, so a shop that
-also has Joomla's page cache on would store and serve those pages like any other page. This follows from the code
-(`Alfasync.php`, the two page cache handlers). It was not reproduced on a shop for this manual, and it does not
-arise while the plugin is enabled or the page cache is off.
+also has Joomla's page cache on would store and serve those pages like any other page.
+
+This was tried on a 2.2.0 test shop with Joomla's page cache on. With the plugin enabled, the cart page and the
+pages of a visitor with a cart were not stored. With the plugin disabled they were stored, and a new visitor who
+asked for the cart page was shown the stored cart of another visitor. It does not arise while the plugin is
+enabled or the page cache is off.
 
 What to do:
 
