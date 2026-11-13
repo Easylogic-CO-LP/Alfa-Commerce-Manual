@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Alfa Commerce',
   tagline: 'Developer Documentation for Alfa Commerce, Joomla eCommerce',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/alfa-mark.svg',
 
   future: {
     v4: true,
@@ -74,6 +74,12 @@ const config: Config = {
     },
     navbar: {
       title: 'Alfa Commerce',
+      logo: {
+        alt: 'Alfa Commerce',
+        src: 'img/alfa-mark.svg',
+        width: 28,
+        height: 28,
+      },
       items: [
         {
           type: 'docSidebar',
