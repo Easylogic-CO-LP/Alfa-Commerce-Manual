@@ -159,19 +159,19 @@
 }
 
 .iconWrap {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   margin-bottom: 1rem;
-  border-radius: 11px;
+  border-radius: 12px;
   color: var(--ifm-color-primary);
   background: color-mix(in srgb, var(--gold) 18%, transparent);
   transition: background 0.2s ease, color 0.2s ease;
 }
 .iconWrap svg {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
 }
 .card:hover .iconWrap {
   background: var(--gold);

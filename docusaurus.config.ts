@@ -19,12 +19,6 @@ const config: Config = {
 
   onBrokenLinks: 'throw',
 
-  // The Alfa Commerce release this manual documents. Change it here, once, when a release is documented.
-  // Each page states the release it was last checked against with <AlfaVersion verified="x.y.z" />.
-  customFields: {
-    alfaVersion: '2.2',
-  },
-
   // Enable Mermaid diagrams in markdown
   markdown: {
     mermaid: true,

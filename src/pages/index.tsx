@@ -52,7 +52,7 @@ const svg = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.75,
+  strokeWidth: 1.6,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
@@ -66,8 +66,8 @@ const FeatureList: FeatureItem[] = [
     pages: [['Installation', '/docs/getting-started/installation'], ['Your first shop', '/docs/getting-started/store-setup'], ['Project structure', '/docs/getting-started/project-structure']],
     icon: (
       <svg {...svg}>
-        <path d="M5 12h14" />
-        <path d="m13 6 6 6-6 6" />
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+        <path d="M4 22v-7" />
       </svg>
     ),
   },
@@ -78,10 +78,10 @@ const FeatureList: FeatureItem[] = [
     pages: [['Payment', '/docs/plugins/payment-plugins'], ['Shipping', '/docs/plugins/shipment-plugins'], ['Form field', '/docs/plugins/form-field-plugins'], ['Item field', '/docs/plugins/item-field-plugins'], ['Admin screens', '/docs/plugins/admin-screen-plugins']],
     icon: (
       <svg {...svg}>
-        <path d="M9 3v4" />
-        <path d="M15 3v4" />
-        <path d="M6 7h12v4a6 6 0 0 1-12 0V7Z" />
-        <path d="M12 17v4" />
+        <path d="M12 22v-5" />
+        <path d="M9 8V2" />
+        <path d="M15 8V2" />
+        <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
       </svg>
     ),
   },
@@ -92,9 +92,10 @@ const FeatureList: FeatureItem[] = [
     pages: [['Payment starter', '/docs/plugins/plugin-generator?type=payment'], ['Shipping starter', '/docs/plugins/plugin-generator?type=shipping'], ['Admin screen starter', '/docs/plugins/plugin-generator?type=adminscreen']],
     icon: (
       <svg {...svg}>
-        <path d="M12 3v12" />
-        <path d="m7 11 5 5 5-5" />
-        <path d="M4 20h16" />
+        <path d="m7.5 4.27 9 5.15" />
+        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+        <path d="m3.3 7 8.7 5 8.7-5" />
+        <path d="M12 22V12" />
       </svg>
     ),
   },
@@ -105,7 +106,7 @@ const FeatureList: FeatureItem[] = [
     pages: [['How events reach a plugin', '/docs/events/how-events-reach-a-plugin'], ['Event flows', '/docs/events/flows'], ['Event index', '/docs/events/event-index']],
     icon: (
       <svg {...svg}>
-        <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+        <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
     ),
   },
@@ -116,10 +117,8 @@ const FeatureList: FeatureItem[] = [
     pages: [['Cart and checkout', '/docs/services/cart-and-checkout'], ['Orders', '/docs/services/orders'], ['Pricing', '/docs/services/pricing'], ['Stock', '/docs/services/stock']],
     icon: (
       <svg {...svg}>
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3" />
       </svg>
     ),
   },
@@ -130,9 +129,11 @@ const FeatureList: FeatureItem[] = [
     pages: [['Database schema', '/docs/architecture/database-schema'], ['Background work', '/docs/architecture/background-work'], ['Caches', '/docs/architecture/caches']],
     icon: (
       <svg {...svg}>
-        <path d="M12 2 2 7l10 5 10-5-10-5Z" />
-        <path d="m2 17 10 5 10-5" />
-        <path d="m2 12 10 5 10-5" />
+        <rect x="16" y="16" width="6" height="6" rx="1" />
+        <rect x="2" y="16" width="6" height="6" rx="1" />
+        <rect x="9" y="2" width="6" height="6" rx="1" />
+        <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
+        <path d="M12 12V8" />
       </svg>
     ),
   },
@@ -143,8 +144,8 @@ const FeatureList: FeatureItem[] = [
     pages: [['Overview and token', '/docs/api/overview'], ['Catalogue', '/docs/api/catalogue'], ['Orders', '/docs/api/orders']],
     icon: (
       <svg {...svg}>
-        <path d="M7 4a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2" />
-        <path d="M17 4a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2" />
+        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1" />
+        <path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
       </svg>
     ),
   },
@@ -155,8 +156,10 @@ const FeatureList: FeatureItem[] = [
     pages: [['How to contribute', '/docs/getting-started/contributing'], ['Automated checks', '/docs/tooling/workflows'], ['PHPStan', '/docs/tooling/phpstan']],
     icon: (
       <svg {...svg}>
-        <circle cx="12" cy="12" r="9" />
-        <path d="m8.5 12 2.5 2.5 4.5-4.5" />
+        <circle cx="18" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+        <path d="M6 9v12" />
       </svg>
     ),
   },
@@ -167,8 +170,8 @@ const FeatureList: FeatureItem[] = [
     pages: [],
     icon: (
       <svg {...svg}>
-        <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" />
-        <path d="M5 17a3 3 0 0 1 3-3h11" />
+        <path d="M12 7v14" />
+        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
       </svg>
     ),
   },

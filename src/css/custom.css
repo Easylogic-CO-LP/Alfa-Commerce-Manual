@@ -61,14 +61,6 @@
   display: none;
 }
 
-/* The version line under a page's title (src/components/AlfaVersion.tsx). */
-.alfa-version {
-  font-size: 0.85rem;
-  color: var(--ifm-color-emphasis-700);
-  border-bottom: 1px solid var(--ifm-color-emphasis-200);
-  padding-bottom: 0.5rem;
-}
-
 /* The Postman collection button (src/components/PostmanButton.tsx). */
 .alfa-postman {
   display: inline-flex;
@@ -112,7 +104,7 @@
 /* The button at the top right of a plugin type's pages (src/components/PluginGenerator/CreatePluginButton.tsx). */
 .alfa-create-plugin {
   float: right;
-  margin: 0.35rem 0 0.75rem 1rem;
+  margin: 0 0 0.75rem 1rem;
 }
 
 /* The plugin generator (src/components/PluginGenerator). */
