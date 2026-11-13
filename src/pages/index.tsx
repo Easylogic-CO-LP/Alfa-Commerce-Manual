@@ -1,4 +1,5 @@
 import type {ReactNode} from 'react';
+import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
@@ -11,25 +12,25 @@ const ALPHA =
 
 function HomepageHeader() {
   return (
-    <header className={styles.hero}>
-      <div className={styles.heroInner}>
+    <header className={clsx('hero hero--dark', styles.hero)}>
+      <div className={clsx('container', styles.heroInner)}>
         <svg className={styles.mark} viewBox="-12 -12 631 530" aria-hidden="true" focusable="false">
           <path className={styles.markLine} d={ALPHA} pathLength={1} />
           <path className={styles.markFill} d={ALPHA} />
         </svg>
         <div>
-          <Heading as="h1" className={styles.title}>
+          <Heading as="h1" className="hero__title">
             Alfa Commerce developer manual
           </Heading>
-          <p className={styles.tagline}>
+          <p className="hero__subtitle">
             How to extend Alfa Commerce, the eCommerce component for Joomla: its plugins, events, services and
             REST API.
           </p>
           <div className={styles.buttons}>
-            <Link className={styles.primary} to="/docs/getting-started/installation">
+            <Link className="button button--primary button--lg" to="/docs/getting-started/installation">
               Get started
             </Link>
-            <Link className={styles.secondary} to="/docs/plugins/plugin-generator">
+            <Link className="button button--secondary button--lg" to="/docs/plugins/plugin-generator">
               Create a plugin
             </Link>
           </div>
@@ -177,25 +178,33 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({title, description, link, icon, pages, idx}: FeatureItem & {idx: number}) {
+function Feature({title, description, link, icon, pages}: FeatureItem) {
   return (
-    <div className={styles.card} style={{animationDelay: `${idx * 60}ms`}}>
-      <span className={styles.iconWrap}>{icon}</span>
-      <Heading as="h2" className={styles.cardTitle}>
-        <Link to={link} className={styles.cardLink}>
-          {title}
-        </Link>
-      </Heading>
-      <p className={styles.cardDesc}>{description}</p>
-      {pages.length > 0 && (
-        <ul className={styles.pages}>
-          {pages.map(([label, to]) => (
-            <li key={to}>
-              <Link to={to}>{label}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="col col--4 margin-bottom--lg">
+      <div className={clsx('card', styles.card)}>
+        <div className="card__header">
+          <span className={styles.icon}>{icon}</span>
+          <Heading as="h2" className={styles.cardTitle}>
+            <Link to={link} className={styles.cardLink}>
+              {title}
+            </Link>
+          </Heading>
+        </div>
+        <div className="card__body">
+          <p>{description}</p>
+        </div>
+        {pages.length > 0 && (
+          <div className="card__footer">
+            <ul className={styles.pages}>
+              {pages.map(([label, to]) => (
+                <li key={to}>
+                  <Link to={to}>{label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -206,16 +215,12 @@ export default function Home(): ReactNode {
       title="Developer manual"
       description="The developer manual of Alfa Commerce, the eCommerce component for Joomla by Easylogic: plugins, events, services and the REST API.">
       <HomepageHeader />
-      <main>
-        <section className={styles.features}>
-          <div className="container">
-            <div className={styles.grid}>
-              {FeatureList.map((props, idx) => (
-                <Feature key={props.link} idx={idx} {...props} />
-              ))}
-            </div>
-          </div>
-        </section>
+      <main className="container margin-vert--xl">
+        <div className="row">
+          {FeatureList.map((props) => (
+            <Feature key={props.link} {...props} />
+          ))}
+        </div>
       </main>
     </Layout>
   );
