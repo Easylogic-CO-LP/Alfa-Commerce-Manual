@@ -24,7 +24,7 @@ This page has the rules that hold for every route. The routes themselves are on 
 
 Every route is also in a public Postman collection, with a test on each request:
 
-[Alfa Commerce REST API on Postman](https://www.postman.com/alfa-commerce/alfa-commerce/collection/guu80k5/alfa-commerce-rest-api)
+<PostmanButton href="https://www.postman.com/alfa-commerce/alfa-commerce/collection/guu80k5/alfa-commerce-rest-api">Alfa Commerce REST API on Postman</PostmanButton>
 
 The collection is generated from the 2.2.0 code. Run it against a test or demo shop only, never a live one: it
 creates records, places an order, issues an invoice and voids it.
