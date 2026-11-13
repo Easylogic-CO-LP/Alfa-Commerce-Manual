@@ -29,7 +29,9 @@ it. A plugin declares the ones it handles in its targeted declaration (`TARGETED
 stops it. An "after" event reports what already happened; a listener that fails is logged and the others still run.
 
 **Plugin group.** The folder a plugin lives in under `plugins/`, which says what kind of plugin it is: `alfa-payments`,
-`alfa-shipments`, `alfa-form-fields`, `alfa-item-fields`, `alfa-search`, `alfa`, `system` and so on.
+`alfa-shipments`, `alfa-form-fields`, `alfa-item-fields`, `alfa-search`, `alfa`, `system` and so on. The groups whose
+name starts with `alfa` are Alfa Commerce's. `system`, `console`, `task`, `content`, `user` and the rest are Joomla's
+own, and a plugin of such a group is an ordinary Joomla plugin.
 
 **Feature plugin.** A plugin of the `alfa` group. Alfa loads the group whenever the shop runs, so it is the home of
 plugins that react to shop events or add screens, cards and tools.

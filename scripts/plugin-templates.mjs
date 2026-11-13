@@ -81,10 +81,10 @@ const TEMPLATES = [
     ],
   },
   {
-    type: 'system', label: 'System plugin', group: 'system', element: 'shopnotes', mode: 'global',
+    type: 'system', label: 'Joomla system plugin', group: 'system', element: 'shopnotes', mode: 'global',
     page: 'system-console-task-plugins.md', heading: '## A complete system plugin', guide: 'system-console-task-plugins',
     demo: 'Writes a line to a log file when an order is completed, and offers one button on Alfa Commerce\'s Tools screen.',
-    starter: 'It listens to one order event as an example.',
+    starter: 'It is an ordinary Joomla system plugin, a plugin type of Joomla and not of Alfa Commerce, and it shows only how such a plugin hears Alfa Commerce. For what else a Joomla plugin can do, read https://manual.joomla.org/docs/building-extensions/plugins/',
     todo: [
       ['Listen to the events you need', 'system-console-task-plugins'],
     ],
