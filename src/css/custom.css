@@ -6,27 +6,31 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /* One colour for the whole manual: the gold of alfacommerce.gr, darkened where it carries text on white. */
+  --ifm-color-primary: #8a6516;
+  --ifm-color-primary-dark: #7c5b14;
+  --ifm-color-primary-darker: #755613;
+  --ifm-color-primary-darkest: #614710;
+  --ifm-color-primary-light: #986f18;
+  --ifm-color-primary-lighter: #9f7419;
+  --ifm-color-primary-lightest: #b4841d;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* On the dark theme the gold itself is light enough to read. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
+  --ifm-color-primary: #d4a853;
+  --ifm-color-primary-dark: #cf9c3c;
+  --ifm-color-primary-darker: #cc9631;
+  --ifm-color-primary-darkest: #ae7d24;
+  --ifm-color-primary-light: #d9b46a;
+  --ifm-color-primary-lighter: #dcba75;
+  --ifm-color-primary-lightest: #e5cb97;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+[data-theme='dark'] .button.button--primary {
+  color: #0a0a0b;
 }
 
 /* GitHub mark in the navbar (replaces the plain "GitHub" text link) */
@@ -148,4 +152,38 @@
 }
 .alfa-generator__problems {
   color: var(--ifm-color-danger-dark);
+}
+
+/* Easylogic Sans: the company's own typeface (based on Manrope, SIL Open Font License, see
+   static/fonts/easylogic-sans/OFL.txt). Latin and Greek. Used for the text of the whole site;
+   code keeps the monospace typeface. */
+@font-face {
+  font-family: 'Easylogic Sans';
+  src: url('/fonts/easylogic-sans/EasylogicSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Easylogic Sans';
+  src: url('/fonts/easylogic-sans/EasylogicSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Easylogic Sans';
+  src: url('/fonts/easylogic-sans/EasylogicSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  --ifm-font-family-base: 'Easylogic Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+}
+
+/* The footer in the brand's ink, not Docusaurus's blue-grey. */
+.footer--dark {
+  --ifm-footer-background-color: #0a0a0b;
 }

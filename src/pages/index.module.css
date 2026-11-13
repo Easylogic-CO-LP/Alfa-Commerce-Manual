@@ -1,50 +1,70 @@
-/* The homepage. Its colours and typefaces are those of alfacommerce.gr: ink, gold, DM Serif Display, Outfit,
-   JetBrains Mono. They are set here only, so the documentation pages keep their own look. */
+/* The homepage. Ink and gold are the colours of alfacommerce.gr. */
 .hero,
-.main {
+.features {
   --ink: #0a0a0b;
-  --ink-raised: #16161a;
-  --line: #2a2a31;
   --paper: #f0ede8;
-  --quiet: #8a8a8e;
   --gold: #d4a853;
-  --gold-deep: #c49a3c;
-  --serif: 'DM Serif Display', Georgia, serif;
-  --sans: 'Outfit', system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-family: var(--sans);
 }
 
-/* Hero */
 .hero {
   background: var(--ink);
   color: var(--paper);
-  padding: 4.5rem 1.5rem 4rem;
+  padding: 4.5rem 1.5rem;
 }
 .heroInner {
-  max-width: 1120px;
+  max-width: 1040px;
   margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 3rem;
 }
-.lead {
-  max-width: 44rem;
+
+/* The mark draws itself once, then fills. */
+.mark {
+  flex: none;
+  width: 190px;
+  height: auto;
 }
+.markLine {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 9;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.6s cubic-bezier(0.6, 0, 0.2, 1) 0.2s forwards;
+}
+.markFill {
+  fill: var(--gold);
+  opacity: 0;
+  animation: fill 0.6s ease 1.6s forwards;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fill {
+  to {
+    opacity: 1;
+  }
+}
+
 .title {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(2.3rem, 5.2vw, 3.9rem);
-  line-height: 1.06;
-  letter-spacing: -0.01em;
-  margin: 0 0 1.25rem;
+  font-size: clamp(2rem, 4.4vw, 3.1rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
   color: var(--paper);
 }
-.intro {
-  font-size: 1.125rem;
+.tagline {
+  font-size: 1.15rem;
   line-height: 1.6;
   color: #c9c6c0;
-  margin: 0 0 2rem;
-  max-width: 38rem;
+  margin: 0 0 1.75rem;
+  max-width: 36rem;
 }
-.actions {
+.buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -52,17 +72,16 @@
 .primary,
 .secondary {
   display: inline-block;
-  padding: 0.7rem 1.25rem;
+  padding: 0.7rem 1.3rem;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 1rem;
   text-decoration: none;
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 .primary {
   background: var(--gold);
-  color: var(--ink);
   border: 1px solid var(--gold);
+  color: var(--ink);
 }
 .primary:hover {
   background: #e2b964;
@@ -71,8 +90,8 @@
   text-decoration: none;
 }
 .secondary {
-  color: var(--paper);
   border: 1px solid #4a4a52;
+  color: var(--paper);
 }
 .secondary:hover {
   border-color: var(--gold);
@@ -80,290 +99,169 @@
   text-decoration: none;
 }
 .primary:focus-visible,
-.secondary:focus-visible,
-.stopLink:focus-visible {
+.secondary:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
 
-/* The route of an order */
-.routeWrap {
-  margin-top: 3.75rem;
-}
-.routeLabel {
-  margin: 0 0 1.5rem;
-  color: var(--quiet);
-  font-size: 0.95rem;
-}
-.route {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  position: relative;
-}
-/* The rail, and the gold that runs along it once when the page opens. */
-.route::before,
-.route::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: calc(20% - 6px);
-  height: 2px;
-  background: var(--line);
-}
-.route::after {
-  background: var(--gold);
-  transform-origin: left center;
-  transform: scaleX(0);
-  animation: run 2.6s cubic-bezier(0.45, 0, 0.2, 1) 0.3s forwards;
-}
-.stop {
-  position: relative;
-  padding-right: 1.25rem;
-}
-.stopLink {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-  border-radius: 6px;
-}
-.stopLink:hover {
-  color: inherit;
-  text-decoration: none;
-}
-.dot {
-  display: block;
-  position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--ink);
-  border: 2px solid var(--line);
-  margin-bottom: 1.1rem;
-  animation: arrive 0.4s ease forwards;
-  animation-delay: calc(0.3s + var(--i) * 0.65s);
-}
-.stopName {
-  display: block;
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--paper);
-  margin-bottom: 0.35rem;
-}
-.event {
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  color: var(--gold);
-  background: none;
-  border: 0;
-  padding: 0;
-  margin-bottom: 0.5rem;
-  word-break: break-word;
-}
-.stopText {
-  display: block;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  color: var(--quiet);
-  transition: color 150ms ease;
-}
-.stopLink:hover .stopText {
-  color: var(--paper);
-}
-.stopLink:hover .dot {
-  background: var(--gold);
-}
-
-@keyframes run {
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes arrive {
-  to {
-    border-color: var(--gold);
-    background: var(--gold);
-    box-shadow: 0 0 0 4px rgba(212, 168, 83, 0.16);
-  }
-}
-
-@media (max-width: 860px) {
+@media screen and (max-width: 768px) {
   .hero {
     padding: 3rem 1.25rem;
   }
-  .route {
+  .heroInner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.75rem;
+  }
+  .mark {
+    width: 110px;
+  }
+}
+
+/* The cards */
+.features {
+  padding: 4rem 0 5rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+@media (max-width: 996px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .grid {
     grid-template-columns: 1fr;
-    row-gap: 1.6rem;
-  }
-  .route::before,
-  .route::after {
-    top: 6px;
-    bottom: 3.2rem;
-    left: 6px;
-    right: auto;
-    width: 2px;
-    height: auto;
-  }
-  .route::after {
-    transform-origin: center top;
-    transform: scaleY(0);
-    animation-name: runDown;
-  }
-  .stop {
-    padding: 0 0 0 2.25rem;
-  }
-  .dot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    margin: 0;
-  }
-}
-@keyframes runDown {
-  to {
-    transform: scaleY(1);
   }
 }
 
-/* Contents */
-.main {
-  max-width: calc(1120px + 3rem);
-  margin: 0 auto;
-  padding: 4rem 1.5rem 5rem;
-}
-.sectionTitle {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 1.9rem;
-  line-height: 1.15;
-  margin: 0 0 1.25rem;
-}
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 3rem;
-  border-top: 1px solid var(--ifm-color-emphasis-300);
-}
-.row {
-  display: grid;
-  grid-template-columns: 11rem 1fr;
-  gap: 1rem;
-  padding: 1.1rem 0.5rem 1.1rem 0;
-  border-bottom: 1px solid var(--ifm-color-emphasis-300);
-  color: var(--ifm-font-color-base);
-  text-decoration: none;
-  height: 100%;
-  box-shadow: inset 0 0 0 var(--gold);
-  transition: box-shadow 150ms ease, padding-left 150ms ease;
-}
-.row:hover {
-  color: var(--ifm-font-color-base);
-  text-decoration: none;
-  box-shadow: inset 3px 0 0 var(--gold);
-  padding-left: 0.9rem;
-}
-.row:focus-visible {
-  outline: 2px solid var(--gold-deep);
-  outline-offset: 2px;
-}
-.rowTitle {
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-.rowText {
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-/* Plugin generator */
-.starter {
-  margin-top: 4rem;
-  padding: 2rem;
-  border-radius: 14px;
-  background: var(--ink);
-  color: var(--paper);
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: 2.5rem;
-  align-items: center;
-}
-.starter .sectionTitle {
-  color: var(--paper);
-  margin-bottom: 0.75rem;
-}
-.starterText {
-  margin: 0;
-  color: #c9c6c0;
-  line-height: 1.6;
-}
-.chips {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.card {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-.chip {
-  display: inline-block;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid #4a4a52;
-  border-radius: 8px;
-  color: var(--paper);
-  font-weight: 500;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
   text-decoration: none;
-  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: alfaFadeUp 0.5s ease both;
 }
-.chip:hover {
+.card:hover {
+  transform: translateY(-4px);
   border-color: var(--gold);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  color: var(--ifm-font-color-base);
+}
+
+.iconWrap {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 11px;
+  color: var(--ifm-color-primary);
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.iconWrap svg {
+  width: 24px;
+  height: 24px;
+}
+.card:hover .iconWrap {
   background: var(--gold);
   color: var(--ink);
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  margin: 0 0 0.4rem;
+}
+/* The whole card opens its section; the links under the text stay their own targets. */
+.card {
+  position: relative;
+}
+.cardLink {
+  color: var(--ifm-font-color-base);
   text-decoration: none;
 }
-.chip:focus-visible {
+.cardLink:hover {
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+}
+.cardLink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+.cardLink:focus-visible {
+  outline: none;
+}
+.cardLink:focus-visible::after {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
-
-@media (max-width: 860px) {
-  .list {
-    grid-template-columns: 1fr;
-  }
-  .row {
-    grid-template-columns: 1fr;
-    gap: 0.3rem;
-  }
-  .starter {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
+.cardDesc {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ifm-color-emphasis-700);
+}
+.pages {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.pages a {
+  text-decoration: none;
+}
+.pages a:hover {
+  text-decoration: underline;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .route::after {
-    animation: none;
+@keyframes alfaFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
     transform: none;
   }
-  .dot {
+}
+@media (prefers-reduced-motion: reduce) {
+  .markLine {
     animation: none;
-    border-color: var(--gold);
-    background: var(--gold);
+    stroke-dashoffset: 0;
   }
-  .row,
-  .chip,
+  .markFill {
+    animation: none;
+    opacity: 1;
+  }
+  .card {
+    animation: none;
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+  .iconWrap,
   .primary,
-  .secondary,
-  .stopText {
+  .secondary {
     transition: none;
   }
 }
