@@ -90,7 +90,8 @@ the order. Use what the event carries.
 
 ## A complete system plugin
 
-This plugin writes a line to Joomla's log when an order is completed, and offers one button on Alfa's Tools screen.
+This plugin writes a line to the file `shopnotes.php` in Joomla's log folder when an order is completed, and offers
+one button on Alfa's Tools screen.
 The order event is announced to everyone. The tool list (`onGetToolActions`) is announced to everyone too. Running
 the tool (`onExecuteToolAction`) is addressed to this plugin alone, so it is declared in `getTargetedHandlers()`.
 
@@ -210,7 +211,10 @@ final class Shopnotes extends CMSPlugin implements SubscriberInterface
 
         $order = $event->getOrder();
 
-        Log::add('Order ' . $order->reference() . ' (' . $order->id() . ') was completed.', Log::INFO, 'shopnotes');
+        // Joomla writes a log category to a file only when a logger was added for it.
+        Log::addLogger(['text_file' => 'shopnotes.php'], Log::ALL, ['shopnotes']);
+
+        Log::add('Order ' . $order->id() . ' was completed.', Log::INFO, 'shopnotes');
     }
 
     public function onGetToolActions(GetToolActionsEvent $event): void
