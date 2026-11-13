@@ -388,7 +388,7 @@ GitHub runs these on your pull request. Each has its own page.
 |---|---|---|
 | [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. | Only when the tool or its commit step breaks. |
 | [Copy-clean](../tooling/workflows#copy-clean) | Refuses unclean comments and texts, see the rules above. | Yes. |
-| [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | No. It reports and does not fail the check. Open the run and read what it found. |
+| [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | On `main` (2.2.0) it reports and does not fail the check. On `developer`, since 13 November 2026, a finding fails it. Open the run and read what it found. |
 | [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript for security problems and the history for secrets that are live. | Yes, when it finds a live secret or one of its steps breaks. |
 | [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. | It posts comments. Nothing in its file fails a pull request because of a finding. |
 

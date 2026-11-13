@@ -14,9 +14,14 @@ PHPStan reads PHP code without running it and reports likely mistakes: a method 
 an object, an argument of the wrong type, a class that does not exist. This is called static analysis. Its settings
 for Alfa Commerce are in `phpstan.neon` at the root of the repository.
 
-:::caution The check reports and does not fail
-On GitHub the PHPStan check is green whatever PHPStan finds. It prints its findings on the run's page and does not
-fail the pull request. Open the run and read them.
+:::caution In 2.2.0 the check reports and does not fail
+On the `main` branch (the 2.2.0 release) the PHPStan check is green whatever PHPStan finds. It prints its findings on
+the run's page and does not fail the pull request. Open the run and read them.
+
+Since 13 November 2026 the `developer` branch carries a stricter version of this check: there, any finding PHPStan
+reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact Joomla release (6.2.0),
+so the findings no longer change by themselves. The `main` branch, which is the 2.2.0 release, still runs the check as
+this page describes it. No check is required for a merge yet on either branch.
 :::
 
 Two messages PHPStan gives on the 2.2.0 code, both recorded in the baseline:
