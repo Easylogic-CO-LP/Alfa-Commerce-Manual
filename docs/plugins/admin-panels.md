@@ -10,7 +10,7 @@ description: How a plugin of the alfa group adds a whole administrator screen of
 
 **The pages of this guide:**
 
-- [Creating an Admin Panel](./admin-panels.md): the guide itself
+- **Creating an Admin Panel** (this page)
 - [A complete admin panel plugin](./admin-panel-example.md)
 
 A **panel** is a whole administrator screen that your plugin owns: a list, an edit form, a toolbar, a menu entry and

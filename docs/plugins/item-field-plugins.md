@@ -10,7 +10,7 @@ description: How to write a plugin that adds a new type of item field, the prope
 
 **The pages of this guide:**
 
-- [Item field plugins](./item-field-plugins.md): the guide itself
+- **Item field plugins** (this page)
 - [Item field plugin events](./item-field-plugin-events.md)
 - [A complete item field plugin](./item-field-plugin-example.md)
 

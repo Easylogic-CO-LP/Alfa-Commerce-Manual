@@ -9,9 +9,9 @@ description: "A complete minimal item field plugin for Alfa Commerce 2.2.0, file
 
 **The pages of this guide:**
 
-- [Item field plugins](./item-field-plugins.md): the guide itself
+- [Item field plugins](./item-field-plugins.md): start here
 - [Item field plugin events](./item-field-plugin-events.md)
-- [A complete item field plugin](./item-field-plugin-example.md)
+- **A complete item field plugin** (this page)
 
 This plugin adds a type named `picker`. It draws a field as radio buttons on the item page, for a variant field
 and for an option, and nothing else. It is the shipped `choice` plugin reduced to one layout: every call in it

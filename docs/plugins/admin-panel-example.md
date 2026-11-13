@@ -9,8 +9,8 @@ description: "A complete plugin that adds its own administrator screen to Alfa C
 
 **The pages of this guide:**
 
-- [Creating an Admin Panel](./admin-panels.md): the guide itself
-- [A complete admin panel plugin](./admin-panel-example.md)
+- [Creating an Admin Panel](./admin-panels.md): start here
+- **A complete admin panel plugin** (this page)
 
 No feature plugin ships with Alfa Commerce 2.2.0, so there is none to copy. The plugin below is a complete panel:
 a list of notes with a search box, sorting, New, Delete and an edit form. Every line of it was checked against the

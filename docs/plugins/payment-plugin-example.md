@@ -9,10 +9,10 @@ description: "A complete minimal payment plugin for Alfa Commerce 2.2.0, file by
 
 **The pages of this guide:**
 
-- [Payment plugins](./payment-plugins.md): the guide itself
+- [Payment plugins](./payment-plugins.md): start here
 - [Payment plugin events](./payment-plugin-events.md)
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
-- [A complete payment plugin](./payment-plugin-example.md)
+- **A complete payment plugin** (this page)
 
 This plugin takes an offline payment, such as a bank transfer. When an order is placed it records a pending payment.
 When the money arrives, staff press "Mark as paid", and the order moves to the status the method's settings name. It
