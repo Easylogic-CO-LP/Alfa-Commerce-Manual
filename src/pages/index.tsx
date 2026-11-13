@@ -1,152 +1,194 @@
 import type {ReactNode} from 'react';
-import clsx from 'clsx';
+import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import Heading from '@theme/Heading';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
 import styles from './index.module.css';
 
-function HomepageHeader() {
+// The route of one order through the shop, as the events a plugin hears. Each stop opens the page that documents it.
+const ROUTE = [
+  {
+    stop: 'Cart',
+    event: 'onCalculateShippingCost',
+    text: 'A shipping plugin prices the delivery.',
+    to: '/docs/plugins/shipment-plugin-events',
+  },
+  {
+    stop: 'Checkout',
+    event: 'onOrderPlaceValidate',
+    text: 'Any plugin may refuse the order.',
+    to: '/docs/events/order-and-cart-events',
+  },
+  {
+    stop: 'Order saved',
+    event: 'onOrderAfterPlace',
+    text: 'Payment and shipping plugins write their rows.',
+    to: '/docs/plugins/payment-plugin-events',
+  },
+  {
+    stop: 'Status change',
+    event: 'onOrderStatusChange',
+    text: 'Announced after the save, by background work.',
+    to: '/docs/events/flows',
+  },
+  {
+    stop: 'Document',
+    event: 'onDocumentIssued',
+    text: 'An invoice is issued and never changed.',
+    to: '/docs/events/document-events',
+  },
+];
+
+const CONTENTS = [
+  {
+    title: 'Getting started',
+    text: 'What Alfa Commerce needs, how to install and update it, and the first steps of a new shop.',
+    to: '/docs/getting-started/installation',
+  },
+  {
+    title: 'Plugin development',
+    text: 'Payment, shipping, form field, item field, media, search and feature plugins, each with a complete example.',
+    to: '/docs/plugins/overview',
+  },
+  {
+    title: 'Events',
+    text: 'Every event the shop sends, when it is sent, and whether a listener can stop what is happening.',
+    to: '/docs/events/flows',
+  },
+  {
+    title: 'Services',
+    text: 'Cart and checkout, orders, payments and shipments, documents, pricing, stock and notifications.',
+    to: '/docs/services/overview',
+  },
+  {
+    title: 'Architecture',
+    text: 'The database, background work, order e-mails, languages, caches, integrity and security.',
+    to: '/docs/architecture/overview',
+  },
+  {
+    title: 'REST API',
+    text: 'The token, every route, the filters of each list, and the known defects of this release.',
+    to: '/docs/api/overview',
+  },
+  {
+    title: 'Contributing',
+    text: 'How to send a change, and what the automated checks do with it.',
+    to: '/docs/getting-started/contributing',
+  },
+  {
+    title: 'Glossary',
+    text: 'The words this manual uses, each explained once.',
+    to: '/docs/reference/glossary',
+  },
+];
+
+const STARTERS = [
+  ['payment', 'Payment'],
+  ['shipping', 'Shipping'],
+  ['itemfield', 'Item field'],
+  ['formfield', 'Form field'],
+  ['media', 'Media'],
+  ['adminscreen', 'Admin screens'],
+  ['adminpanel', 'Own admin screen'],
+  ['system', 'Joomla system plugin'],
+];
+
+function Hero(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
+  const release = String(siteConfig.customFields?.alfaVersion ?? '');
+
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <Heading as="h1" className="hero__title">
-          {siteConfig.title}
-        </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/getting-started/installation">
-            Get Started
-          </Link>
+    <header className={styles.hero}>
+      <div className={styles.heroInner}>
+        <div className={styles.lead}>
+          <h1 className={styles.title}>The developer manual of Alfa Commerce</h1>
+          <p className={styles.intro}>
+            For developers who extend the shop: its plugins, its events, its services and its REST API. This manual
+            documents Alfa Commerce {release}, and its examples were installed and run on that release.
+          </p>
+          <div className={styles.actions}>
+            <Link className={styles.primary} to="/docs/getting-started/installation">
+              Install Alfa Commerce
+            </Link>
+            <Link className={styles.secondary} to="/docs/plugins/plugin-generator">
+              Create a plugin
+            </Link>
+          </div>
+        </div>
+
+        <div className={styles.routeWrap}>
+          <p className={styles.routeLabel} id="route-label">
+            One order, and the events your plugin hears on its way
+          </p>
+          <ol className={styles.route} aria-labelledby="route-label">
+            {ROUTE.map((r, i) => (
+              <li key={r.event} className={styles.stop} style={{'--i': i} as React.CSSProperties}>
+                <Link to={r.to} className={styles.stopLink}>
+                  <span className={styles.dot} aria-hidden="true" />
+                  <span className={styles.stopName}>{r.stop}</span>
+                  <code className={styles.event}>{r.event}</code>
+                  <span className={styles.stopText}>{r.text}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </header>
   );
 }
 
-type FeatureItem = {
-  title: string;
-  description: ReactNode;
-  link: string;
-  icon: ReactNode;
-};
-
-const svg = {
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.75,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  'aria-hidden': true,
-};
-
-const FeatureList: FeatureItem[] = [
-  {
-    title: 'Architecture',
-    description: 'The MVC structure, event system, pricing engine, cart, and order lifecycle.',
-    link: '/docs/architecture/overview',
-    icon: (
-      <svg {...svg}>
-        <path d="M12 2 2 7l10 5 10-5-10-5Z" />
-        <path d="m2 17 10 5 10-5" />
-        <path d="m2 12 10 5 10-5" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Payment Plugins',
-    description: 'Build payment gateway integrations — offline or any hosted provider.',
-    link: '/docs/plugins/payment-plugins',
-    icon: (
-      <svg {...svg}>
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <path d="M2 10h20" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Shipment Plugins',
-    description: 'Build shipping method integrations — flat-rate, zone-based, or carrier-API.',
-    link: '/docs/plugins/shipment-plugins',
-    icon: (
-      <svg {...svg}>
-        <path d="M14 18V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h1" />
-        <path d="M14 9h4l4 4v4a1 1 0 0 1-1 1h-1" />
-        <circle cx="7" cy="18" r="2" />
-        <circle cx="17" cy="18" r="2" />
-      </svg>
-    ),
-  },
-  {
-    title: 'REST API',
-    description: 'JSON-API for products, orders, payments, shipments, and more.',
-    link: '/docs/api/overview',
-    icon: (
-      <svg {...svg}>
-        <path d="M7 4a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2" />
-        <path d="M17 4a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Pricing Engine',
-    description: 'Multi-dimensional pricing by currency, user group, location, and quantity.',
-    link: '/docs/services/pricing',
-    icon: (
-      <svg {...svg}>
-        <path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z" />
-        <circle cx="7.5" cy="7.5" r="1.2" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Automated Checks',
-    description: 'Code style, static analysis, security scans, and AI review on every PR.',
-    link: '/docs/tooling/workflows',
-    icon: (
-      <svg {...svg}>
-        <circle cx="12" cy="12" r="9" />
-        <path d="m8.5 12 2.5 2.5 4.5-4.5" />
-      </svg>
-    ),
-  },
-];
-
-function Feature({title, description, link, icon, idx}: FeatureItem & {idx: number}) {
-  return (
-    <Link to={link} className={styles.card} style={{animationDelay: `${idx * 70}ms`}}>
-      <span className={styles.iconWrap}>{icon}</span>
-      <Heading as="h3" className={styles.cardTitle}>
-        {title}
-      </Heading>
-      <p className={styles.cardDesc}>{description}</p>
-      <span className={styles.cardArrow} aria-hidden="true">
-        →
-      </span>
-    </Link>
-  );
-}
-
 export default function Home(): ReactNode {
   return (
     <Layout
-      title="Developer Documentation"
-      description="Developer documentation for Alfa Commerce — the Joomla eCommerce platform by Easylogic">
-      <HomepageHeader />
-      <main>
-        <section className={styles.features}>
-          <div className="container">
-            <div className={styles.grid}>
-              {FeatureList.map((props, idx) => (
-                <Feature key={idx} idx={idx} {...props} />
-              ))}
-            </div>
+      title="Developer manual"
+      description="The developer manual of Alfa Commerce, the eCommerce component for Joomla by Easylogic: plugins, events, services and the REST API.">
+      <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        />
+      </Head>
+      <Hero />
+      <main className={styles.main}>
+        <section className={styles.contents} aria-labelledby="contents-title">
+          <h2 id="contents-title" className={styles.sectionTitle}>
+            Contents
+          </h2>
+          <ul className={styles.list}>
+            {CONTENTS.map((c) => (
+              <li key={c.to}>
+                <Link to={c.to} className={styles.row}>
+                  <span className={styles.rowTitle}>{c.title}</span>
+                  <span className={styles.rowText}>{c.text}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className={styles.starter} aria-labelledby="starter-title">
+          <div>
+            <h2 id="starter-title" className={styles.sectionTitle}>
+              Start from code that was tested
+            </h2>
+            <p className={styles.starterText}>
+              The plugin generator takes a complete example of this manual, puts your names in it and gives you a
+              ZIP that Joomla installs. Choose a type:
+            </p>
           </div>
+          <ul className={styles.chips}>
+            {STARTERS.map(([type, label]) => (
+              <li key={type}>
+                <Link to={`/docs/plugins/plugin-generator?type=${type}`} className={styles.chip}>
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       </main>
     </Layout>
