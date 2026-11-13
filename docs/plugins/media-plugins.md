@@ -6,6 +6,8 @@ description: How a plugin of the alfa-media group checks, converts and resizes t
 
 # Media plugins
 
+<CreatePluginButton type="media" />
+
 <AlfaVersion verified="2.2.0" />
 
 A **media plugin** takes part when staff add an image to an item, a category, a manufacturer or a combination. It can

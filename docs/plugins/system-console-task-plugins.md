@@ -6,6 +6,8 @@ description: What a plugin of a group that Joomla loads itself can do with Alfa 
 
 # System, console and task plugins
 
+<CreatePluginButton type="system" />
+
 <AlfaVersion verified="2.2.0" />
 
 Joomla has plugin groups of its own: `system`, `console`, `task`, `user`, `content` and others. Joomla loads them,

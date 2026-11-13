@@ -5,6 +5,8 @@ description: "Every event a payment plugin receives in Alfa Commerce 2.2.0: when
 
 # Payment plugin events
 
+<CreatePluginButton type="payment" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

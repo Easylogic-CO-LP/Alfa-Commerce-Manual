@@ -5,6 +5,8 @@ description: "A complete minimal shipping plugin for Alfa Commerce 2.2.0, file b
 
 # A complete shipping plugin
 
+<CreatePluginButton type="shipping" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

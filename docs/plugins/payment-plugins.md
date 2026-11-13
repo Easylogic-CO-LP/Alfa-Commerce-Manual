@@ -6,6 +6,8 @@ description: How to write a payment plugin for Alfa Commerce 2.2.0, what it must
 
 # Payment plugins
 
+<CreatePluginButton type="payment" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

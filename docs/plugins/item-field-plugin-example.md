@@ -5,6 +5,8 @@ description: "A complete minimal item field plugin for Alfa Commerce 2.2.0, file
 
 # A complete item field plugin
 
+<CreatePluginButton type="itemfield" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
