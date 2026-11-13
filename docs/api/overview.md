@@ -155,9 +155,46 @@ The examples in these pages are answers of a 2.2.0 test shop, shortened where ma
 |---|---|---|
 | Pages | `page[limit]` (20 when left out) and `page[offset]` | An offset past the end is answered 404 |
 | An order of the rows | `list[ordering]` and `list[direction]` | A column the list does not allow is ignored without an error, and a direction that is not `asc` or `desc` counts as `asc` |
-| Some of the rows | `filter[...]` | Each list has its own filters. `filter[search]` searches the list's text columns, and `id:123` in it finds one id. |
+| Some of the rows | `filter[...]` | Each list has its own filters: see [The filters of each list](#the-filters-of-each-list). |
 | Texts in one language | `lang=el-GR` | A language the site does not have falls back to the site's default without an error. The response header `Content-Language` says which language you got. |
 | Storefront prices in a currency or for a place | `currency=` and `place=` on the storefront routes | Without them the shop's defaults are used |
+
+### The filters of each list
+
+Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each.
+
+| List | Filters besides `filter[search]` |
+|---|---|
+| `items` | `filter[state]`, `filter[category]`, `filter[manufacturer]` |
+| `catalog/items` | `filter[category]`, `filter[manufacturer]` |
+| `categories`, `manufacturers`, `currencies`, `taxes`, `discounts`, `places`, `paymentmethods`, `shipmentmethods`, `orderstatuses`, `documenttypes`, `formfieldgroups` | `filter[state]` |
+| `itemfields` | `filter[state]`, `filter[type]`, `filter[informational]` |
+| `formfields` | `filter[state]`, `filter[group_id]` |
+| `cartrules` | `filter[state]`, `filter[activation]`, `filter[discount_class]` |
+| `locations` | `filter[state]`, `filter[location_type]` |
+| `users`, `usergroups` | None |
+| `orders` | `filter[id_order_status]`, `filter[id_payment_method]`, `filter[id_shipment_method]`, `filter[show_trashed]` |
+| `documents` | `filter[doc_type]`, `filter[status]`, `filter[id_order]` |
+| `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
+| `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
+
+`filter[search]` also takes a short form for an exact match:
+
+| In the list | Send | Finds |
+|---|---|---|
+| `items`, `categories`, `orders`, `documents` | `filter[search]=id:123` | The record with that id |
+| `inventorymovements` | `filter[search]=id:123` | The movements of the item with that id |
+| `inventorymovements` | `filter[search]=op:...` | The movements of one stock operation |
+
+Two questions that come up often:
+
+- **The payments and the parcels of an order.** Read the order: `GET v1/alfa/orders/:id` holds the lists
+  `payments`, `shipments`, `lines` and `history`. There is no separate list of an order's payments or parcels.
+- **The stock movements of one item.** `GET v1/alfa/inventorymovements?filter[search]=id:123`, where 123 is the
+  item's id. A text in `filter[search]` is matched against the item's SKU, the movement's note and its source.
+
+Not offered by the API in 2.2.0: a filter by date on any list, a filter of orders by customer or by item, and a
+filter of items by stock.
 
 **Money.** On orders and documents an amount is an object with exact decimal text, the formatted text and the
 amount in the currency's smallest unit:
@@ -290,7 +327,6 @@ route is meant to answer.
 
 ## Not documented yet
 
-- The filters of each list. The collection's List requests name them.
 - Every field of every record with its type. The resource pages name the fields a read returns; the meaning of
   each is in the administrator form of the same record.
 - Joomla's own routes that the collection uses for setup (`v1/users`, `v1/users/groups`, `v1/media/files`,

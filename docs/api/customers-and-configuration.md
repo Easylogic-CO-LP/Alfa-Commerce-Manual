@@ -291,4 +291,3 @@ See [Stock](../services/stock.md) for what the movements mean.
 
 - The meaning and the allowed values of fields such as `behavior`, `operation`, `discount_class`, `action` and
   `location_type`. They are the values of the administrator form of the same record.
-- The filters of each list, except those of stock movements.

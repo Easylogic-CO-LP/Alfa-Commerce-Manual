@@ -201,4 +201,3 @@ The price here is worked out when you ask, by the same pricing code as the item 
 
 - The parts of the `price` object one by one, and the `variant`, `combinations` and `cartState` objects.
 - How to send combinations and item field values of an item in a write.
-- The filters of each list.
