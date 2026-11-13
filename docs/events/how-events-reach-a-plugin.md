@@ -291,10 +291,18 @@ sequenceDiagram
 | Your listener runs | What it can rely on |
 |---|---|
 | In a "before" event | Nothing is saved yet. Refusing here stops the change. |
-| In an "after" event | The change is saved for good and Alfa's locks are released. It is never called for a change that was undone. |
+| In an "after" event | The change is saved for good, and the locks Alfa holds on an order are released. It is never called for a change that was undone. |
 
 These events are announced only after the save is final: `onAlfaAdminAfterSave`, `onAlfaAdminAfterDelete`,
 `onOrderStatusChange`, `onAlfaNotificationPushed` and `onAlfaPricesChanged`.
+
+:::note What "saved" covers for an item, a discount and a tax
+`onAlfaAdminAfterSave` is announced when the record's own row is saved. For an item, a discount and a tax, Alfa writes
+the rest afterwards (an item's prices, images and categories, the scope of a discount or a tax, and the stored
+prices). For an item, a listener that needs those uses `onItemAfterSave`. A discount and a tax have no later event
+of their own: `onAlfaPricesChanged` follows only when a stored price changed. See
+[Item and catalogue events](./item-and-catalogue-events.md).
+:::
 
 An "after" listener can be called a second time for the same change, for example when staff run a failed step again.
 Write it so that running it twice does no harm.
@@ -318,7 +326,8 @@ contribution without it is refused.
 | A page shows without your part and without an error | Your listener threw an error in an "after" or display event. Look in Joomla's log, category `com_alfa.plugins`. |
 | An order page shows a neutral line where your part was | Your plugin is disabled, missing or failed to start |
 
-## Not documented yet
+## Where to go next
 
-The list of every event with its way of delivery, the moment it fires and what it carries is not in the manual yet.
-It will be added to this section, with one page per plugin type.
+- [Event flows](./flows.md) shows the order of events in nine flows, from placing an order to a search.
+- [Event index](./event-index.md) lists every event with its way of delivery and the page that documents it.
+- The events of one plugin type are on that type's page under Plugin Development.
