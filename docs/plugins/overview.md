@@ -47,7 +47,7 @@ is the class a plugin of that group extends; the base classes are in `administra
 | Media | `alfa-media` | None. Joomla's `CMSPlugin`. | Nothing | [Media plugins](./media-plugins.md) |
 | Search engines | `alfa-search` | `SearchEnginePlugin` | Nothing, on purpose | [Search engine plugins](./search-plugins.md) |
 | Feature plugins | `alfa` | None. Joomla's `CMSPlugin`. | Nothing | [Admin screens](./admin-screen-plugins.md) and [Admin panels](./admin-panels.md) |
-| System, console and task | `system`, `console`, `task` | None. Joomla's `CMSPlugin`. | `system`: `alfasync`. `console`: `alfa`. `task`: nothing. | [System, console and task plugins](./system-console-task-plugins.md) |
+| System, console and task (Joomla's own plugin types) | `system`, `console`, `task` | None. Joomla's `CMSPlugin`. | `system`: `alfasync`. `console`: `alfa`. `task`: nothing. | [System, console and task plugins](./system-console-task-plugins.md) |
 
 For the five groups with a base class, Alfa checks that the plugin really extends it. A plugin in `alfa-payments`
 that does not extend `PaymentsPlugin` is refused.
@@ -111,6 +111,10 @@ the field carries your plugin's settings. Their pages explain it.
 | Do any of the reacting above from a plugin that must also run outside the shop's pages | System plugin |
 | Add a command to Joomla's command line | Console plugin |
 | Run your own work on a timetable | Task plugin, with Joomla's Scheduled Tasks |
+
+System, console and task plugins are Joomla's own plugin types, not Alfa Commerce's. Joomla has more of them
+(content, user, authentication, fields and others): choose the one that fits your purpose from
+[Joomla's documentation on plugins](https://manual.joomla.org/docs/building-extensions/plugins/).
 
 When in doubt between a feature plugin and a system plugin, choose the feature plugin. Alfa loads the `alfa` group
 whenever the shop runs and only then, and some events go only to that group.

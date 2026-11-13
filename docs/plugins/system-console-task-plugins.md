@@ -14,6 +14,20 @@ Joomla has plugin groups of its own: `system`, `console`, `task`, `user`, `conte
 not Alfa Commerce. A plugin of such a group can still take part in the shop. This page says how, and what such a
 plugin cannot do. It also describes the two plugins of these groups that ship with Alfa Commerce.
 
+:::note These are Joomla's plugin types, not Alfa Commerce's
+A system plugin is an ordinary Joomla plugin of Joomla's own `system` group. Alfa Commerce did not invent it and
+adds nothing to it. The same is true of `console`, `task`, `content`, `user`, `authentication`, `fields` and
+Joomla's other groups.
+
+A Joomla system plugin can do any work that belongs to the whole site: change the HTTP response headers, redirect
+a request, add something to every page. Hearing shop events is only one more thing it may do, and the only one this
+page is about. For everything else, and for choosing the Joomla plugin type that fits your purpose, read
+[Joomla's documentation on plugins](https://manual.joomla.org/docs/building-extensions/plugins/).
+
+A system plugin is not the recommended home of every customisation. For work that belongs to the shop, a plugin of
+an Alfa group is the better choice: see [When it is used](#when-it-is-used).
+:::
+
 Read [How events reach a plugin](../events/how-events-reach-a-plugin.md) first. The words used here are explained in
 the [Glossary](../reference/glossary.md).
 
@@ -92,8 +106,9 @@ the order. Use what the event carries.
 
 ## A complete system plugin
 
-This plugin writes a line to the file `shopnotes.php` in Joomla's log folder when an order is completed, and offers
-one button on Alfa's Tools screen.
+This is a normal Joomla system plugin that also listens to Alfa Commerce. It writes a line to the file
+`shopnotes.php` in Joomla's log folder when an order is completed, and offers one button on Alfa's Tools screen.
+It is an example of the Alfa side only: it does none of the other things a Joomla system plugin may do.
 The order event is announced to everyone. The tool list (`onGetToolActions`) is announced to everyone too. Running
 the tool (`onExecuteToolAction`) is addressed to this plugin alone, so it is declared in `getTargetedHandlers()`.
 
