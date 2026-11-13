@@ -103,6 +103,8 @@
 }
 .alfa-postman__text small {
   opacity: 0.9;
+}
+
 /* The button at the top right of a plugin type's pages (src/components/PluginGenerator/CreatePluginButton.tsx). */
 .alfa-create-plugin {
   float: right;
