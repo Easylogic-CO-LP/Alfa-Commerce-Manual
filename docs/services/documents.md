@@ -31,7 +31,7 @@ The events are on [Document events](../events/document-events.md). The words **d
 |---|---|
 | **The doors this manual documents** | The three events `onDocumentBeforeIssue`, `onDocumentIssued` and `onDocumentVoided`, and a document type provider. See [Document events](../events/document-events.md). |
 | **What the code says** | Nothing in `DocumentIssuer` addresses an extension as a caller, and nothing forbids one. Its methods are public and static and take plain arrays. Its comments mention other callers (a returns workflow, a scheduled job) without saying whether they are Alfa's own or an extension's. The code does not settle the question. |
-| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()` and `void()` check no permission and do not read the `documents_issuer` setting: Alfa's own controllers check the member of staff before they call, and the order screen's issuing tasks check the setting. Only `replace()` checks a permission itself. |
+| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()` and `void()` check no permission and do not read the `documents_issuer` setting: Alfa's own controllers check the member of staff before they call, and the order screen's issuing tasks check the setting. Only `replace()` checks a permission itself. Planned for 2.2.1, which is not released: `issue()` and `void()` check a permission themselves too (see each method below). |
 | **What follows** | Use the events. This manual does not document a call to `DocumentIssuer` from an extension. The rest of this page describes what the issuer guarantees, so that a listener knows what it can rely on. The classes around the issuer (`CreditCalculator`, `IncrementalCorrection`, `VoidAndReplace`, `AutoIssuePolicy`, `StockBridge`, `OrderItemLines`, `OrderChargeLines`) are core's own. |
 
 ## When it is used
@@ -94,6 +94,17 @@ public static function issue(array $draft, bool $manageTransaction = true, bool 
 Takes a draft, asks `onDocumentBeforeIssue`, checks the draft, draws the next number of the series and writes the
 document. Returns the stored document row.
 
+Planned for 2.2.1, which is not released: a fourth argument says who issues.
+
+```php
+public static function issue(
+    array $draft,
+    bool $manageTransaction = true,
+    bool $applyStockEffect = true,
+    User|SystemActor|null $actor = null,
+): object
+```
+
 ### What you must provide
 
 The draft's required keys are `doc_type`, `id_order` and `lines` (at least one). A credit also needs `id_corrects`.
@@ -104,6 +115,7 @@ in the comment above `issue()`.
 |---|---|
 | `$manageTransaction` | `true`: `issue()` saves as one unit of its own. `false`: the caller has already opened a database transaction. Then the draft must have been answered by `beforeIssue()` **before** that transaction was opened. |
 | `$applyStockEffect` | `true`: the stock step of the document's type is applied. `false`: only for a caller that has already moved these goods through the stock service itself, so that they are not moved twice. |
+| `$actor` | Planned for 2.2.1, which is not released. A person (a Joomla `User`) must hold Sales Documents: Create. A `SystemActor` (`administrator/src/Service/Document/SystemActor.php`, made with the name of the policy) is the shop's own policy and asks no permission: the automatic issue on a status uses it. Left out, the request's own user is judged. |
 
 ### What it guarantees
 
@@ -124,6 +136,7 @@ in the comment above `issue()`.
 
 | It refuses | When it is checked |
 |---|---|
+| Planned for 2.2.1, which is not released: an actor who lacks Sales Documents: Create. It is a `DocumentRefusedException` with a sentence for staff. | Before anything |
 | A listener of `onDocumentBeforeIssue` that throws, or that leaves a database transaction open | Before the save |
 | An unknown `doc_type`, a draft without `id_order`, a draft without lines | Before the save |
 | `id_replaces` set by anyone but `replace()` | Before the save |
@@ -189,6 +202,10 @@ touched. There is no way back: a voided document is never issued again.
 Each is a `RuntimeException` whose message starts with `DocumentIssuer: void failed:`, except the empty reason, which
 is refused before anything else with the message `DocumentIssuer: a void requires a reason.` and no sentence for
 staff. `replace()` refuses an empty reason with a `DocumentRefusedException` instead.
+
+Planned for 2.2.1, which is not released: the empty reason is a `DocumentRefusedException` too, with a sentence for
+staff ("Voiding requires a reason."). Then the actor (`$actorId`, or the request's own user when it is null) must
+hold Sales Documents: Change State, or the void is refused with a `DocumentRefusedException` and nothing is voided.
 
 There is no "before void" event. A plugin cannot refuse a void.
 
@@ -302,7 +319,7 @@ print view (`DocumentRenderer::render(int $documentId): string`) and hands it to
 | | |
 |---|---|
 | **What you must provide** | The Joomla library `lib_dompdf`, installed so that `libraries/dompdf/autoload.inc.php` exists. It is not part of the Alfa Commerce package. |
-| **What happens without it** | `pdfBytes()` throws a `RuntimeException`: "the dompdf library is not installed (install lib_dompdf)". The print view still works. |
+| **What happens without it** | `pdfBytes()` throws a `RuntimeException`: "the dompdf library is not installed (install lib_dompdf)". The print view still works. Planned for 2.2.1, which is not released: the library is asked for before anything is drawn, and `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), which PDF documents need, is not installed." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library. `PdfRenderer::libraryInstalled()` says whether it is installed. |
 | **What it guarantees** | Nothing is stored. The PDF is made again from the stored document on every request, so it cannot differ from the document. A voided document is drawn with its "voided" mark. |
 | **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. |
 
@@ -366,8 +383,8 @@ All of it only after the save is final. A listener that throws there is logged, 
 | "inside an open transaction a document is issued only from a draft onDocumentBeforeIssue answered before that transaction began" | `issue()` was called inside a transaction without `beforeIssue()` first |
 | "the draft was changed after onDocumentBeforeIssue answered it" | The answered draft was changed before it was handed to `issue()` |
 | "an onDocumentBeforeIssue subscriber left a database transaction changed" | A listener opened a transaction and did not close it. Alfa undid it and refused the issue. |
-| A document is issued and the stock did not move | The stock step failed after the save was final. It stays owed. Staff find it under Tools > Database Sync. |
-| "the dompdf library is not installed" | `lib_dompdf` is missing |
+| A document is issued and the stock did not move | The stock step failed after the save was final. It stays owed. Staff find it under Tools > Database Sync. Planned for 2.2.1, which is not released: when a stock plugin refused it on purpose, a task "Stock movement of a document that a stock plugin refused" stands in Tools > Tasks with Run again; any other failure is tried again by itself. See [Stock events](../events/stock-events.md). |
+| "the dompdf library is not installed" | `lib_dompdf` is missing. Planned for 2.2.1, which is not released: the message is "The dompdf library (lib_dompdf), which PDF documents need, is not installed." |
 | A document type cannot be issued automatically | The type has no default series |
 | `onDocumentIssued` did not fire | The save the document belonged to was undone, or the shop's documents are issued by an outside system |
 
@@ -385,4 +402,5 @@ All of it only after the save is final. A listener that throws there is logged, 
   `CorrectionStrategies`) and the order screen's void and replace workflow (`VoidAndReplace`).
 - Automatic issue on a status (`AutoIssuePolicy`) beyond what [Document events](../events/document-events.md) says.
 - Document layouts: where a layout file goes and how a series chooses one.
-- How the `lib_dompdf` library is obtained and installed.
+- How the `lib_dompdf` library is obtained and installed. Planned for 2.2.1, which is not released: the setup
+  checklist's row "PDF library for sales documents" says it.

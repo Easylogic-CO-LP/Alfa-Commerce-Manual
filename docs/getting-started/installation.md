@@ -22,7 +22,9 @@ libraries.
 The installer checks Joomla, PHP and the PHP extensions itself and names what is missing. It does not check the
 database version, so check that one yourself.
 
-Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which is installed separately.
+Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which is installed separately. Planned for
+2.2.1, which is not released: the setup checklist has a recommended row, "PDF library for sales documents", which
+says that the library is to be had from Easylogic and is installed in **System**, **Install**, **Extensions**.
 
 ## Installing
 
@@ -82,6 +84,20 @@ result: it places a test file in the folder and asks the site for it at its publ
 nginx ignores the deny rules in the folder. There, refuse the folder in the server configuration (the warning prints
 the rule), or move the store outside the public web root.
 
+Planned for 2.2.1, which is not released:
+
+- **A switch.** **Options**, **Downloads**, **Direct-download protection check** (Yes by default). With No, no
+  administrator page says anything about the store's protection, and installing, updating, a path change and the
+  first file test nothing. **Check again** in the Options still tests the store and records the result. Turn it off
+  for a shop that sells no files, or on a server where the site cannot request its own address.
+- **Nothing to protect, nothing tested.** While no item carries a file, no order hands one out and the folder holds
+  no file of its own, no page warns and nothing is tested. The Options say "No files in the store yet; the protection
+  is checked when the first file is added." The first file added to such a store is tested once, while the check is
+  on. The upload never fails because of the test.
+- **The warning.** It says in plain words what happened, whether it matters and what to do. The nginx rule is no
+  longer in its text: it is behind the warning's **Server rule** line. Two links open the Downloads tab of the
+  Options: "Move the store outside the web root" and, while the check is on, "Turn this check off".
+
 The shop's background work (sending e-mails, issuing documents, rebuilding the catalogue's stored data) needs no
 cron job: visits to the shop, staff using the administrator and API requests keep it running. A server can also run
 it from cron with the console command `alfa:tasks:run`.
@@ -101,6 +117,14 @@ Before updating:
 - Update every Alfa Commerce extension you have installed to the same release together with core.
 
 The same Joomla and PHP checks run on an update as on an installation.
+
+Planned for 2.2.1, which is not released:
+
+- The update also cleans the caches of the bundled items module (`mod_alfa_items`).
+- The update lists the files among the item images that are not images, with the records that name them: one
+  warning on the update page, and one line per file in the media log (`com_alfa_media.php` in Joomla's log folder).
+  Nothing is deleted. Look at each file, delete by hand those that are not yours to publish, and choose a new
+  thumbnail for the records named.
 
 An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
 removed". They were removed, and the warning can be ignored. A fix is planned for 2.2.1, which is not released.
@@ -122,6 +146,10 @@ The beta's data is not carried over.
 
 Uninstalling removes the component, its plugins, modules, libraries, guided tours and any Alfa Commerce language
 packs. It keeps every Alfa Commerce table and its data. Installing the same version again reconnects that data.
+
+A language pack whose package manifest is missing is not uninstalled: Joomla cannot uninstall it without the
+manifest either. The uninstall message names the pack, and the maintenance log (`com_alfa_maintenance.php` in
+Joomla's log folder) says why, with its files.
 
 Two things stay: plugins of other authors that were written for Alfa Commerce, and the storefront menu items.
 Remove them yourself if you do not install again.

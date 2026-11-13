@@ -128,8 +128,8 @@ operation, and `expireDueReservations()` writes one without returning its id. A 
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `commitReservation(CommitmentRequest $request, ?InventoryContext $context = null): array` | Takes goods from stock: the reservations of the lines become stock movements. The one entry for orders and documents. | Running the same request twice takes the goods once. Goods are taken from the locations the reservation was placed on. It never takes stock that is set aside for an order ahead in the queue. Returns `deducted_quantity`, `over_shipment`, `lines`, `operation_id`. | More than was ordered while the shop's over-shipment setting is strict, or stock below zero while that is not allowed (`RuntimeException`). Stock that other reservations hold (`InventoryReservedFloorException`). A line whose unit is gone (`InventoryLineUnresolvedException`). Any of these undoes the whole call. |
-| `restore(string $sourceType, int $sourceId, array $lines, ?InventoryContext $context = null): array` | Puts goods that were taken back on the shelf | At most what was taken and not yet put back, to the locations it left from. Works on archived units too. Announces no event. Returns `restored_quantity`, `lines`, `operation_id`, `held_units`. | A line whose unit is gone (`InventoryLineUnresolvedException`). A return that would leave a record below zero or below its reservations. |
-| `reverseRestores(string $sourceType, int $sourceId, ?InventoryContext $context = null): array` | Undoes what one source (a voided credit document) put back | A second call finds nothing left and does nothing | Goods that were sold again in the meantime: a record would go below zero or below its reservations |
+| `restore(string $sourceType, int $sourceId, array $lines, ?InventoryContext $context = null): array` | Puts goods that were taken back on the shelf | At most what was taken and not yet put back, to the locations it left from. Works on archived units too. Announces no event. Planned for 2.2.1, which is not released: announces `onInventoryRestored` after the save is final. Returns `restored_quantity`, `lines`, `operation_id`, `held_units`. | A line whose unit is gone (`InventoryLineUnresolvedException`). A return that would leave a record below zero or below its reservations. |
+| `reverseRestores(string $sourceType, int $sourceId, ?InventoryContext $context = null): array` | Undoes what one source (a voided credit document) put back | A second call finds nothing left and does nothing. Planned for 2.2.1, which is not released: announces `onInventoryRestored` with `isReversal()` true and negative quantities, after the save is final. | Goods that were sold again in the meantime: a record would go below zero or below its reservations |
 | `scrapRestored(string $restoreOperationId, string $sourceType, int $sourceId, InventoryContext $context): array` | Writes off exactly what one restore put back (returned goods that are discarded) | A repeat writes off only what is left. No caller in 2.2.0. | A record that would go below its reservations (`InventoryReservedFloorException`) |
 
 ### Changing a quantity by hand
@@ -364,10 +364,10 @@ A row is in one of five states:
 | State | Meaning |
 |---|---|
 | `pending` | Written, not tried yet |
-| `claimed` | One worker is making the movement now. A claim older than 300 seconds counts as abandoned and can be taken again. |
+| `claimed` | One worker is making the movement now. A claim older than 300 seconds counts as abandoned and can be taken again. Planned for 2.2.1, which is not released: such a claim is settled as a failed try ("The process that was applying it stopped before it finished") and follows the waits and the limit of `failed`. |
 | `applied` | The movement exists. Final. |
-| `failed` | The try failed. It can be tried again. |
-| `refused` | An order line names a unit that no longer exists, so trying again cannot help. The row waits until staff say which unit the line acts on, on the Inventory audit page. |
+| `failed` | The try failed. It can be tried again. Planned for 2.2.1, which is not released: it is tried again after 1 minute, 5 minutes, 30 minutes, 2 hours, 6 hours and 24 hours, seven tries in all, then waits for staff with a notice. A new status of the order, and "Apply outstanding stock movements", try it again at once. |
+| `refused` | An order line names a unit that no longer exists, so trying again cannot help. The row waits until staff say which unit the line acts on, on the Inventory audit page. Planned for 2.2.1, which is not released: also a movement that a stock plugin refused on purpose (`InventoryRefusedException`); its notice carries the plugin's sentence. See [Stock events](../events/stock-events.md). |
 
 Until its row is applied, an owed movement counts as a claim on the units of its order: such a unit cannot be
 deleted or archived.
@@ -376,7 +376,9 @@ deleted or archived.
 
 The background job `stock.effects.drain` (`StockEffectsDrainJob`) makes the movements that are still owed. It is
 asked for whenever a movement is found owed. Staff can also apply them with Tools > Database Sync. A failed or
-refused movement raises a notice in the notification bell for the order or the document.
+refused movement raises a notice in the notification bell for the order or the document. Planned for 2.2.1, which is
+not released: a document's movement that a stock plugin refused waits as a task in Tools > Tasks, and only its Run
+again tries it.
 
 For a plugin this means that a stock event can arrive in a later request than the one in which a person acted, with
 nobody signed in.

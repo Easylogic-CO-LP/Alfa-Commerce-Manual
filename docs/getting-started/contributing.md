@@ -240,7 +240,7 @@ No terminal needed.
 
 Fork the repository on GitHub, then in Desktop clone **your** fork instead of step 1. When asked "How are you
 planning to use this fork?", choose **To contribute to the parent project**. Steps 2 to 8 are unchanged. Your pull
-request targets the parent's `developer`.
+request targets the parent's `developer`. A pull request from a fork gets no AI review.
 
 </details>
 
@@ -287,7 +287,7 @@ git merge upstream/developer
 ```
 
 Steps 3 to 5 and 7 are unchanged; your push goes to your fork. In step 8, open the pull request from your fork into
-`developer` of `Easylogic-CO-LP/Alfa-Commerce`.
+`developer` of `Easylogic-CO-LP/Alfa-Commerce`. A pull request from a fork gets no AI review.
 
 </details>
 
@@ -386,11 +386,11 @@ GitHub runs these on your pull request. Each has its own page.
 
 | Check | What it does | Can it fail the pull request |
 |---|---|---|
-| [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. | Only when the tool or its commit step breaks. |
+| [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. From the next promotion of `developer` to `main`, it runs on PHP 8.3. | Only when the tool or its commit step breaks. |
 | [Copy-clean](../tooling/workflows#copy-clean) | Refuses unclean comments and texts, see the rules above. | Yes. |
 | [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | On `main` (2.2.0) it reports and does not fail the check. On `developer`, since 13 November 2026, a finding fails it. Open the run and read what it found. |
 | [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript for security problems and the history for secrets that are live. | Yes, when it finds a live secret or one of its steps breaks. |
-| [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. | It posts comments. Nothing in its file fails a pull request because of a finding. |
+| [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. It runs only for a pull request from a branch of this repository, by a person with write access. | It posts comments. Nothing in its file fails a pull request because of a finding. |
 
 Code Quality and Security Scan run only for pull requests into `main` or `developer`. Which checks must be green
 before a merge is set in the repository's branch rules on GitHub, which are not part of the code. All details are on
@@ -455,12 +455,13 @@ Joomla itself are reported to Joomla's security team.
 - **Found a bug?** Open an issue with the Bug Report form. It asks for the steps to reproduce, what you expected,
   what happened, and your versions.
 - **Have an idea?** Open an issue with the Feature Request form. It gets the label `enhancement`.
-- **Want another AI review?** A comment that contains `@claude` starts the AI review workflow again.
+- **Want another AI review?** A comment that contains `@claude` on the pull request starts the AI review workflow
+  again, when you have write access to the repository.
 - **Contact:** info@easylogic.gr, [easylogic.gr](https://easylogic.gr)
 
 ## Not documented yet
 
-- Whether PHP CS Fixer can commit its fixes to a pull request that comes from a fork, and whether the AI review runs
-  for one. The workflow files do not settle it.
+- Whether PHP CS Fixer can commit its fixes to a pull request that comes from a fork. The workflow files do not
+  settle it. (The AI review does not run for one.)
 - How the `developer` branch becomes a release. The code holds `main` only.
 - A style rule for JavaScript. The repository has no JavaScript formatter or linter configuration.

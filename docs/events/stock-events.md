@@ -81,6 +81,12 @@ saved, staff are told in the notification bell, and the background job `stock.ef
 (Tools > Database Sync applies it too). So a stock event can reach your plugin in a later request than the one in
 which staff pressed the button.
 
+Planned for 2.2.1, which is not released: a movement that a stock plugin refuses on purpose (see
+[The events that can refuse](#the-events-that-can-refuse)) is not tried again. Any other failure is tried again after
+1 minute, 5 minutes, 30 minutes, 2 hours, 6 hours and 24 hours, then waits for staff with a notice that says so.
+A new status of the order tries that order's failed movement at once, and "Apply outstanding stock movements" in
+Tools > Database Sync tries every failed movement at once.
+
 ## The events at a glance
 
 All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin group before it announces them.
@@ -95,9 +101,11 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 | `onInventoryReleased` | After reservations were let go and the save is final | No | Logged, the others still run |
 | `onInventoryAdjusted` | After a manual adjustment and the save is final | No | Logged, the others still run |
 | `onInventoryTransferred` | After a transfer and the save is final | No | Logged, the others still run |
+| `onInventoryRestored` | Planned for 2.2.1, which is not released: after stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
-Put a plugin that listens to the first eight in the `alfa` group. The group `alfa-inventory` is loaded only when Alfa
+Put a plugin that listens to the first eight (nine from 2.2.1, which is not released) in the `alfa` group. The group
+`alfa-inventory` is loaded only when Alfa
 asks for allocation providers, so a plugin of that group is not always loaded when the other stock events are
 announced.
 
@@ -134,6 +142,11 @@ If your plugin refuses at step 4 or step 7, nothing of the order is saved and th
 general message that the order was not placed. Your message is not shown. It is written to Joomla's log (category
 `com_alfa.orders`).
 
+Planned for 2.2.1, which is not released: when your plugin refuses with `InventoryRefusedException`, the person who
+places the order reads your sentence: the shopper at checkout, staff in the administrator. Any other exception keeps
+the general message, and its words stay in the log. So write the sentence for a shopper: no warehouse codes or
+internal states.
+
 The two "after" events do not follow the save at once. Alfa first hands `onOrderAfterPlace` to the order's payment
 plugin and shipping plugin (step 9), and announces the stock events (step 10) when both are done. The whole order of
 a placement is on [Event flows](./flows.md#placing-an-order).
@@ -161,6 +174,13 @@ sequenceDiagram
 If your plugin refuses at step 4, the status stays changed. The stock movement stays owed, staff see a notice, and
 the background job asks your plugin again when it tries the movement again.
 
+Planned for 2.2.1, which is not released: that holds for an ordinary exception, within the seven tries. A refusal
+with `InventoryRefusedException` is final for the movement: it is recorded as refused, not tried again, and its notice
+carries your sentence (without markup, on one line, at most 300 characters). For an order, staff decide on the order:
+a new status that changes the order's stock claim tries it again. For a document, a task "Stock movement of a
+document that a stock plugin refused" stands in Tools > Tasks and the bell, and only its Run again tries it, once your
+plugin allows it.
+
 ## The events that can refuse
 
 These three are "before" events. Alfa announces them with `AlfaPluginHelper::dispatch()`, so an error thrown by a
@@ -169,6 +189,10 @@ is no "refuse" method.
 
 Alfa has written nothing for the step when it asks. The step can still be part of a larger save, as when an order is
 placed. A refusal then undoes that larger save.
+
+Planned for 2.2.1, which is not released: a refusal on purpose is an exception of its own,
+`Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryRefusedException`, thrown with the sentence people are
+to read. Any other exception is a failure, which is tried again.
 
 ### onInventoryBeforeReserve
 
@@ -190,7 +214,8 @@ written.
 
 **What you are expected to do.** Nothing, if you have no objection. To change what is set aside, call `updateLines()`
 with lines of the same shape. To refuse, throw an exception with a message staff can understand. Do not write to
-stock tables yourself.
+stock tables yourself. Planned for 2.2.1, which is not released: to refuse, throw `InventoryRefusedException` with a
+sentence a shopper can read; at checkout the shopper sees it.
 
 **What happens next.** Alfa takes the lines as the last listener left them and sets them aside. Each line is still
 checked by Alfa's own rules after you, for example the item's backorder setting.
@@ -202,6 +227,8 @@ the step stops:
 |---|---|
 | While an order is placed | The order is not placed and nothing is saved. The person sees a general message. Your message is written to the log (category `com_alfa.orders`). |
 | After a status change | The status stays changed. The movement stays owed, a notice is raised for staff, and the step is tried again later. |
+| Planned for 2.2.1, which is not released: while an order is placed, with `InventoryRefusedException` | The order is not placed and nothing is saved. The person reads your sentence. |
+| Planned for 2.2.1, which is not released: after a status change, with `InventoryRefusedException` | The status stays changed. The movement is refused and not tried again. The notice carries your sentence, and a new status that changes the order's stock claim tries it again. |
 
 ### onInventoryBeforeCommit
 
@@ -237,7 +264,9 @@ movements.
 
 **If you are missing or you fail.** As for `onInventoryBeforeReserve`: with no listener the goods are taken as asked;
 a listener that throws stops the step, with the same two outcomes as in the table above. When the step came from a
-document, the document stays issued and its stock movement stays owed.
+document, the document stays issued and its stock movement stays owed. Planned for 2.2.1, which is not released: when
+the refusal is `InventoryRefusedException`, the document's movement waits for staff as a task with Run again (see
+above).
 
 ### onInventoryBeforeRelease
 
@@ -260,11 +289,13 @@ when an order enters a cancelled status and when an order is deleted.
 **What happens next.** Alfa lets the reservations go. The stock is free to sell again.
 
 **If you are missing or you fail.** With no listener the reservations are let go. A listener that throws stops the
-step, and the reservations stay.
+step, and the reservations stay. Planned for 2.2.1, which is not released: an owed movement refused with
+`InventoryRefusedException` is not tried again; any other exception is tried again with the waits above.
 
 ## The events that only report
 
-These five are "after" events. They all share one base class,
+These five are "after" events (six from 2.2.1, which is not released, with `onInventoryRestored`). They all share one
+base class,
 `Alfa\Component\Alfa\Administrator\Event\Inventory\InventoryAfterEvent`, with two methods:
 
 | Method | What it gives |
@@ -355,6 +386,22 @@ final. Event class `InventoryTransferredEvent`.
 | `sourceLocationId`, `destinationLocationId` | From where, to where |
 | `result` | `transfer_id`, `operation_id` |
 
+### onInventoryRestored
+
+Planned for 2.2.1, which is not released.
+
+**When it fires.** After stock was put back on the shelf and the save is final: an order cancelled or a line cut, or
+the return of a credit note (`InventoryService::restore()`). Also when a credit note is voided and what it put back is
+taken off again (`InventoryService::reverseRestores()`). Event class `InventoryRestoredEvent`. Side effects only, like
+the other "after" events.
+
+| Name for `argument()` | Meaning |
+|---|---|
+| `sourceType`, `sourceId` | What put the stock back |
+| `reversal` | `true` when a voided credit note took back an earlier return. `isReversal()` reads it. |
+| `movements` | One entry for each item, combination and location: `itemId`, `combinationId`, `locationId` and `quantity`, positive when stock came back, negative for a reversal. `movements()` reads it. |
+| `result` | The summary of the step, with `operation_id` |
+
 ## What you must provide: a listener
 
 A feature plugin (group `alfa`) that refuses large reservations and reacts when stock was set aside:
@@ -402,6 +449,9 @@ final class Stockwatch extends CMSPlugin implements SubscriberInterface
     }
 }
 ```
+
+Planned for 2.2.1, which is not released: to refuse in words a shopper reads at checkout, throw
+`InventoryRefusedException` instead of `RuntimeException`. The sample keeps `RuntimeException`, which 2.2.0 needs.
 
 ## The provider contract: where the stock comes from
 
@@ -457,7 +507,7 @@ public function allocate(array $unit, float $quantity, InventoryContext $context
 |---|---|
 | `$unit` | What is set aside: `['item' => int, 'combination' => int]`. A combination of 0 means the item itself. |
 | `$quantity` | How much is set aside |
-| `$context` | An `InventoryContext`. In 2.2.0 Alfa passes an empty one here: user 0, no note, no metadata. |
+| `$context` | An `InventoryContext`. In 2.2.0 Alfa passes an empty one here: user 0, no note, no metadata. Planned for 2.2.1, which is not released: the reservation's own context. |
 
 What your method may do:
 

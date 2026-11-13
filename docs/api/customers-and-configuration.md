@@ -14,6 +14,8 @@ Every resource on this page has the five standard routes, except stock movements
 each resource this page gives a body that creates a record, the fields a read returns, and what is special.
 
 Where a body below has `name_en_gb`, send the name in your site's default language, and again with every change.
+Planned for 2.2.1, which is not released: a change that leaves the name out keeps the stored name (see
+[Writing](./overview.md#writing)).
 
 ## Customers
 
@@ -33,6 +35,10 @@ remove the Joomla user itself, use Joomla's own route `v1/users`.
 
 In 2.2.0 a create also accepts a user id that does not exist. See
 [Known defects](./overview.md#known-defects-in-220), row 5.
+
+Planned for 2.2.1, which is not released: `id_user` is required, and a create or change is refused with 400 and the
+reason when it names a Joomla user that does not exist, the id 0, or a user that another customer record already
+names. The administrator's customer form follows the same rule.
 
 ## Customer groups
 
@@ -64,6 +70,18 @@ mean to change, and send the whole object back:
 }
 ```
 
+Planned for 2.2.1, which is not released:
+
+- A `PATCH` changes only the settings of `prices_display` that it names, and keeps the others.
+- A setting sent empty (`""` or `null`) is removed from the group, which then takes the shop's own setting. A group
+  with no setting of its own answers `{}`.
+- A create that leaves `prices_display` out gets a copy of the shop's settings, as Alfa Commerce gives every new
+  customer group. A create that sends `"prices_display": {}` stores no setting of the group's own.
+
+```json
+{"prices_display": {"tax_amount_show": "1"}}
+```
+
 **A list row holds:** `id`, `usergroup_id`, `prices_enable`, `core_title`.
 
 **One record holds:** `id`, `usergroup_id`, `prices_enable`, `prices_display`, `name`.
@@ -91,6 +109,9 @@ mean to change, and send the whole object back:
 
 A fresh installation comes with a list of currencies. In it the euro has the id 47.
 
+Planned for 2.2.1, which is not released: deleting a currency that orders, item prices or places use is refused
+with 409 and the reason, and nothing is deleted.
+
 ## Taxes
 
 `v1/alfa/taxes`. The rate is exact decimal text.
@@ -108,7 +129,8 @@ the tax applies.
 
 A change that alters prices leaves work for the price index, listed in the answer's `meta.tasks`.
 
-Reading a tax that does not exist answers 500 in 2.2.0 (known defect, row 1).
+Reading a tax that does not exist answers 500 in 2.2.0 (known defect, row 1). Planned for 2.2.1, which is not
+released: 404.
 
 ## Discounts
 
@@ -134,7 +156,8 @@ Reading a tax that does not exist answers 500 in 2.2.0 (known defect, row 1).
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`.
 
-Reading a discount that does not exist answers 500 in 2.2.0 (known defect, row 1).
+Reading a discount that does not exist answers 500 in 2.2.0 (known defect, row 1). Planned for 2.2.1, which is not
+released: 404.
 
 ## Cart rules
 
@@ -156,7 +179,8 @@ a code applies by itself.
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `groups`.
 
 A cart rule is published or unpublished. It has no trash: `state` -2 is refused with 400, and the rule is deleted
-directly. Reading a cart rule that does not exist answers 500 in 2.2.0 (known defect, row 1).
+directly. Reading a cart rule that does not exist answers 500 in 2.2.0 (known defect, row 1). Planned for 2.2.1,
+which is not released: 404.
 
 ## Places
 
@@ -187,7 +211,8 @@ the payment plugin that does the work. See [Payment plugins](../plugins/payment-
 }
 ```
 
-Send `color` and `bg_color`, or the create fails (known defect, row 6).
+Send `color` and `bg_color`, or the create fails (known defect, row 6). Planned for 2.2.1, which is not released: a
+create without them takes the colours the method's edit form sets by default.
 
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `ordering`, `state`.
 
@@ -196,7 +221,9 @@ Send `color` and `bg_color`, or the create fails (known defect, row 6).
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the method is offered.
 
-Deleting a method that an order used answers 204 and keeps the method (known defect, row 2).
+Deleting a method that an order used answers 204 and keeps the method (known defect, row 2). Planned for 2.2.1,
+which is not released: such a delete is refused with 409 and the reason, and nothing is deleted. See
+[Status codes](./overview.md#status-codes) for the cases.
 
 The payments of one order are not here. They are under the order: see
 [Orders](./orders.md#payments).
@@ -279,7 +306,9 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 are never changed or deleted: a correction is a new movement in the other direction, so there is nothing to write
 here.
 
-Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`.
+Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`. Planned for 2.2.1, which is not released:
+also `filter[date_start]` and `filter[date_end]` (the movement's date), and `filter[item_id]` (the movements of one
+item).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,
 `source_id`, `source_line_id`, `transfer_id`, `operation_id`, `correlation_id`, `note`, `created`,

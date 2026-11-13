@@ -296,7 +296,9 @@ that owns it was removed. A plugin builds such a text with `NotificationText`
 - **After a language pack is installed or updated**, Alfa updates its language tables itself. A pack's install
   script does not have to.
 - **Uninstalling Alfa Commerce** also uninstalls its language packs, through Joomla's installer. Joomla's own
-  language packages are not touched.
+  language packages are not touched. A pack whose package manifest is missing is not uninstalled, because Joomla
+  cannot uninstall it without the manifest either; the uninstall message names it, and the maintenance log says
+  why, with its files.
 
 ## What can go wrong
 

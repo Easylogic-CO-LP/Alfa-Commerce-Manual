@@ -324,7 +324,7 @@ is also written to the log (category `com_alfa.orders`) with the plugin's name.
 | What happened | What Alfa does |
 |---|---|
 | Your plugin is disabled or not installed | The order is placed without your check. |
-| Your handler throws an error | The placement is refused, nothing is saved, the plugins after you are not asked, and the error is written to the log (category `com_alfa.orders`). This is a "before" event: a failure stops the operation. To refuse with a sentence the customer can read, call `reject()`. |
+| Your handler throws an error | The placement is refused, nothing is saved, the plugins after you are not asked, and the error is written to the log (category `com_alfa.orders`). This is a "before" event: a failure stops the operation. To refuse with a sentence the customer can read, call `reject()`. Planned for 2.2.1, which is not released: you may also throw `Alfa\Component\Alfa\Administrator\Event\Orders\OrderPlaceRefusedException` with a sentence for the shopper, which is read as a `reject()` is. Any other error, or that exception with no words, is reported to the shopper as "... could not check this order, so it was not placed. Please try again, or contact the shop if it happens again.", naming your plugin; its words stay in the log. |
 | Your plugin is admitted for the customer but not loaded for the member of staff | The placement is refused with the message of "When staff operate a customer's cart". |
 
 ### onAlfaOrderPlaced
@@ -500,5 +500,6 @@ The events about stock and about documents (invoices, credit notes) that follow 
 
 - The data your layout receives for `onCartItemDisplay`, and every property of the cart line and the item objects.
 - The exact message a shopper sees when a handler of `onOrderPlaceValidate` throws an error. Use `reject()`.
+  Planned for 2.2.1, which is not released: the message above, naming the plugin.
 - The other values of a `CartContribution` object passed to `addTotalAdjustment()` beyond what the builder sets.
 - How a charge appears on documents and in e-mails.

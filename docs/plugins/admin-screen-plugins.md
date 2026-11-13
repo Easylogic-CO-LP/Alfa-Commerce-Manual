@@ -437,4 +437,5 @@ How stock is allocated is not one of these. It belongs to a plugin family of its
   events and calls.
 - How many refusal messages staff see when several plugins refuse the same save or delete.
 - The exact moment `onAlfaAdminAfterSave` is announced for a **new item**, compared with the rest of the item's
-  save.
+  save. Planned for 2.2.1, which is not released: once the whole item's save is final, new or not. See
+  [Item and catalogue events](../events/item-and-catalogue-events.md#saving-an-item).

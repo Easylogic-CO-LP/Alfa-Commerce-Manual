@@ -25,7 +25,9 @@ shop itself, for example when an order reaches a status that issues one. See
 | `GET v1/alfa/documents/:id/pdf` | The same as a PDF |
 | `POST v1/alfa/documents/:id/void` | Voids the document |
 
-Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`.
+Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`. Planned for 2.2.1,
+which is not released: also `filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days
+included).
 
 **A list row holds:** `id`, `doc_type`, `status`, `number`, `number_formatted`, `issue_date_local`, `id_order`,
 `id_shipment`, `id_corrects`, `buyer_name`, `buyer_vat_number`, `currency_code`, `total_tax_excl`, `total_tax`,
@@ -39,6 +41,9 @@ Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `fi
 **The PDF** needs the dompdf library (`lib_dompdf`) on the site. Alfa Commerce does not ship it. Without it the
 route answers 500 in 2.2.0 ([Known defects](./overview.md#known-defects-in-220), row 9). The HTML route does not
 need it.
+
+Planned for 2.2.1, which is not released: without the library the route answers 503 with a sentence that names the
+library, and the setup checklist has a row, "PDF library for sales documents", that says where to get it.
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:

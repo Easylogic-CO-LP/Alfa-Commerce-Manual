@@ -109,6 +109,38 @@ Three things follow from this:
 Notice the order of steps 9 and 10: when a save changes a stored price, `onAlfaPricesChanged` is heard **before**
 `onItemAfterSave`.
 
+#### Planned for 2.2.1, which is not released: one save
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Staff
+    participant Alfa as Alfa Commerce
+    participant P as Your plugin
+    Staff->>Alfa: Fills in the form and presses Save
+    Alfa->>Alfa: Writes the row, names, images, prices, categories, fields, combinations and stock, as one save
+    Note over Alfa: The save is final here
+    Alfa->>P: onAlfaAdminAfterSave: the whole item is saved
+    Alfa->>P: onCatalogVisibilityChanged
+    Alfa->>Alfa: Works out the item's stored prices again
+    Alfa->>P: onAlfaPricesChanged, only if a stored price changed
+    Alfa->>P: onItemAfterSave: the item is saved, store your own values now
+    Alfa->>Staff: Shows the saved item
+```
+
+The item is saved as one unit: all of it, or, if the save stops part way, none of it. Staff are then told that the
+item was not saved, that nothing of it was kept, and to try again.
+
+- Everything from step 4 on waits until the save is final and is never announced for a save that was undone.
+  `onAlfaAdminAfterSave` (and Joomla's `onContentAfterSave`) see the new prices, images and categories.
+- A part that reports its own refusal (combinations, stock, tracking, sale rules) is still shown to staff, and the
+  save goes on, unless its failure ended the save.
+- Joomla's `onContentBeforeSave`, Joomla's table events and the media events of the item's images run inside the
+  save (step 2). What a listener writes to the shop's database there is undone with a save that fails, and the
+  listener is not told. Work that must not be undone belongs in `onContentAfterSave`, `onAlfaAdminAfterSave` or
+  `onItemAfterSave`.
+- `onAlfaPricesChanged` is still heard before `onItemAfterSave`.
+
 ### onItemPrepareForm
 
 **When it fires.** Whenever the item's edit form is built in the administrator: when the screen opens, and again
@@ -155,7 +187,8 @@ with the rest of the form and handed to you in `onItemAfterSave`.
 **When it fires.** At the very end of an item's save in the administrator, after every part of the item was written
 and its stored prices were worked out again. One exception: when another piece of work is working out the same
 item's stored data at that moment, Alfa leaves this to its background catalogue job, and the stored prices are
-worked out after `onItemAfterSave`.
+worked out after `onItemAfterSave`. Planned for 2.2.1, which is not released: once the whole save is final, and
+never for a save that was undone.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first.
 
@@ -398,5 +431,6 @@ The events about an item's stock have a page of their own: [Stock events](./stoc
 - How a plugin puts its own stored value back into the item's form when the item is opened again.
 - The data your layout receives for `onItemDisplay`, and every property of the item object.
 - Whether `onAlfaCatalogEntityChanged` and `onCatalogVisibilityChanged` are announced before or after their save is
-  final.
+  final. Planned for 2.2.1, which is not released: after it, for an item's save and a category's save. A
+  manufacturer's save is not settled.
 - Deleting an item: which event a feature plugin uses to remove its own rows for the item.

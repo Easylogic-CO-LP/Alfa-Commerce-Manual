@@ -175,6 +175,20 @@ the order status and the editors of the positions read the administrator side on
 | Add a second layout to choose from | Add a new file in the administrator template's override folder, for example `emails/order/compact.php`. It appears in the layout picker of the order status as `emails.order.compact`. A file whose name starts with `_` is not listed. Put the same file in the site template too. A layout that exists only in a template is not found on an API request or under the console command. |
 | Restyle the items, totals, payments, shipments or downloads | Override the matching file under `html/layouts/com_alfa/emails/partials/`, in both templates |
 
+Planned for 2.2.1, which is not released: an e-mail override is read from one place, whatever sends the e-mail (an
+administrator request, the storefront, the REST API or the console command). Alfa Commerce looks in this order:
+
+1. `administrator/templates/<the default administrator template>/html/layouts/com_alfa/`
+2. The same folder of the template that the default administrator template inherits from, if it has one
+3. The shipped layouts, `administrator/components/com_alfa/layouts/`
+
+The layout picker of the order status lists from the same folders. The site template's `html/layouts/com_alfa/` is
+no longer read for e-mails, and neither is an administrator template style that is not the default one.
+
+What this means for a 2.2.0 shop: an e-mail override kept only in the site template, as the tables above advise
+for the storefront's e-mails, is no longer read after the update to 2.2.1. Copy the file into the default
+administrator template before or with the update. The copy in the site template is then no longer used.
+
 Inside a layout three helpers are available:
 
 | Helper | What it gives |
@@ -262,7 +276,7 @@ it itself. See [Order and cart events](../events/order-and-cart-events.md).
 | The task is Failed at once | Joomla's Send Mail is No, or the order names no currency, so no amount can be stated |
 | The task is "Outcome unknown" | The mail server took the message and did not answer. Check the mailbox, then Resend or Mark resolved. |
 | The e-mail is in the wrong language | It follows the order's language, not the administrator's. An order without a language uses the default content language. |
-| Your override is ignored | The e-mail was sent by a request of the other application. An override is read from the administrator template on an administrator request and from the site template on a storefront request. An API request and the console command read no override. |
+| Your override is ignored | The e-mail was sent by a request of the other application. An override is read from the administrator template on an administrator request and from the site template on a storefront request. An API request and the console command read no override. Planned for 2.2.1, which is not released: the override is not in the default administrator template (or the template it inherits from), or it sits only in the site template, which is no longer read for e-mails. |
 | Raw language keys in the e-mail | Your layout uses a key that is not in Alfa's administrator language file. Alfa loads that file, and the order's language, before drawing. |
 | A send error | Look in the log, category `com_alfa.orderemail` |
 

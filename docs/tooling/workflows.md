@@ -22,7 +22,7 @@ pull request as one check, green or red.
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
 | Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. |
 | Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
-| Claude PR Review, **AI review** (job `claude-review`) | Every pull request when it is opened, updated or reopened, and any comment that contains `@claude` | No. It posts comments. |
+| Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
 Whether a red check stops a merge is decided by the repository's branch rules on GitHub, not by the workflow files.
 
@@ -57,7 +57,7 @@ sequenceDiagram
     Checks->>GitHub: PHP CS Fixer commits its fixes to your branch
     Checks->>GitHub: Copy-clean, CodeQL and the secret scan answer green or red
     Checks->>GitHub: PHPStan prints its findings and stays green
-    GitHub->>Review: Start the review (every pull request)
+    GitHub->>Review: Start the review (a pull request from this repository)
     Review->>GitHub: Comments on the changed lines and a summary
     GitHub->>You: The checks and the comments on the pull request
 ```
@@ -71,7 +71,8 @@ You do not start anything. GitHub starts the workflows by itself:
 
 - **Code Quality** and **Security Scan** start for a pull request whose target is `main` or `developer`, and again
   when `main` or `developer` receives commits. A pull request into any other branch does not start them.
-- **Claude PR Review** has no branch filter. It starts for every pull request.
+- **Claude PR Review** has no branch filter, but it starts only for the repository's own people: see
+  [The AI review](#the-ai-review). A pull request from a fork gets no AI review.
 
 ## What you must provide
 
@@ -88,8 +89,8 @@ File: `.github/workflows/code-quality.yml`. Three jobs.
 | | |
 |---|---|
 | Runs | On pull requests only. It is skipped on a push to `main` or `developer`. |
-| PHP | 8.2 |
-| What it does | Checks out the branch of the pull request, formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. |
+| PHP | 8.2. From the next promotion of `developer` to `main`: 8.3. |
+| What it does | Checks out the branch of the pull request, formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. From the next promotion of `developer` to `main`, it checks the branch out from the pull request's own repository, so a fork's branch is found. |
 | What makes it fail | Only a step that breaks: the tool cannot run, or the commit cannot be made. Badly formatted code does not fail it, it gets fixed. |
 
 Details and the local command: [PHP CS Fixer](./php-cs-fixer).
@@ -131,6 +132,9 @@ copy-clean gate: 1640 shipped files, 1630 judged; 44 occurrence(s) allowed by 44
 So a green PHPStan check does not mean that PHPStan found nothing. Open the run and read its findings. Details and
 the local command: [PHPStan](./phpstan).
 
+From the next promotion of `developer` to `main` (with 2.2.1, which is not released): PHP 8.3, PHPStan 2.3.5 and
+Joomla 6.2.0, each checked against its sha256, and no `continue-on-error`, so any finding turns the check red.
+
 ## Security Scan
 
 File: `.github/workflows/security-scan.yml`. Three jobs, on pull requests into `main` or `developer` and on pushes
@@ -142,6 +146,10 @@ to them.
 | `php-security` | Sets up PHP 8.2 and installs a checker for known vulnerabilities in Composer dependencies. The checker runs only when a file `composer.lock` exists. The repository has none, so the job prints that it skips the scan. | Only a step that breaks. It checks nothing today. |
 | `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords. It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
 
+From the next promotion of `developer` to `main`, the actions of Code Quality and Security Scan run from a fixed
+commit, except those of the `php-security` job, which also stays on PHP 8.2. TruffleHog's action is fixed at v3.99.9; the scanner it starts is
+still its `latest` image.
+
 If the secret scan turns red, removing the secret from the file is not enough: it stays in the history. Replace the
 secret at the service that issued it.
 
@@ -151,8 +159,8 @@ File: `.github/workflows/claude-pr-review.yml`. One job, `claude-review`.
 
 | | |
 |---|---|
-| Runs | When a pull request is opened, when new commits are pushed to it, and when it is reopened. Also when someone writes a comment that contains `@claude` on an issue or a pull request. |
-| What it needs | The repository secret `CLAUDE_CODE_OAUTH_TOKEN`. |
+| Runs | When a pull request is opened, when new commits are pushed to it, and when it is reopened, if the pull request comes from a branch of this repository (not a fork) and its author is the owner, a member, a collaborator or a contributor. Also when one of them writes a comment that contains `@claude` on a pull request (not on an issue). A member whose membership is private and who has never had a commit merged counts as none of these and is skipped. |
+| What it needs | The repository secret `CLAUDE_CODE_OAUTH_TOKEN`. Its first step asks GitHub for the person's access and stops unless it is admin or write (maintain counts as write). The job holds only the permissions `contents: read` and `id-token: write`, its checkout keeps no credentials, and a new start for the same pull request cancels a run in progress. |
 | What it reads first | The reviewer rulebook, `.github/review-guidelines.md`. It is told to review only the changes of the pull request against those rules. |
 | What it posts | Comments on the exact lines, each with a severity mark, and a short summary on the pull request. |
 | What it leaves alone | Formatting, which PHP CS Fixer handles, and findings of the kind PHPStan reports. It is told to say so when the pull request is clean and not to invent problems. |
@@ -171,7 +179,9 @@ holds, in this order:
 - The rule groups: Release and migrations, Database, Joomla gotchas, Multilingual, Security, Conventions, i18n.
 - What not to flag: style, PHPStan findings, and file differences on a development site.
 
-Some lines of the rulebook are older than 2.2.0. Trust this manual and the code where they differ:
+Some lines of the rulebook are older than 2.2.0. Trust this manual and the code where they differ. From the next
+promotion of `developer` to `main` (with 2.2.1, which is not released), the rulebook is corrected on all four rows
+below; one of its headings still reads "Namespaces (PSR-4, Joomla 6/7)".
 
 | The rulebook says | 2.2.0 |
 |---|---|
@@ -200,7 +210,8 @@ On the pull request page:
 | PHPStan is green | That says nothing about findings. Open the run and read them. |
 | PHP CS Fixer added a commit | Pull, then continue. |
 | The AI review commented | Read it, apply what is right. Its comments do not fail a check. |
-| A comment with `@claude` started a new review | That is how the workflow is written: any comment containing `@claude` starts the job again. |
+| A comment with `@claude` started a new review | That is how the workflow is written: a comment containing `@claude` on a pull request, by a person with write access, starts the job again. |
+| A comment with `@claude` started nothing | It was on an issue, on a pull request from a fork, or by a person without write access. |
 
 ## Versions the checks run on
 
@@ -208,11 +219,14 @@ On the pull request page:
   PHP 8.3 or newer.
 - The workflows name no version for PHP CS Fixer or PHPStan, TruffleHog is taken from its `main` branch, and Joomla
   is the latest release on the day of the run. A result can therefore change without a change in the code.
+- From the next promotion of `developer` to `main` (with 2.2.1, which is not released): PHP 8.3 for PHP CS Fixer and
+  PHPStan, PHP 8.2 only for the dependency check; PHPStan 2.3.5 and Joomla 6.2.0; TruffleHog's action at v3.99.9.
+  PHP CS Fixer and TruffleHog's scanner image are still not fixed, so their results can still change by themselves.
 
 ## Not documented yet
 
-- Whether PHP CS Fixer can commit to a pull request that comes from a fork, and whether the AI review's secret is
-  available to such a pull request.
+- Whether PHP CS Fixer can commit to a pull request that comes from a fork. (The AI review does not run for such a
+  pull request.)
 - What the AI review answers when a comment with `@claude` asks a question. The workflow passes the same review
   instructions for every start.
 - Whether a CodeQL alert turns the `security-scan` check red.

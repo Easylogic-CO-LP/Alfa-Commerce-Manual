@@ -196,7 +196,7 @@ Nothing marks an order as partly shipped. Alfa works it out from the units on sh
 |---|---|---|
 | `$this->assignShipmentItems($shipmentId, $orderId, $items)` | Replaces the lines of a parcel. `$items` is a list of order line ids or a map of line id to quantity. Quantities above what is left are lowered. Returns `true` or `false`. | A parcel that is not recorded as yours. Lines of another order are skipped. |
 | `$this->deleteShipment($shipmentId, $orderId)` | Deletes a parcel, its lines and writes the History entry, in one save | A parcel that is not recorded as yours |
-| `$this->getShipment($shipmentId)` | Reads one parcel, with its method's record on `->params`, or `null` | |
+| `$this->getShipment($shipmentId)` | Reads one parcel, with its method's record on `->params`, or `null`. Planned for 2.2.1, which is not released: `->params` is `null` when the parcel names no method or its method was deleted, so test it before you read it. | |
 | `$this->getShipmentsByOrder($orderId)` | Reads the rows of an order's parcels | |
 | `$this->getOrder($orderId)` | Loads an order as the same `Order` reader the events hand over, or `null`. For a webhook, which has no order. | |
 | `$this->orderLanguage($order)` | The language tag of the order's buyer (`el-GR`), for a message or a carrier's page | |

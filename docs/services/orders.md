@@ -75,7 +75,7 @@ The **draft** is a plain array. Keys marked required must be there; the others h
 |---|---|---|
 | `source` | **Required.** Where the order comes from: `storefront`, `admin`, `renewal` or `api`. It is stored on the order and in its History. Only its presence is checked. | |
 | `lines` | **Required**, at least one line, unless `allow_empty` is true | |
-| `id_address_delivery` | The id of an existing address row (`#__alfa_user_info`). The method's comment marks it required, but `create()` does not check it: without it the order is stored with no delivery address. | none |
+| `id_address_delivery` | The id of an existing address row (`#__alfa_user_info`). The method's comment marks it required, but `create()` does not check it: without it the order is stored with no delivery address. Planned for 2.2.1, which is not released: required when the draft names a shipping method (`id_shipment_method`), and checked; an order with no shipping method needs none. | none |
 | `id_address_invoice` | The same for the invoice address | none |
 | `id_user` | The customer's user id | 0, a guest |
 | `id_order_status` | The status the order starts in | The shop's first status |
@@ -162,6 +162,7 @@ the order's methods, a status change goes through [`Transition`](#transition).
 | A line without both unit prices | `OrderCreator: line N needs explicit unit prices` |
 | A starting status that requires the order to be paid, unless that status allows an unpaid exception | `OrderCreator: status N requires payment` |
 | A shop with no order status at all | `OrderCreator: no target status and no is_initial status exists` |
+| Planned for 2.2.1, which is not released: a draft that names a shipping method and no existing delivery address. Nothing is written. | `OrderCreator: id_address_delivery must name an existing delivery record` |
 | Any write that fails, the stock claim included | `OrderCreator: order creation failed:` |
 
 Two more public methods:
@@ -373,7 +374,7 @@ methods, so that you can follow the code:
 | `getBreakdown(int $orderId, ?object $order = null): object` | The same from the database, plus `cart_rules` and the shipping cost before shipping rules (`shipping_gross_tax_incl`, `shipping_gross_tax_excl`) |
 | `getExactBreakdown(int $orderId, ?object $order = null): object` | The ten figures from the database, as exact decimal texts |
 | `getOrderTotal(int $orderId, ?object $order = null): float` | The total, tax included |
-| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each. `getShippingTotal()` is the parcels' charges before shipping rules. |
+| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each. `getShippingTotal()` is the parcels' charges before shipping rules. Planned for 2.2.1, which is not released: `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
 | `activeShipments(array $shipments): array`, `activeShipmentsWhere($db, string $prefix = ''): string` | The parcels that count: all but cancelled and returned ones |
 
 ## OrderStatusHelper
@@ -449,7 +450,7 @@ There is no shipped example of either.
 
 | Your plugin | What the class comment says |
 |---|---|
-| A payment plugin that captures or releases an authorized payment | `OrderMoneyLock`. The comment says the gateway runs its checks, the provider call and the booking inside `run()`. The same comment then says a gateway holds the lock around its own log write and booking, "never across a call to the provider". The two sentences do not agree, and no shipped plugin shows which is meant. This manual does not say whether the call to the provider belongs inside the lock. |
+| A payment plugin that captures or releases an authorized payment | `OrderMoneyLock`. The comment says the gateway runs its checks, the provider call and the booking inside `run()`. The same comment then says a gateway holds the lock around its own log write and booking, "never across a call to the provider". The two sentences do not agree, and no shipped plugin shows which is meant. This manual does not say whether the call to the provider belongs inside the lock. Planned for 2.2.1, which is not released: the comment says one thing. The gateway takes the lock with `run()`, checks the payment's state, records the operation it is about to send and books it, and releases the lock before any call to the provider: "the lock is never held across a call to the provider". |
 | A shipping plugin that books a parcel with the carrier | `ShipmentBookingLock`. The comment says the carrier runs the whole booking inside `run()`: it reads whether the shipment is booked, asks the carrier and records the parcel. |
 
 **A refund needs no such lock.** A refund is set aside in the books before the provider is asked

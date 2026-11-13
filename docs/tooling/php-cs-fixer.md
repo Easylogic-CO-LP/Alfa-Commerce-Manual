@@ -88,6 +88,8 @@ Two things that surprise contributors:
 
 The workflow sets up PHP 8.2 and asks for the tool `php-cs-fixer` without naming a version, so the repository pins
 none. Install PHP CS Fixer the way its own documentation describes, then run it from the root of the repository.
+From the next promotion of `developer` to `main` (with 2.2.1, which is not released), the workflow sets up PHP 8.3;
+it still names no version of the tool.
 
 The workflow's command, which changes the files and prints each change:
 
@@ -126,5 +128,6 @@ You then have a commit on GitHub that you do not have on your computer. Pull bef
 ## Not documented yet
 
 - Whether the job can commit its fixes to a pull request that comes from a fork. The workflow file does not settle
-  it.
+  it. From the next promotion of `developer` to `main`, the job checks out the branch from the pull request's own
+  repository, so a fork's branch is found; whether it can then push to that fork was not tried.
 - Which version of PHP CS Fixer a run installs. The workflow names none.

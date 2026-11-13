@@ -313,7 +313,8 @@ public static function getSubscribedEvents(): array
 ### onAlfaCatalogEntityChanged
 
 **When it fires.** After categories or manufacturers were created, renamed, changed, published, unpublished or
-deleted. Items are not announced here: they reach your writer directly, as described above.
+deleted. Items are not announced here: they reach your writer directly, as described above. Planned for 2.2.1, which
+is not released: for a category's save, after the save is final and its items were rebuilt.
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 
@@ -334,7 +335,9 @@ not listen.
 
 ### onCatalogVisibilityChanged
 
-**When it fires.** After the list of users or user groups allowed to see an item or a category was changed.
+**When it fires.** After the list of users or user groups allowed to see an item or a category was changed. Planned
+for 2.2.1, which is not released: for an item's or a category's save, after the save is final (for a category, after
+its items were rebuilt).
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 

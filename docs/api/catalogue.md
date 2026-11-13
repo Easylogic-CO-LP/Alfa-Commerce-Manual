@@ -91,6 +91,14 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
 `robots`. Left out, each stays as it was.
 
+**Options, combinations and item field values** (`fields`, `options`, `combinations`, `informational`) are for
+reading. Do not send them in a write: see [Known defects](./overview.md#known-defects-in-220), row 14. A program that
+reads an item and sends it back leaves them out. Planned for 2.2.1, which is not released: a create or change that
+carries them, or the item form's keys for them, answers 422 naming the keys, and nothing is saved.
+
+Planned for 2.2.1, which is not released: the list gains `filter[stock]` and `filter[fields]`. See
+[The filters of each list](./overview.md#the-filters-of-each-list).
+
 **Delete.** An item that was never sold is removed (204). An item that an order holds stays, archived
 (`state` 2), and the answer is still 204.
 
@@ -141,6 +149,9 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 **One record holds also:** `description`, `categories`, `translations`.
 
 **Related lists you can send:** `categories`, `values`.
+
+Planned for 2.2.1, which is not released: deleting an item field that items still use (their combinations, offered
+options or specifications) is refused with 409 and the reason, and nothing is deleted.
 
 ## The storefront's view
 
@@ -200,4 +211,4 @@ The price here is worked out when you ask, by the same pricing code as the item 
 ## Not documented yet
 
 - The parts of the `price` object one by one, and the `variant`, `combinations` and `cartState` objects.
-- How to send combinations and item field values of an item in a write.
+- How to send combinations and item field values of an item in a write. The API has no supported way to write them.
