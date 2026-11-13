@@ -5,6 +5,8 @@ description: "Every event a shipping plugin receives in Alfa Commerce 2.2.0: whe
 
 # Shipping plugin events
 
+<CreatePluginButton type="shipping" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

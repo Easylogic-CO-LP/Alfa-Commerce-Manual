@@ -6,6 +6,8 @@ description: How a plugin of the alfa group adds a whole administrator screen of
 
 # Creating an Admin Panel
 
+<CreatePluginButton type="adminpanel" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

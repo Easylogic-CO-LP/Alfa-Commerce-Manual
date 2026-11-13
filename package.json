@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
+    "templates": "node scripts/plugin-templates.mjs",
+    "prestart": "node scripts/plugin-templates.mjs",
     "start": "docusaurus start",
+    "prebuild": "node scripts/plugin-templates.mjs",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",

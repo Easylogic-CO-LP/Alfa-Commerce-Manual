@@ -6,6 +6,8 @@ description: How a plugin adds columns, filters, buttons, row actions, form tabs
 
 # Extending Admin Screens
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

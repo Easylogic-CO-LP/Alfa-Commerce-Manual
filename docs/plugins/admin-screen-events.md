@@ -5,6 +5,8 @@ description: "The list, edit, save and delete events a feature plugin hears on A
 
 # Admin screen events
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

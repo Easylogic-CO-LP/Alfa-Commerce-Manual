@@ -6,6 +6,8 @@ description: How to write a shipping plugin for a carrier, the events it receive
 
 # Shipping plugins
 
+<CreatePluginButton type="shipping" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

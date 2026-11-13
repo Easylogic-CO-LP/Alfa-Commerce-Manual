@@ -5,6 +5,8 @@ description: "A complete small plugin of the alfa group for Alfa Commerce 2.2.0,
 
 # A complete feature plugin
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

@@ -5,6 +5,8 @@ description: "How a script on an administrator screen asks a plugin for an answe
 
 # Calling your plugin from the browser
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

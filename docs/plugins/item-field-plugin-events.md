@@ -5,6 +5,8 @@ description: "Every event an item field plugin receives in Alfa Commerce 2.2.0: 
 
 # Item field plugin events
 
+<CreatePluginButton type="itemfield" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

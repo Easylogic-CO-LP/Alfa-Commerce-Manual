@@ -5,6 +5,8 @@ description: "A complete minimal payment plugin for Alfa Commerce 2.2.0, file by
 
 # A complete payment plugin
 
+<CreatePluginButton type="payment" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**

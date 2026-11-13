@@ -6,6 +6,7 @@
 
 # Generated files
 .docusaurus
+/src/data/pluginTemplates.json
 .cache-loader
 
 # Misc

@@ -5,6 +5,8 @@ description: "How a payment plugin records and settles a payment, refunds it, an
 
 # Payments, refunds and webhooks
 
+<CreatePluginButton type="payment" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
