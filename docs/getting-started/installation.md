@@ -102,6 +102,9 @@ Before updating:
 
 The same Joomla and PHP checks run on an update as on an installation.
 
+An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
+removed". They were removed, and the warning can be ignored. A fix is planned for 2.2.1, which is not released.
+
 ### From a 1.x beta
 
 2.0.0 was the first stable release. It cannot be installed over any 1.x beta, and the installer refuses before
