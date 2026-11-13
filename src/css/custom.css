@@ -5,32 +5,48 @@
  */
 
 /* You can override the default Infima variables here. */
+/* The manual's colours. To recolour the whole manual, change these three values and nothing else:
+   the brand colour, the shade of it that carries text on a white page, and the dark background.
+   Every other colour below is worked out from them. */
 :root {
-  /* One colour for the whole manual: the gold of alfacommerce.gr, darkened where it carries text on white. */
-  --ifm-color-primary: #8a6516;
-  --ifm-color-primary-dark: #7c5b14;
-  --ifm-color-primary-darker: #755613;
-  --ifm-color-primary-darkest: #614710;
-  --ifm-color-primary-light: #986f18;
-  --ifm-color-primary-lighter: #9f7419;
-  --ifm-color-primary-lightest: #b4841d;
+  --alfa-brand: #d4a853;
+  --alfa-brand-on-light: #8a6516;
+  --alfa-ink: #0a0a0b;
+}
+
+/* Infima's colour scale, light theme. */
+:root {
+  --ifm-color-primary: var(--alfa-brand-on-light);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--ifm-color-primary) 90%, black);
+  --ifm-color-primary-darker: color-mix(in srgb, var(--ifm-color-primary) 85%, black);
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--ifm-color-primary) 70%, black);
+  --ifm-color-primary-light: color-mix(in srgb, var(--ifm-color-primary) 90%, white);
+  --ifm-color-primary-lighter: color-mix(in srgb, var(--ifm-color-primary) 85%, white);
+  --ifm-color-primary-lightest: color-mix(in srgb, var(--ifm-color-primary) 70%, white);
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* On the dark theme the gold itself is light enough to read. */
+/* Dark theme: the brand colour itself is light enough to read. */
 [data-theme='dark'] {
-  --ifm-color-primary: #d4a853;
-  --ifm-color-primary-dark: #cf9c3c;
-  --ifm-color-primary-darker: #cc9631;
-  --ifm-color-primary-darkest: #ae7d24;
-  --ifm-color-primary-light: #d9b46a;
-  --ifm-color-primary-lighter: #dcba75;
-  --ifm-color-primary-lightest: #e5cb97;
+  --ifm-color-primary: var(--alfa-brand);
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
-[data-theme='dark'] .button.button--primary {
-  color: #0a0a0b;
+
+/* A filled button in the brand colour carries dark text where the brand colour is light:
+   on the dark theme, and in the dark hero of the homepage. */
+[data-theme='dark'] .button.button--primary,
+.hero--dark .button.button--primary {
+  color: var(--alfa-ink);
+}
+
+/* The dark hero and the dark footer use the brand's ink, and the hero the brand colour itself. */
+.hero--dark {
+  --ifm-hero-background-color: var(--alfa-ink);
+  --ifm-color-primary: var(--alfa-brand);
+}
+.footer--dark {
+  --ifm-footer-background-color: var(--alfa-ink);
 }
 
 /* GitHub mark in the navbar (replaces the plain "GitHub" text link) */
@@ -173,9 +189,4 @@
 :root {
   --ifm-font-family-base: 'Easylogic Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --ifm-heading-font-family: var(--ifm-font-family-base);
-}
-
-/* The footer in the brand's ink, not Docusaurus's blue-grey. */
-.footer--dark {
-  --ifm-footer-background-color: #0a0a0b;
 }

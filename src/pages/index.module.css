@@ -1,25 +1,21 @@
-/* The homepage. Ink and gold are the colours of alfacommerce.gr. */
-.hero,
-.features {
-  --ink: #0a0a0b;
-  --paper: #f0ede8;
-  --gold: #d4a853;
-}
+/* The homepage. Layout, buttons, cards and grid are Infima's (hero, button, card, row, col).
+   Colours come from src/css/custom.css. Only what Infima does not have is written here. */
 
 .hero {
-  background: var(--ink);
-  color: var(--paper);
-  padding: 4.5rem 1.5rem;
+  padding: 4.5rem 0;
 }
 .heroInner {
-  max-width: 1040px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 3rem;
 }
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
 
-/* The mark draws itself once, then fills. */
+/* The Alfa mark draws itself once, then fills. */
 .mark {
   flex: none;
   width: 190px;
@@ -27,7 +23,7 @@
 }
 .markLine {
   fill: none;
-  stroke: var(--gold);
+  stroke: var(--alfa-brand);
   stroke-width: 9;
   stroke-linejoin: round;
   stroke-dasharray: 1;
@@ -35,7 +31,7 @@
   animation: draw 1.6s cubic-bezier(0.6, 0, 0.2, 1) 0.2s forwards;
 }
 .markFill {
-  fill: var(--gold);
+  fill: var(--alfa-brand);
   opacity: 0;
   animation: fill 0.6s ease 1.6s forwards;
 }
@@ -50,63 +46,9 @@
   }
 }
 
-.title {
-  font-size: clamp(2rem, 4.4vw, 3.1rem);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  margin: 0 0 1rem;
-  color: var(--paper);
-}
-.tagline {
-  font-size: 1.15rem;
-  line-height: 1.6;
-  color: #c9c6c0;
-  margin: 0 0 1.75rem;
-  max-width: 36rem;
-}
-.buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.primary,
-.secondary {
-  display: inline-block;
-  padding: 0.7rem 1.3rem;
-  border-radius: 8px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-}
-.primary {
-  background: var(--gold);
-  border: 1px solid var(--gold);
-  color: var(--ink);
-}
-.primary:hover {
-  background: #e2b964;
-  border-color: #e2b964;
-  color: var(--ink);
-  text-decoration: none;
-}
-.secondary {
-  border: 1px solid #4a4a52;
-  color: var(--paper);
-}
-.secondary:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-  text-decoration: none;
-}
-.primary:focus-visible,
-.secondary:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 3px;
-}
-
 @media screen and (max-width: 768px) {
   .hero {
-    padding: 3rem 1.25rem;
+    padding: 3rem 0;
   }
   .heroInner {
     flex-direction: column;
@@ -118,131 +60,66 @@
   }
 }
 
-/* The cards */
-.features {
-  padding: 4rem 0 5rem;
-}
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-}
-@media (max-width: 996px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 14px;
-  background: var(--ifm-background-surface-color);
-  color: var(--ifm-font-color-base);
-  text-decoration: none;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  animation: alfaFadeUp 0.5s ease both;
-}
-.card:hover {
-  transform: translateY(-4px);
-  border-color: var(--gold);
-  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.3);
-  text-decoration: none;
-  color: var(--ifm-font-color-base);
-}
-
-.iconWrap {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 1rem;
-  border-radius: 12px;
-  color: var(--ifm-color-primary);
-  background: color-mix(in srgb, var(--gold) 18%, transparent);
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.iconWrap svg {
-  width: 26px;
-  height: 26px;
-}
-.card:hover .iconWrap {
-  background: var(--gold);
-  color: var(--ink);
-}
-
-.cardTitle {
-  font-size: 1.15rem;
-  margin: 0 0 0.4rem;
-}
-/* The whole card opens its section; the links under the text stay their own targets. */
+/* A card: the whole card opens its section, the links in its footer stay their own targets. */
 .card {
   position: relative;
+  height: 100%;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: border-color var(--ifm-transition-fast) ease, box-shadow var(--ifm-transition-fast) ease;
 }
-.cardLink {
-  color: var(--ifm-font-color-base);
-  text-decoration: none;
+.card:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: var(--ifm-global-shadow-md);
 }
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--ifm-card-border-radius);
+  color: var(--ifm-color-primary);
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+}
+.icon svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.cardTitle {
+  font-size: 1.15rem;
+  margin: 0;
+}
+.cardLink,
 .cardLink:hover {
-  color: var(--ifm-font-color-base);
+  color: inherit;
   text-decoration: none;
 }
 .cardLink::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 14px;
+  border-radius: var(--ifm-card-border-radius);
 }
 .cardLink:focus-visible {
   outline: none;
 }
 .cardLink:focus-visible::after {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--ifm-color-primary);
   outline-offset: 3px;
-}
-.cardDesc {
-  margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: var(--ifm-color-emphasis-700);
 }
 .pages {
   position: relative;
   z-index: 1;
   list-style: none;
-  margin: 1rem 0 0;
-  padding: 0.85rem 0 0;
-  border-top: 1px solid var(--ifm-color-emphasis-200);
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem 1rem;
   font-size: 0.9rem;
-  font-weight: 600;
-}
-.pages a {
-  text-decoration: none;
-}
-.pages a:hover {
-  text-decoration: underline;
+  font-weight: var(--ifm-font-weight-semibold);
 }
 
-@keyframes alfaFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .markLine {
     animation: none;
@@ -253,15 +130,6 @@
     opacity: 1;
   }
   .card {
-    animation: none;
-    transition: none;
-  }
-  .card:hover {
-    transform: none;
-  }
-  .iconWrap,
-  .primary,
-  .secondary {
     transition: none;
   }
 }
