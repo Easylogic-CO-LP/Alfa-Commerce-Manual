@@ -5,13 +5,15 @@ description: "A complete minimal shipping plugin for Alfa Commerce 2.2.0, file b
 
 # A complete shipping plugin
 
+<CreatePluginButton type="shipping" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Shipping plugins](./shipment-plugins.md): the guide itself
+- [Shipping plugins](./shipment-plugins.md): start here
 - [Shipping plugin events](./shipment-plugin-events.md)
-- [A complete shipping plugin](./shipment-plugin-example.md)
+- **A complete shipping plugin** (this page)
 
 This plugin is called `flat`. Each of its methods has one setting, a price, and it answers that price for every cart.
 It records one parcel when the order is placed. It is modelled on the standard plugin, without the zones, the staff

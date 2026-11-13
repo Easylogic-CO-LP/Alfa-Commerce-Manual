@@ -46,6 +46,7 @@ const sidebars: SidebarsConfig = {
       label: 'Plugin Development',
       items: [
         'plugins/overview',
+        'plugins/plugin-generator',
         {
           type: 'category',
           label: 'Payment plugins',

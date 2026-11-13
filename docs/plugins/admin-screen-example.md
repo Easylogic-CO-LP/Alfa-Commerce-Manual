@@ -5,13 +5,15 @@ description: "A complete small plugin of the alfa group for Alfa Commerce 2.2.0,
 
 # A complete feature plugin
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Extending Admin Screens](./admin-screen-plugins.md): the guide itself
+- [Extending Admin Screens](./admin-screen-plugins.md): start here
 - [Admin screen events](./admin-screen-events.md)
-- [A complete feature plugin](./admin-screen-example.md)
+- **A complete feature plugin** (this page)
 - [Calling your plugin from the browser](./admin-screen-ajax.md)
 
 No feature plugin ships with Alfa Commerce 2.2.0, so there is none to copy. The plugin below is complete and small.

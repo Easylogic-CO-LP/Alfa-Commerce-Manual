@@ -5,12 +5,14 @@ description: "Every event a shipping plugin receives in Alfa Commerce 2.2.0: whe
 
 # Shipping plugin events
 
+<CreatePluginButton type="shipping" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Shipping plugins](./shipment-plugins.md): the guide itself
-- [Shipping plugin events](./shipment-plugin-events.md)
+- [Shipping plugins](./shipment-plugins.md): start here
+- **Shipping plugin events** (this page)
 - [A complete shipping plugin](./shipment-plugin-example.md)
 
 The event classes are in `administrator/src/Event/Shipments`. Each card answers the same six questions.

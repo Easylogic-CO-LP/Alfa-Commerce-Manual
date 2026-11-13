@@ -5,14 +5,16 @@ description: "How a script on an administrator screen asks a plugin for an answe
 
 # Calling your plugin from the browser
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Extending Admin Screens](./admin-screen-plugins.md): the guide itself
+- [Extending Admin Screens](./admin-screen-plugins.md): start here
 - [Admin screen events](./admin-screen-events.md)
 - [A complete feature plugin](./admin-screen-example.md)
-- [Calling your plugin from the browser](./admin-screen-ajax.md)
+- **Calling your plugin from the browser** (this page)
 
 Sometimes a script on an admin screen needs a small answer from your plugin without loading a page: is this row
 kept, what does this code look up to. Joomla has an entry point for that, the component `com_ajax`. It is part of

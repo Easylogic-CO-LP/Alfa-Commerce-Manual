@@ -5,12 +5,14 @@ description: "The list, edit, save and delete events a feature plugin hears on A
 
 # Admin screen events
 
+<CreatePluginButton type="adminscreen" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Extending Admin Screens](./admin-screen-plugins.md): the guide itself
-- [Admin screen events](./admin-screen-events.md)
+- [Extending Admin Screens](./admin-screen-plugins.md): start here
+- **Admin screen events** (this page)
 - [A complete feature plugin](./admin-screen-example.md)
 - [Calling your plugin from the browser](./admin-screen-ajax.md)
 

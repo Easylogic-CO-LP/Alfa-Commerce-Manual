@@ -5,12 +5,14 @@ description: "Every event an item field plugin receives in Alfa Commerce 2.2.0: 
 
 # Item field plugin events
 
+<CreatePluginButton type="itemfield" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Item field plugins](./item-field-plugins.md): the guide itself
-- [Item field plugin events](./item-field-plugin-events.md)
+- [Item field plugins](./item-field-plugins.md): start here
+- **Item field plugin events** (this page)
 - [A complete item field plugin](./item-field-plugin-example.md)
 
 In every card, "the field" is the field as staff defined it, with these properties among others: `id`, `type`,

@@ -103,4 +103,47 @@
 }
 .alfa-postman__text small {
   opacity: 0.9;
+/* The button at the top right of a plugin type's pages (src/components/PluginGenerator/CreatePluginButton.tsx). */
+.alfa-create-plugin {
+  float: right;
+  margin: 0.35rem 0 0.75rem 1rem;
+}
+
+/* The plugin generator (src/components/PluginGenerator). */
+.alfa-generator__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.alfa-generator__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+.alfa-generator__field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.alfa-generator__field input,
+.alfa-generator__field select {
+  font: inherit;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-400);
+  border-radius: var(--ifm-global-radius);
+  background: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+}
+.alfa-generator__field small {
+  color: var(--ifm-color-emphasis-700);
+}
+.alfa-generator__about {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  padding: 0.9rem 1rem 0.1rem;
+  margin-bottom: 1.25rem;
+}
+.alfa-generator__problems {
+  color: var(--ifm-color-danger-dark);
 }

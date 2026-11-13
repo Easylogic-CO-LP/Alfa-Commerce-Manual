@@ -5,12 +5,14 @@ description: "Every event a payment plugin receives in Alfa Commerce 2.2.0: when
 
 # Payment plugin events
 
+<CreatePluginButton type="payment" />
+
 <AlfaVersion verified="2.2.0" />
 
 **The pages of this guide:**
 
-- [Payment plugins](./payment-plugins.md): the guide itself
-- [Payment plugin events](./payment-plugin-events.md)
+- [Payment plugins](./payment-plugins.md): start here
+- **Payment plugin events** (this page)
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
 - [A complete payment plugin](./payment-plugin-example.md)
 
