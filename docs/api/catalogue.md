@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
 title: Catalogue
-description: "The REST API routes for items, categories, manufacturers and item fields in Alfa Commerce 2.2.0, and the storefront's view of an item."
+description: "The REST API routes for items, categories, manufacturers and item fields in Alfa Commerce 2.2.1, and the storefront's view of an item."
 ---
 
 # Catalogue
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows: the token, pages, languages, how
 texts and money are sent, and the status codes.
@@ -45,7 +45,7 @@ curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json"
   }'
 ```
 
-The answer, status 200, shortened:
+The answer, status 201 (200 in 2.2.0), shortened:
 
 ```json
 {
@@ -92,27 +92,24 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 `robots`. Left out, each stays as it was.
 
 **Options, combinations and item field values** (`fields`, `options`, `combinations`, `informational`) are for
-reading. Do not send them in a write, nor the item form's keys for them and for its downloads: see
-[Known defects](./overview.md#known-defects-in-220), row 14. A program that reads an item and sends it back leaves
-them out. Set them on the item's page in the administrator.
-
-Planned for 2.2.1, which is not released: a create or change that carries any of these keys answers 422 naming them,
-and nothing is saved. A refused change leaves the item as it was; it is not checked out. The keys are `fields`,
+reading. A program that reads an item and sends it back leaves them out. Set them on the item's page in the
+administrator. A create or change that carries any of these keys answers 422 naming them, and nothing is saved
+(2.2.0 did not refuse them: [Known defects](./overview.md#known-defects-in-220), row 14). A refused change leaves the
+item as it was; it is not checked out. The keys are `fields`,
 `options`, `combinations`, `informational`, and the item form's `combinations_default`, `deleted_combination_ids`,
 `deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required` and
 `item_downloads`. For a body that carries `options`, the reason reads: "options cannot be written through the API: an
 item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
 item without them; nothing was saved."
 
-Planned for 2.2.1, which is not released: the list gains `filter[stock]` and `filter[fields]`. See
+Since 2.2.1, the list also takes `filter[stock]` and `filter[fields]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
 
-**Delete.** An item that was never sold is removed (204). An item that an order holds stays, archived
-(`state` 2), and the answer is still 204.
-
-Planned for 2.2.1, which is not released: an item is deleted only while it is in the trash. Move it there first
-with a `PATCH` of `state` -2; an item in any other state answers 409 and nothing is deleted. An item that an order
-holds then answers 200 with the item, `state` 2, and `meta.note` saying that it was archived instead of deleted.
+**Delete.** An item is deleted only while it is in the trash. Move it there first with a `PATCH` of `state` -2; an
+item in any other state answers 409 and nothing is deleted. An item that was never sold is then removed (204). An
+item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
+that it was archived instead of deleted. In 2.2.0 any item was deleted without the trash step, and the archived item
+was answered 204.
 
 ## Categories
 
@@ -130,11 +127,9 @@ holds then answers 200 with the item, `state` 2, and `meta.note` saying that it 
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `robots`.
 
-**Delete.** A category that has sub-categories, or that is the default category of an item, is refused with 409
-and the reason.
-
-Planned for 2.2.1, which is not released: only a category in the trash is deleted; any other answers 409. Move it
-to the trash first (`PATCH` with `state` -2).
+**Delete.** Only a category in the trash is deleted; any other answers 409. Move it to the trash first (`PATCH`
+with `state` -2). A category that has sub-categories, or that is the default category of an item, is refused with
+409 and the reason.
 
 ## Manufacturers
 
@@ -148,8 +143,8 @@ to the trash first (`PATCH` with `state` -2).
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `medias`, `translations`.
 
-Planned for 2.2.1, which is not released: only a manufacturer in the trash is deleted; any other answers 409. Move
-it to the trash first (`PATCH` with `state` -2).
+**Delete.** Only a manufacturer in the trash is deleted; any other answers 409. Move it to the trash first (`PATCH`
+with `state` -2).
 
 ## Item fields
 
@@ -166,18 +161,13 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 
 **One record holds also:** `description`, `categories`, `translations`.
 
-**Related lists you can send:** `categories`. 2.2.0 also accepts `values`, but do not send it, nor the field form's
-`deleted_value_ids`: a value is kept by its id whatever field it belongs to, so a value of another field named there
-moves under this field, and `deleted_value_ids` deletes the unused values of any field. See
-[Known defects](./overview.md#known-defects-in-220), row 15. Edit a field's values on its page in the administrator.
+**Related lists you can send:** `categories`. Edit a field's values on its page in the administrator: a create or
+change that carries `values` or `deleted_value_ids` answers 422 naming them, and nothing is saved; the field is not
+checked out. (2.2.0 accepted them: [Known defects](./overview.md#known-defects-in-220), row 15.)
 
-Planned for 2.2.1, which is not released: a create or change that carries `values` or `deleted_value_ids` answers 422
-naming them, and nothing is saved; the field is not checked out.
-
-Planned for 2.2.1, which is not released: deleting an item field that items still use (their combinations, offered
-options or specifications) is refused with 409 and the reason, and nothing is deleted. Such a delete is reached only
-once the field is in the trash: an item field in any other state answers 409 and nothing is deleted. Move it to the
-trash first (`PATCH` with `state` -2).
+**Delete.** Only an item field in the trash is deleted; any other answers 409 and nothing is deleted. Move it to the
+trash first (`PATCH` with `state` -2). Deleting an item field that items still use (their combinations, offered
+options or specifications) is refused with 409 and the reason, and nothing is deleted.
 
 ## The storefront's view
 

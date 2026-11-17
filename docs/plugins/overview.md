@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: Plugin overview
-description: What a plugin can do in Alfa Commerce, which plugin types exist in 2.2.0, how to choose one, and the rules every plugin shares.
+description: What a plugin can do in Alfa Commerce, which plugin types exist in 2.2.1, how to choose one, and the rules every plugin shares.
 ---
 
 # Plugin overview
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce is extended with Joomla plugins. A plugin adds to the shop without changing Alfa's own files, so an
 update of Alfa Commerce does not undo it.
@@ -204,7 +204,7 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 |---|---|
 | `extension` | `type="plugin"`, the `group`, and `method="upgrade"` so that installing a newer package updates the plugin. |
 | `name` | A language key built from the group and the element: `PLG_ALFA_PAYMENTS_STANDARD`. The key is in both language files, so Joomla shows the plugin's real name. The shipped `system` and `console` plugins write it in lower case (`plg_system_alfasync`). |
-| `version` | The shipped plugins carry Alfa Commerce's own version, `2.2.0`. Your plugin carries its own. |
+| `version` | The shipped plugins carry Alfa Commerce's own version, `2.2.1`. Your plugin carries its own. |
 | `namespace` | `path="src"`, then your vendor name, `Plugin`, the group in capitals without the hyphen, and the element: `Alfa\Plugin\AlfaPayments\Standard`. Use your own vendor name in place of `Alfa`. |
 | `files` | The `services` folder carries the attribute `plugin` with the element. It holds `provider.php`, which creates the plugin. `src` holds the class, `tmpl` the layouts, `params` the settings form of a method or a field. |
 | `languages` | Two files per language: the plugin's texts and its `.sys.ini` (the name and description Joomla shows in its lists). Their names are `plg_`, the group, an underscore, the element. |
@@ -214,9 +214,8 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 
 The shipped plugins are inside the Alfa Commerce package. The component's manifest (`alfa.xml`) lists them, and the
 component's installer script (`script.php`) installs or updates each one through Joomla's installer and then
-**enables** it. That happens on every installation and every update of Alfa Commerce. Planned for 2.2.1, which is
-not released: a shipped plugin is enabled only when the site did not have it before. On an update each one keeps the
-state it had, so a plugin that staff disabled stays disabled, and the update page names it.
+**enables** it when the site did not have it before. On an update each one keeps the state it had, so a plugin that
+staff disabled stays disabled, and the update page names it. (Up to 2.2.0 every update enabled them all again.)
 
 A plugin of your own is a package of its own. Staff install it through Joomla's Extensions: Install, and Joomla
 leaves a new plugin disabled until staff enable it under Extensions: Plugins. A payment or shipping plugin must also
@@ -227,15 +226,14 @@ keep its Access on Public, or providers and carriers cannot call it.
 ### What it does
 
 `AlfaInstallerGate` (`administrator/src/Service/Setup/AlfaInstallerGate.php`) is one small class that every Alfa
-extension uses when it is installed. It does two things:
+extension uses when it is installed. It does three things:
 
 - It refuses to install or update an extension on a site whose Alfa Commerce is missing or older than the version
   the extension needs, with one wording for every extension.
+- It refuses an install or update outside the lines of Alfa Commerce that your extension's manifest says it is
+  built for (`rangeRefusal()`, since 2.2.1). See
+  [The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for).
 - It provides the warning shown when an Alfa extension is uninstalled: the extension's data stays.
-
-Planned for 2.2.1, which is not released: it also refuses an install or update outside the lines of Alfa Commerce
-that your extension's manifest says it is built for (`rangeRefusal()`). See
-[The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for).
 
 It never refuses anything because the shop is being cleared or maintained, and it never refuses an uninstall.
 
@@ -314,8 +312,7 @@ namespace starts with `Alfa\`, a module whose name starts with `mod_alfa`, and a
 
 ## The Alfa Commerce lines your extension is built for
 
-Planned for 2.2.1, which is not released. Everything in this section is read by Alfa Commerce 2.2.1 and later; a
-2.2.0 site ignores the element.
+Everything in this section is read by Alfa Commerce 2.2.1 and later; a 2.2.0 site ignores the element.
 
 ### What it does
 
@@ -434,7 +431,7 @@ of its plugins and modules is. The extensions that ship inside the Alfa Commerce
 
 ### The compatibility-range policy
 
-This is the policy every Alfa extension follows from 2.2.1, which is not released:
+This is the policy every Alfa extension follows from 2.2.1:
 
 1. Every Alfa extension's manifest declares `<alfacore min max>` with both values. `max` names the last line the
    extension was tested on: a line such as 2.2, never a patch release.

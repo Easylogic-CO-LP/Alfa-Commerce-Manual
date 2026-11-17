@@ -6,7 +6,7 @@ description: Where to start after installing. The Dashboard's setup checklist an
 
 # Your first shop
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This manual is written for developers. Setting up a shop is explained inside Alfa Commerce itself, on the live
 screens, so this page only says where to start.
@@ -17,15 +17,15 @@ Open **Components**, **Alfa Commerce**. The Dashboard shows a **setup checklist*
 needs, checked against the shop as it is now, and each row opens the screen where it is done or starts a guided tour
 of it.
 
-The checklist has 17 rows in three groups, and says how many are done:
+The checklist has 21 rows in three groups, and says how many are done:
 
 | Group | Rows |
 |---|---|
 | **Required** | Store name and contact e-mail, default currency, at least one active tax, storefront menu items, at least one published category, at least one published item |
-| **Recommended** | Checkout form fields, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
+| **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, PDF library for sales documents, Alfa extensions built for this version, Joomla mail configured, media folder writable, Joomla page cache |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
-Planned for 2.2.1, which is not released: the checklist has 21 rows. Four join the **Recommended** group:
+Four of the recommended rows came in 2.2.1 (2.2.0 had 17 rows):
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
   no enabled plugin of Public access, and names each such field.

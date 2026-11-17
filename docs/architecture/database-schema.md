@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 111 tables of Alfa Commerce 2.2.0, grouped by area, with what each holds and how the schema changes between releases.
+description: The 111 tables of Alfa Commerce 2.2.1, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This page is a map of the database, not a copy of it. It groups the tables by area, says in one line what each table
 holds, and shows the main relations in small diagrams.
@@ -22,7 +22,8 @@ table prefix). On top of these come the per-language tables, made at run time, a
 plugin makes for itself. Both are described after the groups.
 
 A fresh 2.2.0 site with one content language (English) holds 126 tables: these 111, fourteen more language tables
-and the standard shipping plugin's log table. This was counted on a test installation.
+and the standard shipping plugin's log table. This was counted on a test installation. The install file of 2.2.1
+creates the same 111 tables.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
 that holds the link. The database enforces only three of these links with a foreign key (they are marked "foreign
@@ -95,7 +96,7 @@ gets a column.
 | `#__alfa_usergroups` | One row per Joomla user group (`usergroup_id`), with its price display settings |
 | `#__alfa_user_info` | One row is one set of customer details. Every column except `id` and `id_user` is a form field |
 | `#__alfa_form_field_groups` | Groups of form fields, with their order |
-| `#__alfa_form_fields` | The definitions of the customer detail fields: type, settings, machine name, role (name, email, phone), and where each is asked (registration, billing, shipping). Planned for 2.2.1, which is not released: the roles are name, email, phone and country, and address, city and postcode for the address fields a new shop ships. |
+| `#__alfa_form_fields` | The definitions of the customer detail fields: type, settings, machine name, role (name, email, phone, country; address, city and postcode for the address fields a new shop ships), and where each is asked (registration, billing, shipping) |
 | `#__alfa_form_fields_en_gb` | The English labels of the fields the installation creates. One of the two language tables the install file makes itself |
 | `#__alfa_form_fields_usergroups` | The user groups a field is limited to (pair key) |
 | `#__alfa_form_fields_users` | The users a field is limited to (pair key) |
@@ -302,7 +303,7 @@ categories, manufacturers, places, user groups or users.
 
 | Table | What it holds |
 |---|---|
-| `#__alfa_places` | Places (countries and their parts, through `parent_id`), each with its codes and default currency. Planned for 2.2.1, which is not released: a country carries its ISO 3166-1 codes (`code2`, `code3`); a place inside one carries none, and may carry its ISO 3166-2 code (`subdivision_code`). |
+| `#__alfa_places` | Places (countries and their parts, through `parent_id`), each with its default currency. A country carries its ISO 3166-1 codes (`code2`, `code3`); a place inside one carries none, and may carry its ISO 3166-2 code (`subdivision_code`). |
 | `#__alfa_currencies` | Currencies: code, symbol, decimal places, separators, format |
 | `#__alfa_taxes` | Tax rules: rate, how the rule combines with others, publish window |
 | `#__alfa_tax_categories` | Scope of a tax rule by category (pair key) |

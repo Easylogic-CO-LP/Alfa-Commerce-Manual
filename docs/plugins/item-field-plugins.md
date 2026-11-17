@@ -8,7 +8,7 @@ description: How to write a plugin that adds a new type of item field, the prope
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

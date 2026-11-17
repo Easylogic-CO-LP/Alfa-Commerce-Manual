@@ -8,7 +8,7 @@ description: What a plugin of a group that Joomla loads itself can do with Alfa 
 
 <CreatePluginButton type="system" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Joomla has plugin groups of its own: `system`, `console`, `task`, `user`, `content` and others. Joomla loads them,
 not Alfa Commerce. A plugin of such a group can still take part in the shop. This page says how, and what such a
@@ -280,7 +280,7 @@ PLG_SYSTEM_SHOPNOTES_XML_DESCRIPTION="Notes completed orders in Joomla's log."
 | The tool is not listed on Tools | The plugin lists the tool and declares no `onExecuteToolAction` (Alfa shows a tool only when its plugin can run it), or the tool names no surface with `meta('surface', ...)`. |
 | The targeted method is never called | The event name was put in `getSubscribedEvents()`. A targeted event is never delivered from there. |
 | Alfa's log says an event is listed in both places | The same name is in `getSubscribedEvents()` and in `getTargetedHandlers()`. |
-| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, and plugins whose namespace starts with `Alfa\`. A plugin of another group and another namespace is not listed. Planned for 2.2.1, which is not released: a plugin of any group that declares `onClearData` in a public `getTargetedHandlers()` is listed too, enabled or not, whatever its namespace, and Clear everything calls it. If it is still missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
+| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group that declares `onClearData` in a public `getTargetedHandlers()`, enabled or not (since 2.2.1; Clear everything calls it too). If yours is missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
 
 ## The system plugin that ships: Alfa Commerce Sync
 
@@ -294,15 +294,15 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | A content language is added, saved or published | Makes that language's Alfa tables. |
 | An Alfa language pack is installed or updated | Has Alfa name its order statuses and system fields in the new language. |
 | Joomla's registration page is opened | Sends the visitor to Alfa's own registration page. Login, profile and password pages are not touched. |
-| A request on the site calls a payment or shipping webhook task (`task=payment.webhook` or `task=shipment.webhook` of `com_alfa`) | Planned for 2.2.1, which is not released: marks the request before Joomla routes it, so that Joomla's language filter and its SEF plugin leave it alone and a provider's GET to the plain webhook address reaches the plugin without a redirect. See [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses). |
+| A request on the site calls a payment or shipping webhook task (`task=payment.webhook` or `task=shipment.webhook` of `com_alfa`) | Marks the request before Joomla routes it, so that Joomla's language filter and its SEF plugin leave it alone and a provider's GET to the plain webhook address reaches the plugin without a redirect. See [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses). |
 | A storefront page, or an administrator page of staff who manage the shop, is drawn | Lets that page start the shop's background work when work is waiting. |
 | An API request has been answered | Runs waiting background work for a moment. |
-| Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart or typed checkout details, out of the cache. Planned for 2.2.1, which is not released: also every page of a visitor whose session holds a currency or a place of their own. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
+| Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart, typed checkout details, or a currency or a place of their own in the session, out of the cache. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
 | An administrator page starts | Loads the texts of Alfa's guided tours. |
-| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. A payment or shipping plugin enabled or disabled from the Plugins list does not. Planned for 2.2.1, which is not released: also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled. |
+| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. Also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
 | An Alfa extension is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
-| An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Planned for 2.2.1, which is not released: has the dashboard cards and the setup checklist worked out again, and brings a standing notification of extensions not built for this version up to date. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
+| An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Has the dashboard cards and the setup checklist worked out again, and brings a standing notification of extensions not built for this version up to date. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
 | The administrator menu is built | Hides the Tools entry from staff without the permission for it. |
 
 Its one setting is Debug Logging, which writes what it does to the file `alfa_sync.php` in Joomla's log folder.
@@ -316,9 +316,9 @@ who may manage plugins get a link to the plugin.
 
 The plugin must also run for visitors who are not logged in. Enabled with an Access that they do not hold (a level
 other than Public or Guest), Joomla does not run it for them, and its page cache rule does not apply to them. See
-[Caches](../architecture/caches.md#the-page-cache-rule). In 2.2.0 no warning says so.
+[Caches](../architecture/caches.md#the-page-cache-rule).
 
-Planned for 2.2.1, which is not released:
+The warnings (2.2.0 said nothing of the page cache):
 
 - The warning for a disabled or missing plugin says first that Alfa Commerce's own pages and modules still keep a
   visitor's cart, checkout details and order out of Joomla's "System - Page Cache", and then what is lost: a shopper

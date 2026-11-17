@@ -6,7 +6,7 @@ description: What a plugin of the alfa-search group must provide so that its own
 
 # Search engine plugins
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce always has a working search. It reads the item tables directly and needs nothing installed. Options
 calls it "Database search (built into Alfa Commerce)".
@@ -244,7 +244,7 @@ you declare it by writing a public method with this name.
 | Getter | Meaning |
 |---|---|
 | `getView()` | The list view being drawn. |
-| `getEngineKey()` | The engine key saved in Options. Planned for 2.2.1, which is not released: the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
+| `getEngineKey()` | The engine key saved in Options; the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
 | `getContext()` | Which list: `com_alfa.items` or `com_alfa.manufacturers`. |
 
 **What you are expected to do.** To draw your own search box, name a layout file of your plugin:
@@ -289,7 +289,7 @@ that a filter change swaps in, or one item card that is drawn again.
 | `getView()` | The items view. Its document is where you add scripts and script options. |
 | `getContext()` | `com_alfa.items`. |
 | `getKind()` | `ResultSetRenderEvent::KIND_PAGE`, `KIND_FRAGMENT` or `KIND_CARD`. |
-| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. Planned for 2.2.1, which is not released: the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
+| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. The database search is `''` (up to 2.2.0 `'database'` on the storefront). |
 | `getAttribution()` | A `ResultAttribution`: `handle` (your `eventId`, or `null`), `order`, `responseSpecific`, `engine`, and `hasHandle()`. |
 | `getPosition()` | For a single card only: the position that card had. Otherwise `null`. |
 
@@ -313,8 +313,7 @@ public static function getSubscribedEvents(): array
 ### onAlfaCatalogEntityChanged
 
 **When it fires.** After categories or manufacturers were created, renamed, changed, published, unpublished or
-deleted. Items are not announced here: they reach your writer directly, as described above. Planned for 2.2.1, which
-is not released: for a category's save, after the save is final and its items were rebuilt.
+deleted. Items are not announced here: they reach your writer directly, as described above. For a category's save, after the save is final and its items were rebuilt.
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 
@@ -335,8 +334,7 @@ not listen.
 
 ### onCatalogVisibilityChanged
 
-**When it fires.** After the list of users or user groups allowed to see an item or a category was changed. Planned
-for 2.2.1, which is not released: for an item's or a category's save, after the save is final (for a category, after
+**When it fires.** After the list of users or user groups allowed to see an item or a category was changed. For an item's or a category's save, after the save is final (for a category, after
 its items were rebuilt).
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
@@ -369,7 +367,7 @@ string $contributor, string $version = '')`. The contributor is your plugin's gr
 
 **What you are expected to do.** Only if your plugin keeps item data of its own besides the search index: add an
 object that implements `ProjectionInterface` (`syncItem(int $itemId)`, `syncItems(array $itemIds)`,
-`deleteForItem(int $itemId)`). Planned for 2.2.1, which is not released: the list is written only through
+`deleteForItem(int $itemId)`). The list is written only through
 `addProjection()`. Setting the projections argument (`setArgument()` or `$event['projections']`) throws a
 `BadMethodCallException`, and `getArgument('projections')` reads `null`; `getProjections()` is the reader.
 
@@ -415,7 +413,7 @@ rebuild button is shown, the standard search box is drawn, and item saves write 
 | Items found by the old search are missing | The reader returned ids in the wrong entity, or the index was never rebuilt after the engine was chosen. |
 | A rebuild ends with "Refusing to activate" | The writer reported failures in `write()` or `await()`. |
 | Your search box is not drawn | The plugin is not the one that registered the configured engine, or its handler threw. |
-| The Options screen stops with an error | An engine's `label()` or `isReady()` threw. The engine list in Options calls both without catching an error. Planned for 2.2.1, which is not released: the engine is listed under its key as not ready, and the error is logged; the Options screen no longer stops. |
+| An engine is listed in Options as not ready | Its `label()` or `isReady()` threw; the error is logged. (In 2.2.0 the Options screen stopped.) |
 | The rebuild job says the engine changed | The engine named when the job started is no longer the configured one, or it does not implement `RebuildableEngine`. |
 
 ## The plugin's files
@@ -690,7 +688,7 @@ The base class loads the plugin's language file by itself (`$autoloadLanguage`).
   own; an engine says what it can through `RebuildableEngine`.
 - A template override of `com_alfa/items/default.php` or `default_item.php` written before 2.2.0 prints the
   attributes only once it calls the view's `resultSetAttributes()` and `resultAttributes()`.
-- Planned for 2.2.1, which is not released: the card draws its images through a part of its own,
+- Since 2.2.1 the card draws its images through a part of its own,
   `default_card_images.php` (the slot `card_images`). An override of `default_item.php` written before 2.2.1 keeps
   its own image markup, and shows the card's slider only once it calls
   `$this->loadTemplate($this->cardImagesTplFor($item))`. The item list (`items/default.php`) opens with

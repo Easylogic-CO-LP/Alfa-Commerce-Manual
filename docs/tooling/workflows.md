@@ -6,7 +6,7 @@ description: The three GitHub workflows of Alfa Commerce, when each runs, what e
 
 # Automated checks
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 The code repository holds three **workflows**. A workflow is a file under `.github/workflows/` that tells GitHub to
 run one or more **jobs** when something happens, for example when a pull request is opened. Each job shows on the
@@ -18,9 +18,9 @@ pull request as one check, green or red.
 |---|---|---|
 | Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). It turns red only when the tool or its commit step breaks. |
 | Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
-| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | On `main` (2.2.0): no, it reports and does not fail the check. On `developer` since 13 November 2026: a finding turns the check red, but no check is required for a merge yet. See [PHPStan](./phpstan). |
+| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge. A finding turns the check red. See [PHPStan](./phpstan). |
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
-| Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. From the next promotion of `developer` to `main` (with 2.2.1, which is not released): it is the **PHP security scan**. Not today: no check is required for a merge. Any finding turns it red. |
+| Security Scan, **PHP security scan** (job `php-security`) | Same | Not today: no check is required for a merge. Any finding turns it red. |
 | Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
 | Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
@@ -89,8 +89,8 @@ File: `.github/workflows/code-quality.yml`. Three jobs.
 | | |
 |---|---|
 | Runs | On pull requests only. It is skipped on a push to `main` or `developer`. |
-| PHP | 8.2. From the next promotion of `developer` to `main`: 8.3. |
-| What it does | Checks out the branch of the pull request, formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. From the next promotion of `developer` to `main`, it checks the branch out from the pull request's own repository, so a fork's branch is found. |
+| PHP | 8.3 |
+| What it does | Checks out the branch of the pull request from the pull request's own repository (so a fork's branch is found), formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. |
 | What makes it fail | Only a step that breaks: the tool cannot run, or the commit cannot be made. Badly formatted code does not fail it, it gets fixed. |
 
 Details and the local command: [PHP CS Fixer](./php-cs-fixer).
@@ -114,32 +114,27 @@ Run it yourself from the root of the repository, with the same command as the wo
 php scripts/copy-clean/copy-clean-gate.php --package=. --allow=scripts/copy-clean/copy-clean-allow.json
 ```
 
-A clean run of 2.2.0 ends with these two lines:
+A clean run of 2.2.1 ends with these two lines:
 
 ```text
-copy-clean gate: 1640 shipped files, 1630 judged; 44 occurrence(s) allowed by 44 entries; 0 not allowed
-17 passed, 0 failed
+copy-clean gate: 1676 shipped files, 1666 judged; 44 occurrence(s) allowed by 44 entries; 0 not allowed
+18 passed, 0 failed
 ```
 
-From the next promotion of `developer` to `main` (with 2.2.1, which is not released): a clean run ends with
-"18 passed, 0 failed". The gate checks itself too: it fails when its planted test lines reach a rule its list does
-not name, or the list names one no planted line reaches. The file counts follow the code; `developer` of 17 November
-2026 read 1676 shipped files, 1666 judged.
+The gate checks itself too: it fails when its planted test lines reach a rule its list does not name, or the list
+names one no planted line reaches. The file counts follow the code (2.2.0: 1640 and 1630, 17 checks).
 
 ### PHPStan
 
 | | |
 |---|---|
 | Runs | On pull requests and on pushes. |
-| PHP | 8.2 |
-| What it does | Downloads the latest Joomla release into the folder `joomla`, then analyses the code with `phpstan.neon` and prints its findings on the run's page. |
-| What makes it fail | Nothing PHPStan finds. The PHPStan step is marked so that its result does not fail the job (`continue-on-error: true`). The check is green whatever PHPStan answers. |
+| PHP | 8.3 |
+| What it does | Installs PHPStan 2.3.5 and downloads Joomla 6.2.0 into the folder `joomla`, each checked against its sha256, then analyses the code with `phpstan.neon` and prints its findings on the run's page. |
+| What makes it fail | Any finding beyond the baseline, or a step that breaks. |
 
-So a green PHPStan check does not mean that PHPStan found nothing. Open the run and read its findings. Details and
-the local command: [PHPStan](./phpstan).
-
-From the next promotion of `developer` to `main` (with 2.2.1, which is not released): PHP 8.3, PHPStan 2.3.5 and
-Joomla 6.2.0, each checked against its sha256, and no `continue-on-error`, so any finding turns the check red.
+Details and the local command: [PHPStan](./phpstan). (On 2.2.0 the job ran on PHP 8.2 with the latest Joomla and an
+unnamed PHPStan, and `continue-on-error` kept it green whatever PHPStan found.)
 
 ## Security Scan
 
@@ -149,13 +144,11 @@ to them.
 | Job | What it does | What makes it fail |
 |---|---|---|
 | `security-scan` | CodeQL, GitHub's code scanner. It is set up for one language group, `javascript-typescript`, with the query set `security-extended`. It does not analyse the PHP code. | A step that breaks. What happens with the alerts it reports depends on the repository's settings, which are not part of the code. |
-| `php-security` | Sets up PHP 8.2 and installs a checker for known vulnerabilities in Composer dependencies. The checker runs only when a file `composer.lock` exists. The repository has none, so the job prints that it skips the scan. From the next promotion of `developer` to `main` (with 2.2.1, which is not released): Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. | Only a step that breaks. It checks nothing today. From the next promotion: any finding. |
+| `php-security` | Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. (On 2.2.0 the job installed a checker of Composer dependencies, which skipped its scan for want of a `composer.lock`.) | Any finding, or a step that breaks. |
 | `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords. It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
 
-From the next promotion of `developer` to `main`, the actions of Code Quality and Security Scan run from a fixed
-commit, except those of the `php-security` job, which also stays on PHP 8.2. TruffleHog's action is fixed at v3.99.9; the scanner it starts is
-still its `latest` image. With the `php-security` job of 2.2.1 every action of that job is fixed by commit too, and
-it sets up no PHP.
+The actions of Code Quality and Security Scan run from a fixed commit. TruffleHog's action is fixed at v3.99.9; the
+scanner it starts is still its `latest` image.
 
 If the secret scan turns red, removing the secret from the file is not enough: it stays in the history. Replace the
 secret at the service that issued it.
@@ -186,16 +179,9 @@ holds, in this order:
 - The rule groups: Release and migrations, Database, Joomla gotchas, Multilingual, Security, Conventions, i18n.
 - What not to flag: style, PHPStan findings, and file differences on a development site.
 
-Some lines of the rulebook are older than 2.2.0. Trust this manual and the code where they differ. From the next
-promotion of `developer` to `main` (with 2.2.1, which is not released), the rulebook is corrected on all four rows
-below; one of its headings still reads "Namespaces (PSR-4, Joomla 6/7)".
-
-| The rulebook says | 2.2.0 |
-|---|---|
-| The component is for "Joomla 6/7" | Joomla 7 is refused by the installer. |
-| `sql/uninstall.mysql.utf8.sql` exists | There is no uninstall SQL, on purpose. |
-| Removed files go in `files/removed/<ver>.json` | They are listed in `script.php`, see [Contributing](../getting-started/contributing#you-deleted-or-moved-a-file). |
-| Its plugin and module lists | They lack the plugins `alfa-item-fields/choice`, `alfa-form-fields/country` and `console/alfa`, and the modules `mod_alfa_filters`, `mod_alfa_items` and `mod_easy_articles`. |
+One heading of the rulebook still reads "Namespaces (PSR-4, Joomla 6/7)": Joomla 7 is refused by the installer.
+Trust this manual and the code where the rulebook differs. (Up to 2.2.0 the rulebook also named an uninstall SQL file
+and a `files/removed` folder, which do not exist, and lacked some of the shipped plugins and modules.)
 
 ## What happens next
 
@@ -213,7 +199,7 @@ On the pull request page:
 | What you see | What to do |
 |---|---|
 | Copy-clean is red | Open the run. Reword each comment or text it names, or add an exception with its reason to the allow list. |
-| From the next promotion of `developer` to `main`: php-security is red | Open the run: it names the file, the line and the rule. Fix the code. A rule that is wrong for Alfa Commerce is left out in the workflow, with its reason, in a pull request. |
+| php-security is red | Open the run: it names the file, the line and the rule. Fix the code. A rule that is wrong for Alfa Commerce is left out in the workflow, with its reason, in a pull request. |
 | The secret scan is red | Replace the secret at its service, then remove it from the code. |
 | PHPStan is green | That says nothing about findings. Open the run and read them. |
 | PHP CS Fixer added a commit | Pull, then continue. |
@@ -223,15 +209,12 @@ On the pull request page:
 
 ## Versions the checks run on
 
-- PHP 8.2 for PHP CS Fixer, PHPStan and the dependency check. PHP 8.3 for Copy-clean. The component itself needs
-  PHP 8.3 or newer.
-- The workflows name no version for PHP CS Fixer or PHPStan, TruffleHog is taken from its `main` branch, and Joomla
-  is the latest release on the day of the run. A result can therefore change without a change in the code.
-- From the next promotion of `developer` to `main` (with 2.2.1, which is not released): PHP 8.3 for PHP CS Fixer and
-  PHPStan, PHP 8.2 only for the dependency check; PHPStan 2.3.5 and Joomla 6.2.0; TruffleHog's action at v3.99.9.
-  With the PHP security scan of 2.2.1 the `php-security` job sets up no PHP, and Semgrep 1.185.0 and the rules'
-  commit join the fixed versions.
-  PHP CS Fixer and TruffleHog's scanner image are still not fixed, so their results can still change by themselves.
+- PHP 8.3 for PHP CS Fixer, PHPStan and Copy-clean. The PHP security scan sets up no PHP. The component itself
+  needs PHP 8.3 or newer.
+- Fixed versions: PHPStan 2.3.5, Joomla 6.2.0, Semgrep 1.185.0 and the rules' commit, TruffleHog's action at
+  v3.99.9. PHP CS Fixer and TruffleHog's scanner image are not fixed, so their results can change by themselves.
+- Up to 2.2.0: PHP 8.2 for PHP CS Fixer, PHPStan and the dependency check, no version named for PHP CS Fixer or
+  PHPStan, and the latest Joomla on the day of the run.
 
 ## Not documented yet
 

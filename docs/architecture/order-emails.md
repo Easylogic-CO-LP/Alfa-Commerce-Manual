@@ -6,7 +6,7 @@ description: Which e-mails Alfa Commerce sends for an order, what triggers each,
 
 # Order e-mails
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce sends an e-mail when an order is placed and when an order enters a status that is set to tell
 somebody. The e-mail is never sent inside the save. Alfa writes down "this e-mail is owed" together with the change,
@@ -69,11 +69,10 @@ The e-mails of one order go out in the order their statuses were entered. The pl
 
 - At checkout, for the first status of the new order.
 - At every status change, when the new status tells somebody.
-- Not when the code that makes the change asks for no e-mail. The REST API's status change accepts `"silent": true`
-  for this. A silent change sends nothing, to the customer or to staff. Everything else still happens. Planned for
-  2.2.1, which is not released: the REST API's silent change leaves out the customer's e-mail only; the staff the
-  status tells are still sent theirs. Code that calls `Transition::silent()` still sends nothing, and
-  `Transition::silentCustomer()` leaves out the customer alone.
+- Not when the code that makes the change asks for no e-mail. Code that calls `Transition::silent()` sends nothing,
+  to the customer or to staff, and `Transition::silentCustomer()` leaves out the customer alone. The REST API's
+  status change accepts `"silent": true`, which leaves out the customer's e-mail only: the staff the status tells
+  are still sent theirs (in 2.2.0 it left out both). Everything else still happens.
 
 ## What happens next
 
@@ -152,8 +151,7 @@ A status picks two layouts: one for the customer's e-mail (`email_layout_custome
 | Checkout fields | `{field_<name>}`, one for each active form field. The field's own plugin draws its value. |
 | Site | `{site_name}`, `{site_url}` |
 
-Planned for 2.2.1, which is not released: `{order_number}` is the order's id. Up to 2.2.0 an invoice number was
-preferred, which nothing wrote.
+`{order_number}` is the order's id. (Up to 2.2.0 an invoice number was preferred, which nothing wrote.)
 
 Tokens are replaced once, over the whole finished e-mail, so they work in staff's text, in the blocks and in the
 layout's own text. In the body their values are made safe for HTML. The subject gets the plain values.
@@ -163,37 +161,26 @@ layout's own text. In the body their values are made safe for HTML. The subject 
 The shipped layouts are always read from the **administrator** side of the component
 (`administrator/components/com_alfa/layouts/`), also when the e-mail starts from a shopper's request at checkout.
 
-A template override is different. It is looked for in the active template of the application that handles the
-request that sends the e-mail:
-
-| The request that sends the e-mail | Where an override is looked for |
-|---|---|
-| An administrator request: staff change a status, staff press Resend, Preview, Send test, a turn of the engine from an administrator page or the bell | `administrator/templates/<the active administrator template>/html/layouts/com_alfa/` |
-| A storefront request: the order confirmation e-mail at checkout, a turn of the engine from a shop page or the web cron | `templates/<the active site template>/html/layouts/com_alfa/` |
-| An API request or the console command | Nowhere. Only the shipped layouts are used. |
-
-So an override that must apply to every e-mail is put in both templates, as the same file. The layout picker of
-the order status and the editors of the positions read the administrator side only.
-
-| You want to | Do this |
-|---|---|
-| Change the frame of the shipped e-mail | Copy `administrator/components/com_alfa/layouts/emails/order/default.php` to `html/layouts/com_alfa/emails/order/default.php` in the administrator template and in the site template, and edit the copies |
-| Add a second layout to choose from | Add a new file in the administrator template's override folder, for example `emails/order/compact.php`. It appears in the layout picker of the order status as `emails.order.compact`. A file whose name starts with `_` is not listed. Put the same file in the site template too. A layout that exists only in a template is not found on an API request or under the console command. |
-| Restyle the items, totals, payments, shipments or downloads | Override the matching file under `html/layouts/com_alfa/emails/partials/`, in both templates |
-
-Planned for 2.2.1, which is not released: an e-mail override is read from one place, whatever sends the e-mail (an
-administrator request, the storefront, the REST API or the console command). Alfa Commerce looks in this order:
+A template override is read from one place, whatever sends the e-mail (an administrator request, the storefront,
+the REST API or the console command). Alfa Commerce looks in this order:
 
 1. `administrator/templates/<the default administrator template>/html/layouts/com_alfa/`
 2. The same folder of the template that the default administrator template inherits from, if it has one
 3. The shipped layouts, `administrator/components/com_alfa/layouts/`
 
 The layout picker of the order status lists from the same folders. The site template's `html/layouts/com_alfa/` is
-no longer read for e-mails, and neither is an administrator template style that is not the default one.
+not read for e-mails, and neither is an administrator template style that is not the default one.
 
-What this means for a 2.2.0 shop: an e-mail override kept only in the site template, as the tables above advise
-for the storefront's e-mails, is no longer read after the update to 2.2.1. Copy the file into the default
-administrator template before or with the update. The copy in the site template is then no longer used. The update
+| You want to | Do this |
+|---|---|
+| Change the frame of the shipped e-mail | Copy `administrator/components/com_alfa/layouts/emails/order/default.php` to `html/layouts/com_alfa/emails/order/default.php` in the default administrator template, and edit the copy |
+| Add a second layout to choose from | Add a new file in the default administrator template's override folder, for example `emails/order/compact.php`. It appears in the layout picker of the order status as `emails.order.compact`. A file whose name starts with `_` is not listed. |
+| Restyle the items, totals, payments, shipments or downloads | Override the matching file under `html/layouts/com_alfa/emails/partials/` in the default administrator template |
+
+Changed in 2.2.1. Up to 2.2.0 an override was looked for in the active template of the application that sent the
+e-mail (the site template for the storefront's e-mails, none for the REST API and the console), and this page
+advised a copy in both templates. An override kept only in the site template is no longer read after the update to
+2.2.1: copy the file into the default administrator template before or with the update. The update
 names every PHP file it finds under a site template's `html/layouts/com_alfa/emails` in one warning, with the folder
 to copy each one into (the same subfolder, `order` or `partials`, under the default administrator template's
 `html/layouts/com_alfa/emails`), and writes one line per file to the maintenance log. It moves and deletes nothing.
@@ -223,12 +210,11 @@ Never edit the files inside `administrator/components/com_alfa/`. An update repl
 | The subject and the positions, for each language | `#__alfa_orders_statuses_<langtag>` (for example `#__alfa_orders_statuses_en_gb`), columns `email_positions_customer` and `email_positions_admin`. Each holds one JSON object: `subject` plus one entry for each position. |
 
 The language tables also still have the columns `email_subject_customer`, `email_body_customer`,
-`email_subject_admin` and `email_body_admin`. The sending code of 2.2.0 does not read them. Planned for 2.2.1, which
-is not released: the update removes these four columns from every language's table that still has them.
+`email_subject_admin` and `email_body_admin`, which nothing read; the update to 2.2.1 removes them from every
+language's table that still has them.
 
-If the subject is left empty, Alfa uses a general subject with the order's id (not its order number) and the
-status's name for the customer. Planned for 2.2.1, which is not released: the order's number is its id, so the
-general subject names the order by its number, as `{order_number}` does.
+If the subject is left empty, Alfa uses a general subject with the order's number (its id) and the status's name for
+the customer.
 
 The tables are described on the [database page](./database-schema.md).
 
@@ -281,13 +267,13 @@ it itself. See [Order and cart events](../events/order-and-cart-events.md).
 
 | What you see | The usual cause |
 |---|---|
-| No e-mail and no task | The status tells nobody: "notify the customer" is off and no staff recipient is listed. Or the change was made silent. Planned for 2.2.1, which is not released: a silent change through the REST API still has an e-mail task when the status tells staff. |
+| No e-mail and no task | The status tells nobody: "notify the customer" is off and no staff recipient is listed. Or the change was made silent by code (`Transition::silent()`). A silent change through the REST API still has an e-mail task when the status tells staff. |
 | A task but no e-mail to the customer | The order has no e-mail address. The log (category `com_alfa.orders`) says so. |
 | The task is done but a recipient got nothing | No subject and no text is stored for that recipient's e-mail, in the order's language or in the default content language. Nothing is sent to that recipient and no outcome is recorded for it. |
 | The task is Failed at once | Joomla's Send Mail is No, or the order names no currency, so no amount can be stated |
 | The task is "Outcome unknown" | The mail server took the message and did not answer. Check the mailbox, then Resend or Mark resolved. |
 | The e-mail is in the wrong language | It follows the order's language, not the administrator's. An order without a language uses the default content language. |
-| Your override is ignored | The e-mail was sent by a request of the other application. An override is read from the administrator template on an administrator request and from the site template on a storefront request. An API request and the console command read no override. Planned for 2.2.1, which is not released: the override is not in the default administrator template (or the template it inherits from), or it sits only in the site template, which is no longer read for e-mails. |
+| Your override is ignored | The override is not in the default administrator template (or the template it inherits from), or it sits only in the site template, which is not read for e-mails. |
 | Raw language keys in the e-mail | Your layout uses a key that is not in Alfa's administrator language file. Alfa loads that file, and the order's language, before drawing. |
 | A send error | Look in the log, category `com_alfa.orderemail` |
 

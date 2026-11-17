@@ -1,13 +1,13 @@
 ---
 title: Shipping plugin events
-description: "Every event a shipping plugin receives in Alfa Commerce 2.2.0: when it fires, what it is given and what it must do."
+description: "Every event a shipping plugin receives in Alfa Commerce 2.2.1: when it fires, what it is given and what it must do."
 ---
 
 # Shipping plugin events
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 
@@ -80,10 +80,10 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | `$cart->getSubtotal()` | What the goods come to, as `Money`. Already settled before you are asked. |
 | `$cart->getTotal()` | Do not call it here. The total includes the shipping you are deciding, so it throws an error during a quote. |
 | `$cart->currency()`, `customer()`, `quantity()`, `itemCount()`, `isVirtual()` | The cart's currency, customer and sizes |
-| `$cart->delivery()` | The delivery address (`invoice()` is the invoice address). On the storefront, what the shopper has just typed wins over the saved row. Planned for 2.2.1, which is not released: in the order builder it is the customer's saved details and the place set in the builder; nothing typed on the storefront is read there. |
+| `$cart->delivery()` | The delivery address (`invoice()` is the invoice address). On the storefront, what the shopper has just typed wins over the saved row. In the order builder it is the customer's saved details and the place set in the builder; nothing typed on the storefront is read there. |
 | `$cart->delivery()->places()` | Where the parcel goes: the destination place and every place that contains it, nearest first. Empty when it is not known. |
 | `$cart->delivery()->places(fieldId: $id)` | The same, read from a checkout field that your method's settings name |
-| `$cart->delivery()->field($id)->value()` | The text of one checkout field, or `null`. This is how you read a postcode: Alfa does not know which field holds it, your settings say. Planned for 2.2.1, which is not released: a new shop ships a Postcode field (role `postcode`); your settings still name the field you read. |
+| `$cart->delivery()->field($id)->value()` | The text of one checkout field, or `null`. This is how you read a postcode: Alfa does not know which field holds it, your settings say. A new shop ships a Postcode field (role `postcode`); your settings still name the field you read. |
 
 **What you answer**
 
@@ -135,14 +135,12 @@ private function carriageFor(Method $method, Cart $cart): ?float
 `0.0` for free, or `null` for a refusal, whose language key `refusal()` then returns. A plugin that asks a carrier's
 service for a rate does not need it.
 
-Planned for 2.2.1, which is not released: of the zones that name the destination or a place above it, the zone of
-the nearest place prices the cart, and it decides alone: a cart none of its rows fit is refused, never priced by a
+Of the zones that name the destination or a place above it, the zone of the nearest place prices the cart, and it decides alone: a cart none of its rows fit is refused, never priced by a
 farther zone. Between zones at the same distance, the one higher in the list wins. A zone with no places is used only
 when no zone matches. Pass the places nearest first, as `$cart->delivery()->places()` gives them. A shop whose zones
-name countries only is priced as before. In 2.2.0 the first matching zone in the list won.
+name countries only is priced as before. (In 2.2.0 the first matching zone in the list won.)
 
-Planned for 2.2.1, which is not released: a setting of type `checkoutfield` may carry `defaultrole`, the role of a
-checkout field to start on. The Standard plugin's `postcode_field` declares `defaultrole="postcode"`, so a new method
+A setting of type `checkoutfield` may carry `defaultrole` (since 2.2.1), the role of a checkout field to start on. The Standard plugin's `postcode_field` declares `defaultrole="postcode"`, so a new method
 of a new shop starts on its Postcode field. Only a setting that was never saved starts this way, and only on a field
 the picker offers; a saved setting, "None" included, is never changed, and a shop with no field of that role starts
 on nothing.
@@ -166,8 +164,8 @@ on nothing.
 | **Who receives it** | The plugin of the method the order was placed with. |
 | **What you are given** | `OrderAfterPlaceEvent`. `getOrder()` returns the saved order as an `Order` reader. |
 | **What you are expected to do** | Record the first parcel of the order (see [Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)). Take the charge from the order: `shipmentTotal()`, `shipmentTotalExcl()` and `shipmentTaxRate()`. |
-| **What happens next** | The order shows its parcel. The order's shipping total is the sum of its parcels' charges, so an order without a parcel shows no shipping charge. Planned for 2.2.1, which is not released: if the order has no parcel on its shipping method once your method has run (you recorded none, your `save()` was refused, you threw an error, or your plugin could not be used), Alfa records one, pending, with every item and the charge the order froze, marked `core_made` in its plugin data. A notification tells staff which method recorded nothing and that a pickup point or locker the customer chose must be chosen again on the order's page. A parcel you record, in any status, is never doubled, and this event fires once per order. |
-| **If you are missing or you fail** | The order stands, it cannot be undone. The failure is written to the log (category `com_alfa.orders`), as critical when your method threw an error and as an error when your plugin could not be used, and the shopper is told that part of the order could not be set up. A `save()` that returns `false` is not such a failure: nobody is told unless your plugin logs it. |
+| **What happens next** | The order shows its parcel. The order's shipping total is the sum of its parcels' charges, so an order needs one. If the order has no parcel on its shipping method once your method has run (you recorded none, your `save()` was refused, you threw an error, or your plugin could not be used), Alfa records one, pending, with every item and the charge the order froze, marked `core_made` in its plugin data. A notification tells staff which method recorded nothing and that a pickup point or locker the customer chose must be chosen again on the order's page. A parcel you record, in any status, is never doubled, and this event fires once per order. |
+| **If you are missing or you fail** | The order stands, it cannot be undone. The failure is written to the log (category `com_alfa.orders`), as critical when your method threw an error and as an error when your plugin could not be used, and the shopper is told that part of the order could not be set up. A `save()` that returns `false` is not logged as such a failure; Alfa then records the parcel itself, as above. |
 
 The standard plugin, as it ships (comments removed):
 
@@ -225,8 +223,8 @@ Changed in 2.2.0: each entry is `['rate' => ..., 'name' => ...]`. Before, the ch
 |---|---|
 | **When it fires** | When a shopper's browser comes back to the shop from a page of the carrier (a pickup point map, for example), at the return address of your plugin. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. `getOrder()` is `null`: Alfa does not know which order the return is about. Read the request yourself. Planned for 2.2.1, which is not released: `getOrder()` is deprecated, and removed in 2.3.0. |
-| **What you are expected to do** | Check that the return is genuine, find the order from what the carrier sent, do your work, and call `setRedirectUrl()`. Always set a redirect: without one the shopper is sent nowhere. Planned for 2.2.1, which is not released: without one the shopper is sent to the cart with the message that the choice could not be confirmed with the shipping service. Set a redirect all the same: only you know where the shopper belongs. |
+| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. `getOrder()` is `null`: Alfa does not know which order the return is about. Read the request yourself. `getOrder()` is deprecated since 2.2.1, and removed in 2.3.0. |
+| **What you are expected to do** | Check that the return is genuine, find the order from what the carrier sent, do your work, and call `setRedirectUrl()`. Without a redirect the shopper is sent to the cart with the message that the choice could not be confirmed with the shipping service. Set a redirect all the same: only you know where the shopper belongs. |
 | **What happens next** | Alfa sends the shopper to the address you set. An address inside the shop written as `index.php?option=...` is turned into its friendly form for you. |
 | **If you are missing or you fail** | If the plugin cannot be used, the shopper is sent to the shop's home page with the message that the shipping method of the return could not be identified. If your class has no such method, the shopper is sent to the cart. An error you throw shows Joomla's error page. |
 
@@ -236,7 +234,7 @@ Changed in 2.2.0: each entry is `['rate' => ..., 'name' => ...]`. Before, the ch
 |---|---|
 | **When it fires** | When the carrier's server calls your plugin's webhook address: picked up, delivered, returned, a label is ready. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element, `getOrder()` is `null`. There is no shopper, no session and no token. Read the request yourself. Planned for 2.2.1, which is not released: `getOrder()` is deprecated, and removed in 2.3.0. |
+| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element, `getOrder()` is `null`. There is no shopper, no session and no token. Read the request yourself. `getOrder()` is deprecated since 2.2.1, and removed in 2.3.0. |
 | **What you are expected to do** | Three duties. Check that the call is genuine (the carrier's signature or shared secret): Alfa checks nothing. Find the parcel yourself. Cope with the same call arriving twice, with `settleAttempt()` (see below). Then set the answer. |
 | **What happens next** | Alfa sends your answer to the carrier and ends the request. |
 | **If you are missing or you fail** | See [Return and webhook addresses](./shipment-plugins.md#return-and-webhook-addresses). |
@@ -267,7 +265,7 @@ Changed in 2.2.0: each entry is `['rate' => ..., 'name' => ...]`. Before, the ch
 | `confirm($message)` | Ask before running |
 | `readOnly()` | The action changes nothing (details, logs). It may be opened from a link. |
 | `mutating()` | The action changes something. This is the default: such an action runs only from a POST with a one-time key, so a reload cannot repeat it. |
-| `modal($layout, $title, $size)` | Records a layout, a title and a size on the action. Nothing in 2.2.0 reads them: every button opens the action popup, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. Planned for 2.2.1, which is not released: deprecated, with `hasResponseLayout()`, and removed in 2.3.0. |
+| `modal($layout, $title, $size)` | Records a layout, a title and a size on the action. Nothing in 2.2.0 reads them: every button opens the action popup, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. Deprecated since 2.2.1, with `hasResponseLayout()`, and removed in 2.3.0. |
 | `data([...])` | Fields posted with the action. Read them from the request in `onExecuteAction`. |
 | `priority(200)` | Higher comes first. The default is 100. |
 | `tooltip($text)`, `meta($key, $value)`, `buttonLayout($layout)` | Hint, extra data, your own button layout |
@@ -300,7 +298,7 @@ $event->add('mark_shipped', Text::_('PLG_ALFA_SHIPMENTS_STANDARD_MARK_SHIPPED'))
 | `setRefresh(true)` | Reload the order page afterwards |
 | `setRedirectUrl($url)` | Send staff elsewhere. Wins over the reload. |
 | `setLayout($name)`, `setLayoutData([...])` | Draw a layout of your `tmpl` folder in the popup |
-| `setModalTitle($title)` | Read by nothing in 2.2.0. The popup's title is the button's label. Planned for 2.2.1, which is not released: `setModalTitle()` and `getModalTitle()` are deprecated, and removed in 2.3.0. |
+| `setModalTitle($title)` | Read by nothing. The popup's title is the button's label. `setModalTitle()` and `getModalTitle()` are deprecated since 2.2.1, and removed in 2.3.0. |
 | `addButton($label, $opts)` | A button under the popup. `$opts` may hold `action` (run another action of this shipment), `data`, `reload`, `class`. |
 
 From the standard plugin, shortened to the writing part:
@@ -325,7 +323,7 @@ $event->setRefresh(true);
 |---|---|
 | **When it fires** | When staff delete an order, before anything is removed. Once for each shipment row of the order that records a plugin. |
 | **Who receives it** | The plugin recorded on that row. |
-| **What you are given** | `AdminOrderDeleteEvent`. `getOrder()` returns the order. Planned for 2.2.1, which is not released: `getMethod()` returns the shipment row your plugin recorded, the one you are asked about. |
+| **What you are given** | `AdminOrderDeleteEvent`. `getOrder()` returns the order, and `getMethod()` (since 2.2.1) the shipment row your plugin recorded, the one you are asked about. |
 | **What you are expected to do** | Nothing, to allow the delete. Call `setResult(false)` to forbid it, for example while a parcel is on its way. You may also tidy up at the carrier here. |
 | **What happens next** | If no plugin forbids it, Alfa deletes the order. If one does, that order is kept. |
 | **If you are missing or you fail** | The base class allows the delete. If the plugin of record is disabled, missing or cannot start, the order is **not** deleted and staff are told which plugin to restore. |

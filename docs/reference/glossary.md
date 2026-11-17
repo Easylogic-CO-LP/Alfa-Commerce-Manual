@@ -6,7 +6,7 @@ description: The words this manual uses, each in plain language with the name it
 
 # Glossary
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 The words this manual uses, in plain language. Where a word has a name in the code, that name follows in brackets.
 Each page explains a word the first time it uses it; this page collects them.
@@ -119,7 +119,7 @@ entry of an item. Tools > Database Sync rebuilds projections.
 earlier coupons.
 
 **Place.** A country, a region inside it, or a town, in one tree. Prices, taxes, discounts and payment and shipping
-methods can be limited to places. Planned for 2.2.1, which is not released: a discount or a tax for a place reaches
+methods can be limited to places. A discount or a tax for a place reaches
 the places inside it; an item's price for a place applies to that place only. The cart is priced at its delivery
 place. A new shop has every ISO 3166-1 country (Greece published) and, unpublished, Greece's regions and Mount Athos
 and Spain's Canary Islands, Ceuta and Melilla. Their names are stored in English; the screen that lists them is

@@ -6,7 +6,7 @@ description: How an extension raises, updates and clears a notification for staf
 
 # Notifications
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **notification** is a line for staff in the bell at the top of Alfa Commerce's administrator screens: a new
 order, low stock, a plugin that cannot be used. This page is about the helper that writes and clears them,
@@ -210,7 +210,7 @@ Plugins hear `onAlfaNotificationPushed` only after the notification is written a
 | History | In the Notifications list only | Staff dismiss it, or `clear()` without `$hard` |
 | Gone | Nowhere | Its `expires` time has passed, or `clear()` with `$hard = true` |
 
-Planned for 2.2.1, which is not released: the Notifications list names these two scopes "Not dismissed" and "All,
+The Notifications list names these two scopes "Not dismissed" and "All,
 dismissed ones included" (its default), and the bell's figure counts the unread notifications that are not
 dismissed. The numbers are unchanged.
 

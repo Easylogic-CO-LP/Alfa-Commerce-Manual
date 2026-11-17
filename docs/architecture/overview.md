@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: Architecture Overview
-description: How Alfa Commerce 2.2.0 is built, its three sides, its layers, how a request and a save travel through them, and where each part is documented.
+description: How Alfa Commerce 2.2.1 is built, its three sides, its layers, how a request and a save travel through them, and where each part is documented.
 ---
 
 # Architecture Overview
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce is one Joomla component, `com_alfa`, with plugins and modules around it. This page is the map: what the
 parts are, which part does what, and in which order they run. Read it once before you write your first extension.

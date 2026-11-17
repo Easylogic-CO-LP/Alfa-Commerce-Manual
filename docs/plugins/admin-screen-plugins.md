@@ -8,7 +8,7 @@ description: How a plugin adds columns, filters, buttons, row actions, form tabs
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 
@@ -402,7 +402,7 @@ six are announced to everyone and go in `getSubscribedEvents()`.
 
 | What | Event | The call |
 |---|---|---|
-| An entry or a heading in the Alfa Commerce menu | `onAlfaBuildMenu` | Planned for 2.2.1, which is not released: `all()` hands copies, so only the entries `item()` and `add()` return to you are yours to change. `$event->item('group.element', $id)`, then `section()`, `title()`, `view()` or `panel()` or `link()`, `icon()`, `ordering()`, `access()`. `$event->section('group.element', $headingKey, $ordering)` places a heading. See [Creating an Admin Panel](./admin-panels.md). |
+| An entry or a heading in the Alfa Commerce menu | `onAlfaBuildMenu` | `$event->item('group.element', $id)`, then `section()`, `title()`, `view()` or `panel()` or `link()`, `icon()`, `ordering()`, `access()`. `$event->section('group.element', $headingKey, $ordering)` places a heading. See [Creating an Admin Panel](./admin-panels.md). |
 | A permission | `onAlfaGetAccessActions` | `$event->action('group.element', $name, $titleKey, $descriptionKey)` |
 | A dashboard card | `onAlfaCollectCards` | `$event->top()`, `metrics()`, `main()`, `side()` or `bottom()`, each `('group.element', $id, $titleKey)` |
 | A line in the setup checklist | `onAlfaCollectSetupChecks` | `$event->add('group.element', $id, $labelKey)` |
@@ -439,6 +439,3 @@ How stock is allocated is not one of these. It belongs to a plugin family of its
 - The details of dashboard cards, setup checks, tools, document types and clearing data. This page gives only their
   events and calls.
 - How many refusal messages staff see when several plugins refuse the same save or delete.
-- The exact moment `onAlfaAdminAfterSave` is announced for a **new item**, compared with the rest of the item's
-  save. Planned for 2.2.1, which is not released: once the whole item's save is final, new or not. See
-  [Item and catalogue events](../events/item-and-catalogue-events.md#saving-an-item).

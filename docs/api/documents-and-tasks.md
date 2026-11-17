@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: Documents and tasks
-description: "The REST API routes for sales documents, document types and background work (tasks) in Alfa Commerce 2.2.0."
+description: "The REST API routes for sales documents, document types and background work (tasks) in Alfa Commerce 2.2.1."
 ---
 
 # Documents and tasks
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -25,9 +25,8 @@ shop itself, for example when an order reaches a status that issues one. See
 | `GET v1/alfa/documents/:id/pdf` | The same as a PDF |
 | `POST v1/alfa/documents/:id/void` | Voids the document |
 
-Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`. Planned for 2.2.1,
-which is not released: also `filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days
-included).
+Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`, and since 2.2.1
+`filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days included).
 
 **A list row holds:** `id`, `doc_type`, `status`, `number`, `number_formatted`, `issue_date_local`, `id_order`,
 `id_shipment`, `id_corrects`, `buyer_name`, `buyer_vat_number`, `currency_code`, `total_tax_excl`, `total_tax`,
@@ -38,14 +37,12 @@ included).
 `vehicle_number`, `movement_start`, `ship_from`, `ship_to`), `payment_method_name`, `authority_uid`, `qr_url`,
 `note`, `print_note`, `voided_at`, `voided_by`, `void_reason`, and the lists `series`, `lines`, `taxes`.
 
-**The PDF** needs the dompdf library (`lib_dompdf`) on the site. Alfa Commerce 2.2.0 does not ship it. Without it
-the route answers 500 in 2.2.0 ([Known defects](./overview.md#known-defects-in-220), row 9). The HTML route does not
-need it.
-
-Planned for 2.2.1, which is not released: the library ships with Alfa Commerce and is installed with it, together
-with the four libraries it needs, so the route works with no extra step. If one of them has been removed, the route
+**The PDF** needs the dompdf library (`lib_dompdf`), which ships with Alfa Commerce and is installed with it,
+together with the four libraries it needs, so the route works with no extra step. The HTML route does not need it.
+If one of them has been removed, the route
 answers 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores
-it, and the setup checklist's row "PDF library for sales documents" fails.
+it, and the setup checklist's row "PDF library for sales documents" fails. (2.2.0 did not ship the library and
+answered 500 without it: [Known defects](./overview.md#known-defects-in-220), row 9.)
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:

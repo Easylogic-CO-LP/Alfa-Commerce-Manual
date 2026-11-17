@@ -8,7 +8,7 @@ description: How a plugin of the alfa group adds a whole administrator screen of
 
 <CreatePluginButton type="adminpanel" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 
@@ -192,7 +192,7 @@ could not be completed, even when your code did its work.
 | "This panel does not exist" (404) | The group in the address is not `alfa`, or the plugin is disabled or not installed |
 | A title and a toolbar with nothing under them | `onAlfaPanelView` is not declared, it returned early (wrong panel name), or `setLayout('notes.list')` names a file that is not at `layouts/notes/list.php` |
 | The list does not show your rows | `onAlfaPanelListQuery` is not declared, or it returned before building the query |
-| Planned for 2.2.1, which is not released: an empty list with "This list could not be read" | Your list query failed. The database's message is in the administrator logs, `com_alfa_panel.php`. |
+| An empty list with "This list could not be read" | Your list query failed. The database's message is in the administrator logs, `com_alfa_panel.php`. |
 | An error about an undefined variable in your layout | The layout did not take its values out of `$displayData` first |
 | The edit screen has no fields | `useForm('note')` names a file that is not at `forms/note.xml` |
 | Saving makes a copy instead of updating | The form has no hidden `id` field |
@@ -224,7 +224,7 @@ could not be completed, even when your code did its work.
 | `lookups(...$tasks)` | The tasks of the panel that only read, which may arrive by GET (see "Tasks arrive by POST") |
 
 - **What happens next.** Alfa drops the entries the person may not see, sorts the rest and draws the menu.
-- Planned for 2.2.1, which is not released: `all()` hands copies of the entries, so changing an entry you read
+- `all()` hands copies of the entries, so changing an entry you read
   through it changes nothing in the menu. A plugin changes only the entries `item()` and `add()` returned to it.
 - **If you are missing or you fail.** There is no entry, and the panel answers "not authorised". An error in your
   handler is written to the log (category `com_alfa.plugins`) and the rest of the menu is drawn.

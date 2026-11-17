@@ -6,7 +6,7 @@ description: The two ways Alfa Commerce calls a plugin, what each asks of the pl
 
 # How events reach a plugin
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 An **event** is Alfa Commerce telling plugins that something is happening: an order changed status, a page is being
 drawn, a payment provider called back. A plugin that wants to take part names the events it handles, and Alfa calls it
@@ -263,11 +263,11 @@ Three events about the cart are handed to each feature plugin in turn, on one ev
 - A `system` plugin cannot add a charge or refuse a placement.
 
 When staff operate a customer's cart and one of those plugins has an Access the customer holds but the staff account
-does not, Joomla does not load it for the staff member. The cart then shows its totals without that plugin's part,
-says so, and the order cannot be placed from that screen. Planned for 2.2.1, which is not released: a member of
-staff with the permission "Carts: Check out on behalf" places the order with the plugin's part, because Alfa starts
-the plugin for the customer with its own settings, in the staff member's request; only staff without that
-permission see the totals without it and the refusal. See
+does not, Joomla does not load it for the staff member. A member of staff with the permission "Carts: Check out on
+behalf" still places the order with the plugin's part, because Alfa starts the plugin for the customer with its own
+settings, in the staff member's request. For staff without that permission the cart shows its totals without that
+plugin's part, says so, and the order cannot be placed from that screen. (In 2.2.0 every member of staff met the
+refusal.) See
 [When staff operate a customer's cart](./order-and-cart-events.md#when-staff-operate-a-customers-cart).
 
 ## Where the save becomes final

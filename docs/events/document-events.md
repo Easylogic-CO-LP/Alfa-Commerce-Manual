@@ -6,7 +6,7 @@ description: When Alfa Commerce issues and voids sales documents, the events it 
 
 # Document events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce tells plugins when a sales document is about to be issued, when it has been issued and when it has been
 voided. A plugin can also add document types of its own. This page explains the words first, then each event, then
@@ -155,7 +155,7 @@ To show staff a translated sentence, throw
 message, a language key and the key's values. The order's screen shows the translated key and the log keeps the
 message.
 
-Planned for 2.2.1, which is not released: the notice of an automatic issue that failed says why. It reads "The
+The notice of an automatic issue that failed says why. It reads "The
 document could not be issued: ... Correct the cause, then issue it from the order.", with your
 `DocumentRefusedException`'s translated sentence in place of the dots. Without one, it says that a database error
 stopped it, or gives the first line of the failure, or says that the reason is in the documents log.

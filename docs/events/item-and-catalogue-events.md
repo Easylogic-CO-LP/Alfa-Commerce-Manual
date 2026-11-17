@@ -6,7 +6,7 @@ description: The events a feature plugin handles when an item is edited, saved o
 
 # Item and catalogue events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 These events let a **feature plugin** (a plugin of the `alfa` group) take part in an item's edit screen, its save and
 its page in the shop, and hear when the catalogue or its stored prices change.
@@ -81,43 +81,6 @@ sequenceDiagram
     Alfa->>P: onItemPrepareForm: add your fields
     P->>Alfa: Adds a group of fields, which becomes a tab
     Staff->>Alfa: Fills in the form and presses Save
-    Alfa->>Alfa: Writes the item's own row, which is final at once
-    Alfa->>P: onAlfaAdminAfterSave: only the row is saved so far
-    Alfa->>Alfa: Writes the names, images, prices, categories, fields, combinations and stock, each part final as it is written
-    Note over Alfa: Every part of the item is saved by now. There is no single moment, each part was final as it was written
-    Alfa->>Alfa: Works out the item's stored prices again
-    Alfa->>P: onAlfaPricesChanged, only if a stored price changed
-    Alfa->>P: onItemAfterSave: the item is saved, store your own values now
-    Alfa->>Staff: Shows the saved item
-```
-
-An item is not saved as one unit. It is saved in parts, one after the other: the item's own row first, then its
-names in each language, its images, its prices, its categories and manufacturers, who may see it, its fields, its
-combinations and its stock. Each part is final as soon as it is written, so there is no single moment at which the
-whole item becomes final. The mark in the picture is the point after the last part: from there on, everything that
-was written for the item is final. By the time `onItemAfterSave` is announced, every part that was written is final.
-
-Three things follow from this:
-
-- `onAlfaAdminAfterSave` (step 6) is announced right after the row, before the other parts are written. A listener
-  of it does not yet see the new prices, images or categories.
-- A part that Alfa refuses, a change of combinations or of stock for example, is shown to staff as an error and the
-  save goes on. `onItemAfterSave` is still announced.
-- If a part fails with an error that stops the save, the parts written before it stay saved, and `onItemAfterSave`
-  is not announced.
-
-Notice the order of steps 9 and 10: when a save changes a stored price, `onAlfaPricesChanged` is heard **before**
-`onItemAfterSave`.
-
-#### Planned for 2.2.1, which is not released: one save
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Staff
-    participant Alfa as Alfa Commerce
-    participant P as Your plugin
-    Staff->>Alfa: Fills in the form and presses Save
     Alfa->>Alfa: Writes the row, names, images, prices, categories, fields, combinations and stock, as one save
     Note over Alfa: The save is final here
     Alfa->>P: onAlfaAdminAfterSave: the whole item is saved
@@ -129,17 +92,19 @@ sequenceDiagram
 ```
 
 The item is saved as one unit: all of it, or, if the save stops part way, none of it. Staff are then told that the
-item was not saved, that nothing of it was kept, and to try again.
+item was not saved, that nothing of it was kept, and to try again. (Up to 2.2.0 an item was saved in parts, each
+final as it was written, and `onAlfaAdminAfterSave` came right after the item's own row.)
 
-- Everything from step 4 on waits until the save is final and is never announced for a save that was undone.
+- Everything from step 6 on waits until the save is final and is never announced for a save that was undone.
   `onAlfaAdminAfterSave` (and Joomla's `onContentAfterSave`) see the new prices, images and categories.
 - A part that reports its own refusal (combinations, stock, tracking, sale rules) is still shown to staff, and the
   save goes on, unless its failure ended the save.
 - Joomla's `onContentBeforeSave`, Joomla's table events and the media events of the item's images run inside the
-  save (step 2). What a listener writes to the shop's database there is undone with a save that fails, and the
+  save (step 5). What a listener writes to the shop's database there is undone with a save that fails, and the
   listener is not told. Work that must not be undone belongs in `onContentAfterSave`, `onAlfaAdminAfterSave` or
   `onItemAfterSave`.
-- `onAlfaPricesChanged` is still heard before `onItemAfterSave`.
+- Notice the order of steps 9 and 10: when a save changes a stored price, `onAlfaPricesChanged` is heard **before**
+  `onItemAfterSave`.
 
 ### onItemPrepareForm
 
@@ -187,8 +152,8 @@ with the rest of the form and handed to you in `onItemAfterSave`.
 **When it fires.** At the very end of an item's save in the administrator, after every part of the item was written
 and its stored prices were worked out again. One exception: when another piece of work is working out the same
 item's stored data at that moment, Alfa leaves this to its background catalogue job, and the stored prices are
-worked out after `onItemAfterSave`. Planned for 2.2.1, which is not released: once the whole save is final, and
-never for a save that was undone.
+worked out after `onItemAfterSave`. It is announced once the whole save is final, and never for a save that was
+undone.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first.
 
@@ -240,7 +205,7 @@ contributes to the same event object.
 
 | Method | Meaning |
 |---|---|
-| `getItem()` | The loaded item, as an object. Planned for 2.2.1, which is not released: its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
+| `getItem()` | The loaded item, as an object. Its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
 | `addSurface($contributor, ItemSurface $surface)` | Starts one part on a place of the page and returns its builder. Since 2.2.0. |
 | `answering()`, `harvestInto()` | For Alfa. Do not call them. |
 
@@ -248,13 +213,14 @@ The places are the cases of `ItemSurface`: `Title`, `Image`, `ShortDescription`,
 `PaymentMethods`, `ShipmentMethods`, `NearAddToCart` and `Specifications`. They are the same places an item field
 uses, see [Item field plugins](../plugins/item-field-plugin-events.md#onitemview).
 
-Planned for 2.2.1, which is not released: the surfaces of an item page, a catalogue card and a cart line
+The surfaces of an item page, a catalogue card and a cart line
 (`$item->surfaces`, `$line->surfaces`) are a read-only `SurfaceMap`. Reading a slot with `?? []`, `isset()`,
 `count()`, `foreach`, `json_encode()` and an `(array)` cast work as before. Setting, removing, appending to or
 reordering a slot throws a `LogicException`, and appending to a slot's list has no effect. The map is an object:
 `is_array()` is false, array functions on it (`array_keys()`, `array_merge()`, `array_key_exists()`,
 `array_filter()`) raise a `TypeError`, an empty map is true in an `if`, and `$item->surfaces[$slot] ??= []` is
-refused. A template override casts it with `(array)` or reads it by slot.
+refused. A template override casts it with `(array)` or reads it by slot. (Up to 2.2.0 the surfaces were a plain array
+that a plugin could write.)
 
 **What you are expected to do.** Name yourself, choose a place, name a layout and hand it its data. The layout is a
 file of your plugin, `tmpl/<name>.php`. Never return HTML from the handler.
@@ -438,7 +404,6 @@ The events about an item's stock have a page of their own: [Stock events](./stoc
 
 - How a plugin puts its own stored value back into the item's form when the item is opened again.
 - The data your layout receives for `onItemDisplay`, and every property of the item object.
-- Whether `onAlfaCatalogEntityChanged` and `onCatalogVisibilityChanged` are announced before or after their save is
-  final. Planned for 2.2.1, which is not released: after it, for an item's save and a category's save. A
-  manufacturer's save is not settled.
+- Whether `onAlfaCatalogEntityChanged` is announced before or after a manufacturer's save is final. For an item's
+  save and a category's save, both catalogue events come after it.
 - Deleting an item: which event a feature plugin uses to remove its own rows for the item.

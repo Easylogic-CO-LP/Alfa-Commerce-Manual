@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: Installation
-description: What Alfa Commerce 2.2.0 needs, how to install and update it, and what the installer does and refuses.
+description: What Alfa Commerce 2.2.1 needs, how to install and update it, and what the installer does and refuses.
 ---
 
 # Installation
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce is a Joomla component. One ZIP file installs the component together with its plugins, modules and
 libraries.
@@ -22,9 +22,9 @@ libraries.
 The installer checks Joomla, PHP and the PHP extensions itself and names what is missing. It does not check the
 database version, so check that one yourself.
 
-Printing sales documents as PDF needs the dompdf library (`lib_dompdf`), which 2.2.0 does not ship: it is installed
-separately. Planned for 2.2.1, which is not released: dompdf ships with Alfa Commerce and is installed and updated
-with it, together with the four libraries it needs, so PDFs work with no extra step. The setup checklist has a
+Printing sales documents as PDF needs the dompdf library (`lib_dompdf`). It ships with Alfa Commerce and is
+installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step (2.2.0 did
+not ship it). The setup checklist has a
 recommended row, "PDF library for sales documents", which fails only when one of these libraries has been removed,
 and says that installing the Alfa Commerce package again restores it.
 
@@ -38,8 +38,8 @@ and says that installing the Alfa Commerce package again restores it.
 ### What the installer does
 
 It installs, in this order, the libraries, the plugins and the modules that come in the ZIP, then enables every
-plugin it brought. Planned for 2.2.1, which is not released: it enables a plugin only when the site did not have it
-before; on an update each plugin keeps the state it had (see [Updating](#updating)).
+plugin it brought that the site did not have before. On an update each plugin keeps the state it had (see
+[Updating](#updating)).
 
 | Kind | What is installed |
 |---|---|
@@ -49,7 +49,7 @@ before; on an update each plugin keeps the state it had (see [Updating](#updatin
 | Item fields | `alfa-item-fields/choice` |
 | Platform | `system/alfasync`, `webservices/alfa` (the REST API), `console/alfa` (the console commands) |
 | Modules | `mod_alfa_cart`, `mod_alfa_search`, `mod_alfa_filters`, `mod_alfa_items`, `mod_easy_articles` |
-| Libraries | libphonenumber and its locale data. Planned for 2.2.1, which is not released: also dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser). |
+| Libraries | libphonenumber and its locale data; dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) |
 
 Alfa Commerce ships in English. Every other language is a separate language pack.
 
@@ -87,7 +87,7 @@ result: it places a test file in the folder and asks the site for it at its publ
 nginx ignores the deny rules in the folder. There, refuse the folder in the server configuration (the warning prints
 the rule), or move the store outside the public web root.
 
-Planned for 2.2.1, which is not released:
+Since 2.2.1:
 
 - **A switch.** **Options**, **Downloads**, **Direct-download protection check** (Yes by default). With No, no
   administrator page says anything about the store's protection, and installing, updating, a path change and the
@@ -117,25 +117,25 @@ own caches, and pauses the shop's background work while it runs (at most ten min
 Before updating:
 
 - Read the release's notes in the changelog. Some updates rebuild large tables and are best done at a quiet hour.
-- Update every Alfa Commerce extension you have installed to the same release together with core. Planned for
-  2.2.1, which is not released: after the update, Alfa Commerce names the installed Alfa extensions that are not
-  known to work with it, on the update page, in the maintenance log and in a notification, and the setup checklist
-  keeps a row until each one is updated. See [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
+- Update every Alfa Commerce extension you have installed to the same release together with core. After the
+  update, Alfa Commerce names the installed Alfa extensions that are not known to work with it, on the update page,
+  in the maintenance log and in a notification, and the setup checklist keeps a row until each one is updated. See
+  [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
 
-The same Joomla and PHP checks run on an update as on an installation.
+The same Joomla and PHP checks run on an update as on an installation. An update also cleans the caches of the
+bundled items module (`mod_alfa_items`), and keeps each plugin of the package in the state staff left it (up to
+2.2.0 an update enabled them all again).
 
-Planned for 2.2.1, which is not released:
+The update to 2.2.1:
 
-- The update also cleans the caches of the bundled items module (`mod_alfa_items`).
 - The update installs dompdf and the four libraries it needs. A `lib_dompdf` that was installed on its own before is
   updated to the package's copy. PDFs then work with no extra step.
 - The update lists the files among the item images that are not images, with the records that name them: one
   warning on the update page, and one line per file in the media log (`com_alfa_media.php` in Joomla's log folder).
   Nothing is deleted. Look at each file, delete by hand those that are not yours to publish, and choose a new
   thumbnail for the records named.
-- An update keeps each plugin of the package in the state staff left it. One that is disabled (for example
-  Web Services - Alfa Commerce) stays disabled and is named on the update page and in the maintenance log. Up to
-  2.2.0 an update enabled them all again.
+- Each plugin of the package that staff disabled (for example Web Services - Alfa Commerce) stays disabled and is
+  named on the update page and in the maintenance log.
 - The update rebuilds the item list's prices once, in the background (**Tools**, **Tasks**), because a discount
   or a tax scoped to a place now reaches the places inside it. Until the rebuild ends, the list may sort and filter
   some customers by the earlier price, while the item page and the cart already show the new one. The update page
@@ -158,7 +158,8 @@ Planned for 2.2.1, which is not released:
   folder to copy each one into. It moves and deletes nothing.
 
 An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
-removed". They were removed, and the warning can be ignored. A fix is planned for 2.2.1, which is not released.
+removed". They were removed, and the warning can be ignored. The update from 2.1.x to 2.2.1 removes them without
+that warning.
 
 ### From a 1.x beta
 

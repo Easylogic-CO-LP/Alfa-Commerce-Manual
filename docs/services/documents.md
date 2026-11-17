@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: Documents
-description: The service that issues, voids, replaces and credits sales documents in 2.2.0, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
+description: The service that issues, voids, replaces and credits sales documents in 2.2.1, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
 ---
 
 # Documents
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **document** is an invoice, a receipt, a credit note or a delivery note issued for an order. Every document is
 issued and voided by one class, `DocumentIssuer` (`administrator/src/Service/Document/DocumentIssuer.php`). This page
@@ -31,7 +31,7 @@ The events are on [Document events](../events/document-events.md). The words **d
 |---|---|
 | **The doors this manual documents** | The three events `onDocumentBeforeIssue`, `onDocumentIssued` and `onDocumentVoided`, and a document type provider. See [Document events](../events/document-events.md). |
 | **What the code says** | Nothing in `DocumentIssuer` addresses an extension as a caller, and nothing forbids one. Its methods are public and static and take plain arrays. Its comments mention other callers (a returns workflow, a scheduled job) without saying whether they are Alfa's own or an extension's. The code does not settle the question. |
-| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()` and `void()` check no permission and do not read the `documents_issuer` setting: Alfa's own controllers check the member of staff before they call, and the order screen's issuing tasks check the setting. Only `replace()` checks a permission itself. Planned for 2.2.1, which is not released: `issue()` and `void()` check a permission themselves too (see each method below). |
+| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()`, `void()` and `replace()` check a permission themselves (see each method below; in 2.2.0 only `replace()` did). They do not read the `documents_issuer` setting: the order screen's issuing tasks check it. |
 | **What follows** | Use the events. This manual does not document a call to `DocumentIssuer` from an extension. The rest of this page describes what the issuer guarantees, so that a listener knows what it can rely on. The classes around the issuer (`CreditCalculator`, `IncrementalCorrection`, `VoidAndReplace`, `AutoIssuePolicy`, `StockBridge`, `OrderItemLines`, `OrderChargeLines`) are core's own. |
 
 ## When it is used
@@ -87,14 +87,8 @@ The same flow with a later void is on [Event flows](../events/flows.md#documents
 
 ### What it does
 
-```php
-public static function issue(array $draft, bool $manageTransaction = true, bool $applyStockEffect = true): object
-```
-
 Takes a draft, asks `onDocumentBeforeIssue`, checks the draft, draws the next number of the series and writes the
-document. Returns the stored document row.
-
-Planned for 2.2.1, which is not released: a fourth argument says who issues.
+document. Returns the stored document row. The fourth argument, since 2.2.1, says who issues.
 
 ```php
 public static function issue(
@@ -115,7 +109,7 @@ in the comment above `issue()`.
 |---|---|
 | `$manageTransaction` | `true`: `issue()` saves as one unit of its own. `false`: the caller has already opened a database transaction. Then the draft must have been answered by `beforeIssue()` **before** that transaction was opened. |
 | `$applyStockEffect` | `true`: the stock step of the document's type is applied. `false`: only for a caller that has already moved these goods through the stock service itself, so that they are not moved twice. |
-| `$actor` | Planned for 2.2.1, which is not released. A person (a Joomla `User`) must hold Sales Documents: Create. A `SystemActor` (`administrator/src/Service/Document/SystemActor.php`, made with the name of the policy) is the shop's own policy and asks no permission: the automatic issue on a status uses it. Left out, the request's own user is judged. |
+| `$actor` | A person (a Joomla `User`) must hold Sales Documents: Create. A `SystemActor` (`administrator/src/Service/Document/SystemActor.php`, made with the name of the policy) is the shop's own policy and asks no permission: the automatic issue on a status uses it. Left out, the request's own user is judged. |
 
 ### What it guarantees
 
@@ -124,7 +118,7 @@ in the comment above `issue()`.
 | **One document at a time per order** | The order's row is locked for the whole issue |
 | **Numbers without gaps** | The number is drawn at the last moment, inside the save. A failed issue never uses one. |
 | **The draft is checked after the listeners** | A listener of `onDocumentBeforeIssue` may change the draft. The changed draft passes every check, as if staff had typed it. |
-| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. Planned for 2.2.1, which is not released: an order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount any more. An invoice issued before 2.2.1 without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
+| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. An order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount (since 2.2.1). An invoice issued before 2.2.1 without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
 | **Kept as issued** | The stored document is never edited or deleted. See [Kept as issued](#kept-as-issued). |
 | **Totals from the lines** | The document's totals and its summary per tax rate are worked out from its own stored lines |
 | **A delivery note carries no money** | Its amounts are stored as zero whatever the draft says |
@@ -136,7 +130,7 @@ in the comment above `issue()`.
 
 | It refuses | When it is checked |
 |---|---|
-| Planned for 2.2.1, which is not released: an actor who lacks Sales Documents: Create. It is a `DocumentRefusedException` with a sentence for staff. | Before anything |
+| An actor who lacks Sales Documents: Create. It is a `DocumentRefusedException` with a sentence for staff. | Before anything |
 | A listener of `onDocumentBeforeIssue` that throws, or that leaves a database transaction open | Before the save |
 | An unknown `doc_type`, a draft without `id_order`, a draft without lines | Before the save |
 | `id_replaces` set by anyone but `replace()` | Before the save |
@@ -200,11 +194,8 @@ touched. There is no way back: a voided document is never issued again.
 | A credit note whose stock movement cannot be reversed, for example because the goods were sold again | |
 
 Each is a `RuntimeException` whose message starts with `DocumentIssuer: void failed:`, except the empty reason, which
-is refused before anything else with the message `DocumentIssuer: a void requires a reason.` and no sentence for
-staff. `replace()` refuses an empty reason with a `DocumentRefusedException` instead.
-
-Planned for 2.2.1, which is not released: the empty reason is a `DocumentRefusedException` too, with a sentence for
-staff ("Voiding requires a reason."). Then the actor (`$actorId`, or the request's own user when it is null) must
+is refused before anything else with a `DocumentRefusedException` and a sentence for staff ("Voiding requires a
+reason."), as `replace()` refuses it. (In 2.2.0 it was a plain `RuntimeException`.) Then the actor (`$actorId`, or the request's own user when it is null) must
 hold Sales Documents: Change State, or the void is refused with a `DocumentRefusedException` and nothing is voided.
 
 There is no "before void" event. A plugin cannot refuse a void.
@@ -279,7 +270,7 @@ drafted at the same moment cannot both take the same amount. That workflow is co
 | The formatted number is kept as text on the document | Changing the series' format later does not change issued documents |
 | A series can restart each year | For a series scoped by year, the counter restarts at 1 when the first document of a new year is issued. The year is read in the shop's time zone. |
 | A new series keeps its starting number | A series that has never issued keeps the starting number the merchant typed, also in its first year |
-| Dates are set by the server | If the server's clock is earlier than the series' last issue, the issue is refused. Planned for 2.2.1, which is not released: the issue date is the server's clock when each document is issued, also in a long run such as the task runner. |
+| Dates are set by the server | If the server's clock is earlier than the series' last issue, the issue is refused. The issue date is the server's clock when each document is issued, also in a long run such as the task runner. |
 
 ## Kept as issued
 
@@ -318,10 +309,10 @@ print view (`DocumentRenderer::render(int $documentId): string`) and hands it to
 
 | | |
 |---|---|
-| **What you must provide** | In 2.2.0, the Joomla library `lib_dompdf`, installed so that `libraries/dompdf/autoload.inc.php` exists. It is not part of the 2.2.0 package. Planned for 2.2.1, which is not released: nothing. dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) are installed with Alfa Commerce, each a Joomla library of its own, and Joomla's autoloader loads their classes. |
-| **What happens without it** | `pdfBytes()` throws a `RuntimeException`: "the dompdf library is not installed (install lib_dompdf)". The print view still works. Planned for 2.2.1, which is not released: the libraries are asked for before anything is drawn. `PdfRenderer::libraryInstalled()` asks for one class of each library in `PdfRenderer::LIBRARIES`. When one of them has been removed, `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores it. |
+| **What you must provide** | Nothing. dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) are installed with Alfa Commerce, each a Joomla library of its own, and Joomla's autoloader loads their classes. (In 2.2.0 `lib_dompdf` was installed separately.) |
+| **What happens without it** | The print view still works. The libraries are asked for before anything is drawn. `PdfRenderer::libraryInstalled()` asks for one class of each library in `PdfRenderer::LIBRARIES`. When one of them has been removed, `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores it. |
 | **What it guarantees** | Nothing is stored. The PDF is made again from the stored document on every request, so it cannot differ from the document. A voided document is drawn with its "voided" mark. |
-| **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. Planned for 2.2.1, which is not released: a font that the page declares with `@font-face` is written to the renderer's temporary folder (`com_alfa_dompdf` in Joomla's temporary folder), never into the library's own fonts folder, which the file check under Tools > Security covers. The fonts that come with dompdf are still read from the library. |
+| **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. A font that the page declares with `@font-face` is written to the renderer's temporary folder (`com_alfa_dompdf` in Joomla's temporary folder), never into the library's own fonts folder, which the file check under Tools > Security covers. The fonts that come with dompdf are still read from the library. |
 
 Both renderers are core's own. They read; they change nothing.
 
@@ -383,8 +374,8 @@ All of it only after the save is final. A listener that throws there is logged, 
 | "inside an open transaction a document is issued only from a draft onDocumentBeforeIssue answered before that transaction began" | `issue()` was called inside a transaction without `beforeIssue()` first |
 | "the draft was changed after onDocumentBeforeIssue answered it" | The answered draft was changed before it was handed to `issue()` |
 | "an onDocumentBeforeIssue subscriber left a database transaction changed" | A listener opened a transaction and did not close it. Alfa undid it and refused the issue. |
-| A document is issued and the stock did not move | The stock step failed after the save was final. It stays owed. Staff find it under Tools > Database Sync. Planned for 2.2.1, which is not released: when a stock plugin refused it on purpose, a task "Stock movement of a document that a stock plugin refused" stands in Tools > Tasks with Run again; any other failure is tried again by itself. See [Stock events](../events/stock-events.md). |
-| "the dompdf library is not installed" | `lib_dompdf` is missing. Planned for 2.2.1, which is not released: the message is "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." One of the libraries that ship with Alfa Commerce has been removed. Install the Alfa Commerce package again. |
+| A document is issued and the stock did not move | The stock step failed after the save was final. It stays owed. Staff find it under Tools > Database Sync. When a stock plugin refused it on purpose, a task "Stock movement of a document that a stock plugin refused" stands in Tools > Tasks with Run again; any other failure is tried again by itself. See [Stock events](../events/stock-events.md). |
+| "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." | One of the libraries that ship with Alfa Commerce has been removed. Install the Alfa Commerce package again. |
 | A document type cannot be issued automatically | The type has no default series |
 | `onDocumentIssued` did not fire | The save the document belonged to was undone, or the shop's documents are issued by an outside system |
 
@@ -402,5 +393,3 @@ All of it only after the save is final. A listener that throws there is logged, 
   `CorrectionStrategies`) and the order screen's void and replace workflow (`VoidAndReplace`).
 - Automatic issue on a status (`AutoIssuePolicy`) beyond what [Document events](../events/document-events.md) says.
 - Document layouts: where a layout file goes and how a series chooses one.
-- How the `lib_dompdf` library is obtained and installed in 2.2.0. Planned for 2.2.1, which is not released: it is
-  installed with Alfa Commerce, so there is nothing to obtain.
