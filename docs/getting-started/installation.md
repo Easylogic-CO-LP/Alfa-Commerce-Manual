@@ -149,8 +149,13 @@ Planned for 2.2.1, which is not released:
   place, each keeping its id, the missing ones are added unpublished, and the update page names what it left: the
   countries the shop changed, the old rows that are not countries, the place Larisa inside Greece, which earlier
   versions installed, and the countries whose default currency it left as it was. The places inside Greece and
-  Spain are not added by the update: in **Places**, select Greece or Spain and press **Add subdivisions** to add
-  them, unpublished.
+  Spain are not added by the update: in **Countries/States**, select Greece or Spain and press **Add subdivisions**
+  to add them, unpublished. The seeded country and region names are in English; rename them in **Countries/States**
+  if the shop prefers names in another language.
+- Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
+  [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
+  finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the
+  folder to copy each one into. It moves and deletes nothing.
 
 An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
 removed". They were removed, and the warning can be ignored. A fix is planned for 2.2.1, which is not released.

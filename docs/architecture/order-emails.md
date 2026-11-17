@@ -193,7 +193,10 @@ no longer read for e-mails, and neither is an administrator template style that 
 
 What this means for a 2.2.0 shop: an e-mail override kept only in the site template, as the tables above advise
 for the storefront's e-mails, is no longer read after the update to 2.2.1. Copy the file into the default
-administrator template before or with the update. The copy in the site template is then no longer used.
+administrator template before or with the update. The copy in the site template is then no longer used. The update
+names every PHP file it finds under a site template's `html/layouts/com_alfa/emails` in one warning, with the folder
+to copy each one into (the same subfolder, `order` or `partials`, under the default administrator template's
+`html/layouts/com_alfa/emails`), and writes one line per file to the maintenance log. It moves and deletes nothing.
 
 Inside a layout three helpers are available:
 
