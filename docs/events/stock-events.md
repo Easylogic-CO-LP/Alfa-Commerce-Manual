@@ -6,7 +6,7 @@ description: What happens to stock when an order is placed or changes status, th
 
 # Stock events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce tells plugins when stock is about to move and when it has moved. This page explains, in plain words
 first, what can happen to stock, then each event, then how a plugin can decide which location an order's stock comes

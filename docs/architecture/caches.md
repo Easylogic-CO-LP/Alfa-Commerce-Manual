@@ -6,7 +6,7 @@ description: What Alfa Commerce keeps in Joomla's cache, what clears each cache,
 
 # Caches and the page cache
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **cache** is a stored copy of something that is slow to work out, kept for a while so that the next request does
 not work it out again. The danger of a cache is a copy that is out of date, or a copy made for one visitor that is

@@ -6,7 +6,7 @@ description: Nine pictures that show, step by step, the order in which Alfa Comm
 
 # Event flows
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 One thing a person does in a shop, such as placing an order, makes Alfa Commerce call several plugins, one after the
 other. This page shows the **order** of those calls, across all plugin types, for the nine things that happen most.

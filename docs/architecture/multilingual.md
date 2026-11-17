@@ -6,7 +6,7 @@ description: How Alfa Commerce stores translated content, which language is show
 
 # Multilingual and Translations
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A shop can show its items, categories and other records in several languages. This page explains where the
 translated text is stored, which language a reader sees, and what your code must do to read and write it.

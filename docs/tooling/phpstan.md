@@ -6,7 +6,7 @@ description: What PHPStan analyses in Alfa Commerce, what it is told to ignore, 
 
 # PHPStan
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 ## What it does
 

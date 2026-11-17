@@ -6,7 +6,7 @@ description: The words this manual uses, each in plain language with the name it
 
 # Glossary
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 The words this manual uses, in plain language. Where a word has a name in the code, that name follows in brackets.
 Each page explains a word the first time it uses it; this page collects them.

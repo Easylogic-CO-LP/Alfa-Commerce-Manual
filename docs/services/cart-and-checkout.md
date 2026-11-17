@@ -6,7 +6,7 @@ description: The services behind the cart and the placement of an order in 2.2.1
 
 # Cart and checkout
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A shopper's cart is calculated again on every request that shows it. When the shopper places the order, the cart is
 turned into an order as one unit and then deleted. This page explains the classes that do this, and says for each

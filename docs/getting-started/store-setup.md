@@ -6,7 +6,7 @@ description: Where to start after installing. The Dashboard's setup checklist an
 
 # Your first shop
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This manual is written for developers. Setting up a shop is explained inside Alfa Commerce itself, on the live
 screens, so this page only says where to start.

@@ -6,7 +6,7 @@ description: The two ways Alfa Commerce calls a plugin, what each asks of the pl
 
 # How events reach a plugin
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 An **event** is Alfa Commerce telling plugins that something is happening: an order changed status, a page is being
 drawn, a payment provider called back. A plugin that wants to take part names the events it handles, and Alfa calls it

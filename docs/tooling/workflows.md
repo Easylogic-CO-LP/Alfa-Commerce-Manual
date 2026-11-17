@@ -6,7 +6,7 @@ description: The three GitHub workflows of Alfa Commerce, when each runs, what e
 
 # Automated checks
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 The code repository holds three **workflows**. A workflow is a file under `.github/workflows/` that tells GitHub to
 run one or more **jobs** when something happens, for example when a pull request is opened. Each job shows on the

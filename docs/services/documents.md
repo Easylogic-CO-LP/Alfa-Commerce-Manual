@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: Documents
-description: The service that issues, voids, replaces and credits sales documents in 2.2.0, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
+description: The service that issues, voids, replaces and credits sales documents in 2.2.1, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
 ---
 
 # Documents
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **document** is an invoice, a receipt, a credit note or a delivery note issued for an order. Every document is
 issued and voided by one class, `DocumentIssuer` (`administrator/src/Service/Document/DocumentIssuer.php`). This page

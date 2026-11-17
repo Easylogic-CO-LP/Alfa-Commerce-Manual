@@ -1,13 +1,13 @@
 ---
 title: A complete item field plugin
-description: "A complete minimal item field plugin for Alfa Commerce 2.2.0, file by file."
+description: "A complete minimal item field plugin for Alfa Commerce 2.2, file by file."
 ---
 
 # A complete item field plugin
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

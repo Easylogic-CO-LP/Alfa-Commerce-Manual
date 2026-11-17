@@ -7,7 +7,7 @@ description: "How a script on an administrator screen asks a plugin for an answe
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

@@ -1,12 +1,12 @@
 ---
 sidebar_position: 4
 title: Payments and shipments
-description: The two ledgers that write an order's payments and parcels in 2.2.0, what they guarantee, and which base class method a plugin uses for each task.
+description: The two ledgers that write an order's payments and parcels in 2.2.1, what they guarantee, and which base class method a plugin uses for each task.
 ---
 
 # Payments and shipments
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 An order's payments and its parcels are each written by one class, called a **ledger**. A plugin never calls a
 ledger. It calls methods of the base class it extends, and the base class calls the ledger for it.

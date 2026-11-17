@@ -1,12 +1,12 @@
 ---
 sidebar_position: 3
 title: Orders
-description: The services that write an order, change its status and read it in 2.2.0, with what each guarantees, what it refuses and which of them an extension may call.
+description: The services that write an order, change its status and read it in 2.2.1, with what each guarantees, what it refuses and which of them an extension may call.
 ---
 
 # Orders
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 An order is written by one class, changes status through one class, and is handed to plugins as one read-only
 object. This page describes those three, the helpers around them, and the two locks.

@@ -6,7 +6,7 @@ description: How an extension raises, updates and clears a notification for staf
 
 # Notifications
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **notification** is a line for staff in the bell at the top of Alfa Commerce's administrator screens: a new
 order, low stock, a plugin that cannot be used. This page is about the helper that writes and clears them,

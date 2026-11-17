@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
 title: Plugin generator
-description: "Fill in a name and your details and download a correctly structured Alfa Commerce 2.2.0 plugin, made from this manual's tested examples."
+description: "Fill in a name and your details and download a correctly structured Alfa Commerce 2.2 plugin, made from this manual's tested examples."
 ---
 
 # Plugin generator
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Choose a plugin type, type a name and your details, and download a ZIP that Joomla's installer accepts. The form
 runs in your browser. Nothing you type is sent anywhere.

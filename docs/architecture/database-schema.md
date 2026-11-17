@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 111 tables of Alfa Commerce 2.2.0, grouped by area, with what each holds and how the schema changes between releases.
+description: The 111 tables of Alfa Commerce 2.2.1, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This page is a map of the database, not a copy of it. It groups the tables by area, says in one line what each table
 holds, and shows the main relations in small diagrams.
@@ -22,7 +22,8 @@ table prefix). On top of these come the per-language tables, made at run time, a
 plugin makes for itself. Both are described after the groups.
 
 A fresh 2.2.0 site with one content language (English) holds 126 tables: these 111, fourteen more language tables
-and the standard shipping plugin's log table. This was counted on a test installation.
+and the standard shipping plugin's log table. This was counted on a test installation. The install file of 2.2.1
+creates the same 111 tables.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
 that holds the link. The database enforces only three of these links with a foreign key (they are marked "foreign

@@ -6,7 +6,7 @@ description: What PHP CS Fixer formats in Alfa Commerce, with which rules, and h
 
 # PHP CS Fixer
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 ## What it does
 

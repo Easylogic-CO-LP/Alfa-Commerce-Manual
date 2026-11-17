@@ -1,13 +1,13 @@
 ---
 title: Admin screen events
-description: "The list, edit, save and delete events a feature plugin hears on Alfa Commerce's administrator screens in 2.2.0."
+description: "The list, edit, save and delete events a feature plugin hears on Alfa Commerce's administrator screens in 2.2.1."
 ---
 
 # Admin screen events
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

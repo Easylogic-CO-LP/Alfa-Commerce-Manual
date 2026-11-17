@@ -1,13 +1,13 @@
 ---
 title: A complete admin panel plugin
-description: "A complete plugin that adds its own administrator screen to Alfa Commerce 2.2.0, file by file."
+description: "A complete plugin that adds its own administrator screen to Alfa Commerce 2.2, file by file."
 ---
 
 # A complete admin panel plugin
 
 <CreatePluginButton type="adminpanel" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

@@ -6,7 +6,7 @@ description: How Alfa Commerce works out a price, which pricing classes an exten
 
 # Pricing
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Every price a shopper sees comes from one place: the pricing engine in `site/src/Service/Pricing`. This page explains
 the order in which a price is worked out, the classes you may use from an extension or a template, the shape of the

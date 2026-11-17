@@ -6,7 +6,7 @@ description: What a plugin of the alfa-search group must provide so that its own
 
 # Search engine plugins
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce always has a working search. It reads the item tables directly and needs nothing installed. Options
 calls it "Database search (built into Alfa Commerce)".

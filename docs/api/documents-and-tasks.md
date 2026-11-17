@@ -6,7 +6,7 @@ description: "The REST API routes for sales documents, document types and backgr
 
 # Documents and tasks
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 

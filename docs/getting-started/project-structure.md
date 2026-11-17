@@ -6,7 +6,7 @@ description: How the Alfa Commerce repository is laid out, with its namespaces a
 
 # Project Structure
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 How the Alfa Commerce repository is organised. Read it before contributing or writing an extension.
 

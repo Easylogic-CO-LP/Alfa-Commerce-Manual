@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Contributing
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This page is the contribution guide of Alfa Commerce. The file `CONTRIBUTING.md` in the code repository only points
 here. For how the code is organised, see [Project Structure](./project-structure).

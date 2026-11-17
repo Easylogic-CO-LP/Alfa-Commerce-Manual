@@ -1,13 +1,13 @@
 ---
 title: Shipping plugin events
-description: "Every event a shipping plugin receives in Alfa Commerce 2.2.0: when it fires, what it is given and what it must do."
+description: "Every event a shipping plugin receives in Alfa Commerce 2.2.1: when it fires, what it is given and what it must do."
 ---
 
 # Shipping plugin events
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

@@ -6,7 +6,7 @@ description: "The REST API routes for items, categories, manufacturers and item 
 
 # Catalogue
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows: the token, pages, languages, how
 texts and money are sent, and the status codes.

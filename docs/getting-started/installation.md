@@ -6,7 +6,7 @@ description: What Alfa Commerce 2.2.1 needs, how to install and update it, and w
 
 # Installation
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce is a Joomla component. One ZIP file installs the component together with its plugins, modules and
 libraries.

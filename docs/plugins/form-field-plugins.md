@@ -8,7 +8,7 @@ description: How to write a plugin that adds a new type of field to the customer
 
 <CreatePluginButton type="formfield" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **form field** is one field of the customer's details: a name, a phone number, a country, a tax office. Staff
 define the fields of their shop, and each field has a **type**. A form field plugin adds one type.

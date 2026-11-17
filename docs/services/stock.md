@@ -6,7 +6,7 @@ description: How Alfa Commerce keeps stock, which stock classes an extension may
 
 # Stock
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce keeps stock through one service, `InventoryService`. Nothing else writes a stock quantity. This page
 explains how stock is recorded, what an extension may read, what each command of the service does, guarantees and

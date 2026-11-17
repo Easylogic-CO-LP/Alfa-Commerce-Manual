@@ -6,7 +6,7 @@ description: Which e-mails Alfa Commerce sends for an order, what triggers each,
 
 # Order e-mails
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce sends an e-mail when an order is placed and when an order enters a status that is set to tell
 somebody. The e-mail is never sent inside the save. Alfa writes down "this e-mail is owed" together with the change,

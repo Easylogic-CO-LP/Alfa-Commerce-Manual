@@ -8,7 +8,7 @@ description: What a plugin of a group that Joomla loads itself can do with Alfa 
 
 <CreatePluginButton type="system" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Joomla has plugin groups of its own: `system`, `console`, `task`, `user`, `content` and others. Joomla loads them,
 not Alfa Commerce. A plugin of such a group can still take part in the shop. This page says how, and what such a

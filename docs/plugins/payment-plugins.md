@@ -1,14 +1,14 @@
 ---
 sidebar_position: 2
 title: Payment plugins
-description: How to write a payment plugin for Alfa Commerce 2.2.0, what it must provide, its settings, staff actions and logging. The events, the money calls and a complete plugin have their own pages.
+description: How to write a payment plugin for Alfa Commerce 2.2.1, what it must provide, its settings, staff actions and logging. The events, the money calls and a complete plugin have their own pages.
 ---
 
 # Payment plugins
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

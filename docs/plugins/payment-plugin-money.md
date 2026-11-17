@@ -7,7 +7,7 @@ description: "How a payment plugin records and settles a payment, refunds it, an
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

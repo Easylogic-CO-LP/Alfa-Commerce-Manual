@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: Plugin overview
-description: What a plugin can do in Alfa Commerce, which plugin types exist in 2.2.0, how to choose one, and the rules every plugin shares.
+description: What a plugin can do in Alfa Commerce, which plugin types exist in 2.2.1, how to choose one, and the rules every plugin shares.
 ---
 
 # Plugin overview
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce is extended with Joomla plugins. A plugin adds to the shop without changing Alfa's own files, so an
 update of Alfa Commerce does not undo it.

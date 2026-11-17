@@ -1,12 +1,12 @@
 ---
 sidebar_position: 10
 title: Background work
-description: How Alfa Commerce records follow-up work with a save, runs it, tries it again, finishes it and shows its outcome, and what an extension can and cannot do with it in 2.2.0.
+description: How Alfa Commerce records follow-up work with a save, runs it, tries it again, finishes it and shows its outcome, and what an extension can and cannot do with it in 2.2.1.
 ---
 
 # Background work
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **Background work** is work that Alfa Commerce owes after a change was saved, or long work that cannot fit in one
 request. Alfa writes it down in the database first and carries it out afterwards. Staff see it under

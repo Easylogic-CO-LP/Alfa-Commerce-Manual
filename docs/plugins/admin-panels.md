@@ -8,7 +8,7 @@ description: How a plugin of the alfa group adds a whole administrator screen of
 
 <CreatePluginButton type="adminpanel" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

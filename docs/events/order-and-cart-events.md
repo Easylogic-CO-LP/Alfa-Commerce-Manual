@@ -6,7 +6,7 @@ description: The five events a feature plugin handles around the cart and the or
 
 # Order and cart events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 These are the events around the cart and the order that belong to no single plugin family. A payment plugin, a
 shipping plugin and an item field each have events of their own, described on their own pages. The five events here

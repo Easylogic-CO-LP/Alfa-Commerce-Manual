@@ -1,12 +1,12 @@
 ---
 sidebar_position: 8
 title: Event index
-description: Every event Alfa Commerce 2.2.0 sends to plugins, with its class, how it is delivered, whether a plugin can refuse, when it fires, where the code sends it and the page that explains it.
+description: Every event Alfa Commerce 2.2.1 sends to plugins, with its class, how it is delivered, whether a plugin can refuse, when it fires, where the code sends it and the page that explains it.
 ---
 
 # Event index
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This page lists every event that Alfa Commerce 2.2.0 sends to plugins. It was built from the code: every place where
 the component hands an event to a plugin was opened and read. Use it to find an event by name, then follow the link

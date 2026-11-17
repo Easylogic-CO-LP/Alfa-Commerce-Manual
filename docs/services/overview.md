@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
 title: Services overview
-description: What a service is in Alfa Commerce, the service areas of 2.2.0 with one line each, and which door an extension uses for each job.
+description: What a service is in Alfa Commerce, the service areas of 2.2.1 with one line each, and which door an extension uses for each job.
 ---
 
 # Services overview
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 A **service** is a class that does one job of the shop and is the only place that does it: write an order, change
 an order's status, record a payment, issue a document, calculate a cart. Screens, the REST API and plugins all end

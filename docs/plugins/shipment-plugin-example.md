@@ -1,13 +1,13 @@
 ---
 title: A complete shipping plugin
-description: "A complete minimal shipping plugin for Alfa Commerce 2.2.0, file by file."
+description: "A complete minimal shipping plugin for Alfa Commerce 2.2, file by file."
 ---
 
 # A complete shipping plugin
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

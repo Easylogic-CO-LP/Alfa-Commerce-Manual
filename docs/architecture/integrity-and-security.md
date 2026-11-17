@@ -6,7 +6,7 @@ description: How Alfa Commerce compares its installed files with the signed list
 
 # Integrity check and Tools > Security
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce can tell whether its files on a site are the files of the official release. It compares them with a
 list that is published for every release and signed by the publisher. The result is shown under **Tools > Security**

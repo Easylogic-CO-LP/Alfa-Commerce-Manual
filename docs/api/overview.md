@@ -6,7 +6,7 @@ description: "The REST API of Alfa Commerce 2.2.1: how to call it, the rules eve
 
 # REST API
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce has a REST API: other programs read and change the shop's data over HTTP, as JSON. It is built on
 Joomla's own Web Services, so the address, the token and the shape of the answers are Joomla's.

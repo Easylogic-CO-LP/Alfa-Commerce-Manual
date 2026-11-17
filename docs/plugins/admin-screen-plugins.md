@@ -8,7 +8,7 @@ description: How a plugin adds columns, filters, buttons, row actions, form tabs
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 

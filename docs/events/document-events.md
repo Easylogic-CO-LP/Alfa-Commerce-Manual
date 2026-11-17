@@ -6,7 +6,7 @@ description: When Alfa Commerce issues and voids sales documents, the events it 
 
 # Document events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce tells plugins when a sales document is about to be issued, when it has been issued and when it has been
 voided. A plugin can also add document types of its own. This page explains the words first, then each event, then

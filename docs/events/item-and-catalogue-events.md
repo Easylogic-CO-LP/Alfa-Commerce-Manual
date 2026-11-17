@@ -6,7 +6,7 @@ description: The events a feature plugin handles when an item is edited, saved o
 
 # Item and catalogue events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 These events let a **feature plugin** (a plugin of the `alfa` group) take part in an item's edit screen, its save and
 its page in the shop, and hear when the catalogue or its stored prices change.

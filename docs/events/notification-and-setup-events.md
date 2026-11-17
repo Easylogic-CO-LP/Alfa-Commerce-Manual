@@ -6,7 +6,7 @@ description: The event announced for every staff notification, how a plugin rais
 
 # Notification and setup events
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 This page covers what a plugin can do around the administrator's notification bell, the dashboard and the store
 setup checklist. It ends with pointers to the other "collecting" events, which are described on the administrator

@@ -1,13 +1,13 @@
 ---
 title: Item field plugin events
-description: "Every event an item field plugin receives in Alfa Commerce 2.2.0: when it fires, what it is given and what it must do."
+description: "Every event an item field plugin receives in Alfa Commerce 2.2.1: when it fires, what it is given and what it must do."
 ---
 
 # Item field plugin events
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 
