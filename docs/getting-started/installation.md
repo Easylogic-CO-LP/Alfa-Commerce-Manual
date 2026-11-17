@@ -38,7 +38,8 @@ and says that installing the Alfa Commerce package again restores it.
 ### What the installer does
 
 It installs, in this order, the libraries, the plugins and the modules that come in the ZIP, then enables every
-plugin it brought:
+plugin it brought. Planned for 2.2.1, which is not released: it enables a plugin only when the site did not have it
+before; on an update each plugin keeps the state it had (see [Updating](#updating)).
 
 | Kind | What is installed |
 |---|---|
@@ -116,7 +117,10 @@ own caches, and pauses the shop's background work while it runs (at most ten min
 Before updating:
 
 - Read the release's notes in the changelog. Some updates rebuild large tables and are best done at a quiet hour.
-- Update every Alfa Commerce extension you have installed to the same release together with core.
+- Update every Alfa Commerce extension you have installed to the same release together with core. Planned for
+  2.2.1, which is not released: after the update, Alfa Commerce names the installed Alfa extensions that are not
+  known to work with it, on the update page, in the maintenance log and in a notification, and the setup checklist
+  keeps a row until each one is updated. See [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
 
 The same Joomla and PHP checks run on an update as on an installation.
 
@@ -129,6 +133,29 @@ Planned for 2.2.1, which is not released:
   warning on the update page, and one line per file in the media log (`com_alfa_media.php` in Joomla's log folder).
   Nothing is deleted. Look at each file, delete by hand those that are not yours to publish, and choose a new
   thumbnail for the records named.
+- An update keeps each plugin of the package in the state staff left it. One that is disabled (for example
+  Web Services - Alfa Commerce) stays disabled and is named on the update page and in the maintenance log. Up to
+  2.2.0 an update enabled them all again.
+- The update rebuilds the item list's prices once, in the background (**Tools**, **Tasks**), because a discount
+  or a tax scoped to a place now reaches the places inside it. Until the rebuild ends, the list may sort and filter
+  some customers by the earlier price, while the item page and the cart already show the new one. The update page
+  names the published discounts and taxes that now reach further; a shop whose places are all countries has none.
+- The update removes columns nothing reads: the orders' coupon id, coupon code, invoice date and invoice number,
+  the invoice id of order lines, parcels and order cart rules, and the e-mail subject and body columns of each
+  language's order status table. On MariaDB 10.6 and on MySQL 8.0.29 or later this changes only the tables'
+  definitions; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet hour.
+  A report or an extension of your own that reads those columns by name stops working.
+- The update brings the shop's countries to ISO 3166-1. The countries the shop never changed are corrected in
+  place, each keeping its id, the missing ones are added unpublished, and the update page names what it left: the
+  countries the shop changed, the old rows that are not countries, the place Larisa inside Greece, which earlier
+  versions installed, and the countries whose default currency it left as it was. The places inside Greece and
+  Spain are not added by the update: in **Countries/States**, select Greece or Spain and press **Add subdivisions**
+  to add them, unpublished. The seeded country and region names are in English; rename them in **Countries/States**
+  if the shop prefers names in another language.
+- Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
+  [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
+  finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the
+  folder to copy each one into. It moves and deletes nothing.
 
 An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
 removed". They were removed, and the warning can be ignored. A fix is planned for 2.2.1, which is not released.

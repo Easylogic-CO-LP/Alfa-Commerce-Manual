@@ -35,6 +35,13 @@ gains filters by payment, fulfilment, waiting time, reconciliation, overpayment,
 the customer's details. The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
 a fresh installation `name`, `email` and `country` are needed, and `country` is the id of a published place.
 
+Planned for 2.2.1, which is not released: a new shop also has the checkout fields `address`, `city` and `postcode`,
+required in the delivery section. On a shop installed with 2.2.1 an order created through the API needs all six,
+for example `"address": "1 Example Street", "city": "Example Town", "postcode": "123 45"` beside the three above,
+unless the shop sets them Optional in Form Fields. A shop installed before 2.2.1 keeps its own fields: the update
+adds none. A `PATCH` of an existing order does not require them, as it does not require the name, the e-mail or
+the country.
+
 ```bash
 curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \
   "https://your-shop.example/api/index.php/v1/alfa/orders" \
@@ -81,6 +88,9 @@ The answer, status 200, shortened:
 `id_address_delivery`, `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`,
 `payments`, `shipments`, `contributions`, `history`, `delivery_address`, `invoice_address`.
 
+Planned for 2.2.1, which is not released: `invoice_number` and `invoice_date`, which nothing in Alfa Commerce
+writes, are no longer part of the record, and the update removes their columns. The order's number is its `id`.
+
 The lists `payments` and `shipments` are where a program reads an order's payments and parcels. The routes under
 [Operations on an order](#operations-on-an-order) write them; none of them reads.
 
@@ -97,8 +107,21 @@ Planned for 2.2.1, which is not released: `customer_note` in a `PATCH` is writte
 shows nor changes it. `state` (the order's trash flag, not its status) is refused:
 
 ```json
-{"errors":[{"title":"state cannot be changed via PATCH: an order is not trashed; its status changes through POST v1/alfa/orders/:id/status.","code":422}]}
+{"errors":[{"title":"state cannot be changed via PATCH: over the API an order has no trash step and is deleted in one call (DELETE v1/alfa/orders/:id); its status changes through POST v1/alfa/orders/:id/status.","code":422}]}
 ```
+
+Planned for 2.2.1, which is not released: a `PATCH` writes the order's `customer_note` and its delivery and invoice
+details (`alfa_form_fields`, and `alfa_form_fields_billing` with `invoice_differs`), and nothing else. A body that
+carries any other field the order publishes, such as `customer_email`, `id_address_delivery`, `created` or
+`order_total`, is refused with 422 before anything is saved, and the answer names the fields:
+
+```json
+{"errors":[{"title":"customer_email cannot be written through the API: an order's update writes its customer_note and its delivery and invoice details (alfa_form_fields, and alfa_form_fields_billing with invoice_differs); its status changes through POST v1/alfa/orders/:id/status, its lines, payments and shipments through the order operations, and the other fields are worked out from them or fixed when the order is placed. Nothing was saved.","code":422}]}
+```
+
+Change the delivery details through `alfa_form_fields`, never by the id of an address record. In 2.2.0
+`id_address_delivery` and `created` in a `PATCH` were written as sent; the other fields were answered 200 and not
+written.
 
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.
@@ -261,7 +284,11 @@ Planned for 2.2.1, which is not released:
 - One order carries `fulfillment_status` and `fulfillment_percentage`, worked out as in the list of orders.
 - Each payment carries `added` (when the payment was recorded) and `refund_reason` (the reason staff gave for a
   refund). `created` is no longer in a payment's entry, so a program that reads it finds no such field.
-- A shipment's `note` and `created` stay as in 2.2.0 (row 10 is open).
+- Each shipment carries `added` (when the parcel was recorded), `shipping_charge_basis` (what its costs were
+  worked out from: `tax_included`, `tax_excluded` or `carrier_stated`) and `shipping_tax_chain` (the tax rates its
+  charge was calculated with, in the order they apply, each `{"rate": "24", "name": "VAT"}`, the rate as exact
+  decimal text; a chain stored before 2.2.0 has empty names). `note` and `created` are no longer in a shipment's
+  entry.
 
 ### The status
 
@@ -275,7 +302,7 @@ Planned for 2.2.1, which is not released:
 |---|---|
 | `id_order_status` | The status to move to. An id that is not a status answers 422. |
 | `note` | A note for the order's history |
-| `silent` | `true` sends no e-mail to the customer. Everything else still happens. |
+| `silent` | `true` sends no e-mail to the customer. Everything else still happens. In 2.2.0 the staff the status tells are not sent theirs either. Planned for 2.2.1, which is not released: they are. |
 | `force` | `true` is needed to bring a cancelled order back |
 
 A 200 means the status changed, and that everything the change owes was recorded with it: the stock step, the
@@ -324,6 +351,11 @@ Planned for 2.2.1, which is not released: the rules are kept with or without `is
 Deleting a status that orders are in answers 204 in 2.2.0 and deletes nothing (known defect, row 2). Planned for
 2.2.1, which is not released: such a delete is refused with 409 and the reason, and so is the delete of the last
 status that holds a role. Nothing is deleted.
+
+Planned for 2.2.1, which is not released: an order status is deleted only while it is in the trash, as in the
+administrator. Move it to the trash first with a `PATCH` of `state` -2, then delete it; a status in any other state
+answers 409 and nothing is deleted. A status that holds the last role of its kind cannot be moved to the trash, so
+its delete answers 409.
 
 ## Not documented yet
 

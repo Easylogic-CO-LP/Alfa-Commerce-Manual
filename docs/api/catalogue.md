@@ -110,6 +110,10 @@ Planned for 2.2.1, which is not released: the list gains `filter[stock]` and `fi
 **Delete.** An item that was never sold is removed (204). An item that an order holds stays, archived
 (`state` 2), and the answer is still 204.
 
+Planned for 2.2.1, which is not released: an item is deleted only while it is in the trash. Move it there first
+with a `PATCH` of `state` -2; an item in any other state answers 409 and nothing is deleted. An item that an order
+holds then answers 200 with the item, `state` 2, and `meta.note` saying that it was archived instead of deleted.
+
 ## Categories
 
 `v1/alfa/categories`, the five standard routes.
@@ -129,6 +133,9 @@ Planned for 2.2.1, which is not released: the list gains `filter[stock]` and `fi
 **Delete.** A category that has sub-categories, or that is the default category of an item, is refused with 409
 and the reason.
 
+Planned for 2.2.1, which is not released: only a category in the trash is deleted; any other answers 409. Move it
+to the trash first (`PATCH` with `state` -2).
+
 ## Manufacturers
 
 `v1/alfa/manufacturers`, the five standard routes.
@@ -140,6 +147,9 @@ and the reason.
 **A list row holds:** `id`, `name`, `alias`, `website`, `state`, `item_count`, `modified`, `ordering`.
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `medias`, `translations`.
+
+Planned for 2.2.1, which is not released: only a manufacturer in the trash is deleted; any other answers 409. Move
+it to the trash first (`PATCH` with `state` -2).
 
 ## Item fields
 
@@ -165,7 +175,9 @@ Planned for 2.2.1, which is not released: a create or change that carries `value
 naming them, and nothing is saved; the field is not checked out.
 
 Planned for 2.2.1, which is not released: deleting an item field that items still use (their combinations, offered
-options or specifications) is refused with 409 and the reason, and nothing is deleted.
+options or specifications) is refused with 409 and the reason, and nothing is deleted. Such a delete is reached only
+once the field is in the trash: an item field in any other state answers 409 and nothing is deleted. Move it to the
+trash first (`PATCH` with `state` -2).
 
 ## The storefront's view
 

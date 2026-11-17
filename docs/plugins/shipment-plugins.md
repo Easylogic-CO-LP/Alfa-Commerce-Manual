@@ -254,6 +254,31 @@ $data->getString(key: 'parcel_id', default: '');
 | `null` keeps the key, `removePluginData()` removes it | `has()` tells them apart |
 | A value that cannot be read as the type you ask for throws an error | A default answers only a missing or `null` key |
 
+Planned for 2.2.1, which is not released: Alfa writes one key itself, `core_made`, on a parcel it records for an
+order your plugin left without one (see [onOrderAfterPlace](./shipment-plugin-events.md#onorderafterplace)). The
+base class names it `self::CORE_MADE`. A plugin that looks for its own parcel afterwards recognises Alfa's:
+
+```php
+$coreMade = $shipment->pluginData()->getBool(self::CORE_MADE) === true;
+```
+
+### The amount to collect
+
+Planned for 2.2.1, which is not released. A cash-on-delivery carrier asks its base class what the courier collects:
+
+```php
+$collect = $this->amountToCollect($order);
+
+if ($collect->isPositive()) {
+    // book the parcel with cash on delivery of $collect
+}
+```
+
+`amountToCollect(object $order): Money` answers what the order still owes: its total less what the shop still holds
+of its payments, in the order's currency, never negative. `0.00` means nothing is owed: book the parcel without cash
+on delivery. `$order` is the order reader a hook was handed, or a loaded row. Never read the payments table or
+`PaymentLedger` for it yourself.
+
 ## What happens next
 
 ### A parcel's status can move the order
@@ -369,6 +394,7 @@ You have three places to write to. They are for three different readers.
 | `$this->log([...])` | Staff, in a popup you draw on the order page | One row per thing that happened to a parcel. Your own table, `#__alfa_shipments_<element>_logs`, with the columns of your `params/logs.xml`. `id_order` is required. Returns the row id, or 0. |
 | `Log::add($message, Log::ERROR, $this->logCategory())` | The developer | The carrier's answers and your errors. The file `alfa_shipments_<element>.php` in Joomla's log folder is registered for you. Never write a password or a key. |
 | `NotificationHelper::push($dedupKey, $title, $options)` | Staff, in the notification bell | A problem that lasts longer than one request, such as keys the carrier no longer accepts. Withdraw it with `NotificationHelper::clear($dedupKey)` when it is over. |
+| `$this->recordActionLog($languageKey, $facts, $itemId)` | The shop owner, in Joomla's User Actions Log | Planned for 2.2.1, which is not released. An act an owner audits, such as a booking sent. One row filed under your plugin, with the user of the request. |
 
 More about the log table:
 
@@ -382,6 +408,22 @@ More about the log table:
   is not written.
 
 When a staff action fails, say so on the event with `setError()`, so that the person who pressed the button is told.
+
+Planned for 2.2.1, which is not released: Joomla's User Actions Log. Call `recordActionLog()` with a sentence of
+your language file that names the facts in braces:
+
+```php
+$this->recordActionLog('PLG_ALFA_SHIPMENTS_FLAT_LOG_BOOKED', ['title' => '#' . $orderId], $orderId);
+```
+
+```ini
+PLG_ALFA_SHIPMENTS_FLAT_LOG_BOOKED="User <a href=\"{accountlink}\">{username}</a> booked the parcel of order {title}"
+```
+
+The row is filed under `plg_alfa-shipments_<element>`, so the User Actions Log screen reads the sentence from your
+plugin's language file. The facts are plain values by name. `userid`, `username` and `accountlink` are always those
+of the user who acted (user 0 when nobody did, as for a carrier's callback), whatever your facts say. The call answers
+`true` when the row is written and `false` otherwise; a failure is logged, never thrown. Rows are never deleted.
 
 ## Language
 
@@ -406,7 +448,7 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 | The shopper sees a raw key such as `PLG_ALFA_SHIPMENTS_FLAT_NO_PRICE` | The key is missing from your language file |
 | Shipping is free although a price is configured | Your code answered `setShippingCost(0.0)`. Zero means free. Refuse with `setUnavailable()` instead. |
 | The shopper pays tax twice, or none | You added or removed tax in your price. Answer the price as configured and let the method's settings do the rest. |
-| The order has no shipping charge and no parcel | `onOrderAfterPlace()` is missing, threw an error, or its `save()` returned `false`. Look in the log, categories `com_alfa.orders` and your own. |
+| The order has no shipping charge and no parcel | `onOrderAfterPlace()` is missing, threw an error, or its `save()` returned `false`. Look in the log, categories `com_alfa.orders` and your own. Planned for 2.2.1, which is not released: Alfa records the parcel itself (marked `core_made`) and a notification names your method; the cause is the same. |
 | `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, or the order's method is not a method of your plugin |
 | `save()` throws a `RuntimeException` on a new parcel | No status was set. Call `pending()` or another status before `save()`. |
 | `save()` returns `false` on a change | The parcel is not recorded as your plugin's. A plugin changes only its own parcels. |
@@ -425,12 +467,18 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 
 - The price helpers of the base class in full: the settings format that `costFromZones()` reads (zones, bands,
   limits), `cheapestMatchingCost()`, `parcelRefusal()`, `packageOf()`, `isWithinLimits()` and `placesFor()`. The
-  standard plugin's `params/params.xml` and `Standard.php` show them in use.
+  standard plugin's `params/params.xml` and `Standard.php` show them in use. Planned for 2.2.1, which is not
+  released, two rules of them: every carrier that prices by the shop's zones through `costFromZones()` picks the
+  zone of the place nearest the delivery address, so give a narrower zone rows for every cart it should carry (see
+  [onCalculateShippingCost](./shipment-plugin-events.md#oncalculateshippingcost)); and `isWithinLimits()` reads a
+  postcode or a band limit made only of digits and spaces (412 22, 410 00) as that number, and a band may be whole
+  postcodes (41000 to 41999) or their first digits (410 to 419).
 - Making sure a parcel is booked with the carrier only once. Alfa has a lock for it (`ShipmentBookingLock`), but the
   base class has no method that reaches it in 2.2.0.
 - The address reader in full (`role()`, `firstFilled()`, `fields()`, `getName()`, `getEmail()`), and the `Order` and
   `Shipment` readers.
-- The shipment row that `onAdminOrderDelete` is about. The event has no named getter for it in 2.2.0.
+- The shipment row that `onAdminOrderDelete` is about. The event has no named getter for it in 2.2.0. Planned for
+  2.2.1, which is not released: `getMethod()` names it.
 - An address of your own for your cart script (Joomla's `com_ajax`), and the cart's script events.
 - What a layout may contain on the action popup, and the script side of staff actions.
 - Notifications in full (`NotificationHelper`, `NotificationText`).

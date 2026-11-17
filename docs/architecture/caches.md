@@ -28,8 +28,8 @@ by one under Joomla's System > Clear Cache.
 
 | Group | What is kept | For how long | What clears it before that |
 |---|---|---|---|
-| `com_alfa.cards` | The dashboard's cards, worked out. One copy for each viewer, administrator language, period and set of permissions, so that one person's figures are never shown to another. | 5 minutes | A save, delete, publish or unpublish, made in the administrator, of an order, an item, a payment method or an order status |
-| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again. Planned for 2.2.1, which is not released: also a payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" enabled or disabled from the Plugins list, a save of "System - Page Cache" or "System - Alfa Commerce Sync", and installing, updating or uninstalling the dompdf library or one of the four libraries it needs. |
+| `com_alfa.cards` | The dashboard's cards, worked out. One copy for each viewer, administrator language, period and set of permissions, so that one person's figures are never shown to another. | 5 minutes | A save, delete, publish or unpublish, made in the administrator, of an order, an item, a payment method or an order status. Planned for 2.2.1, which is not released: also installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
+| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again. Planned for 2.2.1, which is not released: also a payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" enabled or disabled from the Plugins list, a save of "System - Page Cache" or "System - Alfa Commerce Sync", and installing, updating or uninstalling the dompdf library or one of the four libraries it needs. Also installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
 | `com_alfa.categories` | The storefront's category data: each category, its path and the category tree. One copy for each language and for each kind of visitor (who may see what, and how the shop treats items that are out of stock). | 1 year | A save, delete, publish, unpublish, move or reorder of a category. A save, delete, publish or unpublish of an item. The Tools action that fills empty translations of categories. |
 | `com_alfa.integrity` | The last answer of the file check under Tools > Security | 24 hours | The button "Recheck now". An update of Alfa Commerce. |
 | `com_alfa.tasks` | No data. Three marks that stop a check from running too often: the notice about failed tasks (2 minutes), the notice that background work is not running (10 minutes), the fallback deletion of finished tasks (1 hour). | As stated | Nothing. They run out. |
@@ -254,7 +254,9 @@ Two things that do not work:
 - **Calling `allowCache(false)` on the application is not enough.** It tells browsers and proxies not to store the
   answer. Joomla's page cache does not read it.
 - **Joomla's own exclusion options of the page cache plugin do not help** for content that follows the visitor
-  rather than the address. The cart module is on every page.
+  rather than the address. The cart module is on every page. Planned for 2.2.1, which is not released: once the
+  checkout holds a delivery place, the cart module shows the cart's totals at that place on every page, without the
+  cart page's sentence that names the place.
 
 ### If you write a search engine plugin
 
@@ -270,7 +272,7 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
 |---|---|
 | A dashboard card of your own | Mark it `live()` when it must be current on every request. A live card is worked out every time and never read from the 5 minute copy. Use it only where needed: its work is then done on every request of the dashboard. See [Notification and setup events](../events/notification-and-setup-events.md). |
 | A dashboard card that may be up to 5 minutes old | Nothing. It refreshes by itself. |
-| A setup check of your own | Nothing to call. The verdict is worked out again when Alfa's Options are saved, when a payment or shipping plugin is saved, when the records listed in the table above are saved, when staff run the checklist again from Tools, and after 6 hours. Planned for 2.2.1, which is not released: also on the plugin and library changes listed for `com_alfa.setup` above. |
+| A setup check of your own | Nothing to call. The verdict is worked out again when Alfa's Options are saved, when a payment or shipping plugin is saved, when the records listed in the table above are saved, when staff run the checklist again from Tools, and after 6 hours. Planned for 2.2.1, which is not released: also on the plugin and library changes listed for `com_alfa.setup` above, and when an Alfa extension is installed, updated, uninstalled, enabled or disabled. |
 | The storefront's category tree | Nothing to call. Change categories and items through Alfa's own administrator screens, which clear it. A plugin that writes to Alfa's category tables directly leaves a stale tree for up to a year. |
 | A whole page in Joomla's page cache | That is Joomla's cache. Alfa does not clear it when a record is saved. |
 

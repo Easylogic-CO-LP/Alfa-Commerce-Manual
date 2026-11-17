@@ -106,9 +106,21 @@ customers. A rule applies to an item only when all five match. One part matches 
 A rule must also be published and inside its period (its publish dates). The customer groups compared are the
 visitor's own groups, not the groups that may see the item.
 
+Planned for 2.2.1, which is not released: a rule scoped to a place matches a visitor at that place or at any place
+inside it. A rule for a country reaches its regions and towns, for the goods and for the shipping taxes alike. A
+item's own price row for a place still applies to that place only. So publishing a region inside a country
+changes the price row its customers get: a customer whose place is the region pays the region's own price, if the
+item has one, otherwise the price for every place, while the country's discounts and taxes still reach them. Add
+the region's own price rows, or keep the items' prices for every place.
+
 ### When several discounts or taxes apply (the behaviour)
 
-Rules are read in their ordering, then by id. Each rule has a **behaviour**:
+Rules are read in their ordering, then by id. Planned for 2.2.1, which is not released: for a visitor below a
+place that has rules of its own, the rules come in one order. Rules with no place (or "every place") keep their
+ordering, then id, among themselves. Rules scoped to a place come nearest place first (the visitor's own place, then
+the region above it, then the country), each place's rules by ordering, then id. The two lists are then merged by
+ordering and id. A shop whose places are all countries keeps the order of 2.2.0 exactly. Each rule has a
+**behaviour**:
 
 | Behaviour | Value | For discounts | For taxes |
 |---|---|---|---|
@@ -241,7 +253,11 @@ $other   = $context->withCurrency(2);        // the same visitor, another curren
 | `customerGroups(User $customer): array`, `groupLineage(int $groupId): array`, `groupLineages(array $groupIds): array` (static) | The groups a customer holds, and a group with every group above it | |
 
 The session keys are `alfa.currency_id` and `alfa.location_id`. A plugin that detects the visitor's country sets
-the second one to the id of the place. Planned for 2.2.1, which is not released: a page priced for a visitor whose
+the second one to the id of the place. Planned for 2.2.1, which is not released: the cart is the exception. It is
+priced at its delivery place once the checkout holds one; lists and item pages keep the session's place. The cart
+module shows the cart's totals at that place on every page, without the cart page's sentence naming it. The order
+builder in the administrator reads neither key: a cart it makes opens in the shop's default currency, and its prices
+follow the cart's currency. Planned for 2.2.1, which is not released: a page priced for a visitor whose
 session holds either key is kept out of Joomla's page cache, whatever the state of "System - Alfa Commerce Sync".
 While that plugin runs for visitors who are not logged in, such a visitor is also never given a page stored for
 another visitor. See [Caches](../architecture/caches.md#the-page-cache-rule).
@@ -483,7 +499,7 @@ One stored row is the price of:
 | The item | `item_id` | |
 | The combination | `combination_id` | 0 for the item's own row |
 | The currency | `currency_id` | 0 for any |
-| The place | `place_id` | 0 for any, or unknown |
+| The place | `place_id` | 0 for any, or unknown. Planned for 2.2.1, which is not released: the places that discounts, taxes and price rows name. |
 | The customer group set | `group_set_id` | One list of the customer groups that prices, discounts or taxes name and that some customers hold together |
 | The period | `valid_from` | When the row starts to apply. `valid_until` is its end, empty for "no end". |
 
@@ -493,6 +509,10 @@ unit prices at quantity 1.
 
 The prices a shopper sees on an item page, on the cards of a list and in the cart are not read from the index.
 They are worked out live.
+
+Planned for 2.2.1, which is not released: a list reads the row of the visitor's own place, else of the nearest place
+above it that a discount or a tax names, else of no place. A place above that only price rows name is passed over,
+because its price rows apply to it alone.
 
 ### When it is rebuilt
 
@@ -505,6 +525,8 @@ Core rebuilds the rows that a change touches, in the same request:
 | Save, publish, unpublish or delete a discount or a tax | The rows of the items in its scope. A rule for every category rewrites every item. |
 | Delete a category or a manufacturer | The rows of the items that lost it |
 | Change which groups customers hold | New group sets are requested, unused ones are removed |
+| Planned for 2.2.1, which is not released: move a place under another place | Every item, by the background job `catalogue.rebuild`, when a stored place sits at or below it. The save says so. A new place needs none. |
+| Planned for 2.2.1, which is not released: a catalogue rebuild | An unpublished item's rows are removed, and none are written |
 
 A customer group set that customers hold for the first time is not written by the request that brought it. The
 background job `price.set.prepare` prepares it, a part of the items at a time. Until it is finished, the set is not
@@ -605,6 +627,10 @@ Before 2.2.0 the chain held the rate texts alone, for example `['10', '5']`.
 A carrier plugin that passes its own `shipping_tax_chain` to the shipment ledger writes each entry either as a rate
 text (`'24'`) or as exactly the two keys `rate` and `name`. A rate is plain decimal text above zero. Anything else
 is refused. A chain stored before 2.2.0 is still read, as rates with no rule named.
+
+Planned for 2.2.1, which is not released: the shipping taxes follow the same order as the goods' taxes (see
+[When several discounts or taxes apply](#when-several-discounts-or-taxes-apply-the-behaviour)). They already
+reached the places inside theirs in 2.2.0.
 
 ## What can go wrong
 

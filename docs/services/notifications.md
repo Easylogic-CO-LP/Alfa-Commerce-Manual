@@ -210,6 +210,10 @@ Plugins hear `onAlfaNotificationPushed` only after the notification is written a
 | History | In the Notifications list only | Staff dismiss it, or `clear()` without `$hard` |
 | Gone | Nowhere | Its `expires` time has passed, or `clear()` with `$hard = true` |
 
+Planned for 2.2.1, which is not released: the Notifications list names these two scopes "Not dismissed" and "All,
+dismissed ones included" (its default), and the bell's figure counts the unread notifications that are not
+dismissed. The numbers are unchanged.
+
 - A dismissed or cleared notification is kept as history for 7 days by default. The shop owner changes that in the
   component's options (`notifications_history_days`, 1 to 365), and `$historyDays` of `clear()` sets it for one
   call.

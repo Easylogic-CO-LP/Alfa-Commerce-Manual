@@ -25,7 +25,7 @@ The checklist has 17 rows in three groups, and says how many are done:
 | **Recommended** | Checkout form fields, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
-Planned for 2.2.1, which is not released: the checklist has 20 rows. Three join the **Recommended** group:
+Planned for 2.2.1, which is not released: the checklist has 21 rows. Four join the **Recommended** group:
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
   no enabled plugin of Public access, and names each such field.
@@ -36,6 +36,12 @@ Planned for 2.2.1, which is not released: the checklist has 20 rows. Three join 
   Commerce Sync", and also warns while that plugin is disabled, missing, or not run for visitors who are not logged
   in, saying what Alfa still keeps out of the page cache and what is lost.
   See [Caches](../architecture/caches.md#the-page-cache-rule).
+- **Alfa extensions built for this version.** It warns while an installed Alfa extension states a range of Alfa
+  Commerce lines that excludes this one ("needs a compatible build") or states none ("compatibility not stated"),
+  names each with its verdict and the line to update to, and opens **Tools**, **Extensions**. An Alfa extension here
+  is a plugin of a group whose name starts with `alfa` or whose namespace starts with `Alfa\`, or a module whose name
+  starts with `mod_alfa`, another vendor's included; the extensions that ship with Alfa Commerce are never named.
+  See [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
 
 The shop cannot take orders until every required row is done.
 

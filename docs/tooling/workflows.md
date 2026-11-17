@@ -20,7 +20,7 @@ pull request as one check, green or red.
 | Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
 | Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | On `main` (2.2.0): no, it reports and does not fail the check. On `developer` since 13 November 2026: a finding turns the check red, but no check is required for a merge yet. See [PHPStan](./phpstan). |
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
-| Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. |
+| Security Scan, **dependency check** (job `php-security`) | Same | No. It is skipped, because the repository has no `composer.lock`. From the next promotion of `developer` to `main` (with 2.2.1, which is not released): it is the **PHP security scan**. Not today: no check is required for a merge. Any finding turns it red. |
 | Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
 | Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
@@ -105,7 +105,8 @@ Details and the local command: [PHP CS Fixer](./php-cs-fixer).
 | What makes it fail | Any comment or text that breaks a rule and is not in the allow list. An allow list entry that no longer matches anything. The run prints each finding with its file, line and rule. |
 
 The rules, R1, R2, R3, R5 and R6, and the allow list are explained on
-[Contributing](../getting-started/contributing#code-conventions).
+[Contributing](../getting-started/contributing#code-conventions). There is no rule R4: the rules keep the numbers
+they were first given.
 
 Run it yourself from the root of the repository, with the same command as the workflow:
 
@@ -119,6 +120,11 @@ A clean run of 2.2.0 ends with these two lines:
 copy-clean gate: 1640 shipped files, 1630 judged; 44 occurrence(s) allowed by 44 entries; 0 not allowed
 17 passed, 0 failed
 ```
+
+From the next promotion of `developer` to `main` (with 2.2.1, which is not released): a clean run ends with
+"18 passed, 0 failed". The gate checks itself too: it fails when its planted test lines reach a rule its list does
+not name, or the list names one no planted line reaches. The file counts follow the code; `developer` of 17 November
+2026 read 1676 shipped files, 1666 judged.
 
 ### PHPStan
 
@@ -143,12 +149,13 @@ to them.
 | Job | What it does | What makes it fail |
 |---|---|---|
 | `security-scan` | CodeQL, GitHub's code scanner. It is set up for one language group, `javascript-typescript`, with the query set `security-extended`. It does not analyse the PHP code. | A step that breaks. What happens with the alerts it reports depends on the repository's settings, which are not part of the code. |
-| `php-security` | Sets up PHP 8.2 and installs a checker for known vulnerabilities in Composer dependencies. The checker runs only when a file `composer.lock` exists. The repository has none, so the job prints that it skips the scan. | Only a step that breaks. It checks nothing today. |
+| `php-security` | Sets up PHP 8.2 and installs a checker for known vulnerabilities in Composer dependencies. The checker runs only when a file `composer.lock` exists. The repository has none, so the job prints that it skips the scan. From the next promotion of `developer` to `main` (with 2.2.1, which is not released): Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. | Only a step that breaks. It checks nothing today. From the next promotion: any finding. |
 | `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords. It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
 
 From the next promotion of `developer` to `main`, the actions of Code Quality and Security Scan run from a fixed
 commit, except those of the `php-security` job, which also stays on PHP 8.2. TruffleHog's action is fixed at v3.99.9; the scanner it starts is
-still its `latest` image.
+still its `latest` image. With the `php-security` job of 2.2.1 every action of that job is fixed by commit too, and
+it sets up no PHP.
 
 If the secret scan turns red, removing the secret from the file is not enough: it stays in the history. Replace the
 secret at the service that issued it.
@@ -206,6 +213,7 @@ On the pull request page:
 | What you see | What to do |
 |---|---|
 | Copy-clean is red | Open the run. Reword each comment or text it names, or add an exception with its reason to the allow list. |
+| From the next promotion of `developer` to `main`: php-security is red | Open the run: it names the file, the line and the rule. Fix the code. A rule that is wrong for Alfa Commerce is left out in the workflow, with its reason, in a pull request. |
 | The secret scan is red | Replace the secret at its service, then remove it from the code. |
 | PHPStan is green | That says nothing about findings. Open the run and read them. |
 | PHP CS Fixer added a commit | Pull, then continue. |
@@ -221,6 +229,8 @@ On the pull request page:
   is the latest release on the day of the run. A result can therefore change without a change in the code.
 - From the next promotion of `developer` to `main` (with 2.2.1, which is not released): PHP 8.3 for PHP CS Fixer and
   PHPStan, PHP 8.2 only for the dependency check; PHPStan 2.3.5 and Joomla 6.2.0; TruffleHog's action at v3.99.9.
+  With the PHP security scan of 2.2.1 the `php-security` job sets up no PHP, and Semgrep 1.185.0 and the rules'
+  commit join the fixed versions.
   PHP CS Fixer and TruffleHog's scanner image are still not fixed, so their results can still change by themselves.
 
 ## Not documented yet

@@ -442,6 +442,13 @@ it is called from background work.
    message. The task's history and the log (category `com_alfa.orders`) hold it.
 6. **Be quick.** In the normal case the person who made the change waits for you. Do not make them wait for a slow
    remote system. If you call one, set a short time limit.
+7. **The process can be long.** The console command, a scheduler and the web cron run many tasks in one PHP
+   process, and Joomla's `Factory::getDate()` keeps the time of its first call for the whole process. Where you
+   measure a window (an expiry, an age, a start or an end), read the time again: `new Date('now', 'UTC')`, or
+   `UTC_TIMESTAMP()` in SQL where the row is compared with the database's clock. Compare like with like: a row
+   stamped by PHP's clock with PHP's, one stamped by the database with the database's. Planned for 2.2.1, which is not
+   released: Alfa's own windows do so (document issue dates, entitlement expiries, notifications, the price index and
+   the stock outbox).
 
 ## What happens next
 

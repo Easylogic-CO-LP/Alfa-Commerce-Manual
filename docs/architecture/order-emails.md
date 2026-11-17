@@ -70,7 +70,10 @@ The e-mails of one order go out in the order their statuses were entered. The pl
 - At checkout, for the first status of the new order.
 - At every status change, when the new status tells somebody.
 - Not when the code that makes the change asks for no e-mail. The REST API's status change accepts `"silent": true`
-  for this. A silent change sends nothing, to the customer or to staff. Everything else still happens.
+  for this. A silent change sends nothing, to the customer or to staff. Everything else still happens. Planned for
+  2.2.1, which is not released: the REST API's silent change leaves out the customer's e-mail only; the staff the
+  status tells are still sent theirs. Code that calls `Transition::silent()` still sends nothing, and
+  `Transition::silentCustomer()` leaves out the customer alone.
 
 ## What happens next
 
@@ -149,6 +152,9 @@ A status picks two layouts: one for the customer's e-mail (`email_layout_custome
 | Checkout fields | `{field_<name>}`, one for each active form field. The field's own plugin draws its value. |
 | Site | `{site_name}`, `{site_url}` |
 
+Planned for 2.2.1, which is not released: `{order_number}` is the order's id. Up to 2.2.0 an invoice number was
+preferred, which nothing wrote.
+
 Tokens are replaced once, over the whole finished e-mail, so they work in staff's text, in the blocks and in the
 layout's own text. In the body their values are made safe for HTML. The subject gets the plain values.
 
@@ -187,7 +193,10 @@ no longer read for e-mails, and neither is an administrator template style that 
 
 What this means for a 2.2.0 shop: an e-mail override kept only in the site template, as the tables above advise
 for the storefront's e-mails, is no longer read after the update to 2.2.1. Copy the file into the default
-administrator template before or with the update. The copy in the site template is then no longer used.
+administrator template before or with the update. The copy in the site template is then no longer used. The update
+names every PHP file it finds under a site template's `html/layouts/com_alfa/emails` in one warning, with the folder
+to copy each one into (the same subfolder, `order` or `partials`, under the default administrator template's
+`html/layouts/com_alfa/emails`), and writes one line per file to the maintenance log. It moves and deletes nothing.
 
 Inside a layout three helpers are available:
 
@@ -214,10 +223,12 @@ Never edit the files inside `administrator/components/com_alfa/`. An update repl
 | The subject and the positions, for each language | `#__alfa_orders_statuses_<langtag>` (for example `#__alfa_orders_statuses_en_gb`), columns `email_positions_customer` and `email_positions_admin`. Each holds one JSON object: `subject` plus one entry for each position. |
 
 The language tables also still have the columns `email_subject_customer`, `email_body_customer`,
-`email_subject_admin` and `email_body_admin`. The sending code of 2.2.0 does not read them.
+`email_subject_admin` and `email_body_admin`. The sending code of 2.2.0 does not read them. Planned for 2.2.1, which
+is not released: the update removes these four columns from every language's table that still has them.
 
 If the subject is left empty, Alfa uses a general subject with the order's id (not its order number) and the
-status's name for the customer.
+status's name for the customer. Planned for 2.2.1, which is not released: the order's number is its id, so the
+general subject names the order by its number, as `{order_number}` does.
 
 The tables are described on the [database page](./database-schema.md).
 
@@ -270,7 +281,7 @@ it itself. See [Order and cart events](../events/order-and-cart-events.md).
 
 | What you see | The usual cause |
 |---|---|
-| No e-mail and no task | The status tells nobody: "notify the customer" is off and no staff recipient is listed. Or the change was made silent. |
+| No e-mail and no task | The status tells nobody: "notify the customer" is off and no staff recipient is listed. Or the change was made silent. Planned for 2.2.1, which is not released: a silent change through the REST API still has an e-mail task when the status tells staff. |
 | A task but no e-mail to the customer | The order has no e-mail address. The log (category `com_alfa.orders`) says so. |
 | The task is done but a recipient got nothing | No subject and no text is stored for that recipient's e-mail, in the order's language or in the default content language. Nothing is sent to that recipient and no outcome is recorded for it. |
 | The task is Failed at once | Joomla's Send Mail is No, or the order names no currency, so no amount can be stated |

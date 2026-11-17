@@ -87,6 +87,8 @@ Two things differ from what many expect:
   with a thumbnail picture named (a file picked from the media library names itself, or staff chose another picture
   on the image's tile), `onAlfaMediaThumbnail` fires first, before `onAlfaMediaValidate`, and not again afterwards.
   In that case it also fires before Alfa's own check of the file, so check the source yourself before you read it.
+  Planned for 2.2.1, which is not released: the thumbnail of a named picture is made only after the image passed
+  Alfa's check and `onAlfaMediaValidate` and was stored, so a refused image fires no `onAlfaMediaThumbnail`.
 
 Planned for 2.2.1, which is not released: Alfa checks a thumbnail's source before it hands it to
 `onAlfaMediaThumbnail`, resizes it or copies it. The source must lie inside one of the Media folders (Joomla's
@@ -173,7 +175,9 @@ Call `setProcessed(true)` only after your file exists.
 `getFinalPath()` on the image's row and reads the main colour from that file. When no listener did, Alfa copies the
 original to `getDest()` unchanged.
 
-**If you are missing or you fail.** The original is stored unchanged.
+**If you are missing or you fail.** The original is stored unchanged. Planned for 2.2.1, which is not released: a
+main image that a listener marked processed while no file exists at its final path is refused with a message
+("... was not saved: the media plugin that processed it wrote no file."), and no row is written for it.
 
 ## onAlfaMediaThumbnail
 
@@ -234,6 +238,11 @@ removed. Up to 500 rows are announced at a time.
 It does **not** fire when staff remove one image from a record's gallery, or when an item, a category, a
 manufacturer or a combination is deleted with its images.
 
+Planned for 2.2.1, which is not released: it fires on every delete path. Also when staff remove an image in an
+item, category, manufacturer or variant form, when the REST API removes one, and when a record is deleted with its
+gallery. Inside a save it fires once the save is final: the rows are already gone, the files not yet. A save that is
+undone fires nothing and keeps the files.
+
 **Who receives it.** Announced to everyone.
 
 **What you are given.** Event class `BeforeDeleteEvent`. It carries no source, destination, origin or field.
@@ -254,12 +263,12 @@ its thumbnail alone: Alfa deletes them itself, and only when no other image uses
 
 | What you see | The cause |
 |---|---|
-| A saved image whose file does not exist | The plugin called `setProcessed(true)` on `onAlfaMediaBeforeProcess` without writing the file. Alfa then stores the path and copies nothing. |
+| A saved image whose file does not exist | The plugin called `setProcessed(true)` on `onAlfaMediaBeforeProcess` without writing the file. Alfa then stores the path and copies nothing. Planned for 2.2.1, which is not released: the image is refused with a message and no row is written. |
 | An image with no thumbnail | The plugin called `setProcessed(true)` on `onAlfaMediaThumbnail` and the file at `getFinalPath()` does not exist. |
 | Images of 0 by 0 pixels, or an error while resizing | The plugin sized the main image by `getMaxWidth()` and `getMaxHeight()`, which are 0 there. |
 | The path on the row looks wrong | `setFinalPath()` was given a path that is not a full path inside the site. |
 | The plugin seems to do nothing, without any message | Its listener threw an error. Look in Joomla's log, category `com_alfa.plugins`. |
-| Extra files stay behind after an image is removed from a record | `onAlfaMediaBeforeDelete` is not raised there in 2.2.0. |
+| Extra files stay behind after an image is removed from a record | `onAlfaMediaBeforeDelete` is not raised there in 2.2.0. Planned for 2.2.1, which is not released: it is raised there. |
 
 ## A complete media plugin
 

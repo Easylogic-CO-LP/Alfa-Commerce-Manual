@@ -202,7 +202,7 @@ each one. They fire while a record is being saved. A media event does not tell y
 | `onAlfaMediaBeforeProcess` | `BeforeProcessEvent` | Announced | No | Before the image is stored | `administrator/src/Helper/MediaHelper.php:2138` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforeprocess) |
 | `onAlfaMediaThumbnail` | `ThumbnailEvent` | Announced | No | When a thumbnail is made | `administrator/src/Helper/MediaHelper.php:2138` | [Media plugins](../plugins/media-plugins.md#onalfamediathumbnail) |
 | `onAlfaMediaAfterProcess` | `AfterProcessEvent` | Announced | No | After the file is stored, before the image's row is written | `administrator/src/Helper/MediaHelper.php:2167` | [Media plugins](../plugins/media-plugins.md#onalfamediaafterprocess) |
-| `onAlfaMediaBeforeDelete` | `BeforeDeleteEvent` | Announced | No | Before the files and rows of an image are removed | `administrator/src/Helper/MediaHelper.php:2206` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforedelete) |
+| `onAlfaMediaBeforeDelete` | `BeforeDeleteEvent` | Announced | No | Before the files and rows of an image are removed. Planned for 2.2.1, which is not released: on every delete path; inside a save, once the save is final, the rows already gone and the files not yet | `administrator/src/Helper/MediaHelper.php:2206` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforedelete) |
 
 ## Stock
 

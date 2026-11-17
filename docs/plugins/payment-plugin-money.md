@@ -51,15 +51,22 @@ $this->paymentUpdate($paymentId)->cancelled()->note('Customer request')->save();
 | `amountToCollect(object $order): float` | The amount your gateway should charge: the order's total less what is already collected | Before every charge | Never negative | Nothing. `0.0` means: charge nothing and write no row. |
 | `payment(object $order)` | Starts a builder for a new row | `onOrderAfterPlace`, a new attempt | The row records your plugin as its writer | `save()` answers `false` when the method is not one of your plugin's |
 | `paymentUpdate(int $paymentId)` | Starts a builder for an existing row | Any change to a row | Only what you set is written | Throws `RuntimeException` when the row does not exist. Refuses a row that is not your plugin's. |
-| `settleAttempt(PaymentLedger $write, int $orderId, string $reference = ''): int` | Writes a builder that has `expectStatus()` set, and tells you which of three things happened | Every time a provider confirms a payment | Of two callers, exactly one changes the row. When the books refuse money that has moved, a CRITICAL line goes to your log. | Returns `self::WRITE_OK`, `self::WRITE_RACED` (the other caller won, agree with it) or `self::WRITE_FAILED` (not in the books) |
+| `settleAttempt(PaymentLedger $write, int $orderId, string $reference = ''): int` | Writes a builder that has `expectStatus()` set, and tells you which of three things happened | Every time a provider confirms a payment | Of two callers, exactly one changes the row. When the books refuse money that has moved, a CRITICAL line goes to your log. Planned for 2.2.1, which is not released: a write the books refuse queues no message for the shopper; its reason is in the orders log (`com_alfa.orders`), and staff read it in plain words on the order's page. | Returns `self::WRITE_OK`, `self::WRITE_RACED` (the other caller won, agree with it) or `self::WRITE_FAILED` (not in the books) |
 | `claimPendingAttempt(int $paymentId, string $reference): bool` | Writes a provider reference on a pending row that has none, once | When two visits or two deliveries could both take the same attempt | Exactly one caller gets `true`. No money and no status move. | A blank reference and an id under 1 throw `InvalidArgumentException`. `false` when the row is not, or no longer, your pending attempt without a reference. |
 | `supersedeAttempt(int $paymentId, string $reason = ''): int` | Closes a pending attempt nobody will pay | The shopper left, or started a new attempt | The order does not move and the customer is told nothing | Returns the same three `WRITE_` values. Another plugin's row is `WRITE_FAILED`. |
-| `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | Records money the customer's bank took back | A dispute your provider reports | Never moves the order | Another plugin's payment |
+| `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | Records money the customer's bank took back | A dispute your provider reports | Never moves the order. Planned for 2.2.1, which is not released: the order is then owed that money again, and a new payment for it is accepted. | Another plugin's payment |
 | `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | Records that a booked refund or a chargeback did not stand | A reversed refund, a dispute you won | The original row is never edited. A new row names it. | Another plugin's row |
 | `deletePayment(int $id, int $orderId): bool` | Deletes a payment row | Rarely | Only your own rows | Another plugin's row, or one that records no plugin |
 | `orderTransition(int $orderId)` | Moves the order to a status, in your plugin's name: `->to($statusId)->save()` | Only for a moment the method's status settings cannot express | The same steps as any status change | |
 
 Since 2.2.0. Every call above that changes or deletes a row acts only on a row your plugin wrote.
+
+Planned for 2.2.1, which is not released: when the books refuse to write a payment row (`create`, a change, or a
+change that expects a status), for example a payment that would take the order past what it is owed, `save()`
+answers `false` or `self::WRITE_FAILED` as before, and on a storefront request Alfa shows the shopper nothing: tell
+the shopper in your own words. On an administrator or API request staff read a plain sentence that names the order's
+number. A payment cap counts what the shop still holds: money a customer's bank took back, or a part refunded, is
+owed again and may be paid again.
 
 ### Reading
 
@@ -120,6 +127,7 @@ report first.
 | `refundableNow(object $order): Money` | What the order may still give back, less everything reserved | To decide whether to offer a Refund button |
 | `refundableRemainder(int $paymentId): Money` | What is left on one payment, less its reservations | To decide whether to offer a Refund button |
 | `refundFormMaximum(int $paymentId): Money` | What is left on the payment, held to what the order may still refund. Zero for a payment that is not completed. | The maximum of every refund form. Use this figure and do no arithmetic of your own. |
+| `bookedRefundable(int $orderId): Money` | Planned for 2.2.1, which is not released. What the books still allow to be refunded on the order, ignoring what is reserved: the money collected less everything already given back. The ceiling that money your provider already moved is booked against. | Never to decide whether a refund may start (`reserveRefund()` decides) or for the maximum of a form |
 | `refundStartRefusal(object $order): ?string` | Why no refund may start on the order now (translated), or `null` | To explain the refund block to staff |
 | `refundTypeFor(int $paymentId, ?Money $amount = null): string` | Since 2.2.0. `self::REFUND_FULL` or `self::REFUND_PARTIAL` for a refund of this amount. `null` means all that is left. | For your log or your message. Throws when the row is not a payment of yours or the amount is not positive. |
 
@@ -161,6 +169,7 @@ keeps it on a row for staff and answers `OUTCOME_UNRECONCILED`.
 | `settleRefund(int $reservationId, Money $amount, ?string $providerRefundId, array $options = []): array` | The provider completed the refund: books it | Booked once per provider refund id. The provider's figure is booked as it is, also above the reservation. | `OUTCOME_UNRECONCILED` when the books cannot hold it: Alfa keeps it for staff |
 | `holdRefund(int $reservationId, ?string $providerRefundId, ?Money $amount = null, array $options = []): array` | The provider accepted the refund but has not completed it: it stays reserved under the provider's id | Nothing is booked yet | |
 | `releaseRefund(int $reservationId, string $reason, array $options = []): array` | The provider definitely refused: gives the reserved amount back | Nothing is booked | Never use it for an unknown outcome |
+| `failRefundAttempt(int $reservationId, string $providerRefundId, string $reason, array $options = []): array` | Planned for 2.2.1, which is not released. The provider failed this attempt and you will try again for the same request: the reservation keeps its amount and gets a new key | No figure moves, so the retry is never reserved twice. The same failure again is `self::OUTCOME_DUPLICATE` and writes nothing. | Returns `outcome` (`self::OUTCOME_RESERVED` when kept for the retry), `reservation`, `key` (send the retry with it), `amount` (send exactly this) and `reason`. Refuses another plugin's payment and a settled or released reservation. To give the request up instead, use `releaseRefund()`. |
 | `refundReservation(int $reservationId): ?array` | Reads one reservation: `reservation`, `payment`, `order`, `amount`, `status`, `key`, `providerRefundId` | Read only | `null` when there is none |
 | `reportOutcome(int $paymentId, string $reportId): ?array` | Reads what Alfa keeps for one of your provider refund reports | Read only. It never calls your plugin. | `null` when Alfa keeps none |
 
@@ -202,6 +211,15 @@ Four rules for a gateway:
 2. Hold no lock and no transaction while you call the provider.
 3. Sending the same request again uses the same reservation and the same key. Never reserve again for a resend.
 4. Declare the buttons that start a refund with `startsRefund()` (see [Staff actions](./payment-plugins.md#staff-actions)).
+
+Planned for 2.2.1, which is not released:
+
+- When the provider reports that one attempt failed and you will try again, call
+  `$this->failRefundAttempt($reserved['reservation'], $providerRefundId, $why)`, then send the retry with the answer's
+  `key` and exactly its `amount`, and report the retry's outcome on the same reservation as above.
+- `self::REFUND_BEYOND_PREFIX` (`beyond:`) begins the reference Alfa itself writes for a refund the provider gave no
+  refund id for, beyond the request's reservation. It is never a provider's refund id: never send it to your
+  provider as one.
 
 ### Telling Alfa about refunds it does not hold
 
