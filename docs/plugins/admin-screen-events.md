@@ -136,7 +136,8 @@ These slots exist in 2.2.0:
 | `cart-main` | The screen of one cart, under its tabs | `$event->targets('cart') && $event->at('cart-main')` |
 
 The screen of one cart answers `isListScreen()` with true, like the carts list. Tell the two apart with
-`$context->view`: `'cart'` for one cart, `'carts'` for the list.
+`$context->view`: `'cart'` for one cart, `'carts'` for the list. Planned for 2.2.1, which is not released: the screen
+of one cart is an edit screen. `isListScreen()` is false there, and no row or bulk action event is raised on it.
 
 ### Declaring a column
 

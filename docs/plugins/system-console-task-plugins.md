@@ -280,7 +280,7 @@ PLG_SYSTEM_SHOPNOTES_XML_DESCRIPTION="Notes completed orders in Joomla's log."
 | The tool is not listed on Tools | The plugin lists the tool and declares no `onExecuteToolAction` (Alfa shows a tool only when its plugin can run it), or the tool names no surface with `meta('surface', ...)`. |
 | The targeted method is never called | The event name was put in `getSubscribedEvents()`. A targeted event is never delivered from there. |
 | Alfa's log says an event is listed in both places | The same name is in `getSubscribedEvents()` and in `getTargetedHandlers()`. |
-| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, and plugins whose namespace starts with `Alfa\`. A plugin of another group and another namespace is not listed. |
+| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, and plugins whose namespace starts with `Alfa\`. A plugin of another group and another namespace is not listed. Planned for 2.2.1, which is not released: a plugin of any group that declares `onClearData` in a public `getTargetedHandlers()` is listed too, enabled or not, whatever its namespace, and Clear everything calls it. If it is still missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
 
 ## The system plugin that ships: Alfa Commerce Sync
 
@@ -302,6 +302,7 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. A payment or shipping plugin enabled or disabled from the Plugins list does not. Planned for 2.2.1, which is not released: also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
 | An Alfa extension is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
+| An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Planned for 2.2.1, which is not released: has the dashboard cards and the setup checklist worked out again, and brings a standing notification of extensions not built for this version up to date. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
 | The administrator menu is built | Hides the Tools entry from staff without the permission for it. |
 
 Its one setting is Debug Logging, which writes what it does to the file `alfa_sync.php` in Joomla's log folder.

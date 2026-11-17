@@ -97,6 +97,10 @@ What the picture means:
 - **Step 3 is not announced to everyone.** `onOrderPlaceValidate` is handed to each enabled plugin of the `alfa`
   group that the customer's access levels admit, in their order, each once.
 - **Step 9 is skipped** when the order's first status only sets the stock aside. Most shops work that way.
+- Planned for 2.2.1, which is not released: **between steps 3 and 4 the total is compared** with the total the
+  cart page showed (the hidden field `shown_total` the page sends). An order whose total differs is refused before
+  anything is written, and the shopper sees the cart priced again with both totals. A placement that sends no shown
+  total (staff, a plugin's own placement) is not compared.
 - While it sets the stock aside (step 8), Alfa may ask `onCollectStockAllocationProviders` which location the stock
   comes from. It asks once for each stock service object it works with, so the event can be announced more than
   once in a request. Planned for 2.2.1, which is not released: it asks once per request, and a provider is given
@@ -262,6 +266,10 @@ What the picture means:
 - **Steps 5 and 10 can arrive in either order**, and each can arrive twice.
 - **An offline method stops after step 3.** Staff settle the payment later with a button of the plugin. That is
   `onExecuteAction`, as in the next picture.
+- Planned for 2.2.1, which is not released: **the order page opens only this session's order.** After the return
+  (step 10), the completed page, and the process page, open an order only when the shopper placed it in this browser
+  session or the plugin called `authenticatedReturnFor()` for it. Any other is refused: the shopper is sent to the
+  cart with a neutral message, and nothing of the order is shown.
 
 ### A refund through a provider
 
@@ -295,6 +303,9 @@ What the picture means:
   and the order moves if the method's settings name a status for it. A partial refund does not move the order.
 - **No event is announced to everyone in this flow.** A plugin that wants to hear about a refund listens to
   `onOrderStatusChange`, which fires when the order moves.
+- Planned for 2.2.1, which is not released: **a failed attempt can be tried again.** When the provider reports that
+  this attempt failed and the plugin will try again, step 8 is `failRefundAttempt()`: the reservation keeps its
+  amount and gets a new key, and the plugin asks the provider again (steps 6 to 8 again). Nothing in the books moves.
 
 | Event | Who receives it | Documented on |
 |---|---|---|
@@ -635,8 +646,12 @@ What the picture means:
   it. So a media event does not tell a plugin whether the record's own save is final.
 - **A refusal in step 3** (`setValid(false)`) skips that one file. The record is still saved.
 - **An image that arrives with a thumbnail picture named** fires `onAlfaMediaThumbnail` first, before step 2, and
-  not again at step 6.
+  not again at step 6. Planned for 2.2.1, which is not released: that thumbnail is made only after the image passed
+  Alfa's check and `onAlfaMediaValidate` and was stored, so a refused image fires no `onAlfaMediaThumbnail`.
 - **When an image is deleted**, `onAlfaMediaBeforeDelete` is announced before the files and the rows are removed.
+  Planned for 2.2.1, which is not released: it is announced on every delete path (Tools > Media, an image removed
+  in a form or over the API, a record deleted with its images); inside a save, once the save is final, the rows
+  already gone and the files not yet.
 
 | Event | Who receives it | Documented on |
 |---|---|---|

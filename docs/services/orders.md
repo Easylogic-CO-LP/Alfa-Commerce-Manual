@@ -100,7 +100,7 @@ Each line:
 | `id_combination` | The combination | none |
 | `name` | The name kept on the line | Taken from the catalogue |
 | `sku`, `gtin`, `mpn`, `weight` | | empty, 0 |
-| `total_price_tax_excl`, `total_price_tax_incl` | The line totals | Unit price times quantity |
+| `total_price_tax_excl`, `total_price_tax_incl` | The line totals. Planned for 2.2.1, which is not released: **required**, the line totals as charged. | Unit price times quantity. Planned for 2.2.1, which is not released: none; a line without them is refused. |
 | `original_product_price` | The price before discounts | `unit_price_tax_excl` |
 | `tax_rate`, `tax_name` | The line's tax | 0, empty |
 | `discount_percent`, `discount_amount_tax_excl`, `discount_amount_tax_incl` | The line's discount | 0 |
@@ -129,6 +129,9 @@ $created = OrderCreator::create(draft: [
 $orderId  = $created->orderId;
 $statusId = $created->statusId;                // where the order landed, see below
 ```
+
+Planned for 2.2.1, which is not released: each line must also carry its totals. The line above then also needs
+`'total_price_tax_excl' => 20.00` and `'total_price_tax_incl' => 24.80`.
 
 `$manageTransaction`: leave it `true` and `create()` saves as one unit of its own. Pass `false` only when your code
 has already opened a database transaction and will make the save final itself.
@@ -160,6 +163,7 @@ the order's methods, a status change goes through [`Transition`](#transition).
 | No lines, without `allow_empty` | `OrderCreator: a draft needs at least one line` |
 | A line without `id_item` or with a quantity of 0 or less | `OrderCreator: line N needs id_item and a positive quantity` |
 | A line without both unit prices | `OrderCreator: line N needs explicit unit prices` |
+| Planned for 2.2.1, which is not released: a line without `total_price_tax_excl` or `total_price_tax_incl`. Nothing is written. | `OrderCreator: line N needs its totals,` followed by the missing keys and "(a line is never priced as its unit times its quantity)." |
 | A starting status that requires the order to be paid, unless that status allows an unpaid exception | `OrderCreator: status N requires payment` |
 | A shop with no order status at all | `OrderCreator: no target status and no is_initial status exists` |
 | Planned for 2.2.1, which is not released: a draft that names a shipping method and no existing delivery address. Nothing is written. | `OrderCreator: id_address_delivery must name an existing delivery record` |
@@ -225,6 +229,7 @@ The calls you chain, each returning the same object:
 | `byUser(int $userId)` | Records a user instead. Without either, the current user is recorded. |
 | `note(string $note)` | A sentence for the order's History |
 | `silent()` | Sends no status e-mail |
+| `silentCustomer()` | Planned for 2.2.1, which is not released. Sends the status e-mail to the staff the status tells only, not to the customer. The REST API's `silent` uses it. |
 | `expectStatus(int $statusId)` | Since 2.2.0. Moves the order only if it is still in this status. Use it when your move was decided earlier and the order may have moved since. |
 | `force()` | Allows the order to leave a cancelled status. That is a decision for a member of staff. Automatic code must never call it. |
 | `from(int $statusId)` | For Alfa's own order screen, which writes the status itself first. Do not call it. |
@@ -364,8 +369,10 @@ Changed in 2.2.0. Plugin charges are part of the total. Each stored cart rule ca
 it is no longer worked out from the items' average tax.
 
 `OrderTotalHelper` is core's own. A plugin reads the total from the reader (`$order->total()`), and a payment
-plugin reads what is still to collect from its base class (`amountToCollect()`, `orderBalance()`). Its public
-methods, so that you can follow the code:
+plugin reads what is still to collect from its base class (`amountToCollect()`, `orderBalance()`). Planned for 2.2.1,
+which is not released: a carrier reads it from its own base class too (`amountToCollect()`, as `Money`; see
+[Shipping plugins](../plugins/shipment-plugins.md#the-amount-to-collect)). Its public methods, so that you can follow
+the code:
 
 | Method | Returns |
 |---|---|
@@ -373,8 +380,8 @@ methods, so that you can follow the code:
 | `exactFromArrays(...)` | The same ten figures as exact decimal texts |
 | `getBreakdown(int $orderId, ?object $order = null): object` | The same from the database, plus `cart_rules` and the shipping cost before shipping rules (`shipping_gross_tax_incl`, `shipping_gross_tax_excl`) |
 | `getExactBreakdown(int $orderId, ?object $order = null): object` | The ten figures from the database, as exact decimal texts |
-| `getOrderTotal(int $orderId, ?object $order = null): float` | The total, tax included |
-| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each. `getShippingTotal()` is the parcels' charges before shipping rules. Planned for 2.2.1, which is not released: `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
+| `getOrderTotal(int $orderId, ?object $order = null): float` | The total, tax included. Planned for 2.2.1, which is not released: it answers `Money` in the order's currency, rounded once at the order's scale, and an order that names no currency is refused with `OrderCurrencyException`. |
+| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each. Planned for 2.2.1, which is not released: each answers `Money` in the order's currency, as `getOrderTotal()` does. `getShippingTotal()` is the parcels' charges before shipping rules. Planned for 2.2.1, which is not released: `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
 | `activeShipments(array $shipments): array`, `activeShipmentsWhere($db, string $prefix = ''): string` | The parcels that count: all but cancelled and returned ones |
 
 ## OrderStatusHelper
@@ -402,7 +409,7 @@ Both are core's own and serve the order screen of the back office.
 | Class | Public methods | What they do |
 |---|---|---|
 | `OrderHelper` | `getOrderItems(int $orderId, ?Currency $currency = null): array`, `attachOrderItemFields(array $items): void`, `buildOrderPriceContext(int $orderId)`, `searchProducts(string $searchTerm, PriceContext $context, int $limit = 20): array`, `getProductById(int $productId, PriceContext $context, int $quantity = 1): ?object` | Read an order's lines with their amounts as `Money`, attach the field values kept on each line, and price an item for the order's customer when staff add a line. It reads only: order lines are written by the order model. |
-| `OrderHistoryHelper` | `line(object $entry, object $order): string`, `details(array $context): array` | Turn one stored History entry into the sentence and the details staff read. They change nothing. |
+| `OrderHistoryHelper` | `line(object $entry, object $order): string`, `details(array $context): array` | Turn one stored History entry into the sentence and the details staff read. They change nothing. Planned for 2.2.1, which is not released: `details()` names each field core writes by its label in the reader's language (`fieldLabel()`); a field your extension writes into an entry keeps its own name, so name it in words if staff read it. |
 
 Changed in 2.2.0. `OrderHelper::getOrder()` and `OrderHelper::setOrderItems()` no longer exist.
 

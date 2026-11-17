@@ -112,6 +112,12 @@ A fresh installation comes with a list of currencies. In it the euro has the id 
 Planned for 2.2.1, which is not released: deleting a currency that orders, item prices or places use is refused
 with 409 and the reason, and nothing is deleted.
 
+Planned for 2.2.1, which is not released: currencies, taxes, discounts, places, payment and shipping methods, form
+fields and form field groups are deleted only while they are in the trash, as in the administrator. Move the record
+to the trash first (`PATCH` with `state` -2), then delete it; a record in any other state answers 409 and nothing is
+deleted. Cart rules, stock locations, customers and customer groups have no trash step and are deleted in one call.
+See [Status codes](./overview.md#status-codes).
+
 ## Taxes
 
 `v1/alfa/taxes`. The rate is exact decimal text.
@@ -194,6 +200,16 @@ which is not released: 404.
 `ordering`.
 
 **One record holds:** the same without `currency_name`.
+
+Planned for 2.2.1, which is not released:
+
+- A row also holds `subdivision_code`.
+- A country (no `parent_id`) needs `code2` (two letters) and `code3` (three letters), stored in capitals, and has
+  no `subdivision_code`. A place inside a country (`parent_id` set) stores neither `code2` nor `code3`: codes sent
+  for it are dropped. It may carry `subdivision_code`, its ISO 3166-2 code, which starts with its country's code
+  (`GR-I` under Greece). A country sent without its codes, or a code of another country, is refused with the
+  reason.
+- Deleting a place that has places inside it is refused with 409, naming them, unless they are deleted with it.
 
 ## Payment methods
 

@@ -124,7 +124,7 @@ in the comment above `issue()`.
 | **One document at a time per order** | The order's row is locked for the whole issue |
 | **Numbers without gaps** | The number is drawn at the last moment, inside the save. A failed issue never uses one. |
 | **The draft is checked after the listeners** | A listener of `onDocumentBeforeIssue` may change the draft. The changed draft passes every check, as if staff had typed it. |
-| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. |
+| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. Planned for 2.2.1, which is not released: an order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount any more. An invoice issued before 2.2.1 without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
 | **Kept as issued** | The stored document is never edited or deleted. See [Kept as issued](#kept-as-issued). |
 | **Totals from the lines** | The document's totals and its summary per tax rate are worked out from its own stored lines |
 | **A delivery note carries no money** | Its amounts are stored as zero whatever the draft says |
@@ -279,7 +279,7 @@ drafted at the same moment cannot both take the same amount. That workflow is co
 | The formatted number is kept as text on the document | Changing the series' format later does not change issued documents |
 | A series can restart each year | For a series scoped by year, the counter restarts at 1 when the first document of a new year is issued. The year is read in the shop's time zone. |
 | A new series keeps its starting number | A series that has never issued keeps the starting number the merchant typed, also in its first year |
-| Dates are set by the server | If the server's clock is earlier than the series' last issue, the issue is refused |
+| Dates are set by the server | If the server's clock is earlier than the series' last issue, the issue is refused. Planned for 2.2.1, which is not released: the issue date is the server's clock when each document is issued, also in a long run such as the task runner. |
 
 ## Kept as issued
 

@@ -175,7 +175,7 @@ order keeps it whatever your plugin does later.
 | Your plugin is disabled or not installed | The cart costs what it costs without you. |
 | Your handler throws an error | It is logged (categories `com_alfa.plugins` and `com_alfa.cart`), the next plugin runs and the cart is shown without your charge. With Joomla's debug mode on, the error is thrown again so that you see it while developing. |
 | A charge has no label, or neither `amount()` nor `percent()` | All the charges of your plugin are dropped for that calculation, with an error in the log (category `com_alfa.cart`) naming your plugin and the charge. |
-| Your plugin is admitted for the customer but not loaded for the member of staff | See "When staff operate a customer's cart" below. |
+| Your plugin is admitted for the customer but not loaded for the member of staff | See "When staff operate a customer's cart" below. Planned for 2.2.1, which is not released: only when the member of staff also may not check out on a customer's behalf. |
 
 ### onCartItemDisplay
 
@@ -189,7 +189,7 @@ parts.
 
 | Method | Meaning |
 |---|---|
-| `getLine()` | The cart line as an object (its item id, quantity, name and so on). |
+| `getLine()` | The cart line as an object (its item id, quantity, name and so on). Planned for 2.2.1, which is not released: its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
 | `getItem()` | The loaded item behind the line. |
 | `addSurface($contributor, CartSurface $surface)` | Starts one part on the cart line and returns its builder. `CartSurface::Main` is the only place in 2.2.0: under the line's name. Since 2.2.0. |
 | `answering()`, `harvestInto()` | For Alfa. Do not call them. |
@@ -239,6 +239,34 @@ complete:
 The message is: "(plugin name) adds charges or checks to this customer's cart, but your account's Access does not
 include the plugin's, so it cannot run here. These totals lack its part, and the order cannot be placed from this
 screen. Give the plugin an Access your account holds, or let the customer place the order."
+
+Planned for 2.2.1, which is not released:
+
+- **Staff who may check out on a customer's behalf.** A member of staff with the permission "Carts: Check out on
+  behalf" (`alfa.carts.checkout`) gets every plugin of the `alfa` group that the customer's Access admits, also when
+  their own account does not hold the plugin's Access. Alfa starts the plugin for the customer, with its own name,
+  group and settings, so it adds its charges to the totals, its parts to the lines, and checks the placement. Item
+  field, payment and shipping plugins are not started this way.
+- **Staff who may not.** They see the totals without the plugin's part and the refusal, with this message: "(plugin
+  name) adds charges or checks to this customer's cart, but your account's Access does not include the plugin's and
+  your account may not check out on a customer's behalf, so it cannot run here. These totals lack its part, and the
+  order cannot be placed from this screen. A member of staff with the permission Carts: Check out on behalf places
+  it with the plugin's part, or let the customer place the order."
+- **The customer's details.** In the order builder the cart's delivery and invoice details are the customer's saved
+  details and the place set in the builder. What anyone typed in a storefront checkout is never read there, also
+  with Joomla's Shared Sessions on. A new cart the builder makes for a customer opens in the shop's default
+  currency.
+
+For plugin authors, on this path:
+
+- Your plugin runs in the staff member's request: the application's identity is the member of staff. Read the
+  customer from the event, never from `getApplication()->getIdentity()`. `onCartTotals` gives it as
+  `getCart()->customer()` and `onOrderPlaceValidate` as its context's `customerId`. `onCartItemDisplay` carries no
+  customer, so what you show on a cart line must not depend on who is looking.
+- Your language is loaded for you, as Joomla loads it for a plugin it starts itself, when your plugin asks for it
+  with `autoloadLanguage`.
+- A plugin started this way hears no announced event of that request, `onAlfaOrderPlaced` among them. On an order
+  placed by staff, your work after the placement runs only when the member of staff holds your plugin's Access.
 
 A plugin that does not declare the event in question takes no part and causes no refusal.
 
@@ -328,7 +356,7 @@ is also written to the log (category `com_alfa.orders`) with the plugin's name.
 |---|---|
 | Your plugin is disabled or not installed | The order is placed without your check. |
 | Your handler throws an error | The placement is refused, nothing is saved, the plugins after you are not asked, and the error is written to the log (category `com_alfa.orders`). This is a "before" event: a failure stops the operation. To refuse with a sentence the customer can read, call `reject()`. Planned for 2.2.1, which is not released: you may also throw `Alfa\Component\Alfa\Administrator\Event\Orders\OrderPlaceRefusedException` with a sentence for the shopper, which is read as a `reject()` is. Any other error, or that exception with no words, is reported to the shopper as "... could not check this order, so it was not placed. Please try again, or contact the shop if it happens again.", naming your plugin; its words stay in the log. |
-| Your plugin is admitted for the customer but not loaded for the member of staff | The placement is refused with the message of "When staff operate a customer's cart", before any plugin is asked. |
+| Your plugin is admitted for the customer but not loaded for the member of staff | The placement is refused with the message of "When staff operate a customer's cart", before any plugin is asked. Planned for 2.2.1, which is not released: only when the member of staff also may not check out on a customer's behalf. |
 
 ### onAlfaOrderPlaced
 
@@ -482,7 +510,7 @@ The events about stock and about documents (invoices, credit notes) that follow 
 |---|---|
 | `onCartTotals`, `onCartItemDisplay` or `onOrderPlaceValidate` is never called | It is listed in `getSubscribedEvents()`. These three are declared in `getTargetedHandlers()`. Or the plugin is not in the `alfa` group. |
 | It works for one customer and not for another | The plugin's Access is a level the second customer does not hold. |
-| Staff cannot place a customer's cart | A plugin is admitted for the customer and not loaded for the member of staff. See "When staff operate a customer's cart". |
+| Staff cannot place a customer's cart | A plugin is admitted for the customer and not loaded for the member of staff. See "When staff operate a customer's cart". Planned for 2.2.1, which is not released: and the member of staff may not check out on a customer's behalf. |
 | Your charge is missing and there is no error on the page | The charge was incomplete, or it named another plugin. Look in the log, category `com_alfa.cart`. |
 | `onOrderStatusChange` ran twice for one change | Staff pressed Run again. Make the listener safe to repeat. |
 | `onOrderStatusChange` did not run after a placement | A placement announces `onAlfaOrderPlaced`, not a status change. |

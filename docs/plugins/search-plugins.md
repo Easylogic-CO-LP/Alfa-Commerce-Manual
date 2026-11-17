@@ -244,7 +244,7 @@ you declare it by writing a public method with this name.
 | Getter | Meaning |
 |---|---|
 | `getView()` | The list view being drawn. |
-| `getEngineKey()` | The engine key saved in Options. |
+| `getEngineKey()` | The engine key saved in Options. Planned for 2.2.1, which is not released: the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
 | `getContext()` | Which list: `com_alfa.items` or `com_alfa.manufacturers`. |
 
 **What you are expected to do.** To draw your own search box, name a layout file of your plugin:
@@ -289,7 +289,7 @@ that a filter change swaps in, or one item card that is drawn again.
 | `getView()` | The items view. Its document is where you add scripts and script options. |
 | `getContext()` | `com_alfa.items`. |
 | `getKind()` | `ResultSetRenderEvent::KIND_PAGE`, `KIND_FRAGMENT` or `KIND_CARD`. |
-| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. |
+| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. Planned for 2.2.1, which is not released: the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
 | `getAttribution()` | A `ResultAttribution`: `handle` (your `eventId`, or `null`), `order`, `responseSpecific`, `engine`, and `hasHandle()`. |
 | `getPosition()` | For a single card only: the position that card had. Otherwise `null`. |
 
@@ -369,7 +369,9 @@ string $contributor, string $version = '')`. The contributor is your plugin's gr
 
 **What you are expected to do.** Only if your plugin keeps item data of its own besides the search index: add an
 object that implements `ProjectionInterface` (`syncItem(int $itemId)`, `syncItems(array $itemIds)`,
-`deleteForItem(int $itemId)`).
+`deleteForItem(int $itemId)`). Planned for 2.2.1, which is not released: the list is written only through
+`addProjection()`. Setting the projections argument (`setArgument()` or `$event['projections']`) throws a
+`BadMethodCallException`, and `getArgument('projections')` reads `null`; `getProjections()` is the reader.
 
 **What happens next.** Alfa calls your projection with the same item ids, at the same moments, as its own.
 
@@ -413,7 +415,7 @@ rebuild button is shown, the standard search box is drawn, and item saves write 
 | Items found by the old search are missing | The reader returned ids in the wrong entity, or the index was never rebuilt after the engine was chosen. |
 | A rebuild ends with "Refusing to activate" | The writer reported failures in `write()` or `await()`. |
 | Your search box is not drawn | The plugin is not the one that registered the configured engine, or its handler threw. |
-| The Options screen stops with an error | An engine's `label()` or `isReady()` threw. The engine list in Options calls both without catching an error. |
+| The Options screen stops with an error | An engine's `label()` or `isReady()` threw. The engine list in Options calls both without catching an error. Planned for 2.2.1, which is not released: the engine is listed under its key as not ready, and the error is logged; the Options screen no longer stops. |
 | The rebuild job says the engine changed | The engine named when the job started is no longer the configured one, or it does not implement `RebuildableEngine`. |
 
 ## The plugin's files
@@ -688,6 +690,11 @@ The base class loads the plugin's language file by itself (`$autoloadLanguage`).
   own; an engine says what it can through `RebuildableEngine`.
 - A template override of `com_alfa/items/default.php` or `default_item.php` written before 2.2.0 prints the
   attributes only once it calls the view's `resultSetAttributes()` and `resultAttributes()`.
+- Planned for 2.2.1, which is not released: the card draws its images through a part of its own,
+  `default_card_images.php` (the slot `card_images`). An override of `default_item.php` written before 2.2.1 keeps
+  its own image markup, and shows the card's slider only once it calls
+  `$this->loadTemplate($this->cardImagesTplFor($item))`. The item list (`items/default.php`) opens with
+  `<div class="com-alfa items-list-page">`; an override should adopt that root.
 
 ## Not documented yet
 

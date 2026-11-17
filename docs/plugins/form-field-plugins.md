@@ -13,6 +13,11 @@ description: How to write a plugin that adds a new type of field to the customer
 A **form field** is one field of the customer's details: a name, a phone number, a country, a tax office. Staff
 define the fields of their shop, and each field has a **type**. A form field plugin adds one type.
 
+Planned for 2.2.1, which is not released: a new shop has seven fields: name, email, phone, country, address, city
+and postcode. The last three are required in the delivery section and may be changed or deleted like the shop's
+own. They are asked for every order, downloads and goods collected in the shop included: a shop that sells only
+those sets them Optional, or hides them, in Form Fields. An update adds no field to an existing shop.
+
 Do not confuse a form field with an [item field](./item-field-plugins.md), which is a property of an item such as a
 size. The two are separate plugin families. Both words are in the [glossary](../reference/glossary.md).
 
@@ -245,6 +250,12 @@ When Alfa prints a stored value outside a form, it renders your `tmpl/default.ph
 
 A template can override your layout by placing a `default.php` in
 `templates/<template>/html/plg_alfa-form-fields_<type>/`.
+
+Planned for 2.2.1, which is not released: staff can choose another layout of your plugin's `tmpl/` folder, or a
+template's override, in the field's Layout setting. Alfa keeps the choice in the field's settings as
+`display_layout` and renders that file instead of `default.php`; when the chosen file is missing, `default.php` is
+used. A layout of your plugin is chosen as `_:<name>`, a template's override as `<template>:<name>`. In 2.2.0 the
+setting was not saved and `default.php` was always drawn.
 
 ## What happens next
 
@@ -609,7 +620,7 @@ The label, the description and the group title of a field are not the plugin's. 
 | The browser does not check the field before sending | The element lacks the class `validate-<rule>` |
 | A condition never reacts to your widget | The widget does not send `alfa:field-change`, or did not register a value reader |
 | `onAlfaFormFieldsPrepareDom` in `getSubscribedEvents()` is never called | It is not an event. Override `prepareDom()`. |
-| A setting named `layout` breaks the drawing | `layout` is an attribute Joomla reads itself. Name your setting differently. |
+| A setting named `layout` breaks the drawing | `layout` is an attribute Joomla reads itself. Name your setting differently. Planned for 2.2.1, which is not released: the field's Layout setting is not this attribute. It is kept as `display_layout` and never reaches the form. |
 
 Notes for authors of plugins written for earlier versions:
 

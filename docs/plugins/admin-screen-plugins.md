@@ -402,7 +402,7 @@ six are announced to everyone and go in `getSubscribedEvents()`.
 
 | What | Event | The call |
 |---|---|---|
-| An entry or a heading in the Alfa Commerce menu | `onAlfaBuildMenu` | `$event->item('group.element', $id)`, then `section()`, `title()`, `view()` or `panel()` or `link()`, `icon()`, `ordering()`, `access()`. `$event->section('group.element', $headingKey, $ordering)` places a heading. See [Creating an Admin Panel](./admin-panels.md). |
+| An entry or a heading in the Alfa Commerce menu | `onAlfaBuildMenu` | Planned for 2.2.1, which is not released: `all()` hands copies, so only the entries `item()` and `add()` return to you are yours to change. `$event->item('group.element', $id)`, then `section()`, `title()`, `view()` or `panel()` or `link()`, `icon()`, `ordering()`, `access()`. `$event->section('group.element', $headingKey, $ordering)` places a heading. See [Creating an Admin Panel](./admin-panels.md). |
 | A permission | `onAlfaGetAccessActions` | `$event->action('group.element', $name, $titleKey, $descriptionKey)` |
 | A dashboard card | `onAlfaCollectCards` | `$event->top()`, `metrics()`, `main()`, `side()` or `bottom()`, each `('group.element', $id, $titleKey)` |
 | A line in the setup checklist | `onAlfaCollectSetupChecks` | `$event->add('group.element', $id, $labelKey)` |
@@ -410,6 +410,9 @@ six are announced to everyone and go in `getSubscribedEvents()`.
 | Document types | `onCollectDocumentTypeProviders` | `$event->addProvider($provider, 'group.element')`. Here the plugin's name is the second argument. |
 | Clearing your plugin's data | `onClearData` | Addressed to your plugin alone. Declared in `getTargetedHandlers()`. |
 | A whole screen | The six `onAlfaPanel...` events | See [Creating an Admin Panel](./admin-panels.md) |
+
+A registry's entry names its plugin second, after the object it registers: `addProjection()`, `addEngine()` and
+both `addProvider()` (document types, and stock allocation). The other contributions name the plugin first.
 
 How stock is allocated is not one of these. It belongs to a plugin family of its own, `alfa-inventory`.
 

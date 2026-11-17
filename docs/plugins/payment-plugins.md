@@ -158,6 +158,11 @@ The reservation (step 4) is saved before the provider is asked, so a second clic
 cannot start the same refund twice. The provider is called with no lock and no database transaction open. The verbs
 are explained under [Refunds](./payment-plugin-money.md#refunds).
 
+Planned for 2.2.1, which is not released: when the provider reports that this attempt failed and you will try
+again for the same request, step 7 is `failRefundAttempt()`. The reservation keeps its amount and gets a new key,
+and you ask the provider again with that key and that amount (steps 5 to 7 again). Nothing in the books moves, so
+the retry is never reserved twice.
+
 ## Method settings
 
 **Where they live.** Each method is a row of the table `#__alfa_payments`. Its settings are stored as JSON in the
@@ -212,6 +217,17 @@ and stop.
 Pass the method id whenever a payment row names one: on an order with several attempts, the row is the only record
 of which method took that money. Asking twice in one request costs nothing: the answer is kept.
 
+Planned for 2.2.1, which is not released: `protected function ownMethods(bool $publishedOnly = true): array` lists
+your plugin's own methods, keyed by id in ascending order, each the record `getPaymentMethod()` answers. Use it for
+what concerns every method rather than one order's, such as a key your provider registers once per account. With
+`false` it lists every method of your plugin, whatever its state. Never read the methods table yourself.
+
+```php
+foreach ($this->ownMethods() as $methodId => $method) {
+    $key = (string) ($method->params['webhook_key'] ?? '');
+}
+```
+
 ### Sandbox and live
 
 Alfa has one contract for a method with a test set and a live set of credentials, in the class
@@ -261,7 +277,7 @@ public function onGetActions($event): void
 | `readOnly()` | The action writes nothing whatever the request carries (details, logs). Only such an action may be opened by a plain link. |
 | `startsRefund()` | The action starts a new refund. Alfa hides it, and refuses it and its form's `_do` step, while the refund block holds. |
 | `data(array $fields)` | Fields posted with the action, such as the figure the confirmation showed |
-| `modal(string $layout, string $title = '', string $size = 'md')` | Records a layout, a title and a size on the action. Nothing in 2.2.0 reads them: every button opens the action page, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. |
+| `modal(string $layout, string $title = '', string $size = 'md')` | Planned for 2.2.1, which is not released: deprecated, with `hasResponseLayout()`, and removed in 2.3.0. Records a layout, a title and a size on the action. Nothing in 2.2.0 reads them: every button opens the action page, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. |
 | `disabled()` | Takes the action off the list: no button is drawn and the action cannot be run |
 | `meta(string $key, mixed $value)`, `buttonLayout(string $layout)` | Attach your own data, use your own button layout (a layout of your `tmpl` folder; the default is `action_button`) |
 
@@ -320,6 +336,23 @@ The table is never created or changed while a database transaction is open. A lo
 or column inside one is reported and skipped; the next write outside a transaction completes the table. A failed log
 write is never shown to a shopper.
 
+**Joomla's User Actions Log.** Planned for 2.2.1, which is not released. For an act a shop owner audits, such as a
+refund started, call `recordActionLog()` with a sentence of your language file that names the facts in braces:
+
+```php
+$this->recordActionLog('PLG_ALFA_PAYMENTS_MYGATEWAY_LOG_REFUND_STARTED', ['title' => '#' . $orderId, 'amount' => $amount->format()], $orderId);
+```
+
+```ini
+PLG_ALFA_PAYMENTS_MYGATEWAY_LOG_REFUND_STARTED="User <a href=\"{accountlink}\">{username}</a> started a refund of {amount} on order {title}"
+```
+
+`recordActionLog(string $languageKey, array $facts = [], int $itemId = 0): bool` writes one row filed under your
+plugin (`plg_alfa-payments_mygateway`), so the User Actions Log screen reads the sentence from your language file.
+The facts are plain values by name. `userid`, `username` and `accountlink` are always those of the user who acted
+(user 0 when nobody did, as for a provider's notification), whatever your facts say. It answers `true` when the row
+is written and `false` otherwise; a failure is logged, never thrown. Rows are never deleted.
+
 ## Language
 
 Your plugin carries its own texts and loads them.
@@ -360,7 +393,8 @@ Your plugin carries its own texts and loads them.
   core repository contains no code that sends these events, so when they fire and what the shopper sees cannot be
   documented from it.
 - **The action page.** How a layout set in `onExecuteAction` is shown, and the script helper a form uses to submit
-  its `_do` step. The title and size given to `modal()` and `setModalTitle()` are read by nothing in 2.2.0.
+  its `_do` step. The title and size given to `modal()` and `setModalTitle()` are read by nothing in 2.2.0. Planned
+  for 2.2.1, which is not released: both are deprecated, and removed in 2.3.0.
 - **Locks for a capture.** `OrderMoneyLock` and when a gateway that captures an authorization should hold it.
 - **Deposits and instalments**: several payment rows for one order, written by one plugin.
 - **The texts shoppers and staff see** when a plugin is unavailable or an order is refused. This page describes

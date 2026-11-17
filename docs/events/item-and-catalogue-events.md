@@ -240,13 +240,21 @@ contributes to the same event object.
 
 | Method | Meaning |
 |---|---|
-| `getItem()` | The loaded item, as an object. |
+| `getItem()` | The loaded item, as an object. Planned for 2.2.1, which is not released: its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
 | `addSurface($contributor, ItemSurface $surface)` | Starts one part on a place of the page and returns its builder. Since 2.2.0. |
 | `answering()`, `harvestInto()` | For Alfa. Do not call them. |
 
 The places are the cases of `ItemSurface`: `Title`, `Image`, `ShortDescription`, `FullDescription`, `BuyForm`,
 `PaymentMethods`, `ShipmentMethods`, `NearAddToCart` and `Specifications`. They are the same places an item field
 uses, see [Item field plugins](../plugins/item-field-plugin-events.md#onitemview).
+
+Planned for 2.2.1, which is not released: the surfaces of an item page, a catalogue card and a cart line
+(`$item->surfaces`, `$line->surfaces`) are a read-only `SurfaceMap`. Reading a slot with `?? []`, `isset()`,
+`count()`, `foreach`, `json_encode()` and an `(array)` cast work as before. Setting, removing, appending to or
+reordering a slot throws a `LogicException`, and appending to a slot's list has no effect. The map is an object:
+`is_array()` is false, array functions on it (`array_keys()`, `array_merge()`, `array_key_exists()`,
+`array_filter()`) raise a `TypeError`, an empty map is true in an `if`, and `$item->surfaces[$slot] ??= []` is
+refused. A template override casts it with `(array)` or reads it by slot.
 
 **What you are expected to do.** Name yourself, choose a place, name a layout and hand it its data. The layout is a
 file of your plugin, `tmpl/<name>.php`. Never return HTML from the handler.

@@ -180,7 +180,9 @@ Joomla's log (category `com_alfa.orders`), as critical when your method threw.
 Event class: `OrderProcessViewEvent`. You must write this method.
 
 **When it fires.** When the order process page is shown, right after placement, and again each time the shopper
-opens that page.
+opens that page. Planned for 2.2.1, which is not released: the page opens only the order the shopper placed in this
+browser session, or one a payment plugin stated with `authenticatedReturnFor()` (see
+[onPaymentResponse](#onpaymentresponse)). Any other order is refused before it is read.
 
 **Who receives it.** One plugin: the plugin recorded on the order.
 
@@ -237,7 +239,7 @@ Event class: `PaymentResponseEvent`. Optional. Write it when your provider sends
 | Getter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element, as the address named it |
-| `getOrder()` | Always `null` in 2.2.0. Alfa does not load an order from an untrusted address. |
+| `getOrder()` | Always `null` in 2.2.0. Alfa does not load an order from an untrusted address. Planned for 2.2.1, which is not released: deprecated, and removed in 2.3.0. |
 
 Everything else you read from the request yourself. The request is untrusted: anyone can type the address.
 
@@ -248,12 +250,32 @@ Everything else you read from the request yourself. The request is untrusted: an
 redirect, so always set a redirect. Never mark a payment paid because the shopper came back. Settle only what your
 provider has proved.
 
+Planned for 2.2.1, which is not released:
+
+- **State the order whose return you authenticated.** Once the return is authenticated for an order (your
+  provider's signature or digest, or its own answer naming the attempt), call
+  `$this->authenticatedReturnFor($orderId)` before you redirect. Call it in whatever session the return arrives, a
+  fresh one included, and whatever the payment's result: paid, failed, or cancelled by the buyer. Never call it
+  before the return is authenticated. A valid signed return link (`orderFromReturnLink()`) grants the same right, so
+  a return it authenticates may be stated too.
+- **Send a failed or cancelled return to the process page** (`getProcessPageUrl()` with a flag of your own), which
+  asks your plugin again and offers the retry. The completed page offers none.
+- **Do not write `com_alfa.order_id` yourself.** The process page and the completed page open only an order the
+  shopper placed in this session or one your plugin stated this way. An order id written without that mark is
+  refused.
+- **If you set no redirect**, the shopper is sent to the cart with the message that the result of the payment could
+  not be confirmed there. Set a redirect all the same: only you know where the shopper belongs.
+
 **What happens next.** Alfa redirects the shopper to the address you set. A plain `index.php?...` address of this
 site is turned into a friendly address for you.
 
 **If you are missing or you fail.** If the plugin is unavailable, the shopper sees an error message and the home
 page. If your plugin has no `onPaymentResponse`, the shopper is sent to the cart. An error your method throws reaches
-Joomla's error page.
+Joomla's error page. Planned for 2.2.1, which is not released: the error message for an unavailable plugin says
+that the payment method for this return could not be identified (in 2.2.0 it said that no order was specified). A
+return that your plugin did not state through `authenticatedReturnFor()`, arriving in another session, sends the
+shopper to the cart with a neutral message: "This page could not open the order. If you have completed a payment,
+your order is recorded and its confirmation e-mail has the details." Nothing of the order is shown.
 
 ## onPaymentWebhook
 
@@ -269,7 +291,7 @@ page.
 | Getter or setter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element |
-| `getOrder()` | Always `null` in 2.2.0 |
+| `getOrder()` | Always `null` in 2.2.0. Planned for 2.2.1, which is not released: deprecated, and removed in 2.3.0. |
 | `setResponseCode(int)` | The HTTP status answered to the provider. Default 200. |
 | `setResponseBody(string)` | The body. Default `OK`. Plain machine text, never translated. |
 | `setContentType(string)` | Default `text/plain; charset=utf-8` |
@@ -419,7 +441,7 @@ sends them. See [Not documented yet](./payment-plugins.md#not-documented-yet).
 | Event | Getters | Setters |
 |---|---|---|
 | `StoreReferenceEvent` | `getOrder()`, `getPayment()` (the completed payment row) | `setReference(array $reference, string $label = '', ?string $expiresAt = null)` |
-| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()` | Exactly one of `setSuccess(string $transactionId)`, `setFailure(string $error)`, `setPending(string $reference, string $reason)` |
+| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()`. Planned for 2.2.1, which is not released: `getAttempt()`, the attempt's number from 1, the same number for the same attempt sent again; build your idempotency key from it. | Exactly one of `setSuccess(string $transactionId)`, `setFailure(string $error)`, `setPending(string $reference, string $reason)` |
 
 **What you are expected to do.** In the first, hand back whatever you need to charge again later. You do not store
 it. In the second, charge the amount against the stored reference and answer exactly once: success when the provider

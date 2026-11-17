@@ -214,7 +214,9 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 
 The shipped plugins are inside the Alfa Commerce package. The component's manifest (`alfa.xml`) lists them, and the
 component's installer script (`script.php`) installs or updates each one through Joomla's installer and then
-**enables** it. That happens on every installation and every update of Alfa Commerce.
+**enables** it. That happens on every installation and every update of Alfa Commerce. Planned for 2.2.1, which is
+not released: a shipped plugin is enabled only when the site did not have it before. On an update each one keeps the
+state it had, so a plugin that staff disabled stays disabled, and the update page names it.
 
 A plugin of your own is a package of its own. Staff install it through Joomla's Extensions: Install, and Joomla
 leaves a new plugin disabled until staff enable it under Extensions: Plugins. A payment or shipping plugin must also
@@ -230,6 +232,10 @@ extension uses when it is installed. It does two things:
 - It refuses to install or update an extension on a site whose Alfa Commerce is missing or older than the version
   the extension needs, with one wording for every extension.
 - It provides the warning shown when an Alfa extension is uninstalled: the extension's data stays.
+
+Planned for 2.2.1, which is not released: it also refuses an install or update outside the lines of Alfa Commerce
+that your extension's manifest says it is built for (`rangeRefusal()`). See
+[The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for).
 
 It never refuses anything because the shop is being cleared or maintained, and it never refuses an uninstall.
 
@@ -305,6 +311,151 @@ namespace starts with `Alfa\`, a module whose name starts with `mod_alfa`, and a
 | The plugin installs on a site with an Alfa Commerce that is too old, then fails | The installer script has no `preflight()` that asks the gate. |
 | The installation stops with "requires Alfa Commerce" | The site's Alfa Commerce is older than `MIN_ALFA_VERSION`. Update Alfa Commerce first. |
 | The uninstall warning is not shown when the extension is uninstalled through Joomla | The System - Alfa Commerce Sync plugin is disabled. It is the one that says it. |
+
+## The Alfa Commerce lines your extension is built for
+
+Planned for 2.2.1, which is not released. Everything in this section is read by Alfa Commerce 2.2.1 and later; a
+2.2.0 site ignores the element.
+
+### What it does
+
+An Alfa extension states once, in its manifest beside its version, the lines of Alfa Commerce it is built for. A
+line is a major and a minor version: `2.2` covers 2.2.0, 2.2.1 and every later 2.2 release.
+
+```xml
+<version>1.4.0</version>
+<alfacore min="2.2" max="2.2"/>
+```
+
+`min` is required. `max` is optional for the reader, and without it every line from `min` on is included; the
+policy below asks for both. The element is a child of the manifest's root element. One class reads it,
+`AlfaCoreRange` (`administrator/src/Service/Setup/AlfaCoreRange.php`), and two places use what it reads:
+
+- Your installer script asks the gate's `rangeRefusal()`, which refuses an install or update outside the range.
+- After Alfa Commerce itself is installed or updated, it reads the element of every installed Alfa plugin and
+  module and names those that are not known to work with it.
+
+Nothing is ever inferred from your extension's own version number.
+
+### When it is used
+
+At your extension's own install, update or discover install, in `preflight()`. And after every installation and
+update of Alfa Commerce, which reads the manifest file of each installed Alfa plugin and module from its folder.
+
+### What you must provide
+
+1. The element in the manifest of every plugin and every module your extension installs. Alfa Commerce's check after
+   its own update reads those manifests; a package's own manifest is not read there. A package carries the same
+   element in its own manifest too, because the gate reads the manifest its installer is given.
+2. A `preflight()` that asks the gate. On a site with Alfa Commerce 2.2.1 or later it calls `rangeRefusal()`; on an
+   older one, which has no such method, it falls back to `refusal()` with your own minimum. Replace `Example plugin`
+   with your extension's name.
+
+```php
+public const MIN_ALFA_VERSION = '2.2.0';
+
+public function preflight($type, $parent): bool
+{
+    $gate = \Alfa\Component\Alfa\Administrator\Service\Setup\AlfaInstallerGate::class;
+    $file = JPATH_ROOT . '/administrator/components/com_alfa/src/Service/Setup/AlfaInstallerGate.php';
+
+    if (!class_exists($gate) && is_file($file)) {
+        require_once $file;
+    }
+
+    if ($type === 'uninstall') {
+        return true;
+    }
+
+    if (!class_exists($gate)) {
+        // No Alfa Commerce on this site, or one older than 2.1.0.
+        \Joomla\CMS\Factory::getApplication()->enqueueMessage(sprintf(
+            'Example plugin requires Alfa Commerce %1$s or later, and this site has no Alfa Commerce %1$s or later'
+            . ' installed. Install or update Alfa Commerce first, then install Example plugin again. Nothing was changed.',
+            self::MIN_ALFA_VERSION,
+        ), 'error');
+
+        return false;
+    }
+
+    $refusal = method_exists($gate, 'rangeRefusal')
+        ? $gate::rangeRefusal(name: 'Example plugin', route: (string) $type, manifest: $parent->getManifest())
+        : $gate::refusal(name: 'Example plugin', route: (string) $type, minimum: self::MIN_ALFA_VERSION);
+
+    if ($refusal !== null) {
+        \Joomla\CMS\Factory::getApplication()->enqueueMessage($refusal, 'error');
+
+        return false;
+    }
+
+    return true;
+}
+```
+
+### What happens next
+
+At your extension's installation:
+
+| The site | What `rangeRefusal()` returns | What staff see |
+|---|---|---|
+| Has Alfa Commerce of a line inside your range | `null` | The installation goes on. |
+| Has Alfa Commerce of a line outside your range | "Example plugin is built for Alfa Commerce 2.2 to 2.2, and this site has Alfa Commerce 2.3.0. Install the build of Example plugin made for Alfa Commerce 2.3, or ask its developer for one. Nothing was changed." | The installation stops. Nothing was changed. |
+| Has no Alfa Commerce | The sentence of `refusal()`, with your range's `min` as the minimum | The installation stops. |
+| Reads an element it cannot use: `min` missing or not a line, `max` not a line, or `max` before `min` | "Example plugin cannot be installed:", what is wrong with the element, "Its developer must correct its manifest. Nothing was changed." | The installation stops. |
+| Reads no element at all | `null`. Nothing is refused and nothing is inferred. | The installation goes on. |
+| Is uninstalling your extension | `null` | The uninstall goes on. |
+
+After Alfa Commerce is installed or updated, every installed Alfa plugin and module gets one of three verdicts:
+
+| What its manifest says | The verdict | What staff see |
+|---|---|---|
+| A range that includes the installed line | Nothing to say | Nothing |
+| A range that excludes it | "needs a compatible build" | The extension is named on the installation page, in one line of the maintenance log (`com_alfa_maintenance.php`) and in one notification for administrators, whose link opens **Tools**, **Extensions**. The setup checklist's recommended row "Alfa extensions built for this version" warns and names it. |
+| No range, or one that cannot be read | "compatibility not stated" | The same, and the maintenance log says why. |
+
+The extension keeps running in every case: Alfa Commerce's own update is never refused because of an extension.
+The notification is raised again, unread, by every installation of Alfa Commerce, brought up to date when an Alfa
+extension is installed, updated or uninstalled, and cleared when no extension is left to name. The setup row clears
+when each extension named states a range that includes this line.
+
+Which extensions are judged: the rule that Options > About and **Tools**, **Extensions** already use. A plugin of a
+group whose name starts with `alfa`, a plugin whose namespace starts with `Alfa\`, and a module whose name starts
+with `mod_alfa`. An extension of another vendor named that way is judged too. A package is not judged itself: each
+of its plugins and modules is. The extensions that ship inside the Alfa Commerce package are never judged.
+
+### What can go wrong
+
+| What you see | The cause |
+|---|---|
+| After an update of Alfa Commerce your extension is named "compatibility not stated" | Its manifest has no `alfacore` element, or one that cannot be read. Add a valid element to the manifest of each of its plugins and modules. |
+| After an update of Alfa Commerce your extension is named "needs a compatible build" | Its range excludes the installed line. Test it on that line and release it with a raised `max`. |
+| Your package installs on a site outside its range | The package's own manifest has no element, or its `preflight()` still calls only `refusal()`. |
+| The installation of your extension stops with "cannot be installed" | The element in the manifest the installer was given cannot be read. The message names the values written. |
+
+### The compatibility-range policy
+
+This is the policy every Alfa extension follows from 2.2.1, which is not released:
+
+1. Every Alfa extension's manifest declares `<alfacore min max>` with both values. `max` names the last line the
+   extension was tested on: a line such as 2.2, never a patch release.
+2. Every extension that installs on its own (a premium or a third-party extension) enforces the range in its own
+   installer's `preflight()` through `AlfaInstallerGate`, exactly as the gate's class docblock gives: `rangeRefusal()`
+   where it exists, else `refusal()` with the extension's own minimum. Install, update and discover install are
+   refused outside the range with the gate's plain message. Uninstall is never refused. An installation from the
+   command line runs the same `preflight()`.
+3. The plugins and modules bundled with Alfa Commerce declare the range and need no gate call. The core package
+   installs them itself, so they cannot mismatch the core they arrive with.
+4. Updating Alfa Commerce is never blocked by an extension. After an install or update, Alfa Commerce names every
+   installed Alfa extension outside its range or without one (the installation page, the maintenance log, one
+   notification, the recommended setup row) and keeps running it.
+5. An element that cannot be read is refused by the extension's own installer and named by Alfa Commerce's notice.
+   A missing element is "compatibility not stated": never refused, and nothing is inferred.
+6. A new line of Alfa Commerce: each extension is tested on it and released again with a raised `max` (a rebuild
+   that changes only the manifest, once tested). Until then it runs on the new line with the notice, and only its
+   own install or update is refused.
+7. A package of several extensions carries the element in the package's manifest, which its installer hands to the
+   gate, and in each plugin and module manifest it contains, which Alfa Commerce's notice reads, with the same
+   values.
 
 ## Changed in 2.2.0
 
