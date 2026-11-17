@@ -6122,7 +6122,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, name, code2, code3, currency_id, currency_name, parent_id, state, ordering\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
+								"description": "**Returns per row:** id, name, code2, code3, subdivision_code, currency_id, currency_name, parent_id, state, ordering\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
 							}
 						},
 						{
@@ -6173,7 +6173,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, code2, code3, currency_id, parent_id, state, ordering"
+								"description": "**Returns:** id, name, code2, code3, subdivision_code, currency_id, parent_id, state, ordering"
 							}
 						},
 						{
@@ -8818,7 +8818,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, reference, id_user, customer_name, customer_email, id_currency, currency, conversion_rate, invoice_number, delivery_date, id_address_delivery, id_address_invoice, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, id_order_status, status_name, payment_status, fulfillment_status, fulfillment_percentage, payment_percentage, balance, overpaid, excess, still_held, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, contributions_total, total_paid_real, total_refunded_real, customer_note, source, state, created, modified, lines, payments, shipments, contributions, history, delivery_address, invoice_address\n\nMoney is an object: `{amount, formatted, minor_units}`, `amount` exact decimal text.\n\nThis read is the way to an order's payments, shipments, lines and history: there are no GET routes for `orders/:id/payments` or `orders/:id/shipments` (their POST routes add one).\n\nEach entry of `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`."
+								"description": "**Returns:** id, reference, id_user, customer_name, customer_email, id_currency, currency, conversion_rate, delivery_date, id_address_delivery, id_address_invoice, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, id_order_status, status_name, payment_status, fulfillment_status, fulfillment_percentage, payment_percentage, balance, overpaid, excess, still_held, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, contributions_total, total_paid_real, total_refunded_real, customer_note, source, state, created, modified, lines, payments, shipments, contributions, history, delivery_address, invoice_address\n\nMoney is an object: `{amount, formatted, minor_units}`, `amount` exact decimal text.\n\nThis read is the way to an order's payments, shipments, lines and history: there are no GET routes for `orders/:id/payments` or `orders/:id/shipments` (their POST routes add one).\n\nEach entry of `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`."
 							}
 						},
 						{
