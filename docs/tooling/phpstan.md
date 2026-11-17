@@ -16,8 +16,8 @@ for Alfa Commerce are in `phpstan.neon` at the root of the repository.
 
 :::caution Any finding fails the check
 Any finding PHPStan reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact
-Joomla release (6.2.0), so the findings do not change by themselves. No check is required for a merge yet. (On 2.2.0
-the check was green whatever PHPStan found, and neither version was fixed.)
+Joomla release (6.2.0), so the findings do not change by themselves. PHPStan is a required check: a pull request is merged only
+when it is green (see [Branch rules](./workflows#branch-rules)).
 :::
 
 Two messages PHPStan gives on the code, both recorded in the baseline:
@@ -75,8 +75,7 @@ The nine Joomla types are `BaseDatabaseModel`, `CMSApplicationInterface`, `Datab
 Alfa Commerce extends Joomla's classes, and the repository holds no copy of Joomla and no Composer dependencies. So
 before each analysis Joomla is downloaded and unpacked into a folder named `joomla` at the root
 of the repository. The setting `scanDirectories` points PHPStan at that folder. Git ignores the folder. The release is
-Joomla 6.2.0, taken by its address and checked against the sha256 that Joomla publishes (up to 2.2.0 it was the
-latest release).
+Joomla 6.2.0, taken by its address and checked against the sha256 that Joomla publishes.
 
 - On GitHub the job downloads it in a step of its own, on every run.
 - On your computer the script `scripts/phpstan-fetch-joomla.sh` does the same. It needs `curl`, `unzip` and
@@ -91,15 +90,14 @@ A **baseline** is a list of findings that already existed when the list was made
 finding that is on the list, and reports any finding that is not. The list is the file `phpstan-baseline.neon`,
 which `phpstan.neon` includes.
 
-| | 2.2.0 | 2.2.1 |
-|---|---|---|
-| Entries (one message in one file) | 435 | 424 |
-| Findings they cover (an entry counts how often its message occurs in the file) | 652 | 641 |
-| Files with at least one entry | 184 | 183 |
+| What is counted | Count |
+|---|---|
+| Entries (one message in one file) | 424 |
+| Findings they cover (an entry counts how often its message occurs in the file) | 641 |
+| Files with at least one entry | 183 |
 
-In 2.2.0 the most frequent kinds were a wrong argument type (81 entries), a class that is not found (41), an unnecessary
-nullsafe access (38), a wrong number of arguments (29) and a method called on something that may not be an object
-(26).
+The most frequent kinds are a wrong argument type (81 entries), an unnecessary nullsafe access (38), a class that is
+not found (30), a wrong number of arguments (29) and a method called on something that may not be an object (26).
 
 The intention stated in the configuration is to shrink the list over time: fix findings, then make the list again.
 The configuration's comment gives the command:
@@ -144,7 +142,7 @@ What this means for you:
 - PHPStan fixes nothing by itself. A finding in code you changed is yours to fix and push.
 - The AI review is told not to flag findings of this kind.
 
-(On 2.2.0 the job ran on PHP 8.2 with `continue-on-error: true`, so the check was green whatever it found.)
+
 
 ## What can go wrong
 
@@ -158,8 +156,8 @@ What this means for you:
 
 ## A note on @since tags
 
-The `@since` tags in the analysed folders name many versions. 2.0.0 is the most frequent (about 5,600 tags), then
-1.0.0 (about 2,100), 2.2.0 (about 800), 2.1.0, 2.1.4 and 2.1.1. They are not set to one value across the project.
+The `@since` tags in the analysed folders name many different releases. They are not set to one value across the
+project, so a tag does not tell when a piece of code last changed.
 
 ## Not documented yet
 

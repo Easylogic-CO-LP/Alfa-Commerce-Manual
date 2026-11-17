@@ -91,7 +91,7 @@ example, rebuilding the search entry of every item.
 **Held.** A task whose outcome cannot be known (an e-mail that may or may not have left). Alfa does not try it again
 by itself; it waits for staff to decide.
 
-In 2.2.0 only Alfa Commerce itself creates tasks and jobs. A plugin cannot register its own.
+Only Alfa Commerce itself creates tasks and jobs. A plugin cannot register its own.
 
 ## Catalogue and prices
 
@@ -115,8 +115,8 @@ deleted. It announces each write with the event `onAlfaPricesChanged`. See [Pric
 **Projection.** Stored data that is derived from the catalogue and can always be rebuilt from it, such as the search
 entry of an item. Tools > Database Sync rebuilds projections.
 
-**Cart rule.** A promotion applied in the cart, with or without a code the shopper types. Cart rules replaced the
-earlier coupons.
+**Cart rule.** A promotion applied in the cart, with or without a code the shopper types. Coupons are cart rules
+with a code.
 
 **Place.** A country, a region inside it, or a town, in one tree. Prices, taxes, discounts and payment and shipping
 methods can be limited to places. A discount or a tax for a place reaches

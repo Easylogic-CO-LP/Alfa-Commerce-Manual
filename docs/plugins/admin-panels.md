@@ -52,7 +52,7 @@ Use a panel when your feature needs a screen of its own, with its own table. A p
 the **`alfa`** group. A payment, shipping or search plugin that needs a screen ships a second, small plugin in the
 `alfa` group for it.
 
-The set of classes a panel plugin uses is versioned on its own: `PanelFramework::VERSION` is `1` in 2.2.0.
+The set of classes a panel plugin uses is versioned on its own: `PanelFramework::VERSION` is `1`.
 
 ## What you must provide
 
@@ -607,17 +607,6 @@ $e        = static fn (string $text): string => htmlspecialchars($text, ENT_QUOT
 
 This layout expects a form with two fieldsets, `general` and `advanced`, and the hidden `id` field in one of them.
 The file it replaces is `administrator/components/com_alfa/layouts/panel/form.php`.
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** The six panel events are delivered only through `getTargetedHandlers()`. A method with the
-  event's name is no longer enough.
-- **Changed in 2.2.0.** `onAlfaBuildMenu` and `onAlfaGetAccessActions` must be listed in `getSubscribedEvents()`.
-- **Changed in 2.2.0.** `item()`, `add()`, `section()` on the menu event and `action()` on the permission event take
-  the plugin's name, `group.element`, as their first argument.
-- **Changed in 2.2.0.** A save, a delete or a task sent to a plugin that declares no handler for it is an error
-  staff see.
-- **Changed in 2.2.0.** Alfa no longer loads a plugin's language file for its menu entry or its permission's row.
 
 ## Not documented yet
 

@@ -270,13 +270,13 @@ The names of fields and values are not the plugin's. Staff type them per languag
 | A button's action is refused | The action changes data and was not sent as a POST, or it was not offered by `onGetFieldActions` for that row |
 | A fatal error: `onItemView` must be compatible | The method's signature differs from the base class. Write `public function onItemView($event): void`. |
 
-Notes for authors of plugins written for earlier versions:
+Rules every item field plugin follows:
 
-- Changed in 2.2.0: every event of this family except `onItemsListPrepare` is addressed to the field's own
-  plugin through `TARGETED_EVENTS`. A plugin that extends the base class needs no change.
-- Changed in 2.2.0: a disabled item field plugin is never started.
-- Changed in 2.2.0: a cart line that needs an unavailable plugin is no longer priced without it. It stays in the
-  cart without a price and cannot be ordered.
+- Every event of this family except `onItemsListPrepare` is addressed to the field's own plugin through
+  `TARGETED_EVENTS`. A plugin that extends the base class has this already.
+- A disabled item field plugin is never started.
+- A cart line that needs an unavailable plugin is never priced without it. It stays in the cart without a price
+  and cannot be ordered.
 
 ## Not documented yet
 

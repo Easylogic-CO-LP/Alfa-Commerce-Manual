@@ -36,7 +36,7 @@ The language part is Joomla's language tag in lower case with an underscore: `en
 language table has one key column that holds the id of the base record (`id_item` above) and one column per
 translated field.
 
-Sixteen base tables have language tables in 2.2.0.
+Sixteen base tables have language tables.
 
 | Base table | Key column in its language tables |
 |---|---|
@@ -100,8 +100,8 @@ A read looks in the reader's language first. Where that language has no text, it
 content language**. In a list query this is one expression per field:
 `COALESCE(NULLIF(current, ''), NULLIF(default, ''), '')`. A record without a translation still appears in the list.
 
-The default content language is decided in one place, `MultilingualHelper::getDefaultLanguageTag()`. Since 2.1.1
-the rule is:
+The default content language is decided in one place, `MultilingualHelper::getDefaultLanguageTag()`. The
+rule is:
 
 1. It is the site language set in Joomla's Language Manager, when that language is also a published content
    language.
@@ -119,7 +119,7 @@ the rule is:
 The alias is the part of an address that names a record (`blue-shirt`). In Alfa it is a translated field like any
 other: each language has its own alias in its language table, and the main table has no alias column.
 
-The alias rule since 2.1.1:
+The alias rule:
 
 - **An empty alias is generated.** Alfa builds it from the name in the same language and makes it unique in that
   language by adding `-2`, `-3` and so on.
@@ -266,7 +266,7 @@ language of the API's own messages alone.
 
 ### Documents and e-mails
 
-An order remembers the language it was placed in. Since 2.1.1 the e-mails of an order that has no language of its
+An order remembers the language it was placed in. The e-mails of an order that has no language of its
 own, and the documents issued in the back office, are in the default content language. It is never the language of
 the staff member who sends or issues them. In an order e-mail each
 status text that is empty in the order's language is taken from the default content language. See
@@ -274,7 +274,7 @@ status text that is empty in the order's language is taken from the default cont
 
 ### Notifications in each reader's language
 
-Since 2.1.4 a notification is stored as a language key with its parameters, not as finished text. It is translated
+A notification is stored as a language key with its parameters, not as finished text. It is translated
 when it is shown, so a staff member working in Greek and one working in English read the same notification, each in
 their own language. The row also keeps the text as first written, in the shop's default administrator language.
 That copy is shown only when the reader's language can no longer resolve the key, for example after the extension
@@ -283,9 +283,9 @@ that owns it was removed. A plugin builds such a text with `NotificationText`
 
 ## Language files and language packs
 
-- **Core ships English only** (since 2.1.1). Every other language is a separate language pack, a Joomla package
+- **Core ships English only**. Every other language is a separate language pack, a Joomla package
   named `pkg_alfacommerce_<tag>`, for example `pkg_alfacommerce_el-GR`.
-- **Language files live in Joomla's own language folders** (since 2.1.2): `administrator/language/<tag>/` for the
+- **Language files live in Joomla's own language folders**: `administrator/language/<tag>/` for the
   component, its guided tours and its plugins, and `language/<tag>/` for the storefront and the modules. The
   component keeps no language folder of its own on an installed site.
 - **The component's files** are `com_alfa.ini` and `com_alfa.sys.ini`, plus `com_alfa.tours.ini`, which holds the

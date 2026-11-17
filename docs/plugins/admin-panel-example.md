@@ -14,9 +14,9 @@ description: "A complete plugin that adds its own administrator screen to Alfa C
 - [Creating an Admin Panel](./admin-panels.md): start here
 - **A complete admin panel plugin** (this page)
 
-No feature plugin ships with Alfa Commerce 2.2.0, so there is none to copy. The plugin below is a complete panel:
-a list of notes with a search box, sorting, New, Delete and an edit form. Every line of it was checked against the
-event and framework classes of 2.2.0 (`administrator/src/Event/Panel`, `Event/Menu`, `Event/Access`,
+No feature plugin ships with Alfa Commerce, so there is none to copy. The plugin below is a complete panel:
+a list of notes with a search box, sorting, New, Delete and an edit form. Every line of it follows the event and
+framework classes (`administrator/src/Event/Panel`, `Event/Menu`, `Event/Access`,
 `administrator/src/Panel`, `Model/PanelModel.php`, `View/Panel/HtmlView.php`, `Controller/PanelController.php`,
 `Toolbar/PanelToolbar.php`); its manifest and provider follow the plugins that do ship.
 

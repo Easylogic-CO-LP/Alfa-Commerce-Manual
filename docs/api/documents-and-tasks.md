@@ -1,7 +1,7 @@
 ---
 sidebar_position: 5
 title: Documents and tasks
-description: "The REST API routes for sales documents, document types and background work (tasks) in Alfa Commerce 2.2.1."
+description: "The REST API routes for sales documents, document types and background work (tasks) of Alfa Commerce."
 ---
 
 # Documents and tasks
@@ -25,7 +25,7 @@ shop itself, for example when an order reaches a status that issues one. See
 | `GET v1/alfa/documents/:id/pdf` | The same as a PDF |
 | `POST v1/alfa/documents/:id/void` | Voids the document |
 
-Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`, and since 2.2.1
+Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`, and
 `filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days included).
 
 **A list row holds:** `id`, `doc_type`, `status`, `number`, `number_formatted`, `issue_date_local`, `id_order`,
@@ -41,8 +41,7 @@ Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `fi
 together with the four libraries it needs, so the route works with no extra step. The HTML route does not need it.
 If one of them has been removed, the route
 answers 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores
-it, and the setup checklist's row "PDF library for sales documents" fails. (2.2.0 did not ship the library and
-answered 500 without it: [Known defects](./overview.md#known-defects-in-220), row 9.)
+it, and the setup checklist's row "PDF library for sales documents" fails.
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:
@@ -141,12 +140,12 @@ sequenceDiagram
     participant C as Your program
     participant A as Alfa Commerce
     C->>A: POST v1/alfa/items (a new price)
-    A-->>C: 200, meta.tasks names job 2
+    A->>C: 200, meta.tasks names job 2
     loop until the answer is 200
         C->>A: POST v1/alfa/tasks/2/process
-        A-->>C: 202 with Location and Retry-After 5 (still working)
+        A->>C: 202 with Location and Retry-After 5 (still working)
     end
-    A-->>C: 200 with the task (done, failed or resolved)
+    A->>C: 200 with the task (done, failed or resolved)
 ```
 
 You do not have to call `process`. The shop does its background work by itself, as described in
@@ -159,7 +158,7 @@ Only a job can be processed:
 {"errors":[{"title":"Only a job can be processed; a single runs after the save that wrote it.","code":409}]}
 ```
 
-In 2.2.0 only Alfa Commerce itself creates tasks. The API has no route that creates one, and a plugin cannot
+Only Alfa Commerce itself creates tasks. The API has no route that creates one, and a plugin cannot
 register its own.
 
 ## Not documented yet
@@ -167,6 +166,5 @@ register its own.
 - The fields of a document's `lines`, `taxes` and `series` one by one.
 - The values of a task's `state`, `handler` and `origin`. See
   [Background work](../architecture/background-work.md) for the states.
-- A 202 answer was not seen for this page: on the test shop the job had finished before `process` was called,
-  and the answer was 200. The 202 with `Location` and `Retry-After` is what the route's code and the collection
-  state.
+- An example of a 202 answer. A job that has finished when `process` is called answers 200; a job still working
+  answers 202 with `Location` and `Retry-After`.

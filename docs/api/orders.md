@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
 title: Orders
-description: "The REST API routes for orders and order statuses in Alfa Commerce 2.2.1, and the operations on an order: lines, payments, refunds, shipments and the status change."
+description: "The REST API routes for orders and order statuses of Alfa Commerce, and the operations on an order: lines, payments, refunds, shipments and the status change."
 ---
 
 # Orders
@@ -10,7 +10,7 @@ description: "The REST API routes for orders and order statuses in Alfa Commerce
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
-An order is changed in two ways. Its customer details are changed with a `PATCH` of the order. Everything that has
+An order changes in two ways. Its customer details change with a `PATCH` of the order. Everything that has
 rules of its own (lines, money, parcels, the status) is changed with an **operation**: a route of its own that
 hands the request to the service that owns those rules. See [Orders](../services/orders.md) and
 [Payments and shipments](../services/payments-and-shipments.md) for the services.
@@ -28,32 +28,31 @@ flowchart LR
 ## Orders
 
 `v1/alfa/orders`, the five standard routes. The filters of the list are in
-[The filters of each list](./overview.md#the-filters-of-each-list): since 2.2.1 they include filters by payment,
+[The filters of each list](./overview.md#the-filters-of-each-list): they include filters by payment,
 fulfilment, waiting time, reconciliation, overpayment, date, item and customer.
 
-**Create.** An order made through the API has the source `api` and starts empty. Give it a status, a currency and
-the customer's details. The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
+**Create.** An order made through the API has the source `api` and starts empty. Give it a status and the
+customer's details; it takes the shop's default currency (see [Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
 a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are needed, unless the shop sets
-some of them Optional in Form Fields, and `country` is the id of a published place. A shop installed before 2.2.1
-keeps its own fields (the update adds none), and needs `name`, `email` and `country`. A `PATCH` of an existing order
-does not require them.
+some of them Optional in Form Fields, and `country` is the id of a published place. A shop that was installed
+earlier keeps its own fields (an update adds none), and needs those its own fields require. A `PATCH` of an
+existing order does not require them; see [Known limitations](./overview.md#known-limitations) for a shop with a
+required delivery field of its own.
 
 ```bash
 curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \
   "https://your-shop.example/api/index.php/v1/alfa/orders" \
   -d '{
     "id_order_status": 1,
-    "id_currency": 47,
     "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
                          "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}
   }'
 ```
 
-The ids are those of a fresh installation: status 1 is "Pending", the status new orders start in, and currency 47
-is the euro. Read `v1/alfa/orderstatuses` (the row with `is_initial`), `v1/alfa/currencies` and `v1/alfa/places`
-for the ids of your shop.
+The ids are those of a fresh installation: status 1 is "Pending", the status new orders start in, and place 84 is
+Greece. Read `v1/alfa/orderstatuses` (the row with `is_initial`) and `v1/alfa/places` for the ids of your shop.
 
-The answer, status 201 (200 in 2.2.0), shortened:
+The answer, status 201, shortened:
 
 ```json
 {
@@ -85,9 +84,6 @@ The answer, status 201 (200 in 2.2.0), shortened:
 `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `shipments`,
 `contributions`, `history`, `delivery_address`, `invoice_address`. The order's number is its `id`.
 
-Changed in 2.2.1: `invoice_number` and `invoice_date`, which nothing in Alfa Commerce wrote, are no longer part of the
-record, and the update removes their columns.
-
 The lists `payments` and `shipments` are where a program reads an order's payments and parcels. The routes under
 [Operations on an order](#operations-on-an-order) write them; none of them reads.
 
@@ -115,10 +111,6 @@ carries any other field the order publishes, such as `customer_email`, `id_addre
 
 Change the delivery details through `alfa_form_fields`, never by the id of an address record.
 
-Changed in 2.2.1: in 2.2.0 `customer_note`, `state` and the other fields were answered 200 and not written, except
-`id_address_delivery` and `created`, which were written as sent
-([Known defects](./overview.md#known-defects-in-220), row 7).
-
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.
 
@@ -142,7 +134,7 @@ An order id that does not exist, or a line, payment or shipment of another order
 ### Lines
 
 **Add.** `id_item` and `quantity` (a whole number, 1 or more). An item with combinations also needs
-`id_combination`. The line is priced by Alfa Commerce as of now, for this order.
+`id_combination`. The line is priced by Alfa Commerce at the current prices, for this order.
 
 ```json
 {"id_item": 1, "quantity": 2}
@@ -279,11 +271,8 @@ What a single order carries:
 - Each shipment carries `added` (when the parcel was recorded), `shipping_charge_basis` (what its costs were
   worked out from: `tax_included`, `tax_excluded` or `carrier_stated`) and `shipping_tax_chain` (the tax rates its
   charge was calculated with, in the order they apply, each `{"rate": "24", "name": "VAT"}`, the rate as exact
-  decimal text; a chain stored before 2.2.0 has empty names).
+  decimal text; an older chain may carry the rates with empty names).
 
-Changed in 2.2.1: `created`, always null in 2.2.0, is no longer in a payment's entry, and `note` and `created`,
-always null, are no longer in a shipment's entry. 2.2.0 did not fill `fulfillment_status`
-([Known defects](./overview.md#known-defects-in-220), rows 10 to 12).
 
 ### The status
 
@@ -297,7 +286,7 @@ always null, are no longer in a shipment's entry. 2.2.0 did not fill `fulfillmen
 |---|---|
 | `id_order_status` | The status to move to. An id that is not a status answers 422. |
 | `note` | A note for the order's history |
-| `silent` | `true` sends no e-mail to the customer. The staff the status tells are still sent theirs (in 2.2.0 they were not), and everything else still happens. |
+| `silent` | `true` sends no e-mail to the customer. The staff the status tells are still sent theirs, and everything else still happens. |
 | `force` | `true` is needed to bring a cancelled order back |
 
 A 200 means the status changed, and that everything the change owes was recorded with it: the stock step, the
@@ -332,7 +321,7 @@ are needed in the default language.
 **One record holds also:** `name_customer`, `notify_customer`, `translations`.
 
 A status can issue sales documents when an order reaches it. Such a status carries `issues_doc_rules`, with or
-without `issues_delivery_note` (in 2.2.0 the rules were kept only beside it, known defect row 6):
+without `issues_delivery_note`:
 
 ```json
 {
@@ -343,12 +332,11 @@ without `issues_delivery_note` (in 2.2.0 the rules were kept only beside it, kno
 An order status is deleted only while it is in the trash, as in the administrator. Move it to the trash first with a
 `PATCH` of `state` -2, then delete it; a status in any other state answers 409 and nothing is deleted. A status that
 orders are in, and the last status that holds a role, are refused with 409 and the reason. A status that holds the
-last role of its kind cannot be moved to the trash, so its delete answers 409. In 2.2.0 the delete of a status that
-orders are in answered 204 and deleted nothing (known defect, row 2).
+last role of its kind cannot be moved to the trash, so its delete answers 409.
 
 ## Not documented yet
 
 - The entries of `contributions`, `history`, `delivery_address` and `invoice_address` field by field.
 - The allowed values of `transaction_status`, `payment_type` and a parcel's `status`.
 - `overpaid`, `excess` and `still_held` one by one. See [Orders](../services/orders.md) for the money terms.
-- An example of a parcel with tax. The rule above is the collection's; no taxed parcel was sent for this page.
+- An example of a parcel with tax.

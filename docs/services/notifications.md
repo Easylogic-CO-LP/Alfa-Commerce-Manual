@@ -34,12 +34,12 @@ notification: pushing the same key again updates it and never makes a second one
 | `markRead()`, `dismiss()`, `find()`, `canView()`, `canChangeState()`, `canSee()`, `canUseLink()`, `summary()`, `toolbarBadge()`, `renderBadge()`, `safeUrl()` | Core's own screens: the bell, its panel and the Notifications list. Described so that you understand who sees what. |
 | `applyJournal()`, `purge()`, `purgeThrottled()`, `pluginUnavailable()`, `unexpired()`, `visiblePairs()`, `visibilityCondition()` | Core's own. Do not call them. |
 
-What this rests on: the changelog of 2.1.4 names `push()`, `NotificationText` and `NotificationText::from()` under
-"For plugins", and the class comment says that any code pushes and that plain text is kept for third parties. The
+What this rests on: the changelog names `push()`, `NotificationText` and `NotificationText::from()` under "For
+plugins", and the class comment says that any code pushes and that plain text is kept for third parties. The
 comments of `clear()`, `exists()`, `isOpen()` and `keys()` address "a producer", which is whoever pushed the key.
 The value builders of `NotificationText` are not named in the changelog. The comment of `key()` covers a key of
 another extension, and the comments of the others do not say who may use them. No shipped plugin calls any of
-these in 2.2.0.
+these.
 
 ## When it is used
 
@@ -123,7 +123,7 @@ An extension may use one of them, a language key of its own, or plain text.
 
 ### The words: NotificationText
 
-Since 2.1.4 a notification's title and message are stored as a **language key with its values**, not as finished
+A notification's title and message are stored as a **language key with its values**, not as finished
 text. Each member of staff then reads the notification in their own language. Plain text is still accepted, and is
 shown as written to every reader.
 
@@ -143,7 +143,7 @@ a name) or one of these, so that it too is shown in the reader's language:
 | `NotificationText::key(string $key, mixed ...$args): array` | Another language key, translated too |
 | `NotificationText::plural(string $key, int $count, mixed ...$args): array` | A key chosen by a count, as Joomla's plural texts are |
 | `NotificationText::number(int\|float $number, int $decimals = 0): array` | A number, grouped as the reader's language groups it |
-| `NotificationText::date(string $utc): array` | A date and time given in UTC (`Y-m-d H:i:s`), shown in the reader's time zone. Since 2.2.0. |
+| `NotificationText::date(string $utc): array` | A date and time given in UTC (`Y-m-d H:i:s`), shown in the reader's time zone. |
 | `NotificationText::content(array $byLanguage): array` | A text that exists in several content languages, such as an item's name: `['en_gb' => 'Shirt']` |
 | `NotificationText::join(array $items, string $separator = ' ', ?string $and = null): array` | Several values joined, with an optional word before the last |
 
@@ -256,14 +256,6 @@ who may open the bell reads it.
 | The same matter appears twice | Two different keys were used for it |
 | The link is missing | The address was not relative, `http` or `https`. Or the reader lacks the permission of the `link` option. |
 | Your push throws an error | The notification could not be written. Decide in your code whether your work goes on without it. |
-
-## Changed in 2.2.0 and 2.1.4
-
-- **Since 2.2.0.** `NotificationText::date()` exists.
-- **Changed in 2.1.4.** A title and a message are a language key with its values (`NotificationText`), and a group
-  is a language key. Plain text is still accepted.
-- **Changed in 2.1.4.** A push or a clear made inside a save is written only after the outermost save is final,
-  and never for a save that was undone.
 
 ## Not documented yet
 

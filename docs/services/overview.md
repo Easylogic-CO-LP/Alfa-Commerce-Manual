@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Services overview
-description: What a service is in Alfa Commerce, the service areas of 2.2.1 with one line each, and which door an extension uses for each job.
+description: What a service is in Alfa Commerce, the service areas with one line each, and which door an extension uses for each job.
 ---
 
 # Services overview
@@ -34,7 +34,7 @@ The column **For extensions?** in the tables below has three answers:
 |---|---|
 | **Yes**, with a door | An extension takes part, through the event, base class or class named |
 | **Read only** | Alfa hands the extension an object of this area to read. The object has no method that changes anything. |
-| **No, core's own** | This manual documents no door into the area in 2.2.0. Do not call its classes. |
+| **No, core's own** | This manual documents no door into the area. Do not call its classes. |
 
 ## When it is used
 
@@ -64,7 +64,7 @@ section when you need to understand what a service guarantees, so that your plug
 | `Search` | Catalogue search, and which search engine serves it (`CatalogSearchService`, `SearchEngineRegistry`) | Yes, as a search engine plugin | [Search engine plugins](../plugins/search-plugins.md) |
 | `Setup` | The component's own setup checks and the steps of an installation | Yes, through the event `onAlfaCollectSetupChecks` | [Setup checks](../events/notification-and-setup-events.md#setup-checks) |
 | `Stats` | The figures behind core's dashboard cards (`DashboardStatsService`) | No, core's own | |
-| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | No, core's own. In 2.2.0 a plugin cannot register a task of its own. | |
+| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | No, core's own. A plugin cannot register a task of its own. | |
 | `Tools` | The component's own tools on the Tools screen (`CoreToolProvider`) | Yes, through the events `onGetToolActions` and `onExecuteToolAction` | [Other things a plugin can add](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
 | `ValuePool` | The values a rule builder offers for one field | No, core's own | |
 
@@ -123,12 +123,6 @@ makes two plugins from two authors work on one order without knowing about each 
 | Write to an Alfa table yourself (`#__alfa_orders`, `#__alfa_order_payments`, `#__alfa_order_shipments`, the stock tables) | None of the service's checks run, nothing is written to the order's History, no event is announced and no follow-up work is recorded. The totals, the stock and the documents can stop agreeing with each other. |
 | Call a class marked "No, core's own" | It may work today. Its methods can change in any release without a note in this manual. |
 | Call a ledger from a payment or shipping plugin instead of the base class | The row does not record your plugin as its [plugin of record](../plugins/overview.md#the-plugin-of-record), so your later changes to it are refused. |
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** The helper classes of 2.1 and earlier (`CartHelper`, `OrderPlaceHelper`, `OrderStockHelper`,
-  `OrderPaymentHelper`, `OrderShipmentHelper`) no longer exist. Their work is done by `CartService`,
-  `OrderPlacement`, `StockPolicy`, `PaymentLedger` and `ShipmentLedger`.
 
 ## Not documented yet
 

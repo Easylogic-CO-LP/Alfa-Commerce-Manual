@@ -48,8 +48,8 @@ sequenceDiagram
     J->>J: load the plugins of the group "alfa"
     J->>P: onAjaxKeeplist (AjaxEvent)
     Note over P: check the screen side, the token, the permission
-    P-->>J: addResult(...) or throw an error
-    J-->>B: JSON with success, message and data
+    P->>J: addResult(...) or throw an error
+    J->>B: JSON with success, message and data
 ```
 
 ## What Joomla checks, and what it leaves to you
@@ -129,7 +129,7 @@ if (!response.ok || !answer.success) {
 const kept = answer.data[0].kept;
 ```
 
-`csrf.token` is in the page's options on the Manufacturers list of 2.2.0, where this was tried. If a screen you
+`csrf.token` is in the page's options on the Manufacturers list. If a screen you
 work on does not carry it, `HTMLHelper::_('form.csrf')` adds it.
 
 ## What comes back
@@ -159,7 +159,3 @@ Three things to know about errors:
 - **While the shop is paused, Alfa Commerce answers for you.** During **Tools**, **Reset and clear**, "Clear
   everything", a `com_ajax` request whose `group` starts with `alfa` is refused with status 503 before it reaches
   any plugin.
-
-The handler and the script above were run on a fresh Alfa Commerce 2.2.0 (Joomla 6.1.4, PHP 8.3): staff with the
-token got the kept ids, staff without the token got the token error, and a visitor who was not logged in and a
-request on the storefront were both refused.

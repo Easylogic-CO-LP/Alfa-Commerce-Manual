@@ -424,11 +424,10 @@ What the picture means:
 - **Three statuses, three outcomes.** A status that takes the goods runs `commitReservation()`. A status that keeps
   them set aside puts back what was taken. A cancelled status puts back what was taken and runs `release()`.
 - **Putting goods back announces `onInventoryRestored`.** `restore()` (an order cancelled or a line cut, a credit
-  note's return) and `reverseRestores()` (a credit note voided) announce it after the save is final (2.2.0 announced
-  nothing). `releaseLine()` has no event.
+  note's return) and `reverseRestores()` (a credit note voided) announce it after the save is final. `releaseLine()` has no event.
 - **`onCollectStockAllocationProviders` is asked while the command writes**, the first time a stock service object
   (`InventoryService`) must choose a location. The answer is kept for the request, so the event is announced once
-  however many objects are used (in 2.2.0 once for each object).
+  however many objects are used.
 
 | Event | Who receives it | Documented on |
 |---|---|---|
@@ -512,8 +511,7 @@ What the picture means:
 
 - **An item is saved as one unit: all of step 3 is final at once, or none of it.** If the save stops part way,
   nothing of it is kept, and staff are told that the item was not saved, that nothing of it was kept, and to try
-  again. (Up to 2.2.0 the item's row was final first, and its prices, images and categories were each written after
-  it.)
+  again.
 - **Steps 4 to 8 wait for step 3 to be final**, and none of them is announced for a save that was undone. A listener
   of `onAlfaAdminAfterSave` sees the new prices, images and categories.
 - **Joomla's `onContentBeforeSave`, Joomla's table events and the media events of the item's images run inside step
@@ -550,9 +548,8 @@ What the picture means:
 
 - **A discount or a tax** writes its row and what it applies to (its categories, manufacturers, customers and so on)
   as one save (step 3). Its `onAlfaAdminAfterSave` (step 4), and Joomla's `onContentAfterSave`, follow that save and
-  read the record with what it applies to. (Up to 2.2.0 the row was final first, and what it applies to was written
-  after `onAlfaAdminAfterSave`.) A category still writes what it applies to after its own row.
-- **Each batch of the rebuild (step 5) is a save of its own.** What changed in all batches is announced together,
+  read the record with what it applies to. A category still writes what it applies to after its own row.
+- **Each batch of the rebuild (step 5) is a save of its own.** What all batches changed is announced together,
   in one `onAlfaPricesChanged`, after the last one. A very large rebuild is announced in parts.
 - **For a category, step 5 rebuilds every copy** of the items assigned to it (prices, field values and the search
   entry), not only the price rows. Alfa announces `onCollectCatalogProjections` first, as in step 6 of an item save.

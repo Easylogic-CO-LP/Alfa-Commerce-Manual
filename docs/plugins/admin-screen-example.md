@@ -1,6 +1,6 @@
 ---
 title: A complete feature plugin
-description: "A complete small plugin of the alfa group for Alfa Commerce 2.2, file by file, as installed and tried on a fresh shop."
+description: "A complete small plugin of the alfa group for Alfa Commerce, file by file."
 ---
 
 # A complete feature plugin
@@ -16,8 +16,8 @@ description: "A complete small plugin of the alfa group for Alfa Commerce 2.2, f
 - **A complete feature plugin** (this page)
 - [Calling your plugin from the browser](./admin-screen-ajax.md)
 
-No feature plugin ships with Alfa Commerce 2.2.0, so there is none to copy. The plugin below is complete and small.
-Every line of it was checked against the event and framework classes of 2.2.0 (`administrator/src/Event/Admin`,
+No feature plugin ships with Alfa Commerce, so there is none to copy. The plugin below is complete and small.
+Every line of it follows the event and framework classes (`administrator/src/Event/Admin`,
 `administrator/src/Plugin`, `administrator/src/Helper/Columns.php`); its manifest and provider follow the plugins
 that do ship.
 
@@ -242,6 +242,3 @@ Add each one when you use its sample.
 Install the plugin, enable it, and type an id in its options. Open Components, Alfa Commerce, Manufacturers: the
 column is there, after the item count. Deleting is a two-step action on this list: move a kept row to the trash,
 set the Status filter to Trashed, check the row and press **Empty Trash**. The message appears and the row stays.
-
-This plugin was installed and tried on a fresh Alfa Commerce 2.2.0 (Joomla 6.1.4, PHP 8.3, MariaDB 10.6): the
-column, the badge and the refusal all behaved as described.

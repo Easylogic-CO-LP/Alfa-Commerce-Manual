@@ -24,10 +24,8 @@ export type Input = {
   version: string;
   description?: string;
   creationDate: string;
-  alfaVersion?: string;
 };
 
-export const TESTED_AGAINST: string;
 export function elementFrom(name: string): string;
 export function vendorFrom(name: string): string;
 export function problems(template: Template, input: Input): string[];

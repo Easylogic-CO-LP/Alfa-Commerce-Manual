@@ -13,7 +13,7 @@ description: How to write a plugin that adds a new type of field to the customer
 A **form field** is one field of the customer's details: a name, a phone number, a country, a tax office. Staff
 define the fields of their shop, and each field has a **type**. A form field plugin adds one type.
 
-A new shop has seven fields (since 2.2.1): name, email, phone, country, address, city
+A new shop has seven fields: name, email, phone, country, address, city
 and postcode. The last three are required in the delivery section and may be changed or deleted like the shop's
 own. They are asked for every order, downloads and goods collected in the shop included: a shop that sells only
 those sets them Optional, or hides them, in Form Fields. An update adds no field to an existing shop.
@@ -112,9 +112,8 @@ When step 8 becomes final (the commit) depends on the form:
 | The customer's saved details on the storefront, and registration | The row is written on its own, outside any transaction. It is final as soon as it is written. |
 
 At registration, steps 6 and 7 decide whether the form is accepted, and registration stores what the filters
-returned, as the other forms do, and nothing for a field that a condition hides. (In 2.2.0 registration stored the
-values the browser sent, a hidden field's included.) "System - Alfa Commerce Sync" no longer reads customer details from the
-request when a Joomla account is saved. Details stored before stay as they are.
+returned, as the other forms do, and nothing for a field that a condition hides. "System - Alfa Commerce Sync" does not read customer details from the
+request when a Joomla account is saved.
 
 ## What you must provide
 
@@ -210,8 +209,7 @@ start, or a `prepareDom()` that threw before the field was added) is handled by 
 
 This holds for the checkout, registration, the customer's saved details, and the customer and order forms staff use.
 The setup checklist's row "Required form fields can be filled in" fails while such a required field has no enabled
-plugin of Public access. (In 2.2.0 such a field was left out of every form, required or not, and only a system field
-was logged.)
+plugin of Public access.
 
 :::warning Access must be Public
 A guest fills the checkout. A form field plugin whose Access (Extensions: Plugins) is not Public is not loaded
@@ -237,7 +235,7 @@ the column is created as `text`. See "Where the value is stored".
 
 ### The layout for a stored value: tmpl/default.php
 
-When Alfa prints a stored value outside a form, it renders your `tmpl/default.php`. In 2.2.0 this is used for the
+When Alfa prints a stored value outside a form, it renders your `tmpl/default.php`. This is used for the
 `{field_<field name>}` placeholders of the order e-mails. The layout receives `$field` (with the value in
 `$field->value`), `$fieldParams` (the field's settings as a `Registry`), `$item` and `$context`.
 
@@ -247,8 +245,7 @@ A template can override your layout by placing a `default.php` in
 Staff can choose another layout of your plugin's `tmpl/` folder, or a
 template's override, in the field's Layout setting. Alfa keeps the choice in the field's settings as
 `display_layout` and renders that file instead of `default.php`; when the chosen file is missing, `default.php` is
-used. A layout of your plugin is chosen as `_:<name>`, a template's override as `<template>:<name>`. In 2.2.0 the
-setting was not saved and `default.php` was always drawn.
+used. A layout of your plugin is chosen as `_:<name>`, a template's override as `<template>:<name>`.
 
 ## What happens next
 
@@ -289,8 +286,7 @@ Joomla offers two tools, and they do different jobs:
 | A **rule** (`FormRule`) | `validate="name"` | Accept or refuse the value. It cannot change what is stored. |
 | A **filter** (`FormFilterInterface`) | `filter="name"` | Change the value. What the filter returns is what is stored. |
 
-Joomla runs the filters first and the rules second, and keeps what the filters returned (registration too, since
-2.2.1). A rule that rewrites the
+Joomla runs the filters first and the rules second, and keeps what the filters returned. A rule that rewrites the
 value therefore checks correctly and stores the value exactly as it was typed. If your type has one right shape
 for storage, put the reshaping in a filter and let the rule beside it only say yes or no.
 
@@ -339,7 +335,7 @@ The condition is stored with the field's settings, under the key `showon`, as JS
 | `operator` | One of the operators below |
 | `value` | What it is compared with. A list for `in`, `!in` and `between`. Not used by `empty` and `!empty`. |
 
-The operators of 2.2.0. An operator that is not in this list never matches.
+The operators. An operator that is not in this list never matches.
 
 | Operator | Holds when the other field's value |
 |---|---|
@@ -355,8 +351,7 @@ How it behaves:
 - The same rules are evaluated twice: in the browser, which shows and hides fields as the shopper types, and on
   the server, which has the last word when the form is sent.
 - A field that a condition hides is taken out of the form on the server before filters and rules run. A hidden
-  required field therefore does not block the form, and a value sent for a hidden field is not stored
-  (registration too, since 2.2.1).
+  required field therefore does not block the form, and a value sent for a hidden field is not stored.
 - In the browser, the inputs of a hidden field are disabled.
 - The delivery section and the invoice section are separate. A condition reads only the fields of its own section.
 - A comparison whose other field is not part of the form is skipped. If every comparison is skipped, the field
@@ -613,13 +608,13 @@ The label, the description and the group title of a field are not the plugin's. 
 | `onAlfaFormFieldsPrepareDom` in `getSubscribedEvents()` is never called | It is not an event. Override `prepareDom()`. |
 | A setting named `layout` breaks the drawing | `layout` is an attribute Joomla reads itself. Name your setting differently. The field's Layout setting is not this attribute. It is kept as `display_layout` and never reaches the form. |
 
-Notes for authors of plugins written for earlier versions:
+Rules every form field plugin follows:
 
-- Changed in 2.2.0: `prepareDom()` is called through Alfa's plugin helper as an operation of the base class. A
-  plugin that does not extend `FormFieldsPlugin` is not called at all.
-- Changed in 2.2.0: a disabled form field plugin is never started.
-- The field condition format is `{match, action, rules}` with the operators listed above. Earlier formats are
-  not read.
+- `prepareDom()` is called through Alfa's plugin helper as an operation of the base class. A plugin that does not
+  extend `FormFieldsPlugin` is not called at all.
+- A disabled form field plugin is never started.
+- The field condition format is `{match, action, rules}` with the operators listed above. No other format is
+  read.
 - Do not pass a dispatcher to the plugin's constructor in `services/provider.php`. Joomla marks it as deprecated.
 
 ## Not documented yet

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Architecture Overview
-description: How Alfa Commerce 2.2.1 is built, its three sides, its layers, how a request and a save travel through them, and where each part is documented.
+description: How Alfa Commerce is built, its three sides, its layers, how a request and a save travel through them, and where each part is documented.
 ---
 
 # Architecture Overview
@@ -57,16 +57,16 @@ all get the same result.
 | Issue a document | The classes in `administrator/src/Service/Document` |
 | Run work later | `Tasks` in `administrator/src/Service/Task` |
 
-The folders under `administrator/src/Service` in 2.2.0 are Card, Cart, Catalog, ClearData, Credit, Document,
-DocumentTypes, Download, Inventory, ItemFields, Log, Maintenance, Media, Order, Projection, Search, Setup, Stats,
-Task, Tools and ValuePool, plus the file `PriceIndexSyncService.php`. The folders under `site/src/Service` are Cart,
+The folders under `administrator/src/Service` are Card, Cart, Catalog, ClearData, Credit, Document,
+DocumentTypes, Download, Inventory, ItemFields, Log, Maintenance, Media, Order, Place, Projection, Search, Setup,
+Stats, Task, Tools and ValuePool, plus the file `PriceIndexSyncService.php`. The folders under `site/src/Service` are Cart,
 CartRules, Checkout, Data, Facet, FieldState, Order, Place, Pricing, Shipping, ShowOn, Summary and Variant, plus the
 storefront router `Router.php`. The services a developer calls are described in
 [Services](../services/overview.md).
 
-:::note Changed in 2.x
+:::note Classes that do not exist
 Code written for 1.x used the classes `CartHelper`, `OrderPlaceHelper`, `OrderPaymentHelper` and
-`OrderShipmentHelper`. None of them exists in 2.2.0. Use `CartService`, `OrderPlacement`, `PaymentLedger` and
+`OrderShipmentHelper`. None of them exists. Use `CartService`, `OrderPlacement`, `PaymentLedger` and
 `ShipmentLedger` from the table above. `OrderHelper`, `OrderStatusHelper`, `OrderTotalHelper`, `OrderHistoryHelper`
 and `OrderLabels` still exist in `administrator/src/Helper`.
 :::
@@ -258,15 +258,15 @@ TransactionState::commitLevel($db);
 
 ## The platform floors
 
-The installer checks the site before it copies any file (`script.php`, lines 74 to 123, enforced in `preflight()`),
+The installer checks the site before it copies any file (`script.php`, in `preflight()`),
 and refuses with a message when a floor is not met.
 
-| Requirement | Value in 2.2.0 |
+| Requirement | Value |
 |---|---|
-| Joomla | 6.1.0 or a later 6.x. Joomla 7 is refused as not tested yet |
-| PHP | 8.3.0 or newer. The release is tested on 8.3, 8.4 and 8.5, and 8.4 is recommended |
+| Joomla | 6.1.0 or a later 6.x. Joomla 7 is refused |
+| PHP | 8.3.0 or newer. 8.4 is recommended |
 | PHP extensions | bcmath, intl, mbstring, gd, openssl |
-| An existing Alfa Commerce | 2.0.0 or newer. A 1.x install is refused, because 1.x has no schema to update from |
+| An existing Alfa Commerce | A stable release. A 1.x beta install is refused, because a beta has no schema to update from |
 
 Write your extension for these floors. You may use PHP 8.3 syntax and Joomla 6.1 classes.
 

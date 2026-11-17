@@ -34,7 +34,7 @@ Alfa-Commerce/
 │   ├── layouts/                # Reusable layouts
 │   ├── sql/
 │   │   ├── install.mysql.utf8.sql   # The complete schema
-│   │   └── updates/mysql/           # One file per release since 2.0.0 (2.0.0.sql ... 2.2.0.sql)
+│   │   └── updates/mysql/           # One file per release that changes the schema (<version>.sql)
 │   ├── tours/                  # Guided tours (JSON)
 │   ├── languages/en-GB/        # com_alfa.ini, com_alfa.sys.ini, com_alfa.tours.ini
 │   ├── services/provider.php   # Registers the component with Joomla

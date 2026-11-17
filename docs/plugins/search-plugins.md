@@ -14,9 +14,9 @@ calls it "Database search (built into Alfa Commerce)".
 A **search engine** is a plugin that answers the same searches from its own prepared copy of the catalogue (its
 **index**), usually faster on a large shop. An engine is a plugin of the group `alfa-search`.
 
-No search engine ships with Alfa Commerce 2.2.0, on purpose: the core package carries the rules an engine follows
-(the **contract**), and no engine. So this page prints only what the base class and the contract classes prove. It
-could not be compared with a shipped engine. The plugin's own storage and matching code is yours and is not shown.
+No search engine ships with Alfa Commerce, on purpose: the core package carries the rules an engine follows (the
+**contract**), and no engine. So this page prints only what the base class and the contract classes prove. The
+plugin's own storage and matching code is yours and is not shown.
 
 Read [How events reach a plugin](../events/how-events-reach-a-plugin.md) first. The words used here are explained in
 the [Glossary](../reference/glossary.md).
@@ -244,7 +244,7 @@ you declare it by writing a public method with this name.
 | Getter | Meaning |
 |---|---|
 | `getView()` | The list view being drawn. |
-| `getEngineKey()` | The engine key saved in Options; the database search is `''` (up to 2.2.0 `'database'` on the storefront). |
+| `getEngineKey()` | The engine key saved in Options; the database search is `''`. |
 | `getContext()` | Which list: `com_alfa.items` or `com_alfa.manufacturers`. |
 
 **What you are expected to do.** To draw your own search box, name a layout file of your plugin:
@@ -289,7 +289,7 @@ that a filter change swaps in, or one item card that is drawn again.
 | `getView()` | The items view. Its document is where you add scripts and script options. |
 | `getContext()` | `com_alfa.items`. |
 | `getKind()` | `ResultSetRenderEvent::KIND_PAGE`, `KIND_FRAGMENT` or `KIND_CARD`. |
-| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. The database search is `''` (up to 2.2.0 `'database'` on the storefront). |
+| `getEngineKey()` | The engine key saved in Options. Act only when it is your own. The database search is `''`. |
 | `getAttribution()` | A `ResultAttribution`: `handle` (your `eventId`, or `null`), `order`, `responseSpecific`, `engine`, and `hasHandle()`. |
 | `getPosition()` | For a single card only: the position that card had. Otherwise `null`. |
 
@@ -343,7 +343,7 @@ its items were rebuilt).
 
 | Method | Meaning |
 |---|---|
-| `changeType()` | The kind of change. In 2.2.0 always `VisibilityChangedEvent::AUDIENCE_CHANGED`. |
+| `changeType()` | The kind of change. Always `VisibilityChangedEvent::AUDIENCE_CHANGED`. |
 | `itemIds()` | Items whose own list changed. |
 | `categoryIds()` | Categories whose list changed. |
 | `affectedItemIds()` | Every item whose visibility changed as a result, worked out by Alfa. |
@@ -413,7 +413,7 @@ rebuild button is shown, the standard search box is drawn, and item saves write 
 | Items found by the old search are missing | The reader returned ids in the wrong entity, or the index was never rebuilt after the engine was chosen. |
 | A rebuild ends with "Refusing to activate" | The writer reported failures in `write()` or `await()`. |
 | Your search box is not drawn | The plugin is not the one that registered the configured engine, or its handler threw. |
-| An engine is listed in Options as not ready | Its `label()` or `isReady()` threw; the error is logged. (In 2.2.0 the Options screen stopped.) |
+| An engine is listed in Options as not ready | Its `label()` or `isReady()` threw; the error is logged. |
 | The rebuild job says the engine changed | The engine named when the job started is no longer the configured one, or it does not implement `RebuildableEngine`. |
 
 ## The plugin's files
@@ -677,29 +677,12 @@ PLG_ALFA_SEARCH_EXAMPLE_XML_DESCRIPTION="An example search engine for Alfa Comme
 
 The base class loads the plugin's language file by itself (`$autoloadLanguage`).
 
-## Changed in 2.2.0
-
-- `onAlfaSearchInputLayout` is addressed to the configured engine's plugin only. It is declared through
-  `TARGETED_EVENTS` and must not be listed in `getSubscribedEvents()`.
-- `addEngine()` takes the plugin's group.element as its second argument, in place of an extension name.
-- `onAlfaResultSetRender` is new. An engine loads its scripts there, no longer from its search box layout.
-- `SearchQuery::$context`, `SearchResult::$responseSpecific`, `ResultSetContext` and `ResultAttribution` are new.
-- The rebuild runs as the background job `search.rebuild`. The base class no longer offers a rebuild tool of its
-  own; an engine says what it can through `RebuildableEngine`.
-- A template override of `com_alfa/items/default.php` or `default_item.php` written before 2.2.0 prints the
-  attributes only once it calls the view's `resultSetAttributes()` and `resultAttributes()`.
-- Since 2.2.1 the card draws its images through a part of its own,
-  `default_card_images.php` (the slot `card_images`). An override of `default_item.php` written before 2.2.1 keeps
-  its own image markup, and shows the card's slider only once it calls
-  `$this->loadTemplate($this->cardImagesTplFor($item))`. The item list (`items/default.php`) opens with
-  `<div class="com-alfa items-list-page">`; an override should adopt that root.
-
 ## Not documented yet
 
-- A complete, working engine (reader and writer). None ships in 2.2.0 to take it from. The reader and the writer
+- A complete, working engine (reader and writer). None ships to take it from. The reader and the writer
   printed above are stubs.
 - The inside of `SearchDocument`'s parts (`FacetRef`, `FieldValue`, `SearchCombination`, `SearchDescriptions`) and
   the helper classes `LanguageTag`, `SearchScope`, `QueryNormalizer` and `PlainText`.
 - The search module (`mod_alfa_search`) and the JSON format of the search endpoint.
-- Running a rebuild from the command line. No console command for it ships in 2.2.0.
+- Running a rebuild from the command line. No console command for it ships.
 - The background work engine is described on its own page, [Background work](../architecture/background-work.md).

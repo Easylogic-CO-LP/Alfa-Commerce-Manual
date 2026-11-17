@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
             'tooling/phpstan',
           ],
         },
+        'getting-started/improve-the-manual',
       ],
     },
     {

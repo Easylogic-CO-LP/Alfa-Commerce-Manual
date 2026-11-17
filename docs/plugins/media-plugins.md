@@ -13,9 +13,8 @@ description: How a plugin of the alfa-media group checks, converts and resizes t
 A **media plugin** takes part when staff add an image to an item, a category, a manufacturer or a combination. It can
 refuse a file, write the image in another format or size, write the thumbnail, and tidy up its own files.
 
-No media plugin ships with Alfa Commerce 2.2.0. Everything on this page, the sample included, is taken from the
-event classes and from the code that raises them. It could not be compared with a shipped plugin, because there is
-none.
+No media plugin ships with Alfa Commerce. Everything on this page, the sample included, is taken from the event
+classes and from the code that raises them.
 
 Read [How events reach a plugin](../events/how-events-reach-a-plugin.md) first. The words used here are explained in
 the [Glossary](../reference/glossary.md).
@@ -235,7 +234,7 @@ source's own format, and falls back to a plain copy only when the server cannot 
 Media (up to 500 rows are announced at a time, before the rows go), when staff remove an image in an item, category,
 manufacturer or variant form, when the REST API removes one, and when a record is deleted with its gallery. Inside a
 save it fires once the save is final: the rows are already gone, the files not yet. A save that is undone fires
-nothing and keeps the files. (In 2.2.0 it fired only on Tools > Media.)
+nothing and keeps the files.
 
 **Who receives it.** Announced to everyone.
 
@@ -257,7 +256,7 @@ its thumbnail alone: Alfa deletes them itself, and only when no other image uses
 
 | What you see | The cause |
 |---|---|
-| A saved image whose file does not exist | In 2.2.0: the plugin called `setProcessed(true)` on `onAlfaMediaBeforeProcess` without writing the file, and Alfa stored the path. Since 2.2.1 such an image is refused with a message and no row is written. |
+| The save of an image is refused with a message, and no row is written | The plugin called `setProcessed(true)` on `onAlfaMediaBeforeProcess` without writing the file. |
 | An image with no thumbnail | The plugin called `setProcessed(true)` on `onAlfaMediaThumbnail` and the file at `getFinalPath()` does not exist. |
 | Images of 0 by 0 pixels, or an error while resizing | The plugin sized the main image by `getMaxWidth()` and `getMaxHeight()`, which are 0 there. |
 | The path on the row looks wrong | `setFinalPath()` was given a path that is not a full path inside the site. |
@@ -487,22 +486,9 @@ PLG_ALFA_MEDIA_WEBP_XML_DESCRIPTION="Stores gallery images and their thumbnails 
 Install the plugin through Joomla's Extensions: Install and enable it under Extensions: Plugins. The conventions of
 the manifest are explained in the [Plugin overview](./overview.md#the-manifest).
 
-## Changed in 2.2.0
-
-- Every image gets a real thumbnail at the size set in Options. Before, an uploaded image used its full file as its
-  thumbnail. So `onAlfaMediaThumbnail` now fires for uploads too.
-- Tools > Media can make thumbnails again in the background. `onAlfaMediaThumbnail` fires there as well.
-- A file name is free only when no file and no image row uses it in any extension. A plugin that changes the
-  extension no longer risks overwriting another item's image.
-- A plugin that claims a thumbnail and writes no file leaves the image without a thumbnail, instead of a thumbnail
-  path that points at nothing.
-- Two images never share one file, and deleting an image removes only files no other image uses.
-- An image's description holds at most 75 characters (`MediaHelper::ALT_MAX_LENGTH`). A longer one is shortened at
-  save and staff are told. The REST API refuses a longer one.
-
 ## Not documented yet
 
 - Settings that differ by what the image belongs to (a different size for items than for categories, for example).
   The event gives `getOrigin()`, but no shipped plugin shows a settings layout for it.
 - How a media plugin behaves for images written through the REST API.
-- A sample checked against a shipped media plugin. None ships in 2.2.0.
+- A sample taken from a shipped media plugin. None ships.

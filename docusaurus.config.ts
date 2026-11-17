@@ -48,7 +48,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           editUrl:
-            'https://github.com/Easylogic-CO-LP/Alfa-Commerce-Manual/tree/main/',
+            'https://github.com/Easylogic-CO-LP/Alfa-Commerce-Manual/edit/main/',
         },
         blog: false,
         theme: {
@@ -125,6 +125,10 @@ const config: Config = {
             {
               label: 'Contributing',
               to: '/docs/getting-started/contributing',
+            },
+            {
+              label: 'Help improve this Manual',
+              to: '/docs/getting-started/improve-the-manual',
             },
           ],
         },

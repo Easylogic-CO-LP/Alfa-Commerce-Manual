@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 111 tables of Alfa Commerce 2.2.1, grouped by area, with what each holds and how the schema changes between releases.
+description: The 111 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -21,9 +21,8 @@ The install file creates **111 tables**. Every name starts with `#__alfa_` (Joom
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh 2.2.0 site with one content language (English) holds 126 tables: these 111, fourteen more language tables
-and the standard shipping plugin's log table. This was counted on a test installation. The install file of 2.2.1
-creates the same 111 tables.
+A fresh site with one content language (English) holds 126 tables: these 111, fourteen more language tables and the
+standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
 that holds the link. The database enforces only three of these links with a foreign key (they are marked "foreign
@@ -326,7 +325,7 @@ Text that can be translated is not stored in the tables above. For each translat
 table per published content language, named `<base table>_<language>`, for example `#__alfa_items_en_gb` and
 `#__alfa_items_el_gr`. Each has the id of the base record and one column per translated field.
 
-In 2.2.0 sixteen base tables have language tables: `cart_rules`, `categories`, `discounts`, `document_types`,
+Sixteen base tables have language tables: `cart_rules`, `categories`, `discounts`, `document_types`,
 `form_field_groups`, `form_fields`, `inventory_locations`, `item_combinations`, `item_field_values`, `item_fields`,
 `items`, `manufacturers`, `orders_statuses`, `payments`, `shipments` and `taxes`.
 
@@ -347,24 +346,20 @@ A plugin declares the columns of its log in its `params/logs.xml` file. The plug
 
 ### Pair keys on the link tables
 
-A link table has two id columns and one row per link. Since 2.0.1 the primary key of every link table is the pair
-of ids, so the database itself refuses the same link twice. The 36 tables above marked "pair key" are these tables.
-The update file `2.0.1.sql` adds the key to 32 of them. The other four (`item_combination_values`,
-`orderstatus_recipients`, `payment_shipments` and `shipment_taxes`) are not in that file.
+A link table has two id columns and one row per link. The primary key of every link table is the pair of ids, so the database itself refuses the same link twice. The 36 tables above marked "pair key" are these tables.
 An insert of a pair that is already there is refused by the database.
 
 ### One collation
 
-Since 2.1.1 every table is `utf8mb4_unicode_ci`, as Joomla's own tables are, so a text column of one table can be
+Every table is `utf8mb4_unicode_ci`, as Joomla's own tables are, so a text column of one table can be
 compared with a text column of any other. Only a few columns carry a binary collation of their own: five hash and
 key columns that must compare bytes, and the `params` column of `#__alfa_payments`. If your plugin creates a table, give it the same collation, or a query that joins it to an
 Alfa table can fail with "Illegal mix of collations".
 
-### Wider record numbers in 2.2.0
+### Wide record numbers
 
-The tables that grow fastest have a `bigint` id since 2.2.0: `#__alfa_inventory_movements`,
-`#__alfa_inventory_operations` and `#__alfa_order_activity_log`. `#__alfa_tasks` has had one since it was added in
-2.1.4. Do not store these ids in a 32-bit integer column or variable.
+The tables that grow fastest have a `bigint` id: `#__alfa_inventory_movements`, `#__alfa_inventory_operations`,
+`#__alfa_order_activity_log` and `#__alfa_tasks`. Do not store these ids in a 32-bit integer column or variable.
 
 ## How the schema changes between releases
 
@@ -372,25 +367,19 @@ The tables that grow fastest have a `bigint` id since 2.2.0: `#__alfa_inventory_
 
 Joomla records the schema version of the component. On an update it runs every file in
 `administrator/sql/updates/mysql/` that is newer than the recorded version, in order. A change to the schema is
-therefore written twice: in the install file, for new shops, and in a new update file, for shops that already exist.
+therefore written twice: in the install file, for new shops, and in a new update file, named after its release, for
+shops that already exist.
 
-| File | What it changes |
-|---|---|
-| `2.0.0.sql` | Empty. 2.0.0 is the starting point |
-| `2.0.1.sql` | The pair keys on the link tables |
-| `2.1.0.sql` | Adds `#__alfa_maintenance` and `#__alfa_refund_report_outcomes`, indexes for the back office pages, and `shipments.price_entry_mode` |
-| `2.1.1.sql` | Converts the tables that had another collation to `utf8mb4_unicode_ci` |
-| `2.1.4.sql` | Adds `#__alfa_tasks` and `#__alfa_task_slots`, and five columns on `#__alfa_notifications` (the language keys of a notification, their parameters and the time of its last write) |
-| `2.2.0.sql` | The wider ids, `items.projection_dirty_at`, `document_items.tax_name`, `media.thumbnail_origin`, text columns for the tax name of an order line and the tax chain of a parcel, a new index on the tasks, and the rows of the job runner's slots |
-
-The installer's own script, `script.php`, works beside these files. For example, before `2.0.1.sql` adds the pair
-keys it reduces any link written twice to one row.
+The installer's own script, `script.php`, works beside these files. When you update Alfa Commerce, it drops the
+columns no code reads any more, adds the columns a table lacks, reduces any link written twice to one row before a
+pair key is added, and starts the rebuild of the stored prices in the background when a release changes how they are
+worked out.
 
 ### What can go wrong
 
 | What happens | Why |
 |---|---|
-| The installer refuses to update a 1.x shop | There is no update file older than 2.0.0. An Alfa Commerce older than 2.0.0 cannot be updated in place |
+| The installer refuses to update a 1.x beta shop | The update files start from the first stable release, so a 1.x beta cannot be updated in place |
 | The installer refuses to install over kept tables | The tables are at another schema version than the one this install file creates. The version is read from `#__alfa_meta` before anything is changed |
 | A statement in an update file fails and the update goes on | The statement carries Joomla's marker `/** CAN FAIL **/`. It is used where a second run must not stop, for example a key that already exists |
 

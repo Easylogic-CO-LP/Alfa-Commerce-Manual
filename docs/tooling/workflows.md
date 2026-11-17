@@ -16,20 +16,20 @@ pull request as one check, green or red.
 
 | Check (workflow, job) | Runs on | Can a finding block a merge |
 |---|---|---|
-| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). It turns red only when the tool or its commit step breaks. |
-| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
-| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge. A finding turns the check red. See [PHPStan](./phpstan). |
-| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
-| Security Scan, **PHP security scan** (job `php-security`) | Same | Not today: no check is required for a merge. Any finding turns it red. |
-| Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
+| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | No: not a required check (see [Branch rules](#branch-rules)). It turns red when the tool or its commit step breaks. |
+| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
+| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). A finding beyond the baseline turns it red. See [PHPStan](./phpstan). |
+| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). |
+| Security Scan, **PHP security scan** (job `php-security`) | Same | No: not a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
+| Security Scan, **secret scan** (job `secret-scanning`) | Same | Yes: a required check (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
 | Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
 Whether a red check stops a merge is decided by the repository's branch rules on GitHub, not by the workflow files.
 
 ### Branch rules
 
-The rules of the two branches are settings of the repository (two rulesets), read on 13 November 2026. They can
-change without a change in the code.
+The rules of the two branches are settings of the repository, two rulesets named Develop and Main. They can change
+without a change in the code.
 
 | | `developer` | `main` |
 |---|---|---|
@@ -38,9 +38,11 @@ change without a change in the code.
 | The last push must be approved by someone else | No | Yes |
 | Force push | Refused | Refused |
 | Linear history | Not asked | Required |
-| Required checks | None | None |
+| Required checks | Copy-clean, `security-scan` (CodeQL), `secret-scanning` and PHPStan | The same four |
+| The branch must be up to date before the merge | Yes | Yes |
 
-So today no automated check has to be green for a merge. The checks inform the people who review and merge.
+So these four checks must be green before a pull request is merged. PHP CS Fixer and the PHP security scan
+(`php-security`) are not required: they inform the people who review and merge, as the AI review does.
 Organisation and repository administrators may bypass these rules.
 
 No workflow runs a test suite, builds the installable package or publishes a release.
@@ -56,7 +58,7 @@ sequenceDiagram
     GitHub->>Checks: Start the jobs (pull requests into main or developer)
     Checks->>GitHub: PHP CS Fixer commits its fixes to your branch
     Checks->>GitHub: Copy-clean, CodeQL and the secret scan answer green or red
-    Checks->>GitHub: PHPStan prints its findings and stays green
+    Checks->>GitHub: PHPStan answers green or red and prints its findings
     GitHub->>Review: Start the review (a pull request from this repository)
     Review->>GitHub: Comments on the changed lines and a summary
     GitHub->>You: The checks and the comments on the pull request
@@ -93,7 +95,8 @@ File: `.github/workflows/code-quality.yml`. Three jobs.
 | What it does | Checks out the branch of the pull request from the pull request's own repository (so a fork's branch is found), formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. |
 | What makes it fail | Only a step that breaks: the tool cannot run, or the commit cannot be made. Badly formatted code does not fail it, it gets fixed. |
 
-Details and the local command: [PHP CS Fixer](./php-cs-fixer).
+On a pull request from a fork the job cannot push to the fork's branch: when the fixer changes a file there, the
+commit step fails and the job turns red. Running the fixer on your computer before you push is required. Details and the local command: [PHP CS Fixer](./php-cs-fixer).
 
 ### Copy-clean
 
@@ -114,7 +117,7 @@ Run it yourself from the root of the repository, with the same command as the wo
 php scripts/copy-clean/copy-clean-gate.php --package=. --allow=scripts/copy-clean/copy-clean-allow.json
 ```
 
-A clean run of 2.2.1 ends with these two lines:
+A clean run ends with two lines like these:
 
 ```text
 copy-clean gate: 1676 shipped files, 1666 judged; 44 occurrence(s) allowed by 44 entries; 0 not allowed
@@ -122,7 +125,7 @@ copy-clean gate: 1676 shipped files, 1666 judged; 44 occurrence(s) allowed by 44
 ```
 
 The gate checks itself too: it fails when its planted test lines reach a rule its list does not name, or the list
-names one no planted line reaches. The file counts follow the code (2.2.0: 1640 and 1630, 17 checks).
+names one no planted line reaches. The file counts follow the code.
 
 ### PHPStan
 
@@ -133,8 +136,7 @@ names one no planted line reaches. The file counts follow the code (2.2.0: 1640 
 | What it does | Installs PHPStan 2.3.5 and downloads Joomla 6.2.0 into the folder `joomla`, each checked against its sha256, then analyses the code with `phpstan.neon` and prints its findings on the run's page. |
 | What makes it fail | Any finding beyond the baseline, or a step that breaks. |
 
-Details and the local command: [PHPStan](./phpstan). (On 2.2.0 the job ran on PHP 8.2 with the latest Joomla and an
-unnamed PHPStan, and `continue-on-error` kept it green whatever PHPStan found.)
+Details and the local command: [PHPStan](./phpstan).
 
 ## Security Scan
 
@@ -144,7 +146,7 @@ to them.
 | Job | What it does | What makes it fail |
 |---|---|---|
 | `security-scan` | CodeQL, GitHub's code scanner. It is set up for one language group, `javascript-typescript`, with the query set `security-extended`. It does not analyse the PHP code. | A step that breaks. What happens with the alerts it reports depends on the repository's settings, which are not part of the code. |
-| `php-security` | Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. (On 2.2.0 the job installed a checker of Composer dependencies, which skipped its scan for want of a `composer.lock`.) | Any finding, or a step that breaks. |
+| `php-security` | Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. | Any finding, or a step that breaks. |
 | `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords. It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
 
 The actions of Code Quality and Security Scan run from a fixed commit. TruffleHog's action is fixed at v3.99.9; the
@@ -180,8 +182,7 @@ holds, in this order:
 - What not to flag: style, PHPStan findings, and file differences on a development site.
 
 One heading of the rulebook still reads "Namespaces (PSR-4, Joomla 6/7)": Joomla 7 is refused by the installer.
-Trust this manual and the code where the rulebook differs. (Up to 2.2.0 the rulebook also named an uninstall SQL file
-and a `files/removed` folder, which do not exist, and lacked some of the shipped plugins and modules.)
+Trust this manual and the code where the rulebook differs.
 
 ## What happens next
 
@@ -213,13 +214,9 @@ On the pull request page:
   needs PHP 8.3 or newer.
 - Fixed versions: PHPStan 2.3.5, Joomla 6.2.0, Semgrep 1.185.0 and the rules' commit, TruffleHog's action at
   v3.99.9. PHP CS Fixer and TruffleHog's scanner image are not fixed, so their results can change by themselves.
-- Up to 2.2.0: PHP 8.2 for PHP CS Fixer, PHPStan and the dependency check, no version named for PHP CS Fixer or
-  PHPStan, and the latest Joomla on the day of the run.
 
 ## Not documented yet
 
-- Whether PHP CS Fixer can commit to a pull request that comes from a fork. (The AI review does not run for such a
-  pull request.)
 - What the AI review answers when a comment with `@claude` asks a question. The workflow passes the same review
   instructions for every start.
 - Whether a CodeQL alert turns the `security-scan` check red.

@@ -15,8 +15,8 @@ pages.
 Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. All the events on this page are **announced
 to everyone** (broadcast events): list them in `getSubscribedEvents()`.
 
-No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page were
-checked line by line against the classes of 2.2.0.
+No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page follow
+the classes line by line.
 
 ## What it does
 
@@ -82,10 +82,10 @@ plugin included. Alfa loads the `alfa` group first.
 | `message()` | The message as stored, or an empty string. |
 | `url()` | The link as stored, or an empty string when there is none or it was not safe. |
 | `change()` | What the write did: `NotificationPushedEvent::CHANGE_NEW` (a new notification), `CHANGE_UPDATED` (an existing one was updated and keeps its read and dismissed state) or `CHANGE_REALERTED` (an existing one was raised again and is unread once more). |
-| `titleKey()` | The language key of the headline, or an empty string for plain text. Since 2.1.4. |
-| `messageKey()` | The language key of the message, or an empty string. Since 2.1.4. |
-| `arguments()` | The values that fill the keys: an array with the entries `title` and `message`. Empty for plain text. Since 2.1.4. |
-| `textDomain()` | The extension whose language files hold the keys, for example `com_alfa`. Empty for plain text. Since 2.1.4. |
+| `titleKey()` | The language key of the headline, or an empty string for plain text. |
+| `messageKey()` | The language key of the message, or an empty string. |
+| `arguments()` | The values that fill the keys: an array with the entries `title` and `message`. Empty for plain text. |
+| `textDomain()` | The extension whose language files hold the keys, for example `com_alfa`. Empty for plain text. |
 
 The values are the notification as it was written, not as the producer passed them. The event has no setters.
 
@@ -193,13 +193,13 @@ your handler does not run on every page.
 
 | Method | Meaning |
 |---|---|
-| `screen()` | The screen being built. In 2.2.0 it is `dashboard` (`CardRegistry::SCREEN_DASHBOARD`). |
+| `screen()` | The screen being built. It is `dashboard` (`CardRegistry::SCREEN_DASHBOARD`). |
 | `top($contributor, $id, $title)` | A card across the full width, above everything. |
 | `metrics($contributor, $id, $title)` | A card in the row of figures. |
 | `main($contributor, $id, $title)` | A card in the wide column. |
 | `side($contributor, $id, $title)` | A card in the narrow column beside it. |
 | `bottom($contributor, $id, $title)` | A card across the full width, at the end. |
-| `addCard($contributor, DashboardSurface $surface, $id, $title)` | The same, with the place held in a variable. The places are the cases of `DashboardSurface`: `Top`, `Metrics`, `Main`, `Side`, `Bottom`. Since 2.2.0. |
+| `addCard($contributor, DashboardSurface $surface, $id, $title)` | The same, with the place held in a variable. The places are the cases of `DashboardSurface`: `Top`, `Metrics`, `Main`, `Side`, `Bottom`. |
 | `getCards()` | For Alfa. Do not call it. |
 
 `$contributor` is your plugin's name, `group.element`. `$id` is a name of your own for the card. `$title` is a
@@ -216,7 +216,7 @@ you go on with:
 | `icon($name)` | An icon the layout knows. `card.metric` knows `receipt`, `clock`, `coins`, `box` and `list`. |
 | `url($url)` | Where the card links. |
 | `when($function)` | A function that returns `false` to hide the card from the current viewer, for example by a permission. |
-| `live()` | Work the card out on every request and never from the five minute copy. Since 2.2.0. |
+| `live()` | Work the card out on every request and never from the five minute copy. |
 
 **What you are expected to do.** Return at once when the screen is not one you know. Otherwise declare your cards.
 
@@ -287,7 +287,7 @@ On the check, a `SetupCheck` (`administrator/src/Setup/SetupCheck.php`), you go 
 | `priority($number)` | The position in the list, higher first. |
 | `tour($uid)` | The id of a guided tour that teaches the task. |
 | `provision($function)` and `choice($name, $label, $options)` | A one-click fix and the questions it asks first. See "Not documented yet". |
-| `reasonArguments($arguments, $unnamed)` | Since 2.2.1. Names what the reason is about. `$arguments` is a function that returns the values for the placeholders of the reason's language string, as plain text; the checklist escapes them. `$unnamed` is a language key without placeholders, said instead when the values cannot be read. `reasonFor()` and `reasonArgumentsNow()` are for Alfa: do not call them. |
+| `reasonArguments($arguments, $unnamed)` | Names what the reason is about. `$arguments` is a function that returns the values for the placeholders of the reason's language string, as plain text; the checklist escapes them. `$unnamed` is a language key without placeholders, said instead when the values cannot be read. `reasonFor()` and `reasonArgumentsNow()` are for Alfa: do not call them. |
 
 **What you are expected to do.** Add a check only for something the shop owner must set up for your plugin to work.
 
@@ -339,17 +339,6 @@ These events also ask "who adds something?". Each is described where it is used.
 | Your card or your check shows `PLG_...` | Your plugin's language file does not hold the key, or is not loaded. See [Extending Admin Screens](../plugins/admin-screen-plugins.md#your-own-language-file). |
 | Your card does not change for some minutes | The dashboard keeps its cards for five minutes. Use `live()` only for a card that must be current. |
 | Your card is missing and there is no error on the page | Its data failed or was empty, or it has no layout. Look in the log, category `com_alfa.cards`. |
-
-## Changed in 2.2.0 and 2.1.4
-
-- **Changed in 2.2.0.** A card and a setup check take the plugin's name, `group.element`, as their first argument.
-- **Since 2.2.0.** `addCard()` and `live()` exist. A card whose data is empty is not drawn.
-- **Changed in 2.1.4.** A notification is stored as a language key with its values. `push()` accepts a
-  `NotificationText`. The event gained `titleKey()`, `messageKey()`, `arguments()` and `textDomain()`, and `group()`
-  returns a language key for Alfa's own notifications.
-- **Changed in 2.1.4.** `onAlfaNotificationPushed` is announced for a notification raised during a save only once
-  the whole save is finished, and never for a change that was undone.
-- **Since 2.1.1.** `onAlfaNotificationPushed` exists.
 
 ## Not documented yet
 

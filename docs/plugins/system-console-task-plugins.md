@@ -280,7 +280,7 @@ PLG_SYSTEM_SHOPNOTES_XML_DESCRIPTION="Notes completed orders in Joomla's log."
 | The tool is not listed on Tools | The plugin lists the tool and declares no `onExecuteToolAction` (Alfa shows a tool only when its plugin can run it), or the tool names no surface with `meta('surface', ...)`. |
 | The targeted method is never called | The event name was put in `getSubscribedEvents()`. A targeted event is never delivered from there. |
 | Alfa's log says an event is listed in both places | The same name is in `getSubscribedEvents()` and in `getTargetedHandlers()`. |
-| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group that declares `onClearData` in a public `getTargetedHandlers()`, enabled or not (since 2.2.1; Clear everything calls it too). If yours is missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
+| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group that declares `onClearData` in a public `getTargetedHandlers()`, enabled or not. If yours is missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
 
 ## The system plugin that ships: Alfa Commerce Sync
 
@@ -318,7 +318,7 @@ The plugin must also run for visitors who are not logged in. Enabled with an Acc
 other than Public or Guest), Joomla does not run it for them, and its page cache rule does not apply to them. See
 [Caches](../architecture/caches.md#the-page-cache-rule).
 
-The warnings (2.2.0 said nothing of the page cache):
+The warnings:
 
 - The warning for a disabled or missing plugin says first that Alfa Commerce's own pages and modules still keep a
   visitor's cart, checkout details and order out of Joomla's "System - Page Cache", and then what is lost: a shopper
@@ -396,9 +396,9 @@ disabled.
 
 ## Task plugins
 
-Alfa Commerce 2.2.0 ships no task plugin.
+Alfa Commerce ships no task plugin.
 
-Alfa has background work of its own (tasks and jobs, under Tools > Tasks). In 2.2.0 only Alfa Commerce itself
+Alfa has background work of its own (tasks and jobs, under Tools > Tasks). Only Alfa Commerce itself
 creates them. The lists of what can run are fixed inside Alfa, and writing a task or a job with a name Alfa does not
 know is refused. An extension cannot register its own.
 
@@ -411,18 +411,6 @@ listener of `onOrderStatusChange`: Alfa records each listener's run as part of a
 one again.
 
 The background work engine is described on its own page, [Background work](../architecture/background-work.md).
-
-## Changed in 2.2.0
-
-- New: a plugin of a group Joomla loads itself declares targeted handlers with a public `getTargetedHandlers()` and
-  names no Alfa class or interface on its class line.
-- `onCartTotals`, `onOrderPlaceValidate` and `onCartItemDisplay` go only to plugins of the `alfa` group. A system
-  plugin that used them must move that code to a feature plugin.
-- The console commands come with "Console - Alfa Commerce". The update removes "Console - Alfa Inventory";
-  `alfa:inventory:audit` keeps its name, so existing cron lines keep working.
-- The scheduled task "Alfa - Prepare list prices for customer groups" and its task plugin are removed by the
-  update. Alfa's own background work does that job now.
-- The shop's background work no longer needs a cron job. `alfa:tasks:run` remains for servers that prefer one.
 
 ## Not documented yet
 

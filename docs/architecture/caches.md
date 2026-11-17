@@ -16,7 +16,7 @@ This page covers two different things:
 
 - **Alfa Commerce's own caches.** Small stored answers, such as the dashboard's cards.
 - **Joomla's page cache.** The plugin "System - Page Cache" stores whole pages for visitors who are not logged in.
-  Alfa does not own it, but since 2.2.0 it tells it which pages must never be stored.
+  Alfa does not own it, but it tells it which pages must never be stored.
 
 ## What it does
 
@@ -46,7 +46,7 @@ Two more caches belong to the items module (`mod_alfa_items`), not to the compon
 | What is kept | For how long | Notes |
 |---|---|---|
 | The module's list of items | The module's own cache time, when the module's caching is on | One copy for each module, source, ordering, page, price setting of the visitor and stock setting. A "recently viewed" or random list is never cached. A page that shows a visitor's own, non-empty "recently viewed" list is also kept out of Joomla's page cache. |
-| The ranking of best sellers | Set by the module's field "Refresh the best-sellers ranking every (minutes)", 60 unless changed. 0 switches it off. The ranking is kept for the minutes the field says. (In 2.2.0 it was kept 60 times as long: 60 hours for the value 60.) | The ranking is the same for every visitor. What a visitor may see is applied when the list is read. |
+| The ranking of best sellers | Set by the module's field "Refresh the best-sellers ranking every (minutes)", 60 unless changed. 0 switches it off. The ranking is kept for the minutes the field says. | The ranking is the same for every visitor. What a visitor may see is applied when the list is read. |
 
 ### What an update cleans
 
@@ -55,11 +55,11 @@ An update of Alfa Commerce cleans, once and by itself:
 - Joomla's page cache (the group `page`);
 - the eight `com_alfa.` groups of the table above.
 
-So no page or card stored by the earlier version is served by the new one. Nothing has to be cleared by hand. If a
+So no page or card stored before the update is served after it. Nothing has to be cleared by hand. If a
 group cannot be cleaned, that is written to the maintenance log and the update goes on; the group's entries then run
 out by themselves.
 
-The update also cleans both caches of the items module (the group `mod_alfa_items`; 2.2.0 did not). It does not
+The update also cleans both caches of the items module. It does not
 clean other extensions' caches.
 
 ### The page cache rule
@@ -73,8 +73,7 @@ plugin disabled. A shop that does not use it stores no whole pages, and nothing 
 
 The cart page, and every page of a visitor whose session holds a cart, typed checkout details, or a currency or a
 place of their own (the session keys `alfa.currency_id` and `alfa.location_id`, which the storefront's prices
-follow), are never stored. Such a visitor is also never given a stored page. Every other page is cached as before.
-The rule came in 2.2.0; the currency and the place joined it in 2.2.1.
+follow), are never stored. Such a visitor is also never given a stored page. Every other page is cached.
 
 Alfa answers two questions that Joomla's page cache asks. Joomla's page cache works only on a GET request of a
 visitor who is not logged in, and only while no message is waiting to be shown:
@@ -140,14 +139,10 @@ plugin does is the other half: it keeps a visitor with items in the cart, typed 
 place of their own from being given a page stored for another visitor. Without it, such a shopper can be shown a
 stored page with an empty cart module and the shop's own prices, until the cache time ends.
 
-In 2.2.0 nothing replaced the plugin. This was tried on a 2.2.0 test shop with Joomla's page cache on: with the
-plugin disabled, the cart page and the pages of a visitor with a cart were stored, and a new visitor who asked for
-the cart page was shown the stored cart of another visitor.
-
 What to do:
 
-- Keep "System - Alfa Commerce Sync" enabled, with its Access set to Public. Installing or updating Alfa Commerce
-  enables it again.
+- Keep "System - Alfa Commerce Sync" enabled, with its Access set to Public. A new installation of Alfa Commerce
+  enables it; an update keeps it in the state staff left it.
 - If it must be disabled for a time, switch "System - Page Cache" off for that time.
 
 The warning that Alfa shows on its administrator pages while the plugin is disabled, and a warning of its own for a
@@ -165,9 +160,8 @@ serve.
 
 - You write a module, a template override or a plugin whose output differs from one visitor to the next.
 - A figure on the dashboard, or a category in the menu, does not change right after you changed your data.
-- You are asked why a shopper saw somebody else's cart. On 2.1 with the page cache on, that could happen. 2.2.0
-  closed it while "System - Alfa Commerce Sync" runs for visitors who are not logged in, and 2.2.1 closes it for
-  Alfa's own pages whatever the plugin's state.
+- You are asked why a shopper saw somebody else's cart. Alfa's own pages and modules never show one visitor's cart
+  to another, whatever the state of "System - Alfa Commerce Sync"; see "What can go wrong" below.
 
 ## What you must provide
 
@@ -251,9 +245,9 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
 
 ### If your data changes and a cached Alfa view must follow
 
-2.2.0 has no event with which a plugin tells Alfa "clear your cache". What exists:
+No event lets a plugin tell Alfa "clear your cache". What exists:
 
-| Cached view | What a plugin can do in 2.2.0 |
+| Cached view | What a plugin can do |
 |---|---|
 | A dashboard card of your own | Mark it `live()` when it must be current on every request. A live card is worked out every time and never read from the 5 minute copy. Use it only where needed: its work is then done on every request of the dashboard. See [Notification and setup events](../events/notification-and-setup-events.md). |
 | A dashboard card that may be up to 5 minutes old | Nothing. It refreshes by itself. |
@@ -272,7 +266,7 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
 
 | What you see | The usual cause |
 |---|---|
-| A shopper sees another shopper's cart or details | The shop is on 2.1 with the page cache on, or on 2.2.0 with "System - Alfa Commerce Sync" disabled or with an Access that visitors who are not logged in do not hold. Or the content is your own extension's and you have not answered the two page cache events. On 2.2.1, never through Alfa's own pages and modules, whatever the plugin's state. |
+| A shopper sees another shopper's cart or details | The content is your own extension's and you have not answered the two page cache events. Alfa's own pages and modules keep themselves out, whatever the state of "System - Alfa Commerce Sync". |
 | A shopper with items in the cart is shown a page whose cart module is empty | "System - Alfa Commerce Sync" is disabled, not installed, or not run for visitors who are not logged in, so the page cache gave that shopper a page stored for another visitor. Enable it with its Access set to Public, or switch "System - Page Cache" off. |
 | Your module shows the same personal content to everybody | Joomla's page cache or the module's own cache stored it. Answer the two events, and do not cache personal output in the module. |
 | A new category does not appear in the storefront's menu | It was written to the database directly, past Alfa's own save. Clear the group `com_alfa.categories` under System > Clear Cache. |
@@ -281,17 +275,10 @@ answer. See [Search engine plugins](../plugins/search-plugins.md).
 | The cart page is slow under load | It is never served from the page cache. That is on purpose. |
 | After an update the log has "the cache group ... could not be cleaned" | The cache storage refused. The entries run out by themselves, or clear them under System > Clear Cache. |
 
-## Changed in 2.2.0
-
-- **Since 2.2.0.** The page cache rule above. On 2.1, a shop with "System - Page Cache" on could show one visitor's
-  cart page, cart module and order-completed page to another visitor.
-- **Since 2.2.0.** The update cleans the page cache and Alfa's own caches once.
-- **Since 2.2.0.** `live()` on a dashboard card, and `responseSpecific` on a search result.
-
 ## Not documented yet
 
 - A supported way for a plugin to clear one of Alfa's cache groups. The classes that own the groups have public
-  methods that clear them, but 2.2.0 does not present them as something for extensions to call, so they are not
+  methods that clear them, but Alfa does not present them as something for extensions to call, so they are not
   described here.
 - The exact keys under which each group files its entries.
 - How Joomla's page cache itself works, and its options. See Joomla's own documentation.

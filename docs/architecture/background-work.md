@@ -1,7 +1,7 @@
 ---
 sidebar_position: 10
 title: Background work
-description: How Alfa Commerce records follow-up work with a save, runs it, tries it again, finishes it and shows its outcome, and what an extension can and cannot do with it in 2.2.1.
+description: How Alfa Commerce records follow-up work with a save, runs it, tries it again, finishes it and shows its outcome, and what an extension can and cannot do with it.
 ---
 
 # Background work
@@ -36,7 +36,7 @@ The words "the save is final" (the **commit**), "transaction" and "lock" are exp
 
 ## What an extension author must know first
 
-**In 2.2.0 only Alfa Commerce itself creates background work. A plugin cannot register a task or a job of its own.**
+**Only Alfa Commerce itself creates background work. A plugin cannot register a task or a job of its own.**
 
 - The kinds of work that can run are two fixed lists inside Alfa. Nothing adds to them: no event, no setting, no
   naming rule.
@@ -113,7 +113,7 @@ stateDiagram-v2
     resolved --> [*]: deleted after 30 days
 ```
 
-A seventh word, `cancelled`, exists in the table's description. Nothing in 2.2.0 sets it.
+A seventh word, `cancelled`, exists in the table's description. Nothing in Alfa Commerce sets it.
 
 ### When it first runs
 
@@ -163,7 +163,7 @@ The name in the first column is what Tools > Tasks shows. The name in code style
 
 | Kind of task | What it does | Tried again by itself after a failure | If the request stopped in the middle | What staff can do when it is failed or held | Kept when done |
 |---|---|---|---|---|---|
-| Stock movement after a status change (`order.stock`) | Applies the stock movement the status change asks for. What it cannot apply is left to the job "Apply outstanding stock movements". | Yes, with the waits above, and a failure that stays raises a notice in Tools > Tasks and the bell (in 2.2.0 a failure was only logged). | Run again | Mark resolved | 7 days |
+| Stock movement after a status change (`order.stock`) | Applies the stock movement the status change asks for. What it cannot apply is left to the job "Apply outstanding stock movements". | Yes, with the waits above, and a failure that stays raises a notice in Tools > Tasks and the bell. | Run again | Mark resolved | 7 days |
 | Stock movement of a document that a stock plugin refused (`order.document_stock`) | Stands for a document whose stock movement a stock plugin refused on purpose. Run again tries the movement once the plugin allows it. | No. Its first run fails with the plugin's words and waits for staff. | Run again | **Run again**, Mark resolved | 30 days |
 | Download access after a status change or a payment (`order.entitlements`) | Gives or takes away the order's download access, by the status the order is in when it runs | Yes | Run again | Mark resolved | 7 days |
 | Documents after a status change or a payment (`order.documents`) | Issues the documents the status issues | Yes, for a failure such as a busy database. A document the shop's data refuses (no series, a missing tax number) raises its own alert and is not tried again. | Run again | Mark resolved | 7 days |
@@ -226,7 +226,7 @@ staff pressed, with the time, what started it and the user. Tools > Tasks shows 
 was sent (naming each recipient), an e-mail or a plugin reaction that failed or is held, a Resend, a Run again and a
 Mark resolved, with who did it. These entries stay after the task itself is deleted.
 
-**No event announces the end of a task.** In 2.2.0 a plugin cannot listen for "a task finished".
+**No event announces the end of a task.** A plugin cannot listen for "a task finished".
 
 ### How long a finished task is kept
 
@@ -317,7 +317,7 @@ they finish, so that nothing the second request meant is missed.
 | **Retry** | A failed job | Puts it back in the queue with its failures reset. It continues from where it stopped. Refused when another job for the same thing is already waiting or running. |
 | **Mark resolved** | A failed job | Closes it, with a reason |
 
-A job cannot be cancelled in 2.2.0.
+A job cannot be cancelled.
 
 ### How long a finished job is kept
 
@@ -346,14 +346,14 @@ The fields of one task in an answer:
 | `id` | Its number |
 | `type` | `single` or `job` |
 | `handler` | The kind, for example `order.status_email` or `search.rebuild` |
-| `owner` | Always `com_alfa` in 2.2.0 |
+| `owner` | Always `com_alfa` |
 | `scope` | What it covers: a job's scope, or for a task its subject, for example `order:15` |
 | `state` | One of the states above |
 | `done_units`, `total_units`, `percent` | Progress |
 | `run_after`, `created_at`, `started_at`, `finished_at`, `updated_at` | Times, in UTC |
 | `origin` | Where it was created: `admin`, `site`, `api` or `cli` |
 | `last_error` | The last error, shortened to 200 characters. Shown only to a caller with the Tools permission, otherwise `null`. |
-| `result` | Always `null` in 2.2.0 |
+| `result` | Always `null` |
 
 The answer of an API request that saves something also lists, under `meta.tasks`, the jobs that request started or
 joined. An order's answer lists the order's tasks too, each in the state it is in at that moment.
@@ -459,7 +459,7 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 
 | What you see | The usual cause |
 |---|---|
-| An error "No task handler is named ..." or "No job handler is named ..." | Code tried to create background work of a kind Alfa does not have. A plugin cannot add kinds in 2.2.0. |
+| An error "No task handler is named ..." or "No job handler is named ..." | Code tried to create background work of a kind Alfa does not have. A plugin cannot add kinds. |
 | Your `onOrderStatusChange` listener ran twice for one change | Staff pressed Run again. Make the listener safe to repeat. |
 | Your listener sees a user with id 0 | The engine carried the work on some other request. Take the actor from the event. |
 | A task "Plugin reactions to a status change" stays Failed | A listener threw an error. Alfa never repeats this kind by itself. Fix the cause, then Run again or Mark resolved. |
@@ -471,7 +471,7 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 
 ## Where it lives in the code
 
-For reading only. These classes are internal in 2.2.0.
+For reading only. These classes are internal.
 
 | What | File |
 |---|---|
@@ -484,22 +484,9 @@ For reading only. These classes are internal in 2.2.0.
 | The REST routes | `api/src/Controller/TasksController.php` |
 | The console commands | `plugins/console/alfa/src/Console/` |
 
-## Changed in 2.2.0
-
-- **Since 2.2.0.** Jobs exist, and the engine runs from shop pages, staff pages, the bell, API requests, cron and
-  web cron. In 2.1.4 only the bell and Tools > Tasks picked up unfinished tasks.
-- **Since 2.2.0.** A status change writes only the tasks that have something to do. With no listener of
-  `onOrderStatusChange` there is no plugin task.
-- **Since 2.2.0.** Each listener of `onOrderStatusChange` is a part of its own, so Run again calls only the ones not
-  done.
-- **Since 2.2.0.** A payment's or shipment's move of the order is a task written with the payment or shipment.
-- **Changed in 2.2.0.** The scheduled task "Alfa - Prepare list prices for customer groups" and its plugin are
-  removed. The work is a job. The console commands come with the plugin "Console - Alfa Commerce".
-- **Since 2.1.4.** Tasks exist: follow-up work is written with the change and run after the save is final.
-
 ## Not documented yet
 
-- A way for an extension to register its own task or job. None exists in 2.2.0. The API fields `owner` and `result`
+- A way for an extension to register its own task or job. None exists. The API fields `owner` and `result`
   and the filter `filter[owner]` are placeholders: they always read `com_alfa` and `null`.
 - The engine's PHP classes as something to call. They are internal, and this manual does not describe their methods.
 - The data each kind of task carries with it (its payload). It is internal and has no stated contract.
