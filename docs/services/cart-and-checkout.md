@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Cart and checkout
-description: The services behind the cart and the placement of an order in 2.2.1, what a plugin may read, what it may call, and where the save becomes final.
+description: The services behind the cart and the placement of an order, what a plugin may read, what it may call, and where the save becomes final.
 ---
 
 # Cart and checkout
@@ -12,7 +12,7 @@ A shopper's cart is calculated again on every request that shows it. When the sh
 turned into an order as one unit and then deleted. This page explains the classes that do this, and says for each
 whether an extension may use it.
 
-The cart is priced at its delivery place (since 2.2.1). Its goods and its carriage are
+The cart is priced at its delivery place. Its goods and its carriage are
 priced at one place: the place the request bound, else the place field of the delivery address. Item lists and
 item pages keep the visitor's own place.
 
@@ -103,7 +103,7 @@ $placeId  = $cart->delivery()->role('country')->int();
 ```
 
 `$postcodeFieldId` is the id of a checkout field that your method's settings name. A new shop ships a Postcode
-field (role `postcode`), with Address and City (a shop installed before 2.2.1 has none of its own). A carrier still
+field (role `postcode`), with Address and City. A carrier still
 names the field it reads in its settings, and a setting of type `checkoutfield` may start on a
 role's field with `defaultrole` (see [onCalculateShippingCost](../plugins/shipment-plugin-events.md#oncalculateshippingcost)).
 
@@ -172,8 +172,8 @@ if ($snapshot !== null && !$snapshot->isEmpty()) {
 browser), reading nothing. A module shown on every page asks it before `read()`, as the shipped cart module does, so
 a first-time visitor costs it no query. The shipped module then hands
 its layouts no reading (`$snapshot` is `null`): a template override of `tmpl/default.php` or `tmpl/default_items.php`
-must accept `null`. An override of `default_items.php` made from the 2.2.0 file returns early on `null`, so the drawer
-opens with no header, no close button and no "Your cart is empty" until it takes the shipped file's first lines.
+must accept `null`. An override of `default_items.php` that returns early on `null` opens the drawer with no header,
+no close button and no "Your cart is empty": take the shipped file's first lines into it.
 
 ### The methods
 
@@ -214,7 +214,7 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | `customer` | `User` | Whose cart it is |
 | `placeId` | `?int` | The delivery place of this request, and the place the cart's goods are priced at. |
 
-Its methods are `isEmpty()`, `exists()` and, since 2.2.0, `shippingAwaitsChoice()`: the cart needs shipping and no
+Its methods are `isEmpty()`, `exists()` and `shippingAwaitsChoice()`: the cart needs shipping and no
 shipping method is chosen yet, so the shipping cost is not known. It is not zero.
 
 `CartTotalsView`, each amount a `Money` object:
@@ -230,7 +230,7 @@ shipping method is chosen yet, so the shipping cost is not known. It is not zero
 | `shippingBenefit` | The shipping rule's own summary, as an object. Its properties are not documented here. |
 | `contributions` | The charges plugins added, as a list |
 | `grand`, `grandExcl` | What the shopper pays, with and without tax |
-| `contributionsNotLoaded` | Since 2.2.0. The plugins whose charge is missing because Joomla did not load them for the current user. See [When staff operate a customer's cart](../events/order-and-cart-events.md#when-staff-operate-a-customers-cart). |
+| `contributionsNotLoaded` | The plugins whose charge is missing because Joomla did not load them for the current user. See [When staff operate a customer's cart](../events/order-and-cart-events.md#when-staff-operate-a-customers-cart). |
 
 `CartMutationResult` has `succeeded`, `cartId` and `snapshot` (which is `null` when no reading was taken).
 `CartAddResult` has `added`, `lineId`, `line`, `itemCount`, `quantity` and `grandTotal`.
@@ -243,8 +243,7 @@ shipping method is chosen yet, so the shipping cost is not known. It is not zero
 grand total = line totals + shipping after shipping rules + plugin charges - cart rules
 ```
 
-Changed in 2.2.0. The old helper page said "items plus shipping". Plugin charges and cart rules are part of the
-total.
+Plugin charges and cart rules are part of the total, not only the items and the shipping.
 
 ## CartRepository
 
@@ -390,18 +389,7 @@ methods, and `discard()`. Its class comment says it is "not a plugin API and not
 | `read()` throws `InvalidArgumentException` | It was called with `CartResolution::Mutable` |
 | Your plugin is called in `onOrderAfterPlace` and finds no cart | The cart is deleted before the save is final. Read the order. |
 | An order exists but has no payment row | The payment plugin failed after the save was final. See the table above. |
-| Every order is refused with "its total is now" | A template override of the cart's items layout (`default_cart_items.php`) prints a `shown_total` other than the cart's grand total. The field is `<input type="hidden" form="cart-form" name="shown_total" value="CODE:minor units">`, for example `EUR:34720`. An override made before 2.2.1 that lacks the field is not compared at all, so the check is lost: add the field. |
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** `CartHelper` and `OrderPlaceHelper` no longer exist. `CartService` and `OrderPlacement`
-  replaced them, with other method names.
-- **Changed in 2.2.0.** The cart is deleted inside the save of the order, not after the "after place" events.
-- **Changed in 2.2.0.** A placement that fails after the save is final reports "placed, with warnings". It no
-  longer reports a failure for an order that exists.
-- **Changed in 2.2.0.** Placing an order does not write the `stock` column of an item. Stock is set aside through
-  the stock service. See [Stock events](../events/stock-events.md).
-- **Since 2.2.0.** `CartSnapshot::shippingAwaitsChoice()` and `CartTotalsView::contributionsNotLoaded`.
+| Every order is refused with "its total is now" | A template override of the cart's items layout (`default_cart_items.php`) prints a `shown_total` other than the cart's grand total. The field is `<input type="hidden" form="cart-form" name="shown_total" value="CODE:minor units">`, for example `EUR:34720`. An override that lacks the field is not compared at all, so the check is lost: add the field. |
 
 ## Not documented yet
 

@@ -1,6 +1,6 @@
 ---
 title: Item field plugin events
-description: "Every event an item field plugin receives in Alfa Commerce 2.2.1: when it fires, what it is given and what it must do."
+description: "Every event an item field plugin receives: when it fires, what it is given and what it must do."
 ---
 
 # Item field plugin events
@@ -88,7 +88,7 @@ layout by Alfa.
 | The plugin is disabled, missing or cannot be loaded | The field is not drawn. The page shows without it. |
 | The selector kind does not match the field's use | On a site in debug mode, an error. Otherwise a warning in Joomla's log, category `alfa-item-fields`. |
 | The layout file does not exist | Your layout is not drawn. Alfa falls back to a default layout of its own or to nothing. In debug mode a warning names the missing file. |
-| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an order's item. Whatever your method changed before the error is undone. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). (In 2.2.0 the page failed.) |
+| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an order's item. Whatever your method changed before the error is undone. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
 
 ## onItemListPrepare
 
@@ -191,9 +191,8 @@ written to Joomla's log (category `com_alfa.cart`), the item is not added, and t
 "invalid selection" message.
 
 :::note
-`ValidateCartAddEvent` had `setSnapshot()` and `setPriceImpact()` up to 2.2.0, which nothing read; 2.2.1 removes
-them, with `getSnapshot()` and `getPriceImpact()`.
-Store data with `onPrepareForCart` and change the price with `onCalculateItemPrice`.
+`ValidateCartAddEvent` only accepts or refuses. Store data with `onPrepareForCart` and change the price with
+`onCalculateItemPrice`.
 :::
 
 ## onPrepareForCart
@@ -276,8 +275,8 @@ and the price is worked out without your lines. On a site in debug mode the erro
 plugin is unavailable, see "When the plugin is unavailable" below.
 
 :::note
-`CalculateItemPriceEvent` had `setOverrideFinal()` up to 2.2.0, which nothing read; 2.2.1 removes it, with
-`getOverrideFinal()`.
+`CalculateItemPriceEvent` cannot replace the final price outright. It changes the price only through the lines
+above.
 :::
 
 ## onCartItemView
@@ -302,7 +301,7 @@ plugin is unavailable, see "When the plugin is unavailable" below.
 
 **If you are missing or you fail.** A missing plugin gets the standard "label: value". If you throw an error, the
 line shows the field as the standard "label: value" and the page renders; the error is logged once per plugin
-and event in the request (category `com_alfa.plugins`). (In 2.2.0 the page failed.)
+and event in the request (category `com_alfa.plugins`).
 
 ## onGetFieldActions
 
@@ -355,7 +354,7 @@ permission to edit orders.
 | Method | Outcome |
 |---|---|
 | `setLayout(string $layout)`, `setLayoutData(array $data)` | Show one of your layouts in a popup |
-| `setModalTitle(string $title)` | Read by nothing; deprecated since 2.2.1, and removed in 2.3.0. The popup's title is the action's label. |
+| `setModalTitle(string $title)` | Read by nothing, and deprecated: do not use it, it will be removed. The popup's title is the action's label. |
 | `addButton(string $label, array $opts = [])` | A footer button of the popup. Without options it closes. `['reload' => true]` closes and reloads. `['action' => 'id']` runs another of your actions in the same popup. |
 | `setMessage(string $message)` | Report a result |
 | `setError(string $message)` | Report a failure |

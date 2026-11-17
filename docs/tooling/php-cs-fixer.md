@@ -86,7 +86,7 @@ Two things that surprise contributors:
 
 ## Running it yourself
 
-The workflow sets up PHP 8.3 (8.2 up to 2.2.0) and asks for the tool `php-cs-fixer` without naming a version, so the
+The workflow sets up PHP 8.3 and asks for the tool `php-cs-fixer` without naming a version, so the
 repository pins none. Install PHP CS Fixer the way its own documentation describes, then run it from the root of the
 repository.
 
@@ -115,6 +115,9 @@ On a pull request the job does this, in order:
 
 You then have a commit on GitHub that you do not have on your computer. Pull before you commit again.
 
+On a pull request from a fork the job runs the same command, but it cannot write to the fork's branch. Run the
+command above on your computer before you push, so that the job finds nothing to fix.
+
 ## What can go wrong
 
 | What you see | Why | What to do |
@@ -126,7 +129,4 @@ You then have a commit on GitHub that you do not have on your computer. Pull bef
 
 ## Not documented yet
 
-- Whether the job can commit its fixes to a pull request that comes from a fork. The job checks out the branch from
-  the pull request's own repository, so a fork's branch is found; whether it can then push to that fork was not
-  tried.
 - Which version of PHP CS Fixer a run installs. The workflow names none.

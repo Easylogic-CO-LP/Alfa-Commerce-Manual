@@ -266,8 +266,7 @@ When staff operate a customer's cart and one of those plugins has an Access the 
 does not, Joomla does not load it for the staff member. A member of staff with the permission "Carts: Check out on
 behalf" still places the order with the plugin's part, because Alfa starts the plugin for the customer with its own
 settings, in the staff member's request. For staff without that permission the cart shows its totals without that
-plugin's part, says so, and the order cannot be placed from that screen. (In 2.2.0 every member of staff met the
-refusal.) See
+plugin's part, says so, and the order cannot be placed from that screen. See
 [When staff operate a customer's cart](./order-and-cart-events.md#when-staff-operate-a-customers-cart).
 
 ## Where the save becomes final

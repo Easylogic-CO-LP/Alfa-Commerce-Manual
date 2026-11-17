@@ -1,6 +1,6 @@
 ---
 title: Admin screen events
-description: "The list, edit, save and delete events a feature plugin hears on Alfa Commerce's administrator screens in 2.2.1."
+description: "The list, edit, save and delete events a feature plugin hears on Alfa Commerce's administrator screens."
 ---
 
 # Admin screen events
@@ -124,7 +124,7 @@ some staff may have the button, check their permission first (see "Permissions")
 - **What happens next.** Every plugin's markup is joined in order and printed at the slot. Nobody replaces anybody.
 - **If you are missing or you fail.** The slot prints nothing from you. Your error is logged.
 
-These slots exist in 2.2.0:
+These slots exist:
 
 | Slot | Where | Guard |
 |---|---|---|
@@ -134,7 +134,7 @@ These slots exist in 2.2.0:
 | `cartrule-sidebar` | Cart rule edit screen, in the side column | `$event->targets('cartrule') && $event->at('cartrule-sidebar')` |
 | `cart-main` | The screen of one cart, under its tabs | `$event->targets('cart') && $event->at('cart-main')` |
 
-The screen of one cart is an edit screen (in 2.2.0 it answered `isListScreen()` with true, like the carts list). `isListScreen()` is false there, and no row or bulk action event is raised on it.
+The screen of one cart is an edit screen. `isListScreen()` is false there, and no row or bulk action event is raised on it.
 
 ### Declaring a column
 
@@ -153,7 +153,7 @@ can replace your layout with its own file in `html/plg_<group>_<element>/<name>.
 
 :::note Where `after()` works
 A screen honours `after()` only for the column keys its template declares. Everywhere else, and for a key the screen
-does not know, your column is placed after the last column. Five lists declare keys in 2.2.0:
+does not know, your column is placed after the last column. Five lists declare keys:
 
 | List | Keys you may pass to `after()` |
 |---|---|

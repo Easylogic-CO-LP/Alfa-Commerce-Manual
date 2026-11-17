@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: Customers and configuration
-description: "The REST API routes for customers, customer groups, currencies, taxes, discounts, cart rules, places, payment and shipping methods, form fields and stock in Alfa Commerce 2.2.1."
+description: "The REST API routes for customers, customer groups, currencies, taxes, discounts, cart rules, places, payment and shipping methods, form fields and stock of Alfa Commerce."
 ---
 
 # Customers and configuration
@@ -34,15 +34,14 @@ remove the Joomla user itself, use Joomla's own route `v1/users`.
 
 `id_user` is required, and a create or change is refused with 400 and the reason when it names a Joomla user that
 does not exist, the id 0, or a user that another customer record already names. The administrator's customer form
-follows the same rule. (2.2.0 accepted them: [Known defects](./overview.md#known-defects-in-220), row 5.)
+follows the same rule.
 
 ## Customer groups
 
 `v1/alfa/usergroups`. A customer group is a Joomla user group with Alfa Commerce's price settings on it. Alfa
 Commerce makes the row by itself for every new Joomla group.
 
-**`prices_display` must be in the body of every write** (known defect, row 6). Read the record, change what you
-mean to change, and send the whole object back:
+A customer group's price settings are the object `prices_display`:
 
 ```json
 {
@@ -66,7 +65,7 @@ mean to change, and send the whole object back:
 }
 ```
 
-How `prices_display` is written (since 2.2.1; in 2.2.0 a part sent alone replaced the whole):
+How `prices_display` is written:
 
 - A `PATCH` changes only the settings of `prices_display` that it names, and keeps the others.
 - A setting sent empty (`""` or `null`) is removed from the group, which then takes the shop's own setting. A group
@@ -131,7 +130,7 @@ the tax applies.
 
 A change that alters prices leaves work for the price index, listed in the answer's `meta.tasks`.
 
-Reading a tax that does not exist answers 404 (500 in 2.2.0, known defect row 1).
+Reading a tax that does not exist answers 404.
 
 ## Discounts
 
@@ -157,7 +156,7 @@ Reading a tax that does not exist answers 404 (500 in 2.2.0, known defect row 1)
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`.
 
-Reading a discount that does not exist answers 404 (500 in 2.2.0, known defect row 1).
+Reading a discount that does not exist answers 404.
 
 ## Cart rules
 
@@ -179,7 +178,7 @@ a code applies by itself.
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `groups`.
 
 A cart rule is published or unpublished. It has no trash: `state` -2 is refused with 400, and the rule is deleted
-directly. Reading a cart rule that does not exist answers 404 (500 in 2.2.0, known defect row 1).
+directly. Reading a cart rule that does not exist answers 404.
 
 ## Places
 
@@ -193,8 +192,6 @@ directly. Reading a cart rule that does not exist answers 404 (500 in 2.2.0, kno
 `parent_id`, `state`, `ordering`.
 
 **One record holds:** the same without `currency_name`.
-
-Since 2.2.1:
 
 - A country (no `parent_id`) needs `code2` (two letters) and `code3` (three letters), stored in capitals, and has
   no `subdivision_code`. A place inside a country (`parent_id` set) stores neither `code2` nor `code3`: codes sent
@@ -219,8 +216,7 @@ the payment plugin that does the work. See [Payment plugins](../plugins/payment-
 }
 ```
 
-A create without `color` and `bg_color` takes the colours the method's edit form sets by default (in 2.2.0 it
-failed, known defect row 6).
+A create without `color` and `bg_color` takes the colours the method's edit form sets by default.
 
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `ordering`, `state`.
 
@@ -229,8 +225,7 @@ failed, known defect row 6).
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the method is offered.
 
-Deleting a method that an order used is refused with 409 and the reason, and nothing is deleted (in 2.2.0 it
-answered 204 and kept the method, known defect row 2). See [Status codes](./overview.md#status-codes) for the cases.
+Deleting a method that an order used is refused with 409 and the reason, and nothing is deleted. See [Status codes](./overview.md#status-codes) for the cases.
 
 The payments of one order are not here. They are under the order: see
 [Orders](./orders.md#payments).
@@ -313,7 +308,7 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 are never changed or deleted: a correction is a new movement in the other direction, so there is nothing to write
 here.
 
-Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`, and since 2.2.1 `filter[date_start]` and
+Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`, `filter[date_start]` and
 `filter[date_end]` (the movement's date) and `filter[item_id]` (the movements of one item).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,

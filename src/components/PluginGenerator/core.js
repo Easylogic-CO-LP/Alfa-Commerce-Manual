@@ -22,9 +22,6 @@ const SHIPPED = {
   system: ['alfasync'],
 };
 
-// The Alfa Commerce release the examples were installed and tested on.
-export const TESTED_AGAINST = '2.2.0';
-
 export function elementFrom(name) {
   return String(name || '')
     .toLowerCase()
@@ -100,9 +97,9 @@ function header(template, input, e) {
 
   return [
     '/**',
-    ` * ${ini(input.name)}: a starter plugin for Alfa Commerce ${input.alfaVersion}.`,
+    ` * ${ini(input.name)}: a starter plugin for Alfa Commerce.`,
     ' *',
-    ` * Made from the manual's tested example "${template.element}" (${template.label.toLowerCase()}), with the names changed.`,
+    ` * Made from the manual's example "${template.element}" (${template.label.toLowerCase()}), with the names changed.`,
     ' *',
     ' * WHAT THE EXAMPLE CODE IN THIS PLUGIN DOES',
     ` *   ${template.demo}`,
@@ -125,8 +122,8 @@ function readme(template, input, e) {
   return [
     `# ${ini(input.name)}`,
     '',
-    `A starter plugin for Alfa Commerce ${input.alfaVersion}, group \`${template.group}\`, element \`${e}\`.`,
-    `It was made from the manual's tested example "${template.element}" (${template.label.toLowerCase()}) by changing the names.`,
+    `A starter plugin for Alfa Commerce, group \`${template.group}\`, element \`${e}\`.`,
+    `It was made from the manual's example "${template.element}" (${template.label.toLowerCase()}) by changing the names.`,
     '',
     '## What the example code does',
     '',
@@ -155,10 +152,9 @@ function readme(template, input, e) {
  *
  * @param template One entry of pluginTemplates.json.
  * @param input    name, element, vendor, author, authorEmail, authorUrl, copyright, license, version, description,
- *                 creationDate, alfaVersion.
+ *                 creationDate.
  */
 export function generate(template, input) {
-  input = {alfaVersion: TESTED_AGAINST, ...input};
   const wrong = problems(template, input);
 
   if (wrong.length) throw new Error(wrong.join(' '));

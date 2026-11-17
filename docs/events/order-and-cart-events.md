@@ -16,8 +16,8 @@ Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. This pag
 everyone** (a broadcast event), **addressed** (a targeted event) and **the save is final** (the commit). The
 [Glossary](../reference/glossary.md) explains the others.
 
-No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page were
-checked line by line against the event classes of 2.2.0.
+No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page follow
+the event classes line by line.
 
 ## What it does
 
@@ -129,7 +129,7 @@ of them receive the same event object (`dispatchToEachIsolated()` in the code).
 | `getCart()` | The cart to read: `isVirtual()`, `quantity()`, `itemCount()`, `lines()`, `customer()`, `delivery()`, `currency()` and the others of `Cart` (`site/src/Service/Cart/Cart.php`). `getSubtotal()` gives the sum of the line prices. `getTotal()` throws an error here, because the total is what is being decided. |
 | `getRequest()` | The same two things as one object (`lines` and `cart`). |
 | `contribution($contributor, $code)` | Starts one charge and returns its builder, see below. |
-| `addTotalAdjustment($contributor, $contribution)` | Adds a ready `CartContribution` object. Since 2.2.0. |
+| `addTotalAdjustment($contributor, $contribution)` | Adds a ready `CartContribution` object. |
 | `getContributions()`, `answering()` | For Alfa. Do not call them. |
 
 The builder returned by `contribution()`:
@@ -191,7 +191,7 @@ parts.
 |---|---|
 | `getLine()` | The cart line as an object (its item id, quantity, name and so on). Its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
 | `getItem()` | The loaded item behind the line. |
-| `addSurface($contributor, CartSurface $surface)` | Starts one part on the cart line and returns its builder. `CartSurface::Main` is the only place in 2.2.0: under the line's name. Since 2.2.0. |
+| `addSurface($contributor, CartSurface $surface)` | Starts one part on the cart line and returns its builder. `CartSurface::Main` is the only place: under the line's name. |
 | `answering()`, `harvestInto()` | For Alfa. Do not call them. |
 
 On the builder you call `setLayout($name)` and `setData($data)`. The layout is a file of your plugin,
@@ -246,9 +246,6 @@ take part, and Joomla does not load it for the request (the reason `not_loaded`,
   with Joomla's Shared Sessions on. A new cart the builder makes for a customer opens in the shop's default
   currency.
 
-Up to 2.2.0 every member of staff met the refusal, whatever their permissions, and the builder could read the staff
-member's own storefront checkout details and currency under Shared Sessions.
-
 For plugin authors, on this path:
 
 - Your plugin runs in the staff member's request: the application's identity is the member of staff. Read the
@@ -291,7 +288,7 @@ Step 7 is the event `onOrderAfterPlace`. It is addressed to the one payment plug
 order, never to a feature plugin. See [Payment plugins](../plugins/payment-plugins.md) and
 [Shipping plugins](../plugins/shipment-plugins.md).
 
-:::note Names that do not exist in 2.2.0
+:::note Names that do not exist
 The event announced after a placement is `onAlfaOrderPlaced`. No event named `onOrderPlaced` or
 `onAlfaOrderAfterSave` is dispatched.
 :::
@@ -505,18 +502,6 @@ The events about stock and about documents (invoices, credit notes) that follow 
 | Your charge is missing and there is no error on the page | The charge was incomplete, or it named another plugin. Look in the log, category `com_alfa.cart`. |
 | `onOrderStatusChange` ran twice for one change | Staff pressed Run again. Make the listener safe to repeat. |
 | `onOrderStatusChange` did not run after a placement | A placement announces `onAlfaOrderPlaced`, not a status change. |
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** `onCartTotals`, `onOrderPlaceValidate` and `onCartItemDisplay` are addressed to the admitted
-  plugins of the `alfa` group and are declared in `getTargetedHandlers()`. A method with the event's name, or an
-  entry in `getSubscribedEvents()`, is no longer enough.
-- **Changed in 2.2.0.** `contribution()`, `reject()` and `addSurface()` take the plugin's name, `group.element`, as
-  their first argument.
-- **Since 2.2.0.** `addTotalAdjustment()` and `addSurface()` exist.
-- **Changed in 2.2.0.** Each listener of `onOrderStatusChange` is a step of its own, so Run again calls only the
-  ones that are not done. The task is written only when a plugin listens.
-- **Changed in 2.1.4.** `onOrderStatusChange` is announced after the save is final, from a recorded task.
 
 ## Not documented yet
 

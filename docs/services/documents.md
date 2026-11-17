@@ -1,7 +1,7 @@
 ---
 sidebar_position: 5
 title: Documents
-description: The service that issues, voids, replaces and credits sales documents in 2.2.1, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
+description: The service that issues, voids, replaces and credits sales documents, what it guarantees and refuses, how numbers are drawn, and how an extension takes part.
 ---
 
 # Documents
@@ -31,7 +31,7 @@ The events are on [Document events](../events/document-events.md). The words **d
 |---|---|
 | **The doors this manual documents** | The three events `onDocumentBeforeIssue`, `onDocumentIssued` and `onDocumentVoided`, and a document type provider. See [Document events](../events/document-events.md). |
 | **What the code says** | Nothing in `DocumentIssuer` addresses an extension as a caller, and nothing forbids one. Its methods are public and static and take plain arrays. Its comments mention other callers (a returns workflow, a scheduled job) without saying whether they are Alfa's own or an extension's. The code does not settle the question. |
-| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()`, `void()` and `replace()` check a permission themselves (see each method below; in 2.2.0 only `replace()` did). They do not read the `documents_issuer` setting: the order screen's issuing tasks check it. |
+| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls it, so there is no shipped example. `issue()`, `void()` and `replace()` check a permission themselves. They do not read the `documents_issuer` setting: the order screen's issuing tasks check it. |
 | **What follows** | Use the events. This manual does not document a call to `DocumentIssuer` from an extension. The rest of this page describes what the issuer guarantees, so that a listener knows what it can rely on. The classes around the issuer (`CreditCalculator`, `IncrementalCorrection`, `VoidAndReplace`, `AutoIssuePolicy`, `StockBridge`, `OrderItemLines`, `OrderChargeLines`) are core's own. |
 
 ## When it is used
@@ -88,7 +88,7 @@ The same flow with a later void is on [Event flows](../events/flows.md#documents
 ### What it does
 
 Takes a draft, asks `onDocumentBeforeIssue`, checks the draft, draws the next number of the series and writes the
-document. Returns the stored document row. The fourth argument, since 2.2.1, says who issues.
+document. Returns the stored document row. The fourth argument says who issues.
 
 ```php
 public static function issue(
@@ -118,7 +118,7 @@ in the comment above `issue()`.
 | **One document at a time per order** | The order's row is locked for the whole issue |
 | **Numbers without gaps** | The number is drawn at the last moment, inside the save. A failed issue never uses one. |
 | **The draft is checked after the listeners** | A listener of `onDocumentBeforeIssue` may change the draft. The changed draft passes every check, as if staff had typed it. |
-| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. An order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount (since 2.2.1). An invoice issued before 2.2.1 without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
+| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. An order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount. An invoice that was issued without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
 | **Kept as issued** | The stored document is never edited or deleted. See [Kept as issued](#kept-as-issued). |
 | **Totals from the lines** | The document's totals and its summary per tax rate are worked out from its own stored lines |
 | **A delivery note carries no money** | Its amounts are stored as zero whatever the draft says |
@@ -195,7 +195,7 @@ touched. There is no way back: a voided document is never issued again.
 
 Each is a `RuntimeException` whose message starts with `DocumentIssuer: void failed:`, except the empty reason, which
 is refused before anything else with a `DocumentRefusedException` and a sentence for staff ("Voiding requires a
-reason."), as `replace()` refuses it. (In 2.2.0 it was a plain `RuntimeException`.) Then the actor (`$actorId`, or the request's own user when it is null) must
+reason."), as `replace()` refuses it. Then the actor (`$actorId`, or the request's own user when it is null) must
 hold Sales Documents: Change State, or the void is refused with a `DocumentRefusedException` and nothing is voided.
 
 There is no "before void" event. A plugin cannot refuse a void.
@@ -289,7 +289,7 @@ What is kept on the document, as it was at the issue:
 
 ### Tax names are kept at issue
 
-Since 2.2.0 each document line keeps the **name** of the tax it was charged with, next to the rate. A draft cannot
+Each document line keeps the **name** of the tax it was charged with, next to the rate. A draft cannot
 state it; the issuer takes it from where the line's money comes from:
 
 | The line | Its tax name comes from |
@@ -299,7 +299,7 @@ state it; the issuer takes it from where the line's money comes from:
 | A line of a credit | The document it corrects, and nowhere else |
 | A fee, an adjustment or a free-text line | None |
 
-A document issued before 2.2.0 has no tax names. A credit that corrects such a document has none either. The tax
+An older document whose lines carry no tax names keeps none, and a credit that corrects it has none either. The tax
 rules are never read again at issue, so renaming a tax later does not change a document.
 
 ## A PDF needs the dompdf library
@@ -309,7 +309,7 @@ print view (`DocumentRenderer::render(int $documentId): string`) and hands it to
 
 | | |
 |---|---|
-| **What you must provide** | Nothing. dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) are installed with Alfa Commerce, each a Joomla library of its own, and Joomla's autoloader loads their classes. (In 2.2.0 `lib_dompdf` was installed separately.) |
+| **What you must provide** | Nothing. dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) are installed with Alfa Commerce, each a Joomla library of its own, and Joomla's autoloader loads their classes. |
 | **What happens without it** | The print view still works. The libraries are asked for before anything is drawn. `PdfRenderer::libraryInstalled()` asks for one class of each library in `PdfRenderer::LIBRARIES`. When one of them has been removed, `pdfBytes()` throws `PdfLibraryMissingException` (a `RuntimeException`) with the message "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." The administrator's PDF and the REST API's PDF route then answer 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores it. |
 | **What it guarantees** | Nothing is stored. The PDF is made again from the stored document on every request, so it cannot differ from the document. A voided document is drawn with its "voided" mark. |
 | **What a layout may use** | The same page feeds the print view, the PDF and the e-mail attachment, and the library draws a limited set of CSS. The rules are in the comment at the top of `administrator/layouts/documents/partials/style.php`. A font that the page declares with `@font-face` is written to the renderer's temporary folder (`com_alfa_dompdf` in Joomla's temporary folder), never into the library's own fonts folder, which the file check under Tools > Security covers. The fonts that come with dompdf are still read from the library. |
@@ -378,11 +378,6 @@ All of it only after the save is final. A listener that throws there is logged, 
 | "The dompdf library (lib_dompdf), or a library it needs, is not installed: PDF documents need them." | One of the libraries that ship with Alfa Commerce has been removed. Install the Alfa Commerce package again. |
 | A document type cannot be issued automatically | The type has no default series |
 | `onDocumentIssued` did not fire | The save the document belonged to was undone, or the shop's documents are issued by an outside system |
-
-## Changed in 2.2.0
-
-- **Since 2.2.0.** Each document line keeps its tax name, taken from the order line, the parcel or the corrected
-  document.
 
 ## Not documented yet
 

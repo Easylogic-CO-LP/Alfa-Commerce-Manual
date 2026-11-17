@@ -66,8 +66,8 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 
 There is no "before void" event. A plugin cannot refuse a void.
 
-No plugin that handles these events ships with Alfa Commerce. The samples on this page were checked line by line
-against the event classes and the interface, and there is no shipped plugin to copy from.
+No plugin that handles these events ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples
+on this page follow the event classes and the interface line by line.
 
 ## An automatic invoice on a status change
 
@@ -310,8 +310,8 @@ registered and each provider's error, if any.
 `InvalidArgumentException`. A listener that throws is logged (category `com_alfa.documents`), shown to staff as a
 warning on a sync, and the other providers still run.
 
-Changed in 2.2.0: `$contributor` is the plugin's name as group.element. Earlier versions took the extension's name
-there. A provider that passed another name before must move its stored types itself in its own update.
+`$contributor` is the plugin's name as group.element. A provider whose stored types carry another name moves them
+itself in its own update.
 
 ### The interface
 
@@ -431,6 +431,6 @@ final class ProformaTypes implements DocumentTypeProviderInterface
 - Creating a series for a new type. A type without a default series cannot be issued automatically, and staff get a
   notice that says so.
 - Switching a plugin's types off when the plugin is uninstalled (`DocumentTypeRegistry::disableByProvider()` exists,
-  and nothing in Alfa Commerce 2.2.0 calls it).
+  and nothing in Alfa Commerce calls it).
 - The full list of draft and line keys, with the rules each must pass.
 - Issuing or voiding a document from a plugin.

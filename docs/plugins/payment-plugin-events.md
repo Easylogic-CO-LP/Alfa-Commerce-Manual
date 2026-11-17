@@ -1,6 +1,6 @@
 ---
 title: Payment plugin events
-description: "Every event a payment plugin receives in Alfa Commerce 2.2.1: when it fires, what it is given and what it must do."
+description: "Every event a payment plugin receives: when it fires, what it is given and what it must do."
 ---
 
 # Payment plugin events
@@ -239,7 +239,7 @@ Event class: `PaymentResponseEvent`. Optional. Write it when your provider sends
 | Getter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element, as the address named it |
-| `getOrder()` | Always `null`: Alfa does not load an order from an untrusted address. Deprecated since 2.2.1, and removed in 2.3.0. |
+| `getOrder()` | Always `null`: Alfa does not load an order from an untrusted address. Deprecated: do not use it, it will be removed. |
 
 Everything else you read from the request yourself. The request is untrusted: anyone can type the address.
 
@@ -250,7 +250,7 @@ Everything else you read from the request yourself. The request is untrusted: an
 redirect, so always set a redirect. Never mark a payment paid because the shopper came back. Settle only what your
 provider has proved.
 
-What the session's order needs from you (since 2.2.1):
+What the session's order needs from you:
 
 - **State the order whose return you authenticated.** Once the return is authenticated for an order (your
   provider's signature or digest, or its own answer naming the attempt), call
@@ -290,7 +290,7 @@ page.
 | Getter or setter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element |
-| `getOrder()` | Always `null`. Deprecated since 2.2.1, and removed in 2.3.0. |
+| `getOrder()` | Always `null`. Deprecated: do not use it, it will be removed. |
 | `setResponseCode(int)` | The HTTP status answered to the provider. Default 200. |
 | `setResponseBody(string)` | The body. Default `OK`. Plain machine text, never translated. |
 | `setContentType(string)` | Default `text/plain; charset=utf-8` |
@@ -430,7 +430,7 @@ changes the method.
 Event classes: `StoreReferenceEvent` and `ChargeReferenceEvent`. Optional. They are for a gateway that can charge a
 saved card or mandate without the shopper present, and that says so by returning `true` from `supportsRecurring()`.
 
-**When they fire.** The core repository of 2.2.0 defines both events and their contract, but contains no code that
+**When they fire.** The core repository defines both events and their contract, but contains no code that
 sends them. See [Not documented yet](./payment-plugins.md#not-documented-yet).
 
 **Who receives them.** One plugin.
@@ -440,7 +440,7 @@ sends them. See [Not documented yet](./payment-plugins.md#not-documented-yet).
 | Event | Getters | Setters |
 |---|---|---|
 | `StoreReferenceEvent` | `getOrder()`, `getPayment()` (the completed payment row) | `setReference(array $reference, string $label = '', ?string $expiresAt = null)` |
-| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()`, and since 2.2.1 `getAttempt()`, the attempt's number from 1, the same number for the same attempt sent again; build your idempotency key from it. | Exactly one of `setSuccess(string $transactionId)`, `setFailure(string $error)`, `setPending(string $reference, string $reason)` |
+| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()`, and `getAttempt()`, the attempt's number from 1, the same number for the same attempt sent again; build your idempotency key from it. | Exactly one of `setSuccess(string $transactionId)`, `setFailure(string $error)`, `setPending(string $reference, string $reason)` |
 
 **What you are expected to do.** In the first, hand back whatever you need to charge again later. You do not store
 it. In the second, charge the amount against the stored reference and answer exactly once: success when the provider

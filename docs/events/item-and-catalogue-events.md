@@ -14,8 +14,8 @@ its page in the shop, and hear when the catalogue or its stored prices change.
 Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. The
 [Glossary](../reference/glossary.md) explains **item**, **price index**, **projection** and **customer group**.
 
-No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page were
-checked line by line against the event classes of 2.2.0.
+No feature plugin ships with Alfa Commerce, so there is no shipped plugin to copy from. The samples on this page follow
+the event classes line by line.
 
 ## What it does
 
@@ -92,8 +92,7 @@ sequenceDiagram
 ```
 
 The item is saved as one unit: all of it, or, if the save stops part way, none of it. Staff are then told that the
-item was not saved, that nothing of it was kept, and to try again. (Up to 2.2.0 an item was saved in parts, each
-final as it was written, and `onAlfaAdminAfterSave` came right after the item's own row.)
+item was not saved, that nothing of it was kept, and to try again.
 
 - Everything from step 6 on waits until the save is final and is never announced for a save that was undone.
   `onAlfaAdminAfterSave` (and Joomla's `onContentAfterSave`) see the new prices, images and categories.
@@ -198,7 +197,7 @@ the finished item uses `onItemAfterSave`. See
 **When it fires.** When the item's page is prepared in the shop, once, after the item's fields have added their
 parts.
 
-**Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Since 2.2.0 every listener
+**Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Every listener
 contributes to the same event object.
 
 **What you are given.** `ItemDisplayEvent` (`administrator/src/Event/Items/ItemDisplayEvent.php`).
@@ -206,7 +205,7 @@ contributes to the same event object.
 | Method | Meaning |
 |---|---|
 | `getItem()` | The loaded item, as an object. Its `surfaces` are read-only (a `SurfaceMap`). Add your part with `addSurface()`, never by writing the map. |
-| `addSurface($contributor, ItemSurface $surface)` | Starts one part on a place of the page and returns its builder. Since 2.2.0. |
+| `addSurface($contributor, ItemSurface $surface)` | Starts one part on a place of the page and returns its builder. |
 | `answering()`, `harvestInto()` | For Alfa. Do not call them. |
 
 The places are the cases of `ItemSurface`: `Title`, `Image`, `ShortDescription`, `FullDescription`, `BuyForm`,
@@ -215,12 +214,11 @@ uses, see [Item field plugins](../plugins/item-field-plugin-events.md#onitemview
 
 The surfaces of an item page, a catalogue card and a cart line
 (`$item->surfaces`, `$line->surfaces`) are a read-only `SurfaceMap`. Reading a slot with `?? []`, `isset()`,
-`count()`, `foreach`, `json_encode()` and an `(array)` cast work as before. Setting, removing, appending to or
+`count()`, `foreach`, `json_encode()` and an `(array)` cast works. Setting, removing, appending to or
 reordering a slot throws a `LogicException`, and appending to a slot's list has no effect. The map is an object:
 `is_array()` is false, array functions on it (`array_keys()`, `array_merge()`, `array_key_exists()`,
 `array_filter()`) raise a `TypeError`, an empty map is true in an `if`, and `$item->surfaces[$slot] ??= []` is
-refused. A template override casts it with `(array)` or reads it by slot. (Up to 2.2.0 the surfaces were a plain array
-that a plugin could write.)
+refused. A template override casts it with `(array)` or reads it by slot.
 
 **What you are expected to do.** Name yourself, choose a place, name a layout and hand it its data. The layout is a
 file of your plugin, `tmpl/<name>.php`. Never return HTML from the handler.
@@ -251,7 +249,7 @@ The event for a whole list of items is described with the item fields, whose bas
 ## When stored prices change
 
 Alfa works out the prices of every item in advance and stores them, so that lists and filters need not calculate
-them on each page. This store is the **price index**. Since 2.2.0 Alfa announces every change of it.
+them on each page. This store is the **price index**. Alfa announces every change of it.
 
 ### onAlfaPricesChanged
 
@@ -390,15 +388,6 @@ The events about an item's stock have a page of their own: [Stock events](./stoc
 | `onItemAfterSave` did not run and staff saw no error | Your listener threw an error. Look in the log, category `com_alfa.plugins`. |
 | `onAlfaPricesChanged` did not run after a save | No stored price changed, or the save was undone, or the stored prices were left to the background catalogue job and are announced when it runs. |
 | `onAlfaPricesChanged` runs without end | Your listener writes prices on every event. |
-
-## Changed in 2.2.0
-
-- **Since 2.2.0.** `onAlfaPricesChanged` exists.
-- **Changed in 2.2.0.** `onItemDisplay` is one event for all listeners, and a part is added with
-  `addSurface('group.element', ItemSurface::...)`, the plugin's name first.
-- **Changed in 2.2.0.** A handler is called only when its event is listed in `getSubscribedEvents()`.
-- **Changed in 2.2.0.** `addProjection()` of `onCollectCatalogProjections` takes the plugin's name as its second
-  argument.
 
 ## Not documented yet
 

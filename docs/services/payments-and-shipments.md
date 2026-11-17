@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
 title: Payments and shipments
-description: The two ledgers that write an order's payments and parcels in 2.2.1, what they guarantee, and which base class method a plugin uses for each task.
+description: The two ledgers that write an order's payments and parcels, what they guarantee, and which base class method a plugin uses for each task.
 ---
 
 # Payments and shipments
@@ -44,9 +44,9 @@ carrier's callback, by staff on the order screen.
 | Guarantee | In plain words |
 |---|---|
 | **One place writes** | Every payment row and every parcel row goes through its ledger, so the same checks run and the same entry is written to the order's History, whoever asked. |
-| **The plugin of record** | Since 2.2.0 a row created through a base class records the plugin that wrote it. Later changes, deletes and line assignments made through a base class work only on a row recorded as that plugin's. See [The plugin of record](../plugins/overview.md#the-plugin-of-record). |
+| **The plugin of record** | A row created through a base class records the plugin that wrote it. Later changes, deletes and line assignments made through a base class work only on a row recorded as that plugin's. See [The plugin of record](../plugins/overview.md#the-plugin-of-record). |
 | **A row is settled once** | A change can be made conditional on the row's current status. Of two requests that confirm the same payment or the same delivery, exactly one writes. |
-| **Money stays inside the order** | A refund cannot exceed what the order can still give back, or what is left on the payment it refunds. A payment cannot take the order past its total, counting what the shop still holds, so money a customer's bank took back, or a part refunded, is owed again and may be paid again (up to 2.2.0 such a payment was refused). A refusal is told to staff in plain words, never to the shopper. |
+| **Money stays inside the order** | A refund cannot exceed what the order can still give back, or what is left on the payment it refunds. A payment cannot take the order past its total, counting what the shop still holds, so money a customer's bank took back, or a part refunded, is owed again and may be paid again. A refusal is told to staff in plain words, never to the shopper. |
 | **Status automation** | When a change gives a payment or a parcel a new status, and the method's settings name an order status for it (`status_on_<status>`), Alfa moves the order. The move is recorded in the same save as the row and carried out after that save is final. A new row never moves the order. |
 | **The refund block** | While a provider's report of a refund that the books do not hold is open on an order, no new refund may start on it. Staff resolve the report first. |
 | **A parcel's charge is consistent** | A taxed shipping charge must name its tax rate. Shipping is charged once per order. A cancelled or returned parcel does not count in the order's total. |
@@ -105,16 +105,6 @@ move's own follow-up work runs: stock, documents, the status e-mail, `onOrderSta
 | The order did not move after `save()` | The row was new (a new row never moves the order), or the method's settings name no status. Inside a lock or a transaction of your own, the order moves after it ends. |
 | A refund is refused though money is left | The refund block holds: an unresolved report of a provider refund is open on the order |
 | A row you wrote with your own SQL is not counted, or breaks a total | The ledger was bypassed. Do not write these tables. |
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** `OrderPaymentHelper` and `OrderShipmentHelper` no longer exist. `PaymentLedger` and
-  `ShipmentLedger` replaced them, and plugins reach them only through the base classes.
-- **Changed in 2.2.0.** Each row records the plugin that wrote it, and a base class changes only its own plugin's
-  rows.
-- **Changed in 2.2.0.** The order moves after the row's save is final, as recorded background work.
-- **Changed in 2.2.0.** A parcel has no tracking link column and its builder has no `trackingUrl()`. A taxed charge
-  must name its tax rate.
 
 ## Not documented yet
 

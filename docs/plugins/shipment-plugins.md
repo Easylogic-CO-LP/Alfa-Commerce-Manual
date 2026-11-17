@@ -44,7 +44,7 @@ parcels, whatever the method's settings say later. See
 | Staff buttons, a staff action, may the order be deleted | The plugin recorded on the shipment row |
 | A shopper's return, a carrier's callback | The plugin named in the address (`method=<element>`) |
 
-Changed in 2.2.0: once an order uses a method, the method's plugin (its Type) can no longer be changed.
+Once an order uses a method, the method's plugin (its Type) cannot be changed.
 
 ## When it is used
 
@@ -112,7 +112,7 @@ to load the class without them, because the base classes declare them abstract.
 list of the twelve names (`ShipmentsPlugin::TARGETED_EVENTS`) and reports to Alfa each one your class has a method
 for.
 
-Changed in 2.2.0: do not list these events in `getSubscribedEvents()`. The base class returns an empty list there. Add
+Do not list these events in `getSubscribedEvents()`. The base class returns an empty list there. Add
 to it only for an event of Joomla itself:
 
 ```php
@@ -131,7 +131,7 @@ A complete plugin is printed in [A complete minimal shipping plugin](./shipment-
 A parcel is one **shipment row** of an order. Your plugin never writes the table. It calls the methods below, which
 the base class gives it. Behind them is the [ledger](../reference/glossary.md#saving) (`ShipmentLedger`).
 
-Changed in 2.2.0: every write made through these methods carries your plugin's name. A new row records your plugin
+Every write made through these methods carries your plugin's name. A new row records your plugin
 as its plugin of record. Every later change, delete or line assignment works only on a row recorded as yours.
 
 ### Starting a write
@@ -172,7 +172,7 @@ repairs every old order.
 
 | | |
 |---|---|
-| **One save** | Since 2.2.0 the row, its lines and its entry in the order's History are saved together or not at all. |
+| **One save** | The row, its lines and its entry in the order's History are saved together or not at all. |
 | **A taxed charge names its rate** | If the gross is above the net and the rate is 0, the save is refused. The rate cannot be worked back from rounded amounts. |
 | **The net is never above the gross** | Refused. |
 | **Shipping is charged once per order** | The order's shipping total is the sum of its parcels. When another parcel of the order already carries a charge, the charge of a new parcel is set to 0, with a notice. |
@@ -264,7 +264,7 @@ $coreMade = $shipment->pluginData()->getBool(self::CORE_MADE) === true;
 
 ### The amount to collect
 
-A cash-on-delivery carrier asks its base class what the courier collects (since 2.2.1):
+A cash-on-delivery carrier asks its base class what the courier collects:
 
 ```php
 $collect = $this->amountToCollect($order);
@@ -309,7 +309,7 @@ Declare one field for each status your plugin's parcels can reach: `status_on_sh
 |---|---|
 | **When it runs** | When a **change** to a parcel gives it a new status, and the parcel's method has a setting for that status. A new parcel never moves the order, whatever its status. |
 | **What Alfa does** | Moves the order the same way a status change by staff does, so stock, e-mails, documents and History follow. |
-| **When** | Changed in 2.2.0: the move is recorded in the same save as the parcel, and carried out after that save is final. Your `save()` returns before the order has moved. If the request stops, [background work](../reference/glossary.md#background-work) carries it out. |
+| **When** | The move is recorded in the same save as the parcel, and carried out after that save is final. Your `save()` returns before the order has moved. If the request stops, [background work](../reference/glossary.md#background-work) carries it out. |
 | **What it guarantees** | The same change arriving twice moves the order once. An order that staff moved in the meantime is left alone, with a line in its History. A busy order is tried again. An order in a cancelled status is never moved out of it. |
 | **What you must not do** | Never move the order yourself for a status the settings can map. |
 
@@ -331,7 +331,7 @@ stored as JSON in the method's row (`#__alfa_shipments.params`).
 | `$method->id()`, `type()`, `name()`, `description()`, `isSelected()` | The method's id, its plugin's element, its texts in the shopper's language, whether the cart has it chosen |
 | `$method->get('column', $default)` | Any other column of the method's record |
 
-The other events are different in 2.2.0:
+The other events are different:
 
 | Where | How you read a setting |
 |---|---|
@@ -339,7 +339,7 @@ The other events are different in 2.2.0:
 | `onGetActions`, `onExecuteAction` | The shipment row carries the method's record on `->params`. The settings are one level down: `$shipment->params->params['tracking_url_template']` |
 
 **What you do not define.** The price entry mode ("Shipping prices entered") and the taxes ("Shipping taxes") are
-fields of the method's own form since 2.1.0, not of your `params.xml`. Your plugin does not read them. Alfa applies
+fields of the method's own form, not of your `params.xml`. Your plugin does not read them. Alfa applies
 them to the price you answer.
 
 Field types for your settings that Alfa provides (each needs
@@ -374,7 +374,7 @@ What the carrier's server is answered:
 |---|---|
 | Your handler ran | The status, body and content type you set on the event (200 and `OK` if you set nothing) |
 | Your handler threw an error | 500 with an empty body, and a line in the log (category `com_alfa.plugins`). The carrier tries again. |
-| Your plugin is disabled, missing or cannot start, and a shipping method uses it | Changed in 2.2.0: **503 Service Unavailable** with the header `Retry-After: 600` and an empty body. Staff get one alert in the notification bell. Nothing is handed to the plugin. |
+| Your plugin is disabled, missing or cannot start, and a shipping method uses it | **503 Service Unavailable** with the header `Retry-After: 600` and an empty body. Staff get one alert in the notification bell. Nothing is handed to the plugin. |
 | The same, but no shipping method uses that plugin | 404 |
 | The plugin has no `onShipmentWebhook` method, or the element is not a valid name | 404 |
 
@@ -394,7 +394,7 @@ You have three places to write to. They are for three different readers.
 | `$this->log([...])` | Staff, in a popup you draw on the order page | One row per thing that happened to a parcel. Your own table, `#__alfa_shipments_<element>_logs`, with the columns of your `params/logs.xml`. `id_order` is required. Returns the row id, or 0. |
 | `Log::add($message, Log::ERROR, $this->logCategory())` | The developer | The carrier's answers and your errors. The file `alfa_shipments_<element>.php` in Joomla's log folder is registered for you. Never write a password or a key. |
 | `NotificationHelper::push($dedupKey, $title, $options)` | Staff, in the notification bell | A problem that lasts longer than one request, such as keys the carrier no longer accepts. Withdraw it with `NotificationHelper::clear($dedupKey)` when it is over. |
-| `$this->recordActionLog($languageKey, $facts, $itemId)` | The shop owner, in Joomla's User Actions Log | Since 2.2.1. An act an owner audits, such as a booking sent. One row filed under your plugin, with the user of the request. |
+| `$this->recordActionLog($languageKey, $facts, $itemId)` | The shop owner, in Joomla's User Actions Log | An act an owner audits, such as a booking sent. One row filed under your plugin, with the user of the request. |
 
 More about the log table:
 
@@ -409,7 +409,7 @@ More about the log table:
 
 When a staff action fails, say so on the event with `setError()`, so that the person who pressed the button is told.
 
-Joomla's User Actions Log (since 2.2.1). Call `recordActionLog()` with a sentence of
+Joomla's User Actions Log. Call `recordActionLog()` with a sentence of
 your language file that names the facts in braces:
 
 ```php
@@ -457,7 +457,7 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 | A setting is never saved | Its field is outside `<fields name="shipmentsparams">` |
 | A setting reads as `null` in a staff action | On the action events the settings are at `$shipment->params->params[...]` |
 | The order does not move when a parcel is delivered | The method has no `status_on_delivered` value, the parcel was created as delivered and not changed to it, or the order was already cancelled |
-| The order moves a moment after your `save()`, not during it | Expected since 2.2.0. The move runs after the save is final. |
+| The order moves a moment after your `save()`, not during it | Expected. The move runs after the save is final. |
 | The carrier's callbacks are answered 503 | The plugin is disabled, or its Access is not Public |
 | The carrier's callbacks are answered 404 | The address names another element, the class has no `onShipmentWebhook()`, or the plugin is disabled and no shipping method uses it |
 | An event method is never called | It is not public, or its name is not exactly the event's name |
@@ -475,7 +475,7 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
   postcode or a band limit made only of digits and spaces (412 22, 410 00) as that number, and a band may be whole
   postcodes (41000 to 41999) or their first digits (410 to 419).
 - Making sure a parcel is booked with the carrier only once. Alfa has a lock for it (`ShipmentBookingLock`), but the
-  base class has no method that reaches it in 2.2.0.
+  base class has no method that reaches it.
 - The address reader in full (`role()`, `firstFilled()`, `fields()`, `getName()`, `getEmail()`), and the `Order` and
   `Shipment` readers.
 - An address of your own for your cart script (Joomla's `com_ajax`), and the cart's script events.

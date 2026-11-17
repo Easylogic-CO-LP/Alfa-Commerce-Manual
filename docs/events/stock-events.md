@@ -101,7 +101,7 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 | `onInventoryReleased` | After reservations were let go and the save is final | No | Logged, the others still run |
 | `onInventoryAdjusted` | After a manual adjustment and the save is final | No | Logged, the others still run |
 | `onInventoryTransferred` | After a transfer and the save is final | No | Logged, the others still run |
-| `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final (since 2.2.1) | No | Logged, the others still run |
+| `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
 Put a plugin that listens to the first nine in the `alfa` group. The group
@@ -109,9 +109,9 @@ Put a plugin that listens to the first nine in the `alfa` group. The group
 asks for allocation providers, so a plugin of that group is not always loaded when the other stock events are
 announced.
 
-No plugin that handles these events ships with Alfa Commerce, and no plugin of the group `alfa-inventory` ships. The
-samples on this page were checked line by line against the event classes and the interface, and there is no shipped
-plugin to copy from.
+No plugin that handles these events ships with Alfa Commerce, and no plugin of the group `alfa-inventory` ships, so
+there is no shipped plugin to copy from. The samples on this page follow the event classes and the interface line by
+line.
 
 ## An order line is set aside and taken from stock
 
@@ -142,7 +142,7 @@ If your plugin refuses at step 4 or step 7, nothing of the order is saved and th
 with `InventoryRefusedException`, the person who places the order reads your sentence: the shopper at checkout,
 staff in the administrator. Any other exception shows a general message that the order was not placed, and its
 words are written to Joomla's log (category `com_alfa.orders`). So write the sentence for a shopper: no warehouse
-codes or internal states. (In 2.2.0 the person always saw the general message.)
+codes or internal states.
 
 The two "after" events do not follow the save at once. Alfa first hands `onOrderAfterPlace` to the order's payment
 plugin and shipping plugin (step 9), and announces the stock events (step 10) when both are done. The whole order of
@@ -185,7 +185,7 @@ is no "refuse" method.
 Alfa has written nothing for the step when it asks. The step can still be part of a larger save, as when an order is
 placed. A refusal then undoes that larger save.
 
-A refusal on purpose is an exception of its own (since 2.2.1),
+A refusal on purpose is an exception of its own,
 `Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryRefusedException`, thrown with the sentence people are
 to read. Any other exception is a failure, which is tried again.
 
@@ -287,7 +287,7 @@ step, and the reservations stay. An owed movement refused with `InventoryRefused
 
 ## The events that only report
 
-These six are "after" events (`onInventoryRestored` since 2.2.1). They all share one base class,
+These six are "after" events. They all share one base class,
 `Alfa\Component\Alfa\Administrator\Event\Inventory\InventoryAfterEvent`, with two methods:
 
 | Method | What it gives |
@@ -380,7 +380,7 @@ final. Event class `InventoryTransferredEvent`.
 
 ### onInventoryRestored
 
-**When it fires.** (Since 2.2.1.) After stock was put back on the shelf and the save is final: an order cancelled or a line cut, or
+**When it fires.** After stock was put back on the shelf and the save is final: an order cancelled or a line cut, or
 the return of a credit note (`InventoryService::restore()`). Also when a credit note is voided and what it put back is
 taken off again (`InventoryService::reverseRestores()`). Event class `InventoryRestoredEvent`. Side effects only, like
 the other "after" events.
@@ -440,8 +440,8 @@ final class Stockwatch extends CMSPlugin implements SubscriberInterface
 }
 ```
 
-To refuse in words a shopper reads at checkout, throw `InventoryRefusedException` (since 2.2.1) instead of
-`RuntimeException`. The sample keeps `RuntimeException`, so that it also runs on 2.2.0.
+To refuse in words a shopper reads at checkout, throw `InventoryRefusedException` instead of the sample's
+`RuntimeException`.
 
 ## The provider contract: where the stock comes from
 
@@ -483,7 +483,7 @@ the highest priority first. The first usable answer wins.
 group.element makes `addProvider()` throw `InvalidArgumentException`. A listener that throws is logged (category
 `com_alfa.inventory`) and skipped, and the other providers still answer.
 
-Since 2.2.0 `$contributor` is the plugin's name as group.element. Earlier versions took the extension's name there.
+`$contributor` is the plugin's name as group.element.
 
 ### The interface
 
@@ -497,7 +497,7 @@ public function allocate(array $unit, float $quantity, InventoryContext $context
 |---|---|
 | `$unit` | What is set aside: `['item' => int, 'combination' => int]`. A combination of 0 means the item itself. |
 | `$quantity` | How much is set aside |
-| `$context` | An `InventoryContext`: the reservation's own context. (In 2.2.0 Alfa passed an empty one here: user 0, no note, no metadata.) |
+| `$context` | An `InventoryContext`: the reservation's own context. |
 
 What your method may do:
 
@@ -579,14 +579,14 @@ final class MainStoreAllocation implements StockAllocationProviderInterface
 
 ## Not documented yet
 
-- Putting goods back on the shelf after they were taken (`restore`), letting go the reservation of a single order
-  line, writing stock off and resolving an order line announce no event in 2.2.0. A plugin cannot hear them.
-- No screen of Alfa Commerce 2.2.0 calls the transfer step, so `onInventoryTransferred` is announced only when other
+- Letting go the reservation of a single order line, writing stock off and resolving an order line announce no
+  event. A plugin cannot hear them.
+- No screen of Alfa Commerce calls the transfer step, so `onInventoryTransferred` is announced only when other
   code calls `InventoryService::transfer()`. The same is true of `receive()` and `adjust()`: every screen corrects a
   stock figure with `adjustTo()`. It is also true of reservations that expire by time
   (`expireDueReservations()`): core orders carry no expiry. An `onInventoryReleased` from that step has an empty
   source, and its result holds `expired` and `released_quantity` only.
-- `ReservationPolicyInterface` (decide when an order sets stock aside) exists in the code, but 2.2.0 always uses its
+- `ReservationPolicyInterface` (decide when an order sets stock aside) exists in the code, but Alfa always uses its
   own rule, "set aside when the order is placed". A plugin cannot supply another.
 - What staff see when a "before" listener refuses while an order's lines are edited or an order is deleted.
 - Calling `InventoryService` from a plugin to move stock.

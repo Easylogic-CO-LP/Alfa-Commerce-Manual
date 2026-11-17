@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: Orders
-description: The services that write an order, change its status and read it in 2.2.1, with what each guarantees, what it refuses and which of them an extension may call.
+description: The services that write an order, change its status and read it, with what each guarantees, what it refuses and which of them an extension may call.
 ---
 
 # Orders
@@ -26,7 +26,7 @@ parcels are on [Payments and shipments](./payments-and-shipments.md).
 | `OrderHelper` (`administrator/src/Helper/OrderHelper.php`) | Reads an order's lines for the order screen | Core's own |
 | `OrderHistoryHelper` (`administrator/src/Helper/OrderHistoryHelper.php`) | Turns a stored History entry into the line staff read | Core's own |
 | `StockPolicy` (`administrator/src/Service/Order/StockPolicy.php`) | What an order status asks of the stock | Core's own. Described so that you can follow the stock events. |
-| `OrderMoneyLock`, `ShipmentBookingLock` (`administrator/src/Service/Order/`) | One capture at a time per order, one booking at a time per shipment | Their class comments address a payment plugin and a shipping plugin. Nothing in 2.2.0 calls them, so there is no shipped example. See [The two locks](#the-two-locks). |
+| `OrderMoneyLock`, `ShipmentBookingLock` (`administrator/src/Service/Order/`) | One capture at a time per order, one booking at a time per shipment | Their class comments address a payment plugin and a shipping plugin. Nothing in Alfa Commerce calls them, so there is no shipped example. See [The two locks](#the-two-locks). |
 
 ## When it is used
 
@@ -59,7 +59,7 @@ orders next to the checkout.
 | | |
 |---|---|
 | **What the code says** | The class comment calls it the writer "for every non-checkout order source" and names renewals. A comment inside `create()` speaks of a plugin that supplies the `source`, and the comment of `clampTaxName()` calls that method "a helper for a plugin". So the code expects a plugin as a caller. |
-| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls `create()`: the two callers in 2.2.0 are the checkout and the back office. There is no shipped example and no base class method that reaches it. |
+| **What the code does not give you** | No plugin or module that ships with Alfa Commerce calls `create()`: its two callers are the checkout and the back office. There is no shipped example and no base class method that reaches it. |
 | **No permission is checked** | `create()` checks no user right. Alfa's own callers check the person before they call. Your code must do the same. |
 | **It is not a complete order** | It writes no payment row and no parcel. How an extension that is not the order's payment or shipping plugin adds them is not settled by the code. See [Not documented yet](#not-documented-yet). |
 
@@ -75,7 +75,7 @@ The **draft** is a plain array. Keys marked required must be there; the others h
 |---|---|---|
 | `source` | **Required.** Where the order comes from: `storefront`, `admin`, `renewal` or `api`. It is stored on the order and in its History. Only its presence is checked. | |
 | `lines` | **Required**, at least one line, unless `allow_empty` is true | |
-| `id_address_delivery` | The id of an existing address row (`#__alfa_user_info`). Required when the draft names a shipping method (`id_shipment_method`), and checked; an order with no shipping method needs none. (In 2.2.0 `create()` did not check it.) | none |
+| `id_address_delivery` | The id of an existing address row (`#__alfa_user_info`). Required when the draft names a shipping method (`id_shipment_method`), and checked; an order with no shipping method needs none. | none |
 | `id_address_invoice` | The same for the invoice address | none |
 | `id_user` | The customer's user id | 0, a guest |
 | `id_order_status` | The status the order starts in | The shop's first status |
@@ -100,13 +100,13 @@ Each line:
 | `id_combination` | The combination | none |
 | `name` | The name kept on the line | Taken from the catalogue |
 | `sku`, `gtin`, `mpn`, `weight` | | empty, 0 |
-| `total_price_tax_excl`, `total_price_tax_incl` | **Required.** The line totals as charged. (In 2.2.0 they defaulted to the unit price times the quantity.) | |
+| `total_price_tax_excl`, `total_price_tax_incl` | **Required.** The line totals as charged. | |
 | `original_product_price` | The price before discounts | `unit_price_tax_excl` |
 | `tax_rate`, `tax_name` | The line's tax | 0, empty |
 | `discount_percent`, `discount_amount_tax_excl`, `discount_amount_tax_incl` | The line's discount | 0 |
 | `id_shipment_method` | A method for this line | The order's |
 
-A minimal call. Every key was checked against `create()` in 2.2.1:
+A minimal call:
 
 ```php
 use Alfa\Component\Alfa\Administrator\Service\Order\OrderCreator;
@@ -173,7 +173,7 @@ Two more public methods:
 | Method | What it does |
 |---|---|
 | `mayCreateInto(int $statusId): bool` | Whether a new order may start in this status. `false` for a status that requires payment and allows no unpaid exception. Ask it before you offer a status as a starting status. |
-| `clampTaxName(string $name, string $context): string` | Shortens a tax name to 255 characters (`OrderCreator::TAX_NAME_MAX`) and logs when it had to. For a plugin that keeps a tax name in a column of its own of that width. Core does not call it in 2.2.0: an order line keeps the tax name whole. |
+| `clampTaxName(string $name, string $context): string` | Shortens a tax name to 255 characters (`OrderCreator::TAX_NAME_MAX`) and logs when it had to. For a plugin that keeps a tax name in a column of its own of that width. Core does not call it: an order line keeps the tax name whole. |
 
 ## Transition
 
@@ -228,8 +228,8 @@ The calls you chain, each returning the same object:
 | `byUser(int $userId)` | Records a user instead. Without either, the current user is recorded. |
 | `note(string $note)` | A sentence for the order's History |
 | `silent()` | Sends no status e-mail |
-| `silentCustomer()` | Since 2.2.1. Sends the status e-mail to the staff the status tells only, not to the customer. The REST API's `silent` uses it. |
-| `expectStatus(int $statusId)` | Since 2.2.0. Moves the order only if it is still in this status. Use it when your move was decided earlier and the order may have moved since. |
+| `silentCustomer()` | Sends the status e-mail to the staff the status tells only, not to the customer. The REST API's `silent` uses it. |
+| `expectStatus(int $statusId)` | Moves the order only if it is still in this status. Use it when your move was decided earlier and the order may have moved since. |
 | `force()` | Allows the order to leave a cancelled status. That is a decision for a member of staff. Automatic code must never call it. |
 | `from(int $statusId)` | For Alfa's own order screen, which writes the status itself first. Do not call it. |
 | `save(): bool` | Makes the change. `true` when the order moved. |
@@ -251,7 +251,7 @@ What it guarantees:
 |---|---|
 | **The same move twice moves once** | A second request for the status the order already has returns `false` and does nothing: no second e-mail, no second document. This is what makes a provider callback that arrives twice harmless. |
 | **The change and what it owes are saved together** | If the change is undone, no follow-up work is left behind. If the request stops after the save, the work is still recorded and Alfa carries it out later. |
-| **Work only where there is work** | Since 2.2.0 a step is recorded only when it has something to do: the stock step when the new status asks something else of the stock, the documents step when the status issues documents, the e-mail when the status notifies, `onOrderStatusChange` when a plugin listens. |
+| **Work only where there is work** | A step is recorded only when it has something to do: the stock step when the new status asks something else of the stock, the documents step when the status issues documents, the e-mail when the status notifies, `onOrderStatusChange` when a plugin listens. |
 | **The follow-up work runs after the save is final** | And after Alfa's locks are released. When you call `save()` inside a database transaction of your own, the work waits until your transaction is final. Until then the order has its new status and nothing else has happened. |
 | **A refusal that matters is visible** | A change refused because of the target status, because the order is cancelled, or because the order was busy is written to the log (category `com_alfa.orders`). The first and the last are also written to the order's History. |
 
@@ -275,7 +275,7 @@ The follow-up work, in the order it runs: stock, download access, documents, the
 | Another request held the order's row for too long, or the database stopped the change twice | `refusedBusy()` is `true`. Asking again later may work. |
 
 `outcome(bool $moved): string` turns the answer of `save()` into one of four constants: `Transition::OUTCOME_MOVED`,
-`OUTCOME_UNMOVED`, `OUTCOME_BUSY` and `OUTCOME_SUPERSEDED` (since 2.2.0).
+`OUTCOME_UNMOVED`, `OUTCOME_BUSY` and `OUTCOME_SUPERSEDED`.
 
 Any other error is thrown. When `save()` runs inside your transaction and the database stops it to resolve a
 deadlock, that error is thrown to you as well, because your own work is lost with it.
@@ -364,8 +364,8 @@ total = lines + shipping + plugin charges - cart rules
 | Plugin charges | The charges plugins added in `onCartTotals`, stored with the order (`#__alfa_order_contributions`) |
 | Cart rules | The item and order rules stored with the order (`#__alfa_order_cart_rule`), each with its own tax-included figure |
 
-Changed in 2.2.0. Plugin charges are part of the total. Each stored cart rule carries its own tax-included amount;
-it is no longer worked out from the items' average tax.
+Plugin charges are part of the total. Each stored cart rule carries its own tax-included amount; it is never
+worked out from the items' average tax.
 
 `OrderTotalHelper` is core's own. A plugin reads the total from the reader (`$order->total()`), and a payment
 plugin reads what is still to collect from its base class (`amountToCollect()`, `orderBalance()`), and a carrier
@@ -379,8 +379,8 @@ the code:
 | `exactFromArrays(...)` | The same ten figures as exact decimal texts |
 | `getBreakdown(int $orderId, ?object $order = null): object` | The same from the database, plus `cart_rules` and the shipping cost before shipping rules (`shipping_gross_tax_incl`, `shipping_gross_tax_excl`) |
 | `getExactBreakdown(int $orderId, ?object $order = null): object` | The ten figures from the database, as exact decimal texts |
-| `getOrderTotal(int $orderId, ?object $order = null): Money` | The total, tax included, in the order's currency, rounded once at the order's scale. An order that names no currency is refused with `OrderCurrencyException`. Changed in 2.2.1: a float before. |
-| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each, as `Money` in the order's currency (a float in 2.2.0). `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
+| `getOrderTotal(int $orderId, ?object $order = null): Money` | The total, tax included, in the order's currency, rounded once at the order's scale. An order that names no currency is refused with `OrderCurrencyException`. |
+| `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each, as `Money` in the order's currency. `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
 | `activeShipments(array $shipments): array`, `activeShipmentsWhere($db, string $prefix = ''): string` | The parcels that count: all but cancelled and returned ones |
 
 ## OrderStatusHelper
@@ -410,7 +410,7 @@ Both are core's own and serve the order screen of the back office.
 | `OrderHelper` | `getOrderItems(int $orderId, ?Currency $currency = null): array`, `attachOrderItemFields(array $items): void`, `buildOrderPriceContext(int $orderId)`, `searchProducts(string $searchTerm, PriceContext $context, int $limit = 20): array`, `getProductById(int $productId, PriceContext $context, int $quantity = 1): ?object` | Read an order's lines with their amounts as `Money`, attach the field values kept on each line, and price an item for the order's customer when staff add a line. It reads only: order lines are written by the order model. |
 | `OrderHistoryHelper` | `line(object $entry, object $order): string`, `details(array $context): array` | Turn one stored History entry into the sentence and the details staff read. They change nothing. `details()` names each field core writes by its label in the reader's language (`fieldLabel()`); a field your extension writes into an entry keeps its own name, so name it in words if staff read it. |
 
-Changed in 2.2.0. `OrderHelper::getOrder()` and `OrderHelper::setOrderItems()` no longer exist.
+`OrderHelper` has no `getOrder()` and no `setOrderItems()`: read an order through [the order reader](#the-order-reader).
 
 ## StockPolicy
 
@@ -430,7 +430,7 @@ It is core's own. `OrderCreator` and `Transition` call it for you. Its other pub
 (`getDefaultOrderStatus()`, `shouldDeductStock()`, `handleStatusTransition()`, `reconcileOrderClaim()`,
 `deductOrderStock()`, `restoreOrderStock()`) move stock and are not for an extension.
 
-Changed in 2.2.0. `OrderStockHelper` no longer exists, and nothing writes the `stock` column of an item directly.
+There is no `OrderStockHelper`, and nothing writes the `stock` column of an item directly.
 
 ## The two locks
 
@@ -450,7 +450,7 @@ the lock.
 ### When they are used
 
 Their class comments address plugins: a gateway for `OrderMoneyLock`, a carrier for `ShipmentBookingLock`. Core itself
-takes neither in 2.2.0, and the standard plugins do not take them either. `ShipmentBookingLock::run()` has no caller
+takes neither, and the standard plugins do not take them either. `ShipmentBookingLock::run()` has no caller
 anywhere in the code. The base classes have no method that reaches them, so a plugin that uses one calls the class.
 There is no shipped example of either.
 
@@ -487,26 +487,17 @@ if (!$ran) {
 | **What they refuse** | An id of 0 or less: `RuntimeException`. A lock the database gives no answer for: `RuntimeException`, and your function does not run. |
 | **What to remember** | Inside the lock the order has not moved yet when a payment's `save()` returns. Do not read the order's new status there. |
 
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** `OrderStockHelper` is replaced by `StockPolicy`. `OrderHelper` only reads.
-- **Changed in 2.2.0.** The order total includes plugin charges.
-- **Since 2.2.0.** `Transition::expectStatus()`, `refusedBusy()`, `refusedSuperseded()` and `outcome()`.
-- **Changed in 2.2.0.** A status change records a follow-up step only when the step has work.
-- **Changed in 2.1.4.** The follow-up work of a status change is recorded with the change and carried out after
-  the save is final.
-
 ## Not documented yet
 
-- Creating a complete order from an extension: `OrderCreator` writes the order and its lines, and nothing in 2.2.0
+- Creating a complete order from an extension: `OrderCreator` writes the order and its lines, and nothing in the code
   shows how an extension that is not the order's payment or shipping plugin adds the payment row and the parcel.
 - The draft keys `customer_name`, `customer_email`, `customer_is_guest` and `actor_name`, which the back office
   passes to `OrderCreator::create()` and the method's comment does not list.
 - The properties of the line objects that `Order::items()` returns.
 - The address reader (`AddressView`) in full.
 - Writing an entry of your own to an order's History.
-- A checked sample of `OrderCreator::create()`, of a direct `Transition` call and of either lock from an extension.
-  No extension that ships with Alfa makes these calls, so the samples on this page were checked against the
+- A sample of `OrderCreator::create()`, of a direct `Transition` call and of either lock taken from a shipped
+  extension. No extension that ships with Alfa makes these calls, so the samples on this page follow the
   signatures and comments only.
 - Whether a shipping plugin may call `Transition`, and whether the call to the provider belongs inside
   `OrderMoneyLock`. The code does not settle either.

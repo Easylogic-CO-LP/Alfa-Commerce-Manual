@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Plugin overview
-description: What a plugin can do in Alfa Commerce, which plugin types exist in 2.2.1, how to choose one, and the rules every plugin shares.
+description: What a plugin can do in Alfa Commerce, which plugin types exist, how to choose one, and the rules every plugin shares.
 ---
 
 # Plugin overview
@@ -33,7 +33,7 @@ Alfa tells plugins what is happening through **events**. How an event gets to a 
 and is explained once, in [How events reach a plugin](../events/how-events-reach-a-plugin.md). Read that page before
 any page listed below.
 
-## The plugin types in 2.2.0
+## The plugin types
 
 A plugin's **group** is the folder it lives in under `plugins/`. It says what kind of plugin it is. A **base class**
 is the class a plugin of that group extends; the base classes are in `administrator/src/Plugin`.
@@ -155,11 +155,10 @@ change is saved and cannot be undone by you. Write "after" listeners so that run
 ### Each extension owns its language
 
 Every extension carries its own texts in its own language files. Alfa's files hold only Alfa's own texts, and your
-plugin's texts are in your plugin's files (since 2.1.1). All of these files are in Joomla's language folders (since
-2.1.2): `administrator/language/` followed by the language tag for the component and for plugins, `language/`
+plugin's texts are in your plugin's files. All of these files are in Joomla's language folders: `administrator/language/` followed by the language tag for the component and for plugins, `language/`
 followed by the tag for the storefront and for modules. Joomla's installer puts them there from your package.
 
-Since 2.2.0 Alfa does not load your plugin's language when your plugin adds something to a screen. Your plugin loads
+Alfa does not load your plugin's language when your plugin adds something to a screen. Your plugin loads
 its own. The Alfa base classes do that for you (`$autoloadLanguage`); a plugin that extends `CMSPlugin` directly
 sets `protected $autoloadLanguage = true;` itself.
 
@@ -168,7 +167,7 @@ Alfa Commerce ships in English only. Other languages are separate language packs
 ## The manifest
 
 Every shipped plugin has a manifest of the same shape. This is the Standard payment plugin's
-(`plugins/alfa-payments/standard/standard.xml`), shortened by its empty `config` block:
+(`plugins/alfa-payments/standard/standard.xml`), shortened by its empty `config` block and one comment:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -180,7 +179,8 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 	<creationDate>2025-03-04</creationDate>
 	<authorEmail>info@easylogic.gr</authorEmail>
 	<authorUrl>http://easylogic.gr</authorUrl>
-	<version>2.2.0</version>
+	<version>2.2.1</version>
+	<alfacore min="2.2" max="2.2"/>
 	<description>PLG_ALFA_PAYMENTS_STANDARD_XML_DESCRIPTION</description>
 	<namespace path="src">Alfa\Plugin\AlfaPayments\Standard</namespace>
 	<files>
@@ -204,7 +204,8 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 |---|---|
 | `extension` | `type="plugin"`, the `group`, and `method="upgrade"` so that installing a newer package updates the plugin. |
 | `name` | A language key built from the group and the element: `PLG_ALFA_PAYMENTS_STANDARD`. The key is in both language files, so Joomla shows the plugin's real name. The shipped `system` and `console` plugins write it in lower case (`plg_system_alfasync`). |
-| `version` | The shipped plugins carry Alfa Commerce's own version, `2.2.1`. Your plugin carries its own. |
+| `version` | The shipped plugins carry Alfa Commerce's own version. Your plugin carries its own. |
+| `alfacore` | The lines of Alfa Commerce the plugin is built for. See [The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for). |
 | `namespace` | `path="src"`, then your vendor name, `Plugin`, the group in capitals without the hyphen, and the element: `Alfa\Plugin\AlfaPayments\Standard`. Use your own vendor name in place of `Alfa`. |
 | `files` | The `services` folder carries the attribute `plugin` with the element. It holds `provider.php`, which creates the plugin. `src` holds the class, `tmpl` the layouts, `params` the settings form of a method or a field. |
 | `languages` | Two files per language: the plugin's texts and its `.sys.ini` (the name and description Joomla shows in its lists). Their names are `plg_`, the group, an underscore, the element. |
@@ -215,7 +216,7 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 The shipped plugins are inside the Alfa Commerce package. The component's manifest (`alfa.xml`) lists them, and the
 component's installer script (`script.php`) installs or updates each one through Joomla's installer and then
 **enables** it when the site did not have it before. On an update each one keeps the state it had, so a plugin that
-staff disabled stays disabled, and the update page names it. (Up to 2.2.0 every update enabled them all again.)
+staff disabled stays disabled, and the update page names it.
 
 A plugin of your own is a package of its own. Staff install it through Joomla's Extensions: Install, and Joomla
 leaves a new plugin disabled until staff enable it under Extensions: Plugins. A payment or shipping plugin must also
@@ -231,7 +232,7 @@ extension uses when it is installed. It does three things:
 - It refuses to install or update an extension on a site whose Alfa Commerce is missing or older than the version
   the extension needs, with one wording for every extension.
 - It refuses an install or update outside the lines of Alfa Commerce that your extension's manifest says it is
-  built for (`rangeRefusal()`, since 2.2.1). See
+  built for. See
   [The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for).
 - It provides the warning shown when an Alfa extension is uninstalled: the extension's data stays.
 
@@ -312,12 +313,10 @@ namespace starts with `Alfa\`, a module whose name starts with `mod_alfa`, and a
 
 ## The Alfa Commerce lines your extension is built for
 
-Everything in this section is read by Alfa Commerce 2.2.1 and later; a 2.2.0 site ignores the element.
-
 ### What it does
 
 An Alfa extension states once, in its manifest beside its version, the lines of Alfa Commerce it is built for. A
-line is a major and a minor version: `2.2` covers 2.2.0, 2.2.1 and every later 2.2 release.
+line is a major and a minor version: `2.2` covers every 2.2 release.
 
 ```xml
 <version>1.4.0</version>
@@ -344,8 +343,8 @@ update of Alfa Commerce, which reads the manifest file of each installed Alfa pl
 1. The element in the manifest of every plugin and every module your extension installs. Alfa Commerce's check after
    its own update reads those manifests; a package's own manifest is not read there. A package carries the same
    element in its own manifest too, because the gate reads the manifest its installer is given.
-2. A `preflight()` that asks the gate. On a site with Alfa Commerce 2.2.1 or later it calls `rangeRefusal()`; on an
-   older one, which has no such method, it falls back to `refusal()` with your own minimum. Replace `Example plugin`
+2. A `preflight()` that asks the gate. Where the gate has `rangeRefusal()` it calls it; where the gate has no such
+   method, it falls back to `refusal()` with your own minimum. Replace `Example plugin`
    with your extension's name.
 
 ```php
@@ -396,7 +395,7 @@ At your extension's installation:
 | The site | What `rangeRefusal()` returns | What staff see |
 |---|---|---|
 | Has Alfa Commerce of a line inside your range | `null` | The installation goes on. |
-| Has Alfa Commerce of a line outside your range | "Example plugin is built for Alfa Commerce 2.2 to 2.2, and this site has Alfa Commerce 2.3.0. Install the build of Example plugin made for Alfa Commerce 2.3, or ask its developer for one. Nothing was changed." | The installation stops. Nothing was changed. |
+| Has Alfa Commerce of a line outside your range | A sentence that names your extension, your range and the installed Alfa Commerce, asks for the build of your extension made for the installed line, or for its developer to make one, and ends "Nothing was changed." | The installation stops. Nothing was changed. |
 | Has no Alfa Commerce | The sentence of `refusal()`, with your range's `min` as the minimum | The installation stops. |
 | Reads an element it cannot use: `min` missing or not a line, `max` not a line, or `max` before `min` | "Example plugin cannot be installed:", what is wrong with the element, "Its developer must correct its manifest. Nothing was changed." | The installation stops. |
 | Reads no element at all | `null`. Nothing is refused and nothing is inferred. | The installation goes on. |
@@ -431,7 +430,7 @@ of its plugins and modules is. The extensions that ship inside the Alfa Commerce
 
 ### The compatibility-range policy
 
-This is the policy every Alfa extension follows from 2.2.1:
+This is the policy every Alfa extension follows:
 
 1. Every Alfa extension's manifest declares `<alfacore min max>` with both values. `max` names the last line the
    extension was tested on: a line such as 2.2, never a patch release.
@@ -453,15 +452,6 @@ This is the policy every Alfa extension follows from 2.2.1:
 7. A package of several extensions carries the element in the package's manifest, which its installer hands to the
    gate, and in each plugin and module manifest it contains, which Alfa Commerce's notice reads, with the same
    values.
-
-## Changed in 2.2.0
-
-- A plugin that handles Alfa events is a `SubscriberInterface` plugin. Broadcast events go in
-  `getSubscribedEvents()`, targeted events in the targeted declaration, never in both.
-- Every contribution names its plugin as group.element.
-- Alfa no longer loads a contributing plugin's language. The plugin loads its own.
-- `onCartTotals`, `onOrderPlaceValidate` and `onCartItemDisplay` go only to plugins of the `alfa` group.
-- A disabled plugin is never started for a targeted event, and Alfa never falls back to another plugin.
 
 ## Not documented yet
 

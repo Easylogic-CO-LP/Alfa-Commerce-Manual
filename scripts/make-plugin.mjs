@@ -17,7 +17,7 @@ const input = {
   author: vendor + ' Ltd', authorEmail: 'dev@example.invalid', authorUrl: 'https://example.invalid',
   copyright: '(C) 2026 ' + vendor + ' Ltd', license: 'GNU General Public License version 3 or later',
   version: '0.1.0', description: name + ', a starter plugin.',
-  creationDate: '2026-11-13', alfaVersion: '2.2.0',
+  creationDate: '2026-11-13',
 };
 const file = join(outDir, zipName(template, input));
 writeFileSync(file, zip(generate(template, input)));

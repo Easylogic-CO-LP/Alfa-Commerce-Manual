@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Installation
-description: What Alfa Commerce 2.2.1 needs, how to install and update it, and what the installer does and refuses.
+description: What Alfa Commerce needs, how to install and update it, and what the installer does and refuses.
 ---
 
 # Installation
@@ -23,8 +23,7 @@ The installer checks Joomla, PHP and the PHP extensions itself and names what is
 database version, so check that one yourself.
 
 Printing sales documents as PDF needs the dompdf library (`lib_dompdf`). It ships with Alfa Commerce and is
-installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step (2.2.0 did
-not ship it). The setup checklist has a
+installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step. The setup checklist has a
 recommended row, "PDF library for sales documents", which fails only when one of these libraries has been removed,
 and says that installing the Alfa Commerce package again restores it.
 
@@ -64,7 +63,7 @@ why:
 2. Joomla is 7.0 or newer.
 3. PHP is older than 8.3.
 4. A required PHP extension is missing (each one is named).
-5. An Alfa Commerce older than 2.0.0 is installed (see [From a 1.x beta](#from-a-1x-beta)).
+5. A 1.x beta of Alfa Commerce is installed (see [From a 1.x beta](#from-a-1x-beta)).
 6. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
 
 ## After installing
@@ -81,13 +80,10 @@ result: it places a test file in the folder and asks the site for it at its publ
 
 - If the test file is refused, nothing is shown.
 - If the test file is served, or the site could not request its own address, a security warning stays on Alfa
-  Commerce's administrator screens until a later check passes. Press **Check again** after fixing the cause. In 2.2.0
-  the warning cannot be dismissed.
+  Commerce's administrator screens until a later check passes. Press **Check again** after fixing the cause.
 
 nginx ignores the deny rules in the folder. There, refuse the folder in the server configuration (the warning prints
 the rule), or move the store outside the public web root.
-
-Since 2.2.1:
 
 - **A switch.** **Options**, **Downloads**, **Direct-download protection check** (Yes by default). With No, no
   administrator page says anything about the store's protection, and installing, updating, a path change and the
@@ -97,8 +93,8 @@ Since 2.2.1:
   no file of its own, no page warns and nothing is tested. The Options say "No files in the store yet; the protection
   is checked when the first file is added." The first file added to such a store is tested once, while the check is
   on. The upload never fails because of the test.
-- **The warning.** It says in plain words what happened, whether it matters and what to do. The nginx rule is no
-  longer in its text: it is behind the warning's **Server rule** line. Two links open the Downloads tab of the
+- **The warning.** It says in plain words what happened, whether it matters and what to do. The nginx rule is behind
+  the warning's **Server rule** line. Two links open the Downloads tab of the
   Options: "Move the store outside the web root" and, while the check is on, "Turn this check off".
 
 The shop's background work (sending e-mails, issuing documents, rebuilding the catalogue's stored data) needs no
@@ -107,7 +103,7 @@ it from cron with the console command `alfa:tasks:run`.
 
 ## Updating
 
-From 2.0.0 on, Alfa Commerce updates in place through Joomla's own update system (update server
+Alfa Commerce updates in place through Joomla's own update system (update server
 `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new ZIP over the installed version. Joomla
 runs each release's database changes itself.
 
@@ -123,48 +119,45 @@ Before updating:
   [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
 
 The same Joomla and PHP checks run on an update as on an installation. An update also cleans the caches of the
-bundled items module (`mod_alfa_items`), and keeps each plugin of the package in the state staff left it (up to
-2.2.0 an update enabled them all again).
+bundled items module (`mod_alfa_items`), and keeps each plugin of the package in the state staff left it.
 
-The update to 2.2.1:
+What else an update does:
 
-- The update installs dompdf and the four libraries it needs. A `lib_dompdf` that was installed on its own before is
-  updated to the package's copy. PDFs then work with no extra step.
-- The update lists the files among the item images that are not images, with the records that name them: one
-  warning on the update page, and one line per file in the media log (`com_alfa_media.php` in Joomla's log folder).
-  Nothing is deleted. Look at each file, delete by hand those that are not yours to publish, and choose a new
-  thumbnail for the records named.
-- Each plugin of the package that staff disabled (for example Web Services - Alfa Commerce) stays disabled and is
-  named on the update page and in the maintenance log.
-- The update rebuilds the item list's prices once, in the background (**Tools**, **Tasks**), because a discount
-  or a tax scoped to a place now reaches the places inside it. Until the rebuild ends, the list may sort and filter
-  some customers by the earlier price, while the item page and the cart already show the new one. The update page
-  names the published discounts and taxes that now reach further; a shop whose places are all countries has none.
-- The update removes columns nothing reads: the orders' coupon id, coupon code, invoice date and invoice number,
-  the invoice id of order lines, parcels and order cart rules, and the e-mail subject and body columns of each
-  language's order status table. On MariaDB 10.6 and on MySQL 8.0.29 or later this changes only the tables'
-  definitions; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet hour.
-  A report or an extension of your own that reads those columns by name stops working.
-- The update brings the shop's countries to ISO 3166-1. The countries the shop never changed are corrected in
-  place, each keeping its id, the missing ones are added unpublished, and the update page names what it left: the
-  countries the shop changed, the old rows that are not countries, the place Larisa inside Greece, which earlier
-  versions installed, and the countries whose default currency it left as it was. The places inside Greece and
-  Spain are not added by the update: in **Countries/States**, select Greece or Spain and press **Add subdivisions**
-  to add them, unpublished. The seeded country and region names are in English; rename them in **Countries/States**
-  if the shop prefers names in another language.
-- Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
+- **The database.** When you update Alfa Commerce, the installation drops the columns it no longer uses, adds the
+  ones it needs, and, when a release changes how prices are worked out, rebuilds the item prices once in the
+  background (**Tools**, **Tasks**). The columns it drops are those nothing reads: the orders' coupon id, coupon
+  code, invoice date and invoice number, the invoice id of order lines, parcels and order cart rules, and the e-mail
+  subject and body columns of each language's order status table. A report or an extension of your own that reads
+  one of them by name stops working. On MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the
+  table's definition; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet
+  hour.
+- **The prices.** Until the rebuild ends, the item list may sort and filter some customers by the earlier price,
+  while the item page and the cart already show the new one. A discount or a tax scoped to a place reaches the
+  places inside it; on a shop whose rules were saved before that, the update page names the published discounts and
+  taxes that now reach further. A shop whose places are all countries has none.
+- **The PDF libraries.** The package installs dompdf and the four libraries it needs. A `lib_dompdf` that was
+  installed on its own is updated to the package's copy. PDFs then work with no extra step.
+- **Item images that are not images.** The update lists the files among the item images that are not images, with
+  the records that name them: one warning on the update page, and one line per file in the media log
+  (`com_alfa_media.php` in Joomla's log folder). Nothing is deleted. Look at each file, delete by hand those that are
+  not yours to publish, and choose a new thumbnail for the records named.
+- **Plugins.** Each plugin of the package that staff disabled (for example Web Services - Alfa Commerce) stays
+  disabled and is named on the update page and in the maintenance log.
+- **Countries.** On a shop whose countries do not yet follow ISO 3166-1, the update brings them to it. The countries
+  the shop never changed are corrected in place, each keeping its id, the missing ones are added unpublished, and
+  the update page names what it left: the countries the shop changed, the old rows that are not countries, the place
+  Larisa inside Greece, which older shops were installed with, and the countries whose default currency it left as
+  it was. The places inside Greece and Spain are not added by the update: in **Countries/States**, select Greece or
+  Spain and press **Add subdivisions** to add them, unpublished. The seeded country and region names are in English;
+  rename them in **Countries/States** if the shop prefers names in another language.
+- **E-mail layouts.** Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
   [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
   finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the
   folder to copy each one into. It moves and deletes nothing.
 
-An update from 2.1.4 to 2.2.0 may print the warning "The scheduled tasks of plg_task_alfapricesets were not
-removed". They were removed, and the warning can be ignored. The update from 2.1.x to 2.2.1 removes them without
-that warning.
-
 ### From a 1.x beta
 
-2.0.0 was the first stable release. It cannot be installed over any 1.x beta, and the installer refuses before
-anything is changed. To move from a beta:
+A stable release cannot be installed over a 1.x beta, and the installer refuses before anything is changed. To move from a beta:
 
 1. Back up the site.
 2. Uninstall the beta.

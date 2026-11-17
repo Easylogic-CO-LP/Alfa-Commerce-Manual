@@ -106,8 +106,7 @@ customers. A rule applies to an item only when all five match. One part matches 
 A rule must also be published and inside its period (its publish dates). The customer groups compared are the
 visitor's own groups, not the groups that may see the item.
 
-A rule scoped to a place matches a visitor at that place or at any place inside it (since 2.2.1 for the goods; the
-shipping taxes did so already). A rule for a country reaches its regions and towns. An item's own price row for a
+A rule scoped to a place matches a visitor at that place or at any place inside it. A rule for a country reaches its regions and towns. An item's own price row for a
 place applies to that place only. So publishing a region inside a country
 changes the price row its customers get: a customer whose place is the region pays the region's own price, if the
 item has one, otherwise the price for every place, while the country's discounts and taxes still reach them. Add
@@ -118,7 +117,7 @@ the region's own price rows, or keep the items' prices for every place.
 Rules are read in one order, the same for the goods and for the shipping taxes. Rules with no place (or "every
 place") keep their ordering, then id, among themselves. Rules scoped to a place come nearest place first (the visitor's own place, then
 the region above it, then the country), each place's rules by ordering, then id. The two lists are then merged by
-ordering and id. A shop whose places are all countries keeps the order of 2.2.0 exactly (ordering, then id). Each
+ordering and id. On a shop whose places are all countries, that is simply ordering, then id. Each
 rule has a **behaviour**:
 
 | Behaviour | Value | For discounts | For taxes |
@@ -188,8 +187,8 @@ The result then gives:
 
 ### Asking for a price: PriceCalculator
 
-`PriceCalculator` is how core asks for a price: the item models, the cart and the order screens call it. In 2.2.0
-no shipped plugin, module or template calls it, and its comments do not say whether an extension may. So this
+`PriceCalculator` is how core asks for a price: the item models, the cart and the order screens call it. No
+shipped plugin, module or template calls it, and its comments do not say whether an extension may. So this
 section describes the class and does not recommend the call. A template reads the result that the item already
 carries (see [In a template](#in-a-template)). The sample shows the call as core makes it.
 
@@ -213,7 +212,7 @@ echo $results[15]->getTotal()->format();
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `__construct(?PriceDataLoader $loader = null, ?PriceComputationEngine $calculator = null)` | Builds the calculator. Core passes no arguments. | | |
-| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Since 2.2.1, also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
+| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
 | `calculateVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null, ?ExplicitPriceInstruction $price = null): PriceResult` | Prices one item for a chosen combination or chosen options | The item's own taxes and discounts apply as for the plain item. An empty selection gives the same as `calculate()`. | |
 | `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | A map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
 | `tierStarts(int $itemId, ?int $combinationId, PriceContext $context): array` | Lists the quantities at which the unit price of a line may change | Ascending, without repeats. It may list more quantities than really change the price. | |
@@ -252,7 +251,7 @@ $other   = $context->withCurrency(2);        // the same visitor, another curren
 | `customerGroups(User $customer): array`, `groupLineage(int $groupId): array`, `groupLineages(array $groupIds): array` (static) | The groups a customer holds, and a group with every group above it | |
 
 The session keys are `alfa.currency_id` and `alfa.location_id`. A plugin that detects the visitor's country sets
-the second one to the id of the place. The cart is the exception (since 2.2.1). It is priced at its delivery place once the checkout holds one; lists and item pages keep the session's place. The cart
+the second one to the id of the place. The cart is the exception. It is priced at its delivery place once the checkout holds one; lists and item pages keep the session's place. The cart
 module shows the cart's totals at that place on every page, without the cart page's sentence naming it. The order
 builder in the administrator reads neither key: a cart it makes opens in the shop's default currency, and its prices
 follow the cart's currency. A page priced for a visitor whose session holds either key is kept out of Joomla's page cache, whatever the state of "System - Alfa Commerce Sync".
@@ -263,7 +262,7 @@ another visitor. See [Caches](../architecture/caches.md#the-page-cache-rule).
 
 The site items model prices its list with a `PricingIntent`. By default it is `PricingIntent::catalog()`: each item
 at its minimum quantity. Core's cart passes another one with the model's `setPricingIntent()` (`CartHydrator`). It
-is the only caller in 2.2.0, and the code does not say whether an extension may call it.
+is the only caller, and the code does not say whether an extension may call it.
 
 ```php
 use Alfa\Component\Alfa\Site\Service\Pricing\PricingIntent;
@@ -280,7 +279,7 @@ $intent = PricingIntent::cart([123 => 3, 124 => 1]);
 | `quote(array $quantities, int $minQuantity = 1): self` | Quantities for a quote, with a minimum of your own |
 | `getQuantityForItem(object $item): int` | The quantity for one item. It reads `$item->id`, and never answers less than 1. |
 | `getQuantities(): array`, `getScope(): string` | Read the intent |
-| `isTransactional(): bool`, `requiresStockValidation(): bool`, `isCacheable(): bool` | True or false by the kind of intent. Nothing outside the class reads them in 2.2.0. |
+| `isTransactional(): bool`, `requiresStockValidation(): bool`, `isCacheable(): bool` | True or false by the kind of intent. Nothing outside the class reads them. |
 
 A key that is not the item's integer id, such as `'item_123'`, never matches, and the item is priced at its minimum
 quantity without an error.
@@ -418,10 +417,10 @@ Each entry of `discounts.applied` has `id`, `name`, `code`, `amount`, `percent`,
 `['value' => ..., 'formatted' => ..., 'basis' => ...]`. Its `basis` is `tax_excluded` for a rule applied before tax
 and `tax_included` for a rule applied after tax. For a percentage, `amount` is `null`.
 
-**Changed in 2.2.0.** Every saving and discount figure of this data is stated without tax, and says so:
-`savings.basis` and `discounts.basis` are `tax_excluded`, and `discounts.total` is the same figure as
-`savings.total_amount`. For a discount applied after tax, 2.1.4 gave the amount with tax there. A discount of 5
-percent applied after tax on 200.00 net under a tax of 24 percent now reads 10.00, where 2.1.4 read 12.40.
+Every saving and discount figure of this data is stated without tax, and says so: `savings.basis` and
+`discounts.basis` are `tax_excluded`, and `discounts.total` is the same figure as `savings.total_amount`, also for a
+discount applied after tax. A discount of 5 percent applied after tax on 200.00 net under a tax of 24 percent reads
+10.00.
 
 The other forms:
 
@@ -602,15 +601,13 @@ The engine on this page prices items. A shipping charge is priced by the shippin
 tax rule: an ordered list of rates, each charged on what the one before left. That list is the charge's **tax
 chain**.
 
-**Changed in 2.2.0.** Each entry of a chain names the tax rule of its rate:
+Each entry of a chain names the tax rule of its rate:
 
 ```php
 [
     ['rate' => '24', 'name' => 'VAT'],
 ]
 ```
-
-Before 2.2.0 the chain held the rate texts alone, for example `['10', '5']`.
 
 | Where you read it | Shape |
 |---|---|
@@ -622,7 +619,7 @@ Before 2.2.0 the chain held the rate texts alone, for example `['10', '5']`.
 
 A carrier plugin that passes its own `shipping_tax_chain` to the shipment ledger writes each entry either as a rate
 text (`'24'`) or as exactly the two keys `rate` and `name`. A rate is plain decimal text above zero. Anything else
-is refused. A chain stored before 2.2.0 is still read, as rates with no rule named.
+is refused. An older chain stored as rate texts alone (`['10', '5']`) is still read, as rates with no rule named.
 
 The shipping taxes follow the same order as the goods' taxes (see
 [When several discounts or taxes apply](#when-several-discounts-or-taxes-apply-the-behaviour)).
@@ -636,21 +633,11 @@ The shipping taxes follow the same order as the goods' taxes (see
 | An item in a list is priced at its minimum quantity although you passed a quantity | The map given to `PricingIntent::cart()` is not keyed by the integer item id |
 | `calculate()` fails for an array of ids | The quantity map does not hold every id of the array. Give each id a quantity. |
 | A unit price prints as 0.00 | It was printed with a per unit method of the result. Use `PriceUnits::page()`. |
-| `Call to private method PriceSettings::global()` or to an unknown method | `global()` is private, and `compact()`, `full()`, `only()` and `except()` do not exist in 2.2.0. Use `get()`, `minimal()` or `make()`. |
+| `Call to private method PriceSettings::global()` or to an unknown method | `global()` is private, and `compact()`, `full()`, `only()` and `except()` do not exist. Use `get()`, `minimal()` or `make()`. |
 | `Non-static method ... cannot be called statically` on the index service | Its sync methods are instance methods. The service is core's own, see [PriceIndexSyncService](#priceindexsyncservice). |
 | The price filter or the sort by price uses an old price after price data was written without Alfa's models | The index was not rebuilt for those items. Staff rebuild it with Tools > Database Sync, "Rebuild catalogue projections". |
 | The price filter has no stored prices for some customers for a while | Their customer group set is still being prepared by the `price.set.prepare` job |
 | `add()` or `subtract()` throws | The two `Money` objects are in different currencies |
-
-## Changed in 2.2.0
-
-- **Changed in 2.2.0.** In `toArray()` and `formatAll()` every saving is stated without tax, and `savings.basis` and
-  `discounts.basis` say so.
-- **Changed in 2.2.0.** A shipping charge's tax chain is a list of rate and name pairs, not of rate texts.
-- **Since 2.2.0.** `onAlfaPricesChanged` is announced after each write to the price index.
-- **Since 2.2.0.** A new customer group set is prepared by the background job `price.set.prepare`, and every write
-  of an item's rows holds the item's rebuild lock.
-- **Changed in 2.2.0.** A place prices a visitor only when it and every place above it are published.
 
 ## Not documented yet
 

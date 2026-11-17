@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Overview
-description: "The REST API of Alfa Commerce 2.2.1: how to call it, the rules every route follows, and the defects of 2.2.0 that 2.2.1 fixed."
+description: "The REST API of Alfa Commerce: how to call it, how to run the Postman collection, and the rules every route follows."
 ---
 
 # REST API
@@ -22,15 +22,89 @@ This page has the rules that hold for every route. The routes themselves are on 
 
 ## The Postman collection
 
-Every route is also in a public Postman collection, with a test on each request:
+Every route is in a Postman collection, with a test on each request. Use it to try the API by hand, or to check a
+shop's API route by route.
 
-<PostmanButton href="https://www.postman.com/alfa-commerce/alfa-commerce/collection/6266p4v/alfa-commerce-rest-api">Alfa Commerce REST API on Postman</PostmanButton>
+### Two ways to get it
 
-The collection is generated from the 2.2.0 code. Run it against a test or demo shop only, never a live one: it
-creates records, places an order, issues an invoice and voids it.
+| | Fork the live collection | Download the file |
+|---|---|---|
+| What you get | Your own copy in your Postman workspace, linked to Alfa Commerce's public collection | A file on your computer |
+| What it needs | A Postman account | Nothing. It works without a Postman account, and in other tools that import Postman collections |
+| When the API changes | Postman notifies you, and you pull the changes with one click | Nothing tells you, and the file never changes on its own. Download it again |
+| Recommended for | Anyone building on the API | A one-off look, or a tool other than Postman |
 
-Since 2.2.1 some answers change (a create answers 201, see [Status codes](#status-codes)), so the 2.2.0 collection
-reports failures when it is run against 2.2.1.
+Both hold the same requests on the day you take them, because the live collection is updated from this file at
+each release.
+
+### Fork the live collection
+
+<PostmanButton href="https://www.postman.com/alfa-commerce/alfa-commerce/collection/6266p4v/alfa-commerce-rest-api">Run in Postman</PostmanButton>
+
+1. Press **Run in Postman**. The collection opens in Alfa Commerce's public workspace on Postman. Sign in: Postman
+   asks for an account before you fork.
+2. Select **Use** in the upper right, or hover over the collection in the sidebar, select **View more actions**
+   and choose **Use / Fork**.
+3. Select your own workspace for the fork. Under **Use as**, keep **Fork** selected, and enter a label for your
+   fork.
+4. Keep **Watch the source collection** selected: Postman then notifies you when the collection changes. You may
+   also select **Pull changes from the source collection automatically**, which keeps your fork up to date with no
+   step of yours.
+5. Select **Use Collection**. The fork appears in your workspace.
+
+To take the changes Postman notified you of: in the sidebar, next to your fork, select **View more actions**,
+**Pull changes**. Postman shows what changed; select **Pull Changes**.
+
+### Download the file
+
+<a href="/postman/alfa-commerce.postman_collection.json" download="alfa-commerce.postman_collection.json">Download alfa-commerce.postman_collection.json</a>
+
+In Postman choose **File**, **Import**, and pick the downloaded file. The collection "Alfa Commerce REST API"
+appears in your workspace. Another tool that imports Postman collections reads the same file.
+
+### Set it up
+
+Open the collection, then its tab **Variables**, and set two values:
+
+| Variable | Value |
+|---|---|
+| `baseUrl` | Your shop's API address, `https://your-shop.example/api/index.php` |
+| `token` | A Joomla API token (see [What you need](#what-you-need)). It ships empty. |
+
+Type the token as the variable's **local value** only. Postman keeps the local value on your computer, while the
+**shared value** is synced to the Postman Cloud and seen by anyone who shares your workspace. Save. The collection
+sends the token itself, as the header `X-Joomla-Token`, on every request.
+
+### Run a request, or the whole collection
+
+- **One request.** Open it and press **Send**. The answer is below the request, and the tab **Test Results** shows
+  each check of that request as passed or failed.
+- **The whole collection.** Select the collection, then **Run** (the Collection Runner). Keep every request
+  selected and in its order, and select **Start run**. Postman sends the requests one after the other and shows each
+  test as passed or failed as it goes, with the counts of passed and failed tests for the run. Run it in order:
+  requests keep the ids of the records they create in collection variables of their own, and later folders read
+  what earlier ones made.
+
+Run the collection against a test or demo shop only, never a live one. It creates records and removes them, places
+an order, issues its invoice on the shop's default invoice series (the shop needs one) and voids it. What the shop's
+rules keep stays on record after a run: that order, cancelled, with its voided invoice, its item, archived, and, in the
+trash, the category and the payment and shipping methods the order used.
+
+### How the folders are organised
+
+| Folder | What it holds |
+|---|---|
+| Catalogue (storefront) | The read-only view the shop shows a shopper: published items only, with their computed prices. |
+| Catalogue (back office) | The editable catalogue: items, categories, manufacturers and item fields, every row visible. |
+| Customers | Customer records and the price settings of customer groups. |
+| Commerce configuration | Currencies, taxes, discounts, cart rules, places, and the payment and shipping methods. |
+| Checkout & registration forms | The form fields and their groups. |
+| Orders | Orders, order statuses, and the operations on an order. |
+| Inventory | Stock locations and stock movements. |
+| Documents | Invoices, credit notes and delivery notes. |
+| Tasks | The background work a save leaves. |
+
+Each folder and each request has a description in Postman that says what it does and what it expects.
 
 ## What you need
 
@@ -41,7 +115,7 @@ reports failures when it is run against 2.2.1.
 | **A token** | A Joomla API token of a user. In the administrator: **Users**, **Manage**, open the user, the tab **Joomla API Token**. Joomla's plugins "User - Joomla API Token" and "API Authentication - Web Services Joomla Token" must be enabled. Joomla installs them enabled. |
 | **The permission** | The token's user must hold the Alfa Commerce permission of the route. See [Permissions](#permissions). |
 
-Send the token in one of two headers. Both were tried on 2.2.0:
+Send the token in one of two headers:
 
 ```bash
 curl -H "X-Joomla-Token: YOUR_TOKEN" \
@@ -70,7 +144,7 @@ sequenceDiagram
     Note over A: The user lacks the route's permission: 403
     A->>A: The same model or service the administrator screens use
     Note over A: A save is final here. Follow-up work is recorded as tasks.
-    A-->>C: JSON: data, links, and meta when there is any
+    A->>C: JSON: data, links, and meta when there is any
 ```
 
 The API is served by the administrator's models and by the services, the code behind the administrator screens, so
@@ -150,7 +224,7 @@ A list has `data` as a list, the links `next` and `last` when there are more pag
 }
 ```
 
-The examples in these pages are answers of a 2.2.0 test shop, shortened where marked.
+The examples in these pages are real answers, shortened where marked.
 
 ## Reading
 
@@ -165,7 +239,7 @@ The examples in these pages are answers of a 2.2.0 test shop, shortened where ma
 ### The filters of each list
 
 Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each. A
-list sent where one value is expected (for example `filter[state][]=1`) is answered 400 (since 2.2.1). The
+list sent where one value is expected (for example `filter[state][]=1`) is answered 400. The
 `filter[category]` and `filter[manufacturer]` of `items` take a list, and `filter[fields]` of `items` takes a map
 (below).
 
@@ -184,7 +258,7 @@ list sent where one value is expected (for example `filter[state][]=1`) is answe
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
 
-Since 2.2.1, four lists also take the filters their administrator screens apply, with the same meaning as there.
+Four lists also take the filters their administrator screens apply, with the same meaning as there.
 
 | List | Filters added | What they keep |
 |---|---|---|
@@ -261,8 +335,7 @@ and a `PATCH` that sends the name empty, are refused:
 {"errors":[{"title":"Field required: Name"}]}
 ```
 
-The name may be sent as the flat key or inside the `translations` object. In 2.2.0 a `PATCH` without the name was
-refused too ([row 13](#known-defects-in-220)).
+The name may be sent as the flat key or inside the `translations` object.
 
 **Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
 `values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
@@ -293,7 +366,7 @@ it under `meta.tasks`, each with its state and its own address. See
 
 | Status | Meaning |
 |---|---|
-| 200 | Done. In 2.2.0 also the answer to a create (see [Known defects](#known-defects-in-220)). |
+| 200 | Done. |
 | 201 | Created: the answer to a create. The body is the new record, and the header `Location` holds its address. The operations on an order keep 200. |
 | 202 | A task is still working. See [Tasks](./documents-and-tasks.md#tasks). |
 | 204 | Deleted. No body. |
@@ -303,7 +376,7 @@ it under `meta.tasks`, each with its state and its own address. See
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
 | 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money, a write of an item that carries its options, combinations, item field values or downloads, a write of an item field that carries its values, a `PATCH` of an order that carries a field its update does not write. |
-| 500 | A fault. Four cases were known in 2.2.0, below; in 2.2.1 none of the four answers 500. |
+| 500 | A fault on the server. The server's log says what. |
 | 503 | A PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, has been removed. The answer says so in words. |
 
 A refusal carries its reason in words:
@@ -363,31 +436,10 @@ Voiding a document needs the documents' Change State permission.
 
 The payments and shipments of one order are under that order: see [Orders](./orders.md).
 
-## Known defects in 2.2.0
+## Known limitations
 
-These are faults of 2.2.0, found by running the collection against the published release. They are listed here so
-that a program talking to a 2.2.0 shop behaves correctly. Every row is fixed in 2.2.1.
-
-| | What 2.2.0 does | What to do today | Fix |
-|---|---|---|---|
-| 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Fixed in 2.2.1: 404 |
-| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Fixed in 2.2.1: 409 with the reason, and nothing is deleted |
-| 3 | A create answers 200, not 201 | Accept 200 | Fixed in 2.2.1: 201, with the new record's address in the header `Location` |
-| 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Fixed in 2.2.1: a delete of an item, category, manufacturer, item field, currency, tax, discount, place, payment or shipping method, form field, form field group or order status that is not in the trash answers 409; move it to the trash first with a `PATCH` of `state` -2. Cart rules, stock locations, customers, customer groups and orders have no trash step and are deleted in one call. |
-| 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Fixed in 2.2.1: each is refused with 400 and the reason |
-| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Fixed in 2.2.1: none of them is needed, and a part of `prices_display` sent alone changes only that part |
-| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Fixed in 2.2.1: `customer_note` is written, and `state` is refused with 422. Every other field the update does not write is refused with 422 too, naming it (see [Orders](./orders.md)). |
-| 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Fixed in 2.2.1 |
-| 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce 2.2.0 does not ship it. | On 2.2.0, install `lib_dompdf`, or use the `html` route | Fixed in 2.2.1: the library ships with the package and is installed with it. A removed library is named by a setup row and answered 503 with the reason. |
-| 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Fixed in 2.2.1: `note` and `created` are gone, and each shipment carries `added`, `shipping_charge_basis` and `shipping_tax_chain` |
-| 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | Fixed in 2.2.1: `created` is gone, and each payment carries `added` and `refund_reason` |
-| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | Fixed in 2.2.1: one order carries `fulfillment_status` and `fulfillment_percentage` |
-| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | Fixed in 2.2.1: the stored name is kept |
-| 14 | A write of an item that carries its options, combinations or item field values (`fields`, `options`, `combinations`, `informational`, or the item form's keys for them, such as `deleted_option_value_ids`) is not refused. Those values reach the option and combination writers in a shape they do not read: a list of options sent as a read returns it is taken by its positions, so it can change another option of the item, and `deleted_option_value_ids` deletes options. The same holds for the item form's downloads grid (`item_downloads`): a download row sent there is written with any combination id, unchecked, and with the state sent. The write answers 200 (row 3), although it was partial and not checked. | Never send them in a write. Set them in the administrator. | Fixed in 2.2.1: 422 naming the keys, and nothing is saved |
-| 15 | A write of an item field that carries `values` or `deleted_value_ids` is not refused. A value is kept by its id whatever field it belongs to, so a `PATCH` of one field that names a value of another field moves that value, with the options, specifications and combinations of items built on it, under the first field. `deleted_value_ids` deletes the unused values of any field. | Never send `values` or `deleted_value_ids`. Edit a field's values on its page in the administrator. | Fixed in 2.2.1: 422 naming the keys, and nothing is saved |
-
-In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
-route is meant to answer.
+No defect of the API is known. A limitation is described on the page of its route: what the route does, and what a
+program does about it.
 
 ## Not documented yet
 
@@ -395,4 +447,4 @@ route is meant to answer.
   each is in the administrator form of the same record.
 - Joomla's own routes that the collection uses for setup (`v1/users`, `v1/users/groups`, `v1/media/files`,
   `v1/config/com_alfa`). See Joomla's documentation.
-- Rate limits. They were not looked at for this page.
+- Rate limits.

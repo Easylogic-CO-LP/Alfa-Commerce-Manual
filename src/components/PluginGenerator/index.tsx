@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 import templates from '@site/src/data/pluginTemplates.json';
-import {TESTED_AGAINST, elementFrom, generate, problems, vendorFrom, zip, zipName} from './core';
+import {elementFrom, generate, problems, vendorFrom, zip, zipName} from './core';
 import type {Input, Template} from './core';
 
 const TEMPLATES = templates as unknown as Template[];
@@ -62,7 +62,6 @@ export default function PluginGenerator(): React.ReactElement {
     version: version.trim(),
     description: description.trim(),
     creationDate: today(),
-    alfaVersion: TESTED_AGAINST,
   };
 
   const wrong = problems(template, input);

@@ -397,7 +397,7 @@ flowchart TB
 
 ## Other things a plugin can add
 
-A plugin can add more than parts of a screen. Each line gives the event and the call as they are in 2.2.0. The first
+A plugin can add more than parts of a screen. Each line gives the event and the call. The first
 six are announced to everyone and go in `getSubscribedEvents()`.
 
 | What | Event | The call |
@@ -415,22 +415,6 @@ A registry's entry names its plugin second, after the object it registers: `addP
 both `addProvider()` (document types, and stock allocation). The other contributions name the plugin first.
 
 How stock is allocated is not one of these. It belongs to a plugin family of its own, `alfa-inventory`.
-
-## Changed in 2.2.0 and 2.1.4
-
-- **Changed in 2.2.0.** A handler is called only when its event is listed in `getSubscribedEvents()`. Before, a
-  method with the event's name was enough.
-- **Changed in 2.2.0.** Every contribution takes the plugin's name, `group.element`, as its first argument:
-  `column()`, `action()`, `append()`, `item()`, `add()`, `section()`, the permission's `action()`, the cards, the
-  setup checks and the tools.
-- **Changed in 2.2.0.** `$context->rowData` and `$context->html` are private. Write with `$event->value()` and
-  `$context->append()`, read with `rowData()`, `rowValues()` and `html()`.
-- **Changed in 2.2.0.** Alfa no longer loads a contributing plugin's language file.
-- **Since 2.2.0.** Targeted events (`onExecuteToolAction`, `onClearData`, the panel events) are declared in
-  `getTargetedHandlers()`.
-- **Changed in 2.1.4.** `onAlfaAdminAfterSave` and `onAlfaAdminAfterDelete` are announced after the save is final
-  and Alfa's locks are released, no longer in the middle of the save. `onAlfaAdminBeforeDelete` is asked before the
-  record is locked.
 
 ## Not documented yet
 

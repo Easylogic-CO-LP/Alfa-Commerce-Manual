@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Plugin generator
-description: "Fill in a name and your details and download a correctly structured Alfa Commerce 2.2 plugin, made from this manual's tested examples."
+description: "Fill in a name and your details and download a correctly structured Alfa Commerce plugin, made from this manual's examples."
 ---
 
 # Plugin generator
@@ -15,9 +15,8 @@ runs in your browser. Nothing you type is sent anywhere.
 
 ## What you get
 
-The generator writes no code of its own. Each plugin type has one complete example in this manual, and each
-example was installed and used on an Alfa Commerce 2.2.0 test shop. The generator takes that example and changes
-only names and details:
+The generator writes no code of its own. Each plugin type has one complete example in this manual. The generator
+takes that example and changes only names and details:
 
 | What changes | For example |
 |---|---|
@@ -45,7 +44,7 @@ and it does what its example does.
 | Joomla system plugin | [System, console and task plugins](./system-console-task-plugins.md#a-complete-system-plugin) | Logs completed orders and adds a button to Tools |
 
 The two feature plugin starters are the same kind of plugin: both are in the group `alfa`, and one plugin may do
-both things. They are offered apart because the manual has one tested example of each. To have both in one
+both things. They are offered apart because the manual has one example of each. To have both in one
 plugin, generate one and copy the event handlers of the other into its class, with their entries in
 `getSubscribedEvents()` and their files.
 
@@ -80,14 +79,7 @@ Read the comment at the top of the plugin's class first. It lists what you still
 | Joomla says the extension is already installed and updates it | A plugin with the same group and element exists on the site. Choose another element. |
 | A name of the example is still in a text | Texts of the demonstration are not changed. Only names are. |
 
-## How it was checked
-
-One plugin of every type was generated with a new name and a new vendor, installed on a fresh Alfa Commerce 2.2.0
-test shop (Joomla 6.1.4, PHP 8.3), enabled and used: an order was placed with the generated payment, shipping,
-item field and form field plugins, the payment was marked as paid, a picture was uploaded through the media
-plugin, and the feature and system plugins were used on their screens.
-
 ## Not offered yet
 
 - A search engine plugin. The manual's example for it is a skeleton that finds nothing.
-- Console and task plugins. Alfa Commerce 2.2.0 has no extension point for either.
+- Console and task plugins. Alfa Commerce has no extension point for either.

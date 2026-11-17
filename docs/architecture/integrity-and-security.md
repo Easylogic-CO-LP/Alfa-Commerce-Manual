@@ -21,7 +21,7 @@ and template or layout overrides, never by changing a file inside Alfa's own fol
 
 | Step | What happens |
 |---|---|
-| 1. Fetch | Alfa downloads the list for the installed version, `checksums-<version>.json`, from `https://cdn.alfacommerce.gr/com_alfa/integrity/`, and with it a signature file of the same name ending in `.sig`. The address is fixed in the code (`administrator/src/Helper/IntegrityHelper.php`) and is not a setting. |
+| 1. Fetch | Alfa downloads the list for the installed version, `checksums-<version>.json`, from `https://cdn.alfacommerce.gr/com_alfa/integrity/`, and with it a signature file of the same name ending in `.sig`. The address is written into the code (`administrator/src/Helper/IntegrityHelper.php`) and is not a setting. |
 | 2. Check the signature | The signature must match the downloaded list, checked with the public keys that ship inside Alfa. The matching private keys are never on the site. A list that fails this check is not used at all. |
 | 3. Compare | For every file the list names, Alfa computes the file's **checksum** (a fingerprint of its content) and compares it with the list. Then it walks Alfa's own folders, and the folder of each library that Alfa Commerce installs, and looks for files the list does not name. |
 
@@ -49,14 +49,14 @@ run.
 Folders shared with other extensions, such as Joomla's `language` and `libraries` folders, are never searched for
 extra files. This is how the two language rules below come about.
 
-| Case | Result | Since |
-|---|---|---|
-| A language pack's files, which live in Joomla's own language folders (`language/<tag>/` and `administrator/language/<tag>/`) | Not reported | 2.1.1 |
-| A language file placed inside Alfa's own folders (for example `administrator/components/com_alfa/language/`) | Reported as an extra file, like any other file the release does not list | 2.1.2 |
-| Your own plugin or module, in its own folder | Not looked at. The check covers only what ships with Alfa Commerce. | |
-| A template override in a template's `html` folder | Not looked at | |
-| A file changed, removed or added in the folder of a library that Alfa Commerce installs (for example `libraries/dompdf/src/`) | Reported (2.2.0 did not look at them) | 2.2.1 |
-| Another extension's library | Not looked at | |
+| Case | Result |
+|---|---|
+| A language pack's files, which live in Joomla's own language folders (`language/<tag>/` and `administrator/language/<tag>/`) | Not reported |
+| A language file placed inside Alfa's own folders (for example `administrator/components/com_alfa/language/`) | Reported as an extra file, like any other file the release does not list |
+| Your own plugin or module, in its own folder | Not looked at. The check covers only what ships with Alfa Commerce. |
+| A template override in a template's `html` folder | Not looked at |
+| A file changed, removed or added in the folder of a library that Alfa Commerce installs (for example `libraries/dompdf/src/`) | Reported |
+| Another extension's library | Not looked at |
 
 The list also names the files of the seven libraries that Alfa Commerce
 installs, at their places on the site, and each library's manifest (`administrator/manifests/libraries/`). The seven
@@ -104,7 +104,7 @@ A difference against the list of **exactly the installed version** is `modified`
 
 The card is drawn from one fixed file (`administrator/src/View/Tools/_integrity.php`), not through Joomla's layout
 overrides, so a template override cannot change it. Its sentences are ordinary language strings. The banner's words
-are fixed in the code and are not language strings, so neither a template override nor a language override can
+are written into the code and are not language strings, so neither a template override nor a language override can
 change or silence the banner.
 
 ## When it is used
@@ -226,7 +226,7 @@ The rules are in the file `SECURITY.md` in the repository:
 [SECURITY.md on GitHub](https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/SECURITY.md). In short:
 
 - **Do not open a public GitHub issue** for a security problem.
-- Send an e-mail to **info@easylogic.gr** with the subject `[SECURITY] Alfa Commerce Vulnerability Report`.
+- Send an e-mail to **info@alfacommerce.gr** with the subject `[SECURITY] Alfa Commerce Vulnerability Report`.
 - Include a description, the steps to reproduce it, the possible impact, and a suggested fix if you have one.
 
 What the file promises in return:
@@ -260,15 +260,6 @@ commit secrets or credentials, and give database operations no more rights than 
 | The red banner stays after you fixed the files | The last answer is kept for 24 hours. Press Recheck now. |
 | A user cannot find Tools | The user lacks the permission Use Maintenance Tools. |
 | Your extension's request fails with status 503 | The shop is in maintenance during Clear everything |
-
-## Changed in 2.2.0
-
-- **Since 2.2.0.** Tools > Tasks lists jobs, and Tools > Database Sync hands its long actions to background work.
-- **Changed in 2.1.2.** A language file inside Alfa's own folders is reported as an extra file.
-- **Changed in 2.1.1.** A language pack's files are no longer reported. When the only differences are extra files,
-  the banner says how many. When the list cannot be verified or fetched, the banner says that instead of saying the
-  files were changed.
-- **Since 2.1.0.** Maintenance during Clear everything, the permission Clear Alfa data, and the installer gate.
 
 ## Not documented yet
 

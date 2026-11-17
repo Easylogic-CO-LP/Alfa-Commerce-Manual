@@ -25,7 +25,7 @@ The checklist has 21 rows in three groups, and says how many are done:
 | **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, PDF library for sales documents, Alfa extensions built for this version, Joomla mail configured, media folder writable, Joomla page cache |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
-Four of the recommended rows came in 2.2.1 (2.2.0 had 17 rows):
+Four of the recommended rows, in more detail:
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
   no enabled plugin of Public access, and names each such field.

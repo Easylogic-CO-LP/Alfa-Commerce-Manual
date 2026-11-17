@@ -55,8 +55,8 @@ libraries. A one line fix and a new feature follow the same path.
 
 | You need | Why |
 |---|---|
-| PHP 8.3 or newer | The installer refuses an older PHP. 8.3, 8.4 and 8.5 are tested, 8.4 is recommended. |
-| Joomla 6.1 or a later Joomla 6 release | The installer refuses Joomla 6.0 and older. It also refuses Joomla 7, which this release is not tested on. In both cases nothing is installed. |
+| PHP 8.3 or newer | The installer refuses an older PHP. 8.4 is recommended. |
+| Joomla 6.1 or a later Joomla 6 release | The installer refuses Joomla 6.0 and older. It also refuses Joomla 7. In both cases nothing is installed. |
 | MySQL 8.0.13 or newer, or MariaDB 10.6 or newer | The database requirement of the release. |
 | Git and a GitHub account | To commit and to open the pull request. |
 | GitHub Desktop (optional) | For the path below that needs no terminal. |
@@ -92,7 +92,6 @@ Make the change in two places:
 1. `administrator/sql/install.mysql.utf8.sql`, the complete schema that a fresh installation creates.
 2. A new file `administrator/sql/updates/mysql/<new-version>.sql`, named by the version that ships the change, for
    the sites that already run Alfa Commerce. There is one such file for each release that changes the database.
-   2.2.0 ships `2.0.0.sql`, `2.0.1.sql`, `2.1.0.sql`, `2.1.1.sql`, `2.1.4.sql` and `2.2.0.sql`.
 
 Joomla records the schema version when the component is installed. On an update it runs every update file newer than
 that version, in version order.
@@ -106,10 +105,10 @@ Rules for an update file:
   semicolon. Never put the marker on a statement that fills in data: Joomla records the file as applied even when
   such a statement failed, so it never runs again.
 - Do not add an uninstall SQL file. Uninstalling keeps every Alfa table and its data, on purpose.
-- 2.0.0 is the starting point. The installer refuses to install over anything older than 2.0.0, so no update file
-  has to bring an older schema forward.
+- The update files start from the first stable release. The installer refuses to install over a 1.x beta, so no
+  update file has to bring a beta's schema forward.
 
-Two statements from the shipped `2.2.0.sql`, as a model:
+Two statements from a shipped update file, as a model:
 
 ```sql
 ALTER TABLE `#__alfa_tasks` ADD INDEX `idx_handler_state_finished` (`handler`, `state`, `finished_at`) /** CAN FAIL **/;
@@ -135,7 +134,7 @@ the paths.
 | `OBSOLETE_FILES` | The path of the removed file as it is on an installed site, relative to the site root, with the content hashes of every copy of that file a release installed. |
 | `OBSOLETE_FOLDERS` | The path of a folder that the removed files leave empty, written deepest first. |
 
-This is the 2.2.0 group of `OBSOLETE_FILES`, shortened to two of its three entries:
+This is one release's group of `OBSOLETE_FILES`, shortened to two of its entries:
 
 ```php
 '2.2.0' => [
@@ -162,7 +161,7 @@ What an entry must respect, and what the update does with it:
 - Every removal, every file kept and every failure is named on the installation page and in the log
   `com_alfa_maintenance.php`.
 
-Since 2.1.1 removed files are declared in these two lists. 2.2.0 reads no `files/removed/<version>.json` file,
+Removed files are declared in these two lists only. The installer reads no `files/removed/<version>.json` file,
 although the reviewer rulebook still names one.
 
 #### You added or changed a text people read
@@ -224,9 +223,36 @@ In `.json` and `.txt` files only the characters of R2 and R3 are looked for.
 
 An exception is one entry in `scripts/copy-clean/copy-clean-allow.json`: the file, the rule, and the exact string
 or the exact line, with a class and a reason. A whole file can never be excepted. An entry that no longer matches
-anything fails the check too. 2.2.0 holds 44 entries.
+anything fails the check too.
 
 How to run it yourself is on [Automated checks](../tooling/workflows#copy-clean).
+
+#### JavaScript
+
+No formatter or linter checks the JavaScript. The rule is written here instead, and it describes what the
+repository's own scripts already do. Read two or three of them before you write one, for example
+`media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.js` and `media/js/site/cart/addtocart.js`.
+
+- **Plain JavaScript.** No framework and no library, no jQuery, no build step and no modules. A file wraps its code
+  in a function that runs at once, as nearly every script of the repository does, and starts with `'use strict'`.
+- **The server draws the markup.** A layout prints the HTML; the script finds it by its `data-` attributes and
+  shows, hides, moves or removes it. A script builds no HTML from strings. Where it needs one more element, it makes
+  it with `document.createElement()` and fills it with `textContent`. Where a part must be drawn again, the server
+  draws it and the script swaps it in.
+- **Joomla's own helpers.** What a script needs from the server comes with the page, read with
+  `Joomla.getOptions()`; the words a person reads are language keys, read with `Joomla.Text._()`. A request goes
+  out with `fetch()`, and one that changes something carries the session token in its body, never in the address.
+- **No inline handlers.** Behaviour is attached from the script with `addEventListener()`, never with an `onclick`
+  or `onchange` attribute in a layout.
+- **Named functions.** A function declaration, or a `const` that holds the function, so a stack trace says where a
+  failure happened.
+- **Indentation.** Four spaces, as in the PHP.
+- **Where the file lives.** A script of the component is in `media/js/admin/` or `media/js/site/<area>/`, a
+  module's or a plugin's in its own `media/js/` folder. It is registered in that extension's `joomla.asset.json`,
+  and the layout that needs it asks for it through Joomla's web asset manager (`$wa->useScript()`). Raise the
+  version in `joomla.asset.json` with every change, so browsers fetch the new file.
+
+A linter is added when the JavaScript grows.
 
 ## The steps
 
@@ -398,6 +424,23 @@ before a merge is set in the repository's branch rules on GitHub, which are not 
 
 After PHP CS Fixer commits to your branch, pull before you commit again.
 
+A pull request from a fork runs the same checks, but PHP CS Fixer cannot write to the fork's branch, and the AI
+review does not run. Run the fixer on your computer before you push, from the root of the repository, so that it
+finds nothing left to fix:
+
+```bash
+php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes --diff
+```
+
+How to install it: [Running it yourself](../tooling/php-cs-fixer#running-it-yourself).
+
+### From `developer` to a release
+
+1. You work on a branch and open a pull request into `developer`. The checks and the review run there.
+2. The Alfa Commerce administrator promotes `developer` to `main` by a pull request.
+3. The administrator runs the release. It builds the package, signs it and updates the update feed on the CDN, so
+   every shop sees the new version in Joomla's updater.
+
 ### The reviewer rulebook
 
 The file
@@ -443,7 +486,7 @@ Before you open it, also confirm:
 
 ## Reporting a security problem
 
-Do not open a public issue. Send an email to **info@easylogic.gr** with the subject
+Do not open a public issue. Send an email to **info@alfacommerce.gr** with the subject
 `[SECURITY] Alfa Commerce Vulnerability Report`. Describe the problem, the steps to reproduce it, what it could
 lead to, and a fix if you have one. The security policy
 ([SECURITY.md](https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/SECURITY.md)) promises an acknowledgement
@@ -457,11 +500,5 @@ Joomla itself are reported to Joomla's security team.
 - **Have an idea?** Open an issue with the Feature Request form. It gets the label `enhancement`.
 - **Want another AI review?** A comment that contains `@claude` on the pull request starts the AI review workflow
   again, when you have write access to the repository.
-- **Contact:** info@easylogic.gr, [easylogic.gr](https://easylogic.gr)
-
-## Not documented yet
-
-- Whether PHP CS Fixer can commit its fixes to a pull request that comes from a fork. The workflow files do not
-  settle it. (The AI review does not run for one.)
-- How the `developer` branch becomes a release. The code holds `main` only.
-- A style rule for JavaScript. The repository has no JavaScript formatter or linter configuration.
+- **Contact:** info@alfacommerce.gr, [alfacommerce.gr](https://www.alfacommerce.gr)
+- **Found a mistake in this Manual?** See [Help improve this Manual](./improve-the-manual.md).

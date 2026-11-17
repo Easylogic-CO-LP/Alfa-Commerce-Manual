@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Payment plugins
-description: How to write a payment plugin for Alfa Commerce 2.2.1, what it must provide, its settings, staff actions and logging. The events, the money calls and a complete plugin have their own pages.
+description: How to write a payment plugin for Alfa Commerce, what it must provide, its settings, staff actions and logging. The events, the money calls and a complete plugin have their own pages.
 ---
 
 # Payment plugins
@@ -78,7 +78,7 @@ Every other event is optional. You take part in an event by writing a public met
 is listed in `getSubscribedEvents()`: all payment events are addressed to one plugin (targeted), and the base class
 reports your methods to Alfa.
 
-Changed in 2.2.0. The base class's `getSubscribedEvents()` returns an empty list. If your plugin needs a Joomla
+The base class's `getSubscribedEvents()` returns an empty list. If your plugin needs a Joomla
 event of its own, override it and merge with `parent::getSubscribedEvents()`.
 
 :::warning A written method is a live endpoint
@@ -210,14 +210,14 @@ The `Method` object also has `id()`, `type()` (the plugin's element), `name()`, 
 | With a method id: `getPaymentMethod($orderId, (int) $payment->id_payment_method)` | Exactly that method, while it is one of your plugin's. Otherwise `null`. |
 | By order alone: `getPaymentMethod($orderId)` | The order's own method, while the order records your plugin and the method is still your plugin's. Otherwise `null`. |
 
-Changed in 2.2.0. There is no fallback. It never answers another method of your plugin, because another method is
+There is no fallback. It never answers another method of your plugin, because another method is
 another set of credentials. An order paid through another plugin gives `null`. Treat `null` as "this is not mine"
 and stop.
 
 Pass the method id whenever a payment row names one: on an order with several attempts, the row is the only record
 of which method took that money. Asking twice in one request costs nothing: the answer is kept.
 
-`protected function ownMethods(bool $publishedOnly = true): array` (since 2.2.1) lists
+`protected function ownMethods(bool $publishedOnly = true): array` lists
 your plugin's own methods, keyed by id in ascending order, each the record `getPaymentMethod()` answers. Use it for
 what concerns every method rather than one order's, such as a key your provider registers once per account. With
 `false` it lists every method of your plugin, whatever its state. Never read the methods table yourself.
@@ -277,7 +277,7 @@ public function onGetActions($event): void
 | `readOnly()` | The action writes nothing whatever the request carries (details, logs). Only such an action may be opened by a plain link. |
 | `startsRefund()` | The action starts a new refund. Alfa hides it, and refuses it and its form's `_do` step, while the refund block holds. |
 | `data(array $fields)` | Fields posted with the action, such as the figure the confirmation showed |
-| `modal(string $layout, string $title = '', string $size = 'md')` | Deprecated since 2.2.1, with `hasResponseLayout()`, and removed in 2.3.0. Records a layout, a title and a size on the action. Nothing reads them: every button opens the action page, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. |
+| `modal(string $layout, string $title = '', string $size = 'md')` | Deprecated, with `hasResponseLayout()`: do not use them, they will be removed. Records a layout, a title and a size on the action. Nothing reads them: every button opens the action page, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. |
 | `disabled()` | Takes the action off the list: no button is drawn and the action cannot be run |
 | `meta(string $key, mixed $value)`, `buttonLayout(string $layout)` | Attach your own data, use your own button layout (a layout of your `tmpl` folder; the default is `action_button`) |
 
@@ -336,7 +336,7 @@ The table is never created or changed while a database transaction is open. A lo
 or column inside one is reported and skipped; the next write outside a transaction completes the table. A failed log
 write is never shown to a shopper.
 
-**Joomla's User Actions Log** (since 2.2.1). For an act a shop owner audits, such as a
+**Joomla's User Actions Log**. For an act a shop owner audits, such as a
 refund started, call `recordActionLog()` with a sentence of your language file that names the facts in braces:
 
 ```php
@@ -372,29 +372,29 @@ Your plugin carries its own texts and loads them.
 | The plugin does not load at all after you added a method | You typed the `$event` parameter of a method the base class declares untyped, or you wrote a private method with the name of a base class method |
 | The provider's callbacks are answered 503 | The plugin is disabled, or its Access is not Public |
 | The provider's callbacks are answered 404 | Your class has no `onPaymentWebhook`, the element in the address is wrong, or the plugin is disabled and no method of the shop uses it |
-| The provider's check of the webhook address fails, on a multilingual site with friendly addresses or with URL rewriting and "Remove index.php" on | In 2.2.0 the provider was given the plain `index.php` address and checks it with a GET, which Joomla redirects. Give it the address the setup checkup prints. A POST to the plain address reaches your plugin. |
+| The provider's check of the webhook address fails, on a multilingual site with friendly addresses or with URL rewriting and "Remove index.php" on | The provider was given the plain `index.php` address and checks it with a GET, which Joomla redirects. Give it the address the setup checkup prints. A POST to the plain address reaches your plugin. |
 | A provider that checks the address with a GET gets a redirect | "System - Alfa Commerce Sync" is disabled, or its Access is not Public. Enable it with its Access set to Public. A POST reaches your plugin either way. See [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses). |
 | The payment is completed but the order did not move | The row was created as completed instead of changed to completed, or the method has no `status_on_completed` setting |
-| `getPaymentMethod()` returns `null` | The order records another plugin, or the method id you passed is not one of your plugin's. There is no fallback since 2.2.0. |
+| `getPaymentMethod()` returns `null` | The order records another plugin, or the method id you passed is not one of your plugin's. There is no fallback. |
 | A setting is always empty in `onCartView` | You read `$method->params[...]`. There the method is an object: use `->param('key')`. |
 | A setting you added is never saved | Its field is outside `<fields name="paymentsparams">` |
 | `$order->id` is empty | The order is an `Order` object: use `$order->id()` |
 | `getOrder()` is `null` in `onPaymentResponse` or `onPaymentWebhook` | It always is. Find the order from your provider's data. |
 | A refund verb answers `OUTCOME_FAILED` and nothing is written | It was called inside a database transaction |
 | A refund button disappeared from a completed payment | The refund block holds: a provider reported a refund the books do not hold. Staff resolve that report first. |
-| `save()`, `settleAttempt()` or `deletePayment()` refuses a row | The row was written by another plugin. Since 2.2.0 a plugin changes only its own rows. |
+| `save()`, `settleAttempt()` or `deletePayment()` refuses a row | The row was written by another plugin. A plugin changes only its own rows. |
 | Your cart panel works once and then stops | Its script was declared in the `onCartView` layout. Declare it in `onCartViewAssets`. |
 | A staff action is refused as "already submitted" | The same one-time key was posted twice. The first submit ran. |
 
 ## Not documented yet
 
 - **Charging a saved card or mandate.** `onPaymentStoreReference`, `onPaymentChargeReference`,
-  `supportsRecurring()`, `renewalsAllowed()` and the related `StoredCredentialIntentEvent` exist in 2.2.0, but the
+  `supportsRecurring()`, `renewalsAllowed()` and the related `StoredCredentialIntentEvent` exist, but the
   core repository contains no code that sends these events, so when they fire and what the shopper sees cannot be
   documented from it.
 - **The action page.** How a layout set in `onExecuteAction` is shown, and the script helper a form uses to submit
-  its `_do` step. The title and size given to `modal()` and `setModalTitle()` are read by nothing; both are deprecated since 2.2.1,
-  and removed in 2.3.0.
+  its `_do` step. The title and size given to `modal()` and `setModalTitle()` are read by nothing; both are deprecated and will
+  be removed.
 - **Locks for a capture.** `OrderMoneyLock` and when a gateway that captures an authorization should hold it.
 - **Deposits and instalments**: several payment rows for one order, written by one plugin.
 - **The texts shoppers and staff see** when a plugin is unavailable or an order is refused. This page describes
