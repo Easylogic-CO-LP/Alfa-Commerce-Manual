@@ -39,7 +39,7 @@ each release.
 
 ### Fork the live collection
 
-<PostmanButton href="https://www.postman.com/alfa-commerce/alfa-commerce/collection/6266p4v/alfa-commerce-rest-api">Run in Postman</PostmanButton>
+<PostmanButton href="https://www.postman.com/alfa-commerce/alfa-commerce/collection/c16yukw/alfa-commerce-rest-api">Run in Postman</PostmanButton>
 
 1. Press **Run in Postman**. The collection opens in Alfa Commerce's public workspace on Postman. Sign in: Postman
    asks for an account before you fork.
