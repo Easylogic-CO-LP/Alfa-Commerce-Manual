@@ -166,5 +166,5 @@ register its own.
 - The fields of a document's `lines`, `taxes` and `series` one by one.
 - The values of a task's `state`, `handler` and `origin`. See
   [Background work](../architecture/background-work.md) for the states.
-- An example of a 202 answer. A job that finishes before `process` is called answers 200; the 202 with `Location`
-  and `Retry-After` is what the route's code and the collection state.
+- An example of a 202 answer. A job that has finished when `process` is called answers 200; a job still working
+  answers 202 with `Location` and `Retry-After`.

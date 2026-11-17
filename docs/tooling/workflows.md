@@ -16,20 +16,20 @@ pull request as one check, green or red.
 
 | Check (workflow, job) | Runs on | Can a finding block a merge |
 |---|---|---|
-| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). It turns red only when the tool or its commit step breaks. |
-| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). Any finding turns it red. |
-| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge. A finding turns the check red. See [PHPStan](./phpstan). |
-| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). |
-| Security Scan, **PHP security scan** (job `php-security`) | Same | Not today: no check is required for a merge. Any finding turns it red. |
-| Security Scan, **secret scan** (job `secret-scanning`) | Same | Not today: no check is required for a merge (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
+| Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | No: not a required check (see [Branch rules](#branch-rules)). It turns red when the tool or its commit step breaks. |
+| Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
+| Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). A finding beyond the baseline turns it red. See [PHPStan](./phpstan). |
+| Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). |
+| Security Scan, **PHP security scan** (job `php-security`) | Same | No: not a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
+| Security Scan, **secret scan** (job `secret-scanning`) | Same | Yes: a required check (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
 | Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
 Whether a red check stops a merge is decided by the repository's branch rules on GitHub, not by the workflow files.
 
 ### Branch rules
 
-The rules of the two branches are settings of the repository (two rulesets), read on 13 November 2026. They can
-change without a change in the code.
+The rules of the two branches are settings of the repository, two rulesets named Develop and Main. They can change
+without a change in the code.
 
 | | `developer` | `main` |
 |---|---|---|
@@ -38,9 +38,11 @@ change without a change in the code.
 | The last push must be approved by someone else | No | Yes |
 | Force push | Refused | Refused |
 | Linear history | Not asked | Required |
-| Required checks | None | None |
+| Required checks | Copy-clean, `security-scan` (CodeQL), `secret-scanning` and PHPStan | The same four |
+| The branch must be up to date before the merge | Yes | Yes |
 
-So today no automated check has to be green for a merge. The checks inform the people who review and merge.
+So these four checks must be green before a pull request is merged. PHP CS Fixer and the PHP security scan
+(`php-security`) are not required: they inform the people who review and merge, as the AI review does.
 Organisation and repository administrators may bypass these rules.
 
 No workflow runs a test suite, builds the installable package or publishes a release.
@@ -56,7 +58,7 @@ sequenceDiagram
     GitHub->>Checks: Start the jobs (pull requests into main or developer)
     Checks->>GitHub: PHP CS Fixer commits its fixes to your branch
     Checks->>GitHub: Copy-clean, CodeQL and the secret scan answer green or red
-    Checks->>GitHub: PHPStan prints its findings and stays green
+    Checks->>GitHub: PHPStan answers green or red and prints its findings
     GitHub->>Review: Start the review (a pull request from this repository)
     Review->>GitHub: Comments on the changed lines and a summary
     GitHub->>You: The checks and the comments on the pull request
@@ -93,8 +95,8 @@ File: `.github/workflows/code-quality.yml`. Three jobs.
 | What it does | Checks out the branch of the pull request from the pull request's own repository (so a fork's branch is found), formats the PHP code with the rules of `.php-cs-fixer.php`, and commits the result to that branch as `github-actions[bot]` with the message `style: auto-fix code style with PHP CS Fixer`. |
 | What makes it fail | Only a step that breaks: the tool cannot run, or the commit cannot be made. Badly formatted code does not fail it, it gets fixed. |
 
-On a pull request from a fork the job runs but cannot write to the fork's branch: run the fixer on your computer
-before you push. Details and the local command: [PHP CS Fixer](./php-cs-fixer).
+On a pull request from a fork the job cannot push to the fork's branch: when the fixer changes a file there, the
+commit step fails and the job turns red. Running the fixer on your computer before you push is required. Details and the local command: [PHP CS Fixer](./php-cs-fixer).
 
 ### Copy-clean
 

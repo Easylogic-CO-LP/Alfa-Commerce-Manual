@@ -229,28 +229,29 @@ How to run it yourself is on [Automated checks](../tooling/workflows#copy-clean)
 
 #### JavaScript
 
-No formatter or linter checks the JavaScript. The rule is written here instead, and it describes what the
-repository's own scripts already do. Read two or three of them before you write one, for example
-`media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.js` and `media/js/site/cart/addtocart.js`.
+No formatter or linter checks the JavaScript. This is the rule for every new or changed script. Good models to
+read first are `media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.js` and
+`media/js/site/cart/addtocart.js`.
 
-- **Plain JavaScript.** No framework and no library, no jQuery, no build step and no modules. A file wraps its code
-  in a function that runs at once, as nearly every script of the repository does, and starts with `'use strict'`.
+- **Plain JavaScript.** No framework and no library, no jQuery, no build step and no modules. Wrap the code of a file
+  in a function that runs at once, and start it with `'use strict'`.
 - **The server draws the markup.** A layout prints the HTML; the script finds it by its `data-` attributes and
-  shows, hides, moves or removes it. A script builds no HTML from strings. Where it needs one more element, it makes
-  it with `document.createElement()` and fills it with `textContent`. Where a part must be drawn again, the server
-  draws it and the script swaps it in.
-- **Joomla's own helpers.** What a script needs from the server comes with the page, read with
-  `Joomla.getOptions()`; the words a person reads are language keys, read with `Joomla.Text._()`. A request goes
-  out with `fetch()`, and one that changes something carries the session token in its body, never in the address.
-- **No inline handlers.** Behaviour is attached from the script with `addEventListener()`, never with an `onclick`
-  or `onchange` attribute in a layout.
-- **Named functions.** A function declaration, or a `const` that holds the function, so a stack trace says where a
-  failure happened.
+  shows, hides, moves or removes it. Build no HTML from strings. Where one more element is needed, make it with
+  `document.createElement()` and fill it with `textContent`. Where a part must be drawn again, let the server draw it
+  and swap it in.
+- **Joomla's own helpers.** Read what the script needs from the server with `Joomla.getOptions()`, set by the PHP
+  that loads the script; the words a person reads are language keys, read with `Joomla.Text._()`. Send a request
+  with `fetch()`; one that changes something carries the session token in its body, never in the address.
+- **No inline handlers.** Attach behaviour from the script with `addEventListener()`, never with an `onclick` or
+  `onchange` attribute in a layout.
+- **Named functions.** Use a function declaration, or a `const` that holds the function, so a stack trace says where
+  a failure happened.
 - **Indentation.** Four spaces, as in the PHP.
-- **Where the file lives.** A script of the component is in `media/js/admin/` or `media/js/site/<area>/`, a
-  module's or a plugin's in its own `media/js/` folder. It is registered in that extension's `joomla.asset.json`,
-  and the layout that needs it asks for it through Joomla's web asset manager (`$wa->useScript()`). Raise the
-  version in `joomla.asset.json` with every change, so browsers fetch the new file.
+- **Where the file lives.** A script of the component goes in `media/js/admin/` or `media/js/site/<area>/`, a
+  module's or a plugin's in its own `media/js/` folder. Register it in that extension's `joomla.asset.json`, and let
+  the layout that needs it ask for it through Joomla's web asset manager (`$wa->useScript()`). The asset version is
+  the component's version and moves with a release: see
+  [Every change: the version and the changelog](#every-change-the-version-and-the-changelog).
 
 A linter is added when the JavaScript grows.
 
@@ -424,9 +425,9 @@ before a merge is set in the repository's branch rules on GitHub, which are not 
 
 After PHP CS Fixer commits to your branch, pull before you commit again.
 
-A pull request from a fork runs the same checks, but PHP CS Fixer cannot write to the fork's branch, and the AI
-review does not run. Run the fixer on your computer before you push, from the root of the repository, so that it
-finds nothing left to fix:
+A pull request from a fork runs the same checks, but PHP CS Fixer cannot push to the fork's branch: when it changes a
+file, its commit step fails and the check turns red. The AI review does not run. Running the fixer on your computer
+before you push is required, from the root of the repository, so that it finds nothing left to fix:
 
 ```bash
 php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes --diff

@@ -16,7 +16,8 @@ for Alfa Commerce are in `phpstan.neon` at the root of the repository.
 
 :::caution Any finding fails the check
 Any finding PHPStan reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact
-Joomla release (6.2.0), so the findings do not change by themselves. No check is required for a merge yet.
+Joomla release (6.2.0), so the findings do not change by themselves. PHPStan is a required check: a pull request is merged only
+when it is green (see [Branch rules](./workflows#branch-rules)).
 :::
 
 Two messages PHPStan gives on the code, both recorded in the baseline:

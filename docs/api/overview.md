@@ -224,7 +224,7 @@ A list has `data` as a list, the links `next` and `last` when there are more pag
 }
 ```
 
-The examples in these pages are real answers, shortened where marked.
+The examples in these pages are shortened where marked.
 
 ## Reading
 

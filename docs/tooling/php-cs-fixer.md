@@ -115,8 +115,9 @@ On a pull request the job does this, in order:
 
 You then have a commit on GitHub that you do not have on your computer. Pull before you commit again.
 
-On a pull request from a fork the job runs the same command, but it cannot write to the fork's branch. Run the
-command above on your computer before you push, so that the job finds nothing to fix.
+On a pull request from a fork the job runs the same command, but it cannot push to the fork's branch: when the
+fixer changes a file, the commit step fails and the job turns red. Running the command above on your computer before
+you push is required, so that the job finds nothing to fix.
 
 ## What can go wrong
 

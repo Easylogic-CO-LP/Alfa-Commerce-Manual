@@ -44,15 +44,13 @@ curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json"
   "https://your-shop.example/api/index.php/v1/alfa/orders" \
   -d '{
     "id_order_status": 1,
-    "id_currency": 47,
     "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
                          "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}
   }'
 ```
 
-The ids are those of a fresh installation: status 1 is "Pending", the status new orders start in, and currency 47
-is the euro. Read `v1/alfa/orderstatuses` (the row with `is_initial`), `v1/alfa/currencies` and `v1/alfa/places`
-for the ids of your shop.
+The ids are those of a fresh installation: status 1 is "Pending", the status new orders start in, and place 84 is
+Greece. Read `v1/alfa/orderstatuses` (the row with `is_initial`) and `v1/alfa/places` for the ids of your shop.
 
 The answer, status 201, shortened:
 
@@ -341,4 +339,4 @@ last role of its kind cannot be moved to the trash, so its delete answers 409.
 - The entries of `contributions`, `history`, `delivery_address` and `invoice_address` field by field.
 - The allowed values of `transaction_status`, `payment_type` and a parcel's `status`.
 - `overpaid`, `excess` and `still_held` one by one. See [Orders](../services/orders.md) for the money terms.
-- An example of a parcel with tax. The rule above is the collection's; no taxed parcel was sent for this page.
+- An example of a parcel with tax.
