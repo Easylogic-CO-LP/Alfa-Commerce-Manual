@@ -446,6 +446,8 @@ What Alfa Commerce does today that a program or a shop must allow for.
 - A `PATCH` of an order that carries only `customer_note` is refused with 400 on a shop that has a required delivery
   field of its own, because the whole order form is validated on a partial update. Send the required fields with the
   note.
+- An update of an order that sends part of the delivery details (`alfa_form_fields`) replaces the stored delivery
+  details with only the fields sent. Send the whole delivery section when you change any of it.
 
 **On the storefront**
 
