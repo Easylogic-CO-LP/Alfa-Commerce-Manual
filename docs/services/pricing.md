@@ -101,26 +101,25 @@ customers. A rule applies to an item only when all five match. One part matches 
 - the rule has no entry for that part, or
 - the rule's entry is 0, which means "all", or
 - the rule names a value the item or the visitor has (one of the item's categories or manufacturers, the visitor's
-  place, one of the visitor's groups, the visitor's own account).
+  place or a place above it, one of the visitor's groups, the visitor's own account).
 
 A rule must also be published and inside its period (its publish dates). The customer groups compared are the
 visitor's own groups, not the groups that may see the item.
 
-Planned for 2.2.1, which is not released: a rule scoped to a place matches a visitor at that place or at any place
-inside it. A rule for a country reaches its regions and towns, for the goods and for the shipping taxes alike. A
-item's own price row for a place still applies to that place only. So publishing a region inside a country
+A rule scoped to a place matches a visitor at that place or at any place inside it (since 2.2.1 for the goods; the
+shipping taxes did so already). A rule for a country reaches its regions and towns. An item's own price row for a
+place applies to that place only. So publishing a region inside a country
 changes the price row its customers get: a customer whose place is the region pays the region's own price, if the
 item has one, otherwise the price for every place, while the country's discounts and taxes still reach them. Add
 the region's own price rows, or keep the items' prices for every place.
 
 ### When several discounts or taxes apply (the behaviour)
 
-Rules are read in their ordering, then by id. Planned for 2.2.1, which is not released: for a visitor below a
-place that has rules of its own, the rules come in one order. Rules with no place (or "every place") keep their
-ordering, then id, among themselves. Rules scoped to a place come nearest place first (the visitor's own place, then
+Rules are read in one order, the same for the goods and for the shipping taxes. Rules with no place (or "every
+place") keep their ordering, then id, among themselves. Rules scoped to a place come nearest place first (the visitor's own place, then
 the region above it, then the country), each place's rules by ordering, then id. The two lists are then merged by
-ordering and id. A shop whose places are all countries keeps the order of 2.2.0 exactly. Each rule has a
-**behaviour**:
+ordering and id. A shop whose places are all countries keeps the order of 2.2.0 exactly (ordering, then id). Each
+rule has a **behaviour**:
 
 | Behaviour | Value | For discounts | For taxes |
 |---|---|---|---|
@@ -214,9 +213,9 @@ echo $results[15]->getTotal()->format();
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `__construct(?PriceDataLoader $loader = null, ?PriceComputationEngine $calculator = null)` | Builds the calculator. Core passes no arguments. | | |
-| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Planned for 2.2.1, which is not released: also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
+| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Since 2.2.1, also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
 | `calculateVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null, ?ExplicitPriceInstruction $price = null): PriceResult` | Prices one item for a chosen combination or chosen options | The item's own taxes and discounts apply as for the plain item. An empty selection gives the same as `calculate()`. | |
-| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | Planned for 2.2.1, which is not released: a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
+| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | A map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
 | `tierStarts(int $itemId, ?int $combinationId, PriceContext $context): array` | Lists the quantities at which the unit price of a line may change | Ascending, without repeats. It may list more quantities than really change the price. | |
 | `breakdownVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null): array` | Gives the net base and one line for each adjustment of a variant | The keys `base_net`, `base_sale`, `tax_factor` and `lines` | |
 
@@ -253,12 +252,10 @@ $other   = $context->withCurrency(2);        // the same visitor, another curren
 | `customerGroups(User $customer): array`, `groupLineage(int $groupId): array`, `groupLineages(array $groupIds): array` (static) | The groups a customer holds, and a group with every group above it | |
 
 The session keys are `alfa.currency_id` and `alfa.location_id`. A plugin that detects the visitor's country sets
-the second one to the id of the place. Planned for 2.2.1, which is not released: the cart is the exception. It is
-priced at its delivery place once the checkout holds one; lists and item pages keep the session's place. The cart
+the second one to the id of the place. The cart is the exception (since 2.2.1). It is priced at its delivery place once the checkout holds one; lists and item pages keep the session's place. The cart
 module shows the cart's totals at that place on every page, without the cart page's sentence naming it. The order
 builder in the administrator reads neither key: a cart it makes opens in the shop's default currency, and its prices
-follow the cart's currency. Planned for 2.2.1, which is not released: a page priced for a visitor whose
-session holds either key is kept out of Joomla's page cache, whatever the state of "System - Alfa Commerce Sync".
+follow the cart's currency. A page priced for a visitor whose session holds either key is kept out of Joomla's page cache, whatever the state of "System - Alfa Commerce Sync".
 While that plugin runs for visitors who are not logged in, such a visitor is also never given a page stored for
 another visitor. See [Caches](../architecture/caches.md#the-page-cache-rule).
 
@@ -499,7 +496,7 @@ One stored row is the price of:
 | The item | `item_id` | |
 | The combination | `combination_id` | 0 for the item's own row |
 | The currency | `currency_id` | 0 for any |
-| The place | `place_id` | 0 for any, or unknown. Planned for 2.2.1, which is not released: the places that discounts, taxes and price rows name. |
+| The place | `place_id` | 0 for any, or unknown; otherwise one of the places that discounts, taxes and price rows name. |
 | The customer group set | `group_set_id` | One list of the customer groups that prices, discounts or taxes name and that some customers hold together |
 | The period | `valid_from` | When the row starts to apply. `valid_until` is its end, empty for "no end". |
 
@@ -510,8 +507,7 @@ unit prices at quantity 1.
 The prices a shopper sees on an item page, on the cards of a list and in the cart are not read from the index.
 They are worked out live.
 
-Planned for 2.2.1, which is not released: a list reads the row of the visitor's own place, else of the nearest place
-above it that a discount or a tax names, else of no place. A place above that only price rows name is passed over,
+A list reads the row of the visitor's own place, else of the nearest place above it that a discount or a tax names, else of no place. A place above that only price rows name is passed over,
 because its price rows apply to it alone.
 
 ### When it is rebuilt
@@ -525,8 +521,8 @@ Core rebuilds the rows that a change touches, in the same request:
 | Save, publish, unpublish or delete a discount or a tax | The rows of the items in its scope. A rule for every category rewrites every item. |
 | Delete a category or a manufacturer | The rows of the items that lost it |
 | Change which groups customers hold | New group sets are requested, unused ones are removed |
-| Planned for 2.2.1, which is not released: move a place under another place | Every item, by the background job `catalogue.rebuild`, when a stored place sits at or below it. The save says so. A new place needs none. |
-| Planned for 2.2.1, which is not released: a catalogue rebuild | An unpublished item's rows are removed, and none are written |
+| Move a place under another place | Every item, by the background job `catalogue.rebuild`, when a stored place sits at or below it. The save says so. A new place needs none. |
+| A catalogue rebuild | An unpublished item's rows are removed, and none are written |
 
 A customer group set that customers hold for the first time is not written by the request that brought it. The
 background job `price.set.prepare` prepares it, a part of the items at a time. Until it is finished, the set is not
@@ -628,9 +624,8 @@ A carrier plugin that passes its own `shipping_tax_chain` to the shipment ledger
 text (`'24'`) or as exactly the two keys `rate` and `name`. A rate is plain decimal text above zero. Anything else
 is refused. A chain stored before 2.2.0 is still read, as rates with no rule named.
 
-Planned for 2.2.1, which is not released: the shipping taxes follow the same order as the goods' taxes (see
-[When several discounts or taxes apply](#when-several-discounts-or-taxes-apply-the-behaviour)). They already
-reached the places inside theirs in 2.2.0.
+The shipping taxes follow the same order as the goods' taxes (see
+[When several discounts or taxes apply](#when-several-discounts-or-taxes-apply-the-behaviour)).
 
 ## What can go wrong
 

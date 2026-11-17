@@ -95,7 +95,7 @@ gets a column.
 | `#__alfa_usergroups` | One row per Joomla user group (`usergroup_id`), with its price display settings |
 | `#__alfa_user_info` | One row is one set of customer details. Every column except `id` and `id_user` is a form field |
 | `#__alfa_form_field_groups` | Groups of form fields, with their order |
-| `#__alfa_form_fields` | The definitions of the customer detail fields: type, settings, machine name, role (name, email, phone), and where each is asked (registration, billing, shipping). Planned for 2.2.1, which is not released: the roles are name, email, phone and country, and address, city and postcode for the address fields a new shop ships. |
+| `#__alfa_form_fields` | The definitions of the customer detail fields: type, settings, machine name, role (name, email, phone, country; address, city and postcode for the address fields a new shop ships), and where each is asked (registration, billing, shipping) |
 | `#__alfa_form_fields_en_gb` | The English labels of the fields the installation creates. One of the two language tables the install file makes itself |
 | `#__alfa_form_fields_usergroups` | The user groups a field is limited to (pair key) |
 | `#__alfa_form_fields_users` | The users a field is limited to (pair key) |
@@ -302,7 +302,7 @@ categories, manufacturers, places, user groups or users.
 
 | Table | What it holds |
 |---|---|
-| `#__alfa_places` | Places (countries and their parts, through `parent_id`), each with its codes and default currency. Planned for 2.2.1, which is not released: a country carries its ISO 3166-1 codes (`code2`, `code3`); a place inside one carries none, and may carry its ISO 3166-2 code (`subdivision_code`). |
+| `#__alfa_places` | Places (countries and their parts, through `parent_id`), each with its default currency. A country carries its ISO 3166-1 codes (`code2`, `code3`); a place inside one carries none, and may carry its ISO 3166-2 code (`subdivision_code`). |
 | `#__alfa_currencies` | Currencies: code, symbol, decimal places, separators, format |
 | `#__alfa_taxes` | Tax rules: rate, how the rule combines with others, publish window |
 | `#__alfa_tax_categories` | Scope of a tax rule by category (pair key) |

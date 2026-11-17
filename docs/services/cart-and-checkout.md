@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Cart and checkout
-description: The services behind the cart and the placement of an order in 2.2.0, what a plugin may read, what it may call, and where the save becomes final.
+description: The services behind the cart and the placement of an order in 2.2.1, what a plugin may read, what it may call, and where the save becomes final.
 ---
 
 # Cart and checkout
@@ -12,7 +12,7 @@ A shopper's cart is calculated again on every request that shows it. When the sh
 turned into an order as one unit and then deleted. This page explains the classes that do this, and says for each
 whether an extension may use it.
 
-Planned for 2.2.1, which is not released: the cart is priced at its delivery place. Its goods and its carriage are
+The cart is priced at its delivery place (since 2.2.1). Its goods and its carriage are
 priced at one place: the place the request bound, else the place field of the delivery address. Item lists and
 item pages keep the visitor's own place.
 
@@ -102,9 +102,9 @@ $postcode = $cart->delivery()->field($postcodeFieldId)->value();
 $placeId  = $cart->delivery()->role('country')->int();
 ```
 
-`$postcodeFieldId` is the id of a checkout field that your method's settings name. Alfa has no postcode field of its
-own. Planned for 2.2.1, which is not released: a new shop ships a Postcode field (role `postcode`), with Address and
-City. A carrier still names the field it reads in its settings, and a setting of type `checkoutfield` may start on a
+`$postcodeFieldId` is the id of a checkout field that your method's settings name. A new shop ships a Postcode
+field (role `postcode`), with Address and City (a shop installed before 2.2.1 has none of its own). A carrier still
+names the field it reads in its settings, and a setting of type `checkoutfield` may start on a
 role's field with `defaultrole` (see [onCalculateShippingCost](../plugins/shipment-plugin-events.md#oncalculateshippingcost)).
 
 ### What you are expected to do
@@ -135,7 +135,7 @@ You get one with a static method:
 | Method | Whose cart |
 |---|---|
 | `CartService::ambient(): self` | The current visitor's own cart |
-| `CartService::forSubject(CartSubject $subject): self` | A cart that one person operates for another. Alfa's back office uses it when staff work a customer's cart. Planned for 2.2.1, which is not released: that cart is priced at its delivery place, the place the order builder shows and the order is placed at. |
+| `CartService::forSubject(CartSubject $subject): self` | A cart that one person operates for another. Alfa's back office uses it when staff work a customer's cart. That cart is priced at its delivery place, the place the order builder shows and the order is placed at. |
 
 ### When it is used
 
@@ -156,9 +156,10 @@ This is how the shipped cart module reads the cart (`modules/mod_alfa_cart/src/D
 use Alfa\Component\Alfa\Administrator\Service\Cart\CartResolution;
 use Alfa\Component\Alfa\Site\Service\Cart\CartService;
 
-$snapshot = CartService::ambient()->read(CartResolution::Current);
+$cart     = CartService::ambient();
+$snapshot = $cart->canHaveCart() ? $cart->read(CartResolution::Current) : null;
 
-if (!$snapshot->isEmpty()) {
+if ($snapshot !== null && !$snapshot->isEmpty()) {
     $units = $snapshot->quantity;                    // int
     $lines = $snapshot->itemCount;                   // int
     $total = $snapshot->totals->grand->format();     // text, with the currency symbol
@@ -167,9 +168,9 @@ if (!$snapshot->isEmpty()) {
 
 `CartResolution::Current` means "look only": a visitor who has no cart still has none afterwards.
 
-Planned for 2.2.1, which is not released: `canHaveCart(): bool` says whether the visitor can have a cart at all (an
-account, or a well-formed cart key of the browser), reading nothing. A module shown on every page asks it before
-`read()`, as the shipped cart module does, so a first-time visitor costs it no query. The shipped module then hands
+`canHaveCart(): bool` says whether the visitor can have a cart at all (an account, or a well-formed cart key of the
+browser), reading nothing. A module shown on every page asks it before `read()`, as the shipped cart module does, so
+a first-time visitor costs it no query. The shipped module then hands
 its layouts no reading (`$snapshot` is `null`): a template override of `tmpl/default.php` or `tmpl/default_items.php`
 must accept `null`. An override of `default_items.php` made from the 2.2.0 file returns early on `null`, so the drawer
 opens with no header, no close button and no "Your cart is empty" until it takes the shipped file's first lines.
@@ -181,19 +182,19 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `read(CartResolution $mode, int $cartId = 0): CartSnapshot` | Reads a cart | Creates no cart. It is not free of writes: it adopts a guest's cart after sign-in, and lowers a quantity that is no longer in stock. | `CartResolution::Mutable` throws `InvalidArgumentException` |
-| `add(int $itemId, int\|float $quantity): CartAddResult` | Puts an item in the cart. Reads the chosen field values and uploads from the current request. Planned for 2.2.1, which is not released: the line and its chosen options are written together, or not at all. | Creates a cart for a first-time visitor. Its comment calls it the only method that may; in the code `chooseShipment()` and `choosePayment()` open the cart the same way, and `createNamedCart()` always makes one. The result carries the line as the cart now prices it. | A request it cannot read, or a write that fails: `added` is `false` and the shopper gets one sentence |
+| `add(int $itemId, int\|float $quantity): CartAddResult` | Puts an item in the cart. Reads the chosen field values and uploads from the current request. The line and its chosen options are written together, or not at all. | Creates a cart for a first-time visitor. Its comment calls it the only method that may; in the code `chooseShipment()` and `choosePayment()` open the cart the same way, and `createNamedCart()` always makes one. The result carries the line as the cart now prices it. | A request it cannot read, or a write that fails: `added` is `false` and the shopper gets one sentence |
 | `setLineQuantity(int $lineId, int $quantity): CartMutationResult` | Sets how many of one line | The quantity is held to stock and to the item's own rules. The line is removed when it reaches 0. | A line of another cart |
 | `setLineQuantityAtCheckout(int $lineId, int $quantity, ?int $placeId): CartMutationResult` | The same at checkout, and then checks the chosen methods against what is still offered | A reading only when the change was written | The same |
 | `clear(): bool` | Takes everything out and keeps the cart | Returns `false` only for a storage failure | |
 | `applyCoupon(string $code): string` | Enters a coupon code | Returns one of the `CouponOutcome` constants, which says what happened | A code is kept on the cart only when it applied, or when its rule is real and its conditions are not met yet. Any other code is refused and not kept. |
 | `removeCoupon(string $code): void` | Takes a code off | | Reports nothing. A storage failure is logged. |
 | `pointAtSavedDetails(int $deliveryId, ?int $invoiceId = null): void` | Points the cart at a saved address | | Reports nothing. A storage failure is logged. |
-| `chooseShipment(int $shipmentId, ?int $placeId): CartMutationResult` | Chooses the shipping method | The delivery place is applied first, because it decides which methods are offered. Planned for 2.2.1, which is not released: it also decides the prices of the cart's goods. May create a cart for a first-time visitor. | A choice that could not be written: `succeeded` is `false` and no reading is taken |
+| `chooseShipment(int $shipmentId, ?int $placeId): CartMutationResult` | Chooses the shipping method | The delivery place is applied first, because it decides which methods are offered and the prices of the cart's goods. May create a cart for a first-time visitor. | A choice that could not be written: `succeeded` is `false` and no reading is taken |
 | `choosePayment(int $paymentId, ?int $placeId): CartMutationResult` | Chooses the payment method | The same order of steps | The same |
 | `checkout(?int $placeId): CartSnapshot` | The checkout as it stands, with the offered methods | Creates no cart and sets no cookie | |
 | `openCheckout(): CheckoutCart` | The checkout page's look: first whether the cart is empty, then the reading | Creates no cart | |
 | `lineConfiguration(object $item, int $lineId): ?array` | What the shopper chose on one line, so that the item page can open it again | `null` for a line that is not the visitor's | |
-| `createNamedCart(): NamedCartEditor` | A new cart for the subject's customer. For the back office. | Always a new cart, never one that already exists. Planned for 2.2.1, which is not released: opened in the shop's default currency, never the session's. | |
+| `createNamedCart(): NamedCartEditor` | A new cart for the subject's customer. For the back office. | Always a new cart, never one that already exists, opened in the shop's default currency, never the session's. | |
 | `editCart(int $cartId): NamedCartEditor` | A handle on a cart known by its id. For the back office. | | |
 
 ### What you are given back
@@ -211,7 +212,7 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | `rules` | `CartRulesView` | The cart rules applied (`applied`), the codes held (`codes`), rules the shopper is close to (`progress`), and their sum (`total`) |
 | `offers` | `CartOffersView` | The payment and shipping methods offered, and the chosen ones |
 | `customer` | `User` | Whose cart it is |
-| `placeId` | `?int` | The delivery place of this request. Planned for 2.2.1, which is not released: also the place the cart's goods are priced at. |
+| `placeId` | `?int` | The delivery place of this request, and the place the cart's goods are priced at. |
 
 Its methods are `isEmpty()`, `exists()` and, since 2.2.0, `shippingAwaitsChoice()`: the cart needs shipping and no
 shipping method is chosen yet, so the shipping cost is not known. It is not zero.
@@ -312,7 +313,7 @@ drawn one by one.
 
 | Step in the picture | What is true |
 |---|---|
-| 2 to 4 | Nothing is written. A refusal costs one failed checkout and leaves no order. Planned for 2.2.1, which is not released: before the payment and shipping plugins are asked, the order's total is compared with the total the cart page showed, and an order whose total differs is refused, with both totals in the shopper's sentence. |
+| 2 to 4 | Nothing is written. A refusal costs one failed checkout and leaves no order. Before the payment and shipping plugins are asked, the order's total is compared with the total the cart page showed, and an order whose total differs is refused, with both totals in the shopper's sentence. |
 | 5 | The cart's row is locked first. A second request with the same cart (a double click, a browser retry) waits here. |
 | 5 | The order and its lines are written by `OrderCreator`, the same class every other source of orders uses. See [Orders](./orders.md#ordercreator). |
 | 6 | If the stock cannot be set aside, the placement fails and everything is undone. |
@@ -378,7 +379,7 @@ methods, and `discard()`. Its class comment says it is "not a plugin API and not
 |---|---|
 | A plugin that reads the cart | A handler for one of the events above. Nothing else. |
 | A plugin that adds a charge | A handler of `onCartTotals`, declared in `getTargetedHandlers()` |
-| A module that shows the cart | A call to `CartService::ambient()->read(CartResolution::Current)`. Load the language file `com_alfa` if your module draws Alfa's own layouts, as the shipped module does. |
+| A module that shows the cart | A call to `CartService::ambient()->read(CartResolution::Current)`, after `canHaveCart()`. Load the language file `com_alfa` if your module draws Alfa's own layouts, as the shipped module does. |
 
 ## What can go wrong
 
@@ -389,7 +390,7 @@ methods, and `discard()`. Its class comment says it is "not a plugin API and not
 | `read()` throws `InvalidArgumentException` | It was called with `CartResolution::Mutable` |
 | Your plugin is called in `onOrderAfterPlace` and finds no cart | The cart is deleted before the save is final. Read the order. |
 | An order exists but has no payment row | The payment plugin failed after the save was final. See the table above. |
-| Planned for 2.2.1, which is not released: every order is refused with "its total is now" | A template override of the cart's items layout (`default_cart_items.php`) prints a `shown_total` other than the cart's grand total. The field is `<input type="hidden" form="cart-form" name="shown_total" value="CODE:minor units">`, for example `EUR:34720`. An override made before 2.2.1 that lacks the field is not compared at all, so the check is lost: add the field. |
+| Every order is refused with "its total is now" | A template override of the cart's items layout (`default_cart_items.php`) prints a `shown_total` other than the cart's grand total. The field is `<input type="hidden" form="cart-form" name="shown_total" value="CODE:minor units">`, for example `EUR:34720`. An override made before 2.2.1 that lacks the field is not compared at all, so the check is lost: add the field. |
 
 ## Changed in 2.2.0
 

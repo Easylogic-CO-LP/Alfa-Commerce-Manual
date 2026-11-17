@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 title: Overview
-description: "The REST API of Alfa Commerce 2.2.0: how to call it, the rules every route follows, and the known defects of 2.2.0."
+description: "The REST API of Alfa Commerce 2.2.1: how to call it, the rules every route follows, and the defects of 2.2.0 that 2.2.1 fixed."
 ---
 
 # REST API
@@ -29,8 +29,8 @@ Every route is also in a public Postman collection, with a test on each request:
 The collection is generated from the 2.2.0 code. Run it against a test or demo shop only, never a live one: it
 creates records, places an order, issues an invoice and voids it.
 
-Planned for 2.2.1, which is not released: some answers change (a create answers 201, see
-[Status codes](#status-codes)), so this 2.2.0 collection reports failures when it is run against 2.2.1.
+Since 2.2.1 some answers change (a create answers 201, see [Status codes](#status-codes)), so the 2.2.0 collection
+reports failures when it is run against 2.2.1.
 
 ## What you need
 
@@ -79,7 +79,7 @@ the rules of a save are the same. See
 
 ## The routes at a glance
 
-2.2.0 registers 112 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`).
+Alfa Commerce registers 112 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`).
 
 Eighteen resources have the five standard routes: list, read one, create, change, delete.
 
@@ -164,10 +164,10 @@ The examples in these pages are answers of a 2.2.0 test shop, shortened where ma
 
 ### The filters of each list
 
-Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each.
-Planned for 2.2.1, which is not released: a list sent where one value is expected (for example
-`filter[state][]=1`) is answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take a list, and
-the added `filter[fields]` of `items` takes a map (below).
+Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each. A
+list sent where one value is expected (for example `filter[state][]=1`) is answered 400 (since 2.2.1). The
+`filter[category]` and `filter[manufacturer]` of `items` take a list, and `filter[fields]` of `items` takes a map
+(below).
 
 | List | Filters besides `filter[search]` |
 |---|---|
@@ -184,8 +184,7 @@ the added `filter[fields]` of `items` takes a map (below).
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
 
-Planned for 2.2.1, which is not released: four lists take the filters their administrator screens apply, with the
-same meaning as there.
+Since 2.2.1, four lists also take the filters their administrator screens apply, with the same meaning as there.
 
 | List | Filters added | What they keep |
 |---|---|---|
@@ -225,13 +224,10 @@ Two questions that come up often:
   `v1/alfa/orders/:id/payments` and `v1/alfa/orders/:id/shipments` take a `POST` only.
 - **The stock movements of one item.** `GET v1/alfa/inventorymovements?filter[search]=id:123`, where 123 is the
   item's id. A text in `filter[search]` is matched against the item's SKU, the movement's note and its source.
-  Planned for 2.2.1, which is not released: `filter[item_id]=123` as well.
-- **The orders of one customer.** Planned for 2.2.1, which is not released: `filter[id_user]` for an account (`0`
-  for the guests' orders), and `filter[email]` for the e-mail on the order, which finds a guest's orders too, with
-  letter case and accents set aside.
-
-Not offered by the API in 2.2.0: a filter by date on any list, a filter of orders by customer or by item, and a
-filter of items by stock. Planned for 2.2.1, which is not released: all of these, in the table above.
+  `filter[item_id]=123` does the same.
+- **The orders of one customer.** `filter[id_user]` for an account (`0` for the guests' orders), and
+  `filter[email]` for the e-mail on the order, which finds a guest's orders too, with letter case and accents set
+  aside.
 
 **Money.** On orders and documents an amount is an object with exact decimal text, the formatted text and the
 amount in the currency's smallest unit:
@@ -257,24 +253,21 @@ language, the field's name followed by the language in lower case with an unders
 A read returns a `translations` object with every language, and you may send that object back instead of the flat
 keys.
 
-**The name in the site's default language is needed on every write, a change included.** A `PATCH` that carries
-only `{"state": 0}` is refused:
+**The name in the site's default language is needed on a create.** A `PATCH` that names a required translated field
+in no language keeps the stored texts of that field, so `{"state": 0}` alone is accepted. A create without the name,
+and a `PATCH` that sends the name empty, are refused:
 
 ```json
 {"errors":[{"title":"Field required: Name"}]}
 ```
 
-This is a known defect of 2.2.0 ([row 13](#known-defects-in-220)). Until it is fixed, send the required translated
-fields again with every `PATCH`. The name may be sent as the flat key or inside the `translations` object.
-
-Planned for 2.2.1, which is not released: a `PATCH` that names a required translated field in no language keeps
-the stored texts of that field, so `{"state": 0}` alone is accepted. A create without the name, and a `PATCH` that
-sends the name empty, are still refused.
+The name may be sent as the flat key or inside the `translations` object. In 2.2.0 a `PATCH` without the name was
+refused too ([row 13](#known-defects-in-220)).
 
 **Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
 `values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
-Planned for 2.2.1, which is not released: an item field's `values` cannot be sent at all; a write that carries them
-answers 422. See [Item fields](./catalogue.md#item-fields).
+An item field's `values` cannot be sent at all; a write that carries them answers 422. See
+[Item fields](./catalogue.md#item-fields).
 
 **Pictures and files of a record.** Send a list named `media`:
 
@@ -289,9 +282,8 @@ An entry you do not send stays. To remove one, send it with `"delete": 1`. A `pa
 site; to upload a new file, send it to Joomla's own route `v1/media/files` first. An `alt` longer than 75
 characters is refused.
 
-Planned for 2.2.1, which is not released: an entry's `thumbnail` must be an image file, of a type Joomla's Media
-allows, inside one of the Media folders (or Alfa Commerce's own image folder). Otherwise the write is refused with
-400 and the reason, and nothing is written.
+An entry's `thumbnail` must be an image file, of a type Joomla's Media allows, inside one of the Media folders (or
+Alfa Commerce's own image folder). Otherwise the write is refused with 400 and the reason, and nothing is written.
 
 **Background work.** When a save leaves work for later (a price rebuild, an e-mail, a document), the answer lists
 it under `meta.tasks`, each with its state and its own address. See
@@ -301,18 +293,18 @@ it under `meta.tasks`, each with its state and its own address. See
 
 | Status | Meaning |
 |---|---|
-| 200 | Done. Also the answer to a create (see [Known defects](#known-defects-in-220)). |
-| 201 | Planned for 2.2.1, which is not released: the answer to a create. The body is the new record, and the header `Location` holds its address. The operations on an order keep 200. |
+| 200 | Done. In 2.2.0 also the answer to a create (see [Known defects](#known-defects-in-220)). |
+| 201 | Created: the answer to a create. The body is the new record, and the header `Location` holds its address. The operations on an order keep 200. |
 | 202 | A task is still working. See [Tasks](./documents-and-tasks.md#tasks). |
 | 204 | Deleted. No body. |
-| 400 | The input cannot be used: a required field is missing, an amount is finer than the currency. Planned for 2.2.1, which is not released: also a list sent where one value is expected. |
+| 400 | The input cannot be used: a required field is missing, an amount is finer than the currency, a list is sent where one value is expected. |
 | 401 | No token, or a token that is not valid. |
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
-| 409 | A rule of the shop refuses the request. The answer says which. Planned for 2.2.1, which is not released: also a delete of a record that must be in the trash first. |
-| 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money. Planned for 2.2.1, which is not released: also a write of an item that carries its options, combinations, item field values or downloads, a write of an item field that carries its values, and a `PATCH` of an order that carries a field its update does not write. |
-| 500 | A fault. Four cases are known in 2.2.0, below. Planned for 2.2.1, which is not released: none of the four answers 500. |
-| 503 | Planned for 2.2.1, which is not released: a PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, has been removed. The answer says so in words. |
+| 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
+| 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money, a write of an item that carries its options, combinations, item field values or downloads, a write of an item field that carries its values, a `PATCH` of an order that carries a field its update does not write. |
+| 500 | A fault. Four cases were known in 2.2.0, below; in 2.2.1 none of the four answers 500. |
+| 503 | A PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, has been removed. The answer says so in words. |
 
 A refusal carries its reason in words:
 
@@ -320,22 +312,17 @@ A refusal carries its reason in words:
 {"errors":[{"title":"payment 1 is completed, not pending","code":409}]}
 ```
 
-Deletes that a rule refuses with 409: a category that still has sub-categories or is the default category of an
-item, an order that has sales documents, a record whose removal would widen a discount, a tax or a cart rule.
+Deletes that a rule refuses with 409, with the reason, and nothing is deleted:
 
-Planned for 2.2.1, which is not released: these deletes are refused with 409 too, with the reason, and nothing is
-deleted:
-
+- a category that still has sub-categories or is the default category of an item, an order that has sales
+  documents, a record whose removal would widen a discount, a tax or a cart rule;
 - an order status that orders are in, or the last status that holds a role;
 - a payment or shipping method that orders, payments, parcels or stored payment references use, and a shipping
   method that a payment method's list of shipping methods names;
 - a currency that orders, item prices or places use;
 - an item field that items still use.
 
-An item that was sold is not removed by a delete. The answer is 204 and the item stays, archived, for the orders
-that hold it.
-
-Planned for 2.2.1, which is not released:
+Two more rules:
 
 - **From the trash only.** An item, a category, a manufacturer, an item field, a currency, a tax, a discount, a
   place, a payment or shipping method, a form field, a form field group and an order status are deleted only while
@@ -350,8 +337,8 @@ Planned for 2.2.1, which is not released:
   is in the trash. An id that names no record still answers 404. Cart rules, stock locations, customers, customer
   groups and orders have no trash step and are deleted in one call.
 - **A sold item answers 200.** The delete of an item that order lines were sold as answers 200 with the item as it
-  now stands, `state` 2 (archived), and `meta.note` saying that it was archived instead of deleted. An item without
-  order history is deleted and answered 204.
+  now stands, `state` 2 (archived), and `meta.note` saying that it was archived instead of deleted. The item stays,
+  for the orders that hold it. An item without order history is deleted and answered 204.
 
 ## Permissions
 
@@ -379,26 +366,25 @@ The payments and shipments of one order are under that order: see [Orders](./ord
 ## Known defects in 2.2.0
 
 These are faults of 2.2.0, found by running the collection against the published release. They are listed here so
-that a program written today behaves correctly. Every row is fixed in 2.2.1, which is not released. This table
-will name the release when one ships.
+that a program talking to a 2.2.0 shop behaves correctly. Every row is fixed in 2.2.1.
 
 | | What 2.2.0 does | What to do today | Fix |
 |---|---|---|---|
-| 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Fixed in 2.2.1, not yet released: 404 |
-| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Fixed in 2.2.1, not yet released: 409 with the reason, and nothing is deleted |
-| 3 | A create answers 200, not 201 | Accept 200 | Fixed in 2.2.1, not yet released: 201, with the new record's address in the header `Location` |
-| 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Fixed in 2.2.1, not yet released: a delete of an item, category, manufacturer, item field, currency, tax, discount, place, payment or shipping method, form field, form field group or order status that is not in the trash answers 409; move it to the trash first with a `PATCH` of `state` -2. Cart rules, stock locations, customers, customer groups and orders have no trash step and are deleted in one call. |
-| 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Fixed in 2.2.1, not yet released: each is refused with 400 and the reason |
-| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Fixed in 2.2.1, not yet released: none of them is needed, and a part of `prices_display` sent alone changes only that part |
-| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Fixed in 2.2.1, not yet released: `customer_note` is written, and `state` is refused with 422. Every other field the update does not write is refused with 422 too, naming it (see [Orders](./orders.md)). |
-| 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Fixed in 2.2.1, not yet released |
-| 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce 2.2.0 does not ship it. | On 2.2.0, install `lib_dompdf`, or use the `html` route | Fixed in 2.2.1, not yet released: the library ships with the package and is installed with it. A removed library is named by a setup row and answered 503 with the reason. |
-| 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Fixed in 2.2.1, not yet released: `note` and `created` are gone, and each shipment carries `added`, `shipping_charge_basis` and `shipping_tax_chain` |
-| 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | Fixed in 2.2.1, not yet released: `created` is gone, and each payment carries `added` and `refund_reason` |
-| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | Fixed in 2.2.1, not yet released: one order carries `fulfillment_status` and `fulfillment_percentage` |
-| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | Fixed in 2.2.1, not yet released: the stored name is kept |
-| 14 | A write of an item that carries its options, combinations or item field values (`fields`, `options`, `combinations`, `informational`, or the item form's keys for them, such as `deleted_option_value_ids`) is not refused. Those values reach the option and combination writers in a shape they do not read: a list of options sent as a read returns it is taken by its positions, so it can change another option of the item, and `deleted_option_value_ids` deletes options. The same holds for the item form's downloads grid (`item_downloads`): a download row sent there is written with any combination id, unchecked, and with the state sent. The write answers 200 (row 3), although it was partial and not checked. | Never send them in a write. Set them in the administrator. | Fixed in 2.2.1, not yet released: 422 naming the keys, and nothing is saved |
-| 15 | A write of an item field that carries `values` or `deleted_value_ids` is not refused. A value is kept by its id whatever field it belongs to, so a `PATCH` of one field that names a value of another field moves that value, with the options, specifications and combinations of items built on it, under the first field. `deleted_value_ids` deletes the unused values of any field. | Never send `values` or `deleted_value_ids`. Edit a field's values on its page in the administrator. | Fixed in 2.2.1, not yet released: 422 naming the keys, and nothing is saved |
+| 1 | Reading a tax, a discount or a cart rule that does not exist answers 500, not 404 | Treat a 500 on `GET v1/alfa/taxes/:id`, `discounts/:id` and `cartrules/:id` as "not found" | Fixed in 2.2.1: 404 |
+| 2 | Deleting an order status that orders are in answers 204, and nothing is deleted. The same happens when deleting a payment or shipping method that an order used, and a currency or an item field that is in use. | Read the record after the delete to see whether it is gone | Fixed in 2.2.1: 409 with the reason, and nothing is deleted |
+| 3 | A create answers 200, not 201 | Accept 200 | Fixed in 2.2.1: 201, with the new record's address in the header `Location` |
+| 4 | A delete does not ask for the record to be in the trash first. Cart rules and orders cannot be moved to the trash through the API. | Nothing | Fixed in 2.2.1: a delete of an item, category, manufacturer, item field, currency, tax, discount, place, payment or shipping method, form field, form field group or order status that is not in the trash answers 409; move it to the trash first with a `PATCH` of `state` -2. Cart rules, stock locations, customers, customer groups and orders have no trash step and are deleted in one call. |
+| 5 | `POST v1/alfa/users` accepts a Joomla user id that does not exist, the id 0, and a second row for the same user | Send only an existing user that has no customer row | Fixed in 2.2.1: each is refused with 400 and the reason |
+| 6 | Some fields are needed although not declared: `prices_display` on every write of a customer group (a part of it sent alone replaces the whole of it), `color` and `bg_color` on a payment or shipping method, and `issues_delivery_note` whenever an order status carries `issues_doc_rules` | Send them | Fixed in 2.2.1: none of them is needed, and a part of `prices_display` sent alone changes only that part |
+| 7 | `PATCH v1/alfa/orders/:id` with `customer_note` or with `state` answers 200 and writes nothing | Do not rely on it. Change an order's status through its own route. | Fixed in 2.2.1: `customer_note` is written, and `state` is refused with 422. Every other field the update does not write is refused with 422 too, naming it (see [Orders](./orders.md)). |
+| 8 | Ordinary writes of items, form fields, places and currencies write PHP warnings to the server's log | Nothing | Fixed in 2.2.1 |
+| 9 | `GET v1/alfa/documents/:id/pdf` answers 500 when the dompdf library (`lib_dompdf`) is not installed. Alfa Commerce 2.2.0 does not ship it. | On 2.2.0, install `lib_dompdf`, or use the `html` route | Fixed in 2.2.1: the library ships with the package and is installed with it. A removed library is named by a setup row and answered 503 with the reason. |
+| 10 | Each shipment inside an order carries `note` and `created`, which are always null, and does not carry the shipment's saved tax details | Do not read those two fields | Fixed in 2.2.1: `note` and `created` are gone, and each shipment carries `added`, `shipping_charge_basis` and `shipping_tax_chain` |
+| 11 | Each payment inside an order carries `created`, which is always null, and a refund's reason is not shown in its entry | Do not read `created` on a payment | Fixed in 2.2.1: `created` is gone, and each payment carries `added` and `refund_reason` |
+| 12 | `fulfillment_status` of an order is not filled by the API | Do not rely on it. Read the order's `shipments`. | Fixed in 2.2.1: one order carries `fulfillment_status` and `fulfillment_percentage` |
+| 13 | A `PATCH` that leaves out the name in the default language is refused with 400 "Field required: Name", even when it changes only another field | Send the name with every `PATCH` | Fixed in 2.2.1: the stored name is kept |
+| 14 | A write of an item that carries its options, combinations or item field values (`fields`, `options`, `combinations`, `informational`, or the item form's keys for them, such as `deleted_option_value_ids`) is not refused. Those values reach the option and combination writers in a shape they do not read: a list of options sent as a read returns it is taken by its positions, so it can change another option of the item, and `deleted_option_value_ids` deletes options. The same holds for the item form's downloads grid (`item_downloads`): a download row sent there is written with any combination id, unchecked, and with the state sent. The write answers 200 (row 3), although it was partial and not checked. | Never send them in a write. Set them in the administrator. | Fixed in 2.2.1: 422 naming the keys, and nothing is saved |
+| 15 | A write of an item field that carries `values` or `deleted_value_ids` is not refused. A value is kept by its id whatever field it belongs to, so a `PATCH` of one field that names a value of another field moves that value, with the options, specifications and combinations of items built on it, under the first field. `deleted_value_ids` deletes the unused values of any field. | Never send `values` or `deleted_value_ids`. Edit a field's values on its page in the administrator. | Fixed in 2.2.1: 422 naming the keys, and nothing is saved |
 
 In the Postman collection, the requests for rows 1, 2 and 9 fail on 2.2.0 on purpose: their tests state what the
 route is meant to answer.

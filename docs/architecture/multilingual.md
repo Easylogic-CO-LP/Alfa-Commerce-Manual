@@ -289,7 +289,7 @@ that owns it was removed. A plugin builds such a text with `NotificationText`
   component, its guided tours and its plugins, and `language/<tag>/` for the storefront and the modules. The
   component keeps no language folder of its own on an installed site.
 - **The component's files** are `com_alfa.ini` and `com_alfa.sys.ini`, plus `com_alfa.tours.ini`, which holds the
-  texts of all the guided tours in one file per language. Planned for 2.2.1, which is not released: a platform
+  texts of all the guided tours in one file per language. A platform
   plugin (group `alfa`) loads its own language for its own screens; Alfa loads it for the guided tours only when the
   plugin has a published tour named `plg_alfa_<element>.<tour>`.
 - **Each extension owns its strings.** A plugin or a module carries every string it shows in its own language

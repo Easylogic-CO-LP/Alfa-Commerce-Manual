@@ -386,10 +386,10 @@ GitHub runs these on your pull request. Each has its own page.
 
 | Check | What it does | Can it fail the pull request |
 |---|---|---|
-| [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. From the next promotion of `developer` to `main`, it runs on PHP 8.3. | Only when the tool or its commit step breaks. |
+| [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. | Only when the tool or its commit step breaks. |
 | [Copy-clean](../tooling/workflows#copy-clean) | Refuses unclean comments and texts, see the rules above. | Yes. |
-| [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | On `main` (2.2.0) it reports and does not fail the check. On `developer`, since 13 November 2026, a finding fails it. Open the run and read what it found. |
-| [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript for security problems and the history for secrets that are live. From the next promotion of `developer` to `main`, it also scans the PHP Alfa Commerce ships. | Yes, when it finds a live secret or one of its steps breaks. From the next promotion: also when it finds a problem in the PHP. |
+| [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | Yes, when it finds something beyond the baseline. Open the run and read what it found. |
+| [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript and the PHP Alfa Commerce ships for security problems, and the history for secrets that are live. | Yes, when it finds a problem in the PHP, a live secret, or one of its steps breaks. |
 | [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. It runs only for a pull request from a branch of this repository, by a person with write access. | It posts comments. Nothing in its file fails a pull request because of a finding. |
 
 Code Quality and Security Scan run only for pull requests into `main` or `developer`. Which checks must be green

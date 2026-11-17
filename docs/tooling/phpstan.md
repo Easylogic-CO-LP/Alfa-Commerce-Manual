@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: PHPStan
-description: What PHPStan analyses in Alfa Commerce, what it is told to ignore, what the baseline is, and why the check stays green.
+description: What PHPStan analyses in Alfa Commerce, what it is told to ignore, what the baseline is, and why any finding fails the check.
 ---
 
 # PHPStan
@@ -14,17 +14,13 @@ PHPStan reads PHP code without running it and reports likely mistakes: a method 
 an object, an argument of the wrong type, a class that does not exist. This is called static analysis. Its settings
 for Alfa Commerce are in `phpstan.neon` at the root of the repository.
 
-:::caution In 2.2.0 the check reports and does not fail
-On the `main` branch (the 2.2.0 release) the PHPStan check is green whatever PHPStan finds. It prints its findings on
-the run's page and does not fail the pull request. Open the run and read them.
-
-Since 13 November 2026 the `developer` branch carries a stricter version of this check: there, any finding PHPStan
-reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact Joomla release (6.2.0),
-so the findings no longer change by themselves. The `main` branch, which is the 2.2.0 release, still runs the check as
-this page describes it. No check is required for a merge yet on either branch.
+:::caution Any finding fails the check
+Any finding PHPStan reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact
+Joomla release (6.2.0), so the findings do not change by themselves. No check is required for a merge yet. (On 2.2.0
+the check was green whatever PHPStan found, and neither version was fixed.)
 :::
 
-Two messages PHPStan gives on the 2.2.0 code, both recorded in the baseline:
+Two messages PHPStan gives on the code, both recorded in the baseline:
 
 ```text
 Cannot call method priceLineConfig() on bool|Joomla\CMS\MVC\Model\BaseDatabaseModel.
@@ -77,16 +73,14 @@ The nine Joomla types are `BaseDatabaseModel`, `CMSApplicationInterface`, `Datab
 ### How Joomla is made available
 
 Alfa Commerce extends Joomla's classes, and the repository holds no copy of Joomla and no Composer dependencies. So
-before each analysis the latest Joomla release is downloaded and unpacked into a folder named `joomla` at the root
-of the repository. The setting `scanDirectories` points PHPStan at that folder. Git ignores the folder.
+before each analysis Joomla is downloaded and unpacked into a folder named `joomla` at the root
+of the repository. The setting `scanDirectories` points PHPStan at that folder. Git ignores the folder. The release is
+Joomla 6.2.0, taken by its address and checked against the sha256 that Joomla publishes (up to 2.2.0 it was the
+latest release).
 
 - On GitHub the job downloads it in a step of its own, on every run.
-- On your computer the script `scripts/phpstan-fetch-joomla.sh` does the same. It needs `curl`, `python3` and
-  `unzip`, and it replaces the `joomla` folder each time.
-
-From the next promotion of `developer` to `main` (with 2.2.1, which is not released), the job and the script both
-download Joomla 6.2.0 by its address and check it against the sha256 that Joomla publishes, instead of the latest
-release. The script then needs `curl`, `unzip` and `sha256sum` or `shasum`, and no longer `python3`.
+- On your computer the script `scripts/phpstan-fetch-joomla.sh` does the same. It needs `curl`, `unzip` and
+  `sha256sum` or `shasum`, and it replaces the `joomla` folder each time.
 
 A small file, `.github/phpstan-bootstrap.php`, defines the constants that Joomla defines only when it runs:
 `_JEXEC`, `DS`, `JDEBUG` and the `JPATH_` constants.
@@ -97,13 +91,13 @@ A **baseline** is a list of findings that already existed when the list was made
 finding that is on the list, and reports any finding that is not. The list is the file `phpstan-baseline.neon`,
 which `phpstan.neon` includes.
 
-| | 2.2.0 |
-|---|---|
-| Entries (one message in one file) | 435 |
-| Findings they cover (an entry counts how often its message occurs in the file) | 652 |
-| Files with at least one entry | 184 |
+| | 2.2.0 | 2.2.1 |
+|---|---|---|
+| Entries (one message in one file) | 435 | 424 |
+| Findings they cover (an entry counts how often its message occurs in the file) | 652 | 641 |
+| Files with at least one entry | 184 | 183 |
 
-The most frequent kinds are a wrong argument type (81 entries), a class that is not found (41), an unnecessary
+In 2.2.0 the most frequent kinds were a wrong argument type (81 entries), a class that is not found (41), an unnecessary
 nullsafe access (38), a wrong number of arguments (29) and a method called on something that may not be an object
 (26).
 
@@ -119,19 +113,18 @@ after you.
 
 ## Running it yourself
 
-Install PHPStan the way its own documentation describes. The workflow asks for the tool without naming a version,
-so the repository pins none. Then, from the root of the repository:
+Install PHPStan the way its own documentation describes; use 2.3.5 to see what the job sees. Then, from the root of
+the repository:
 
 ```bash
-# 1. Download the latest Joomla into ./joomla
+# 1. Download Joomla 6.2.0 into ./joomla
 scripts/phpstan-fetch-joomla.sh
 
 # 2. Analyse
 phpstan analyse --configuration=phpstan.neon --memory-limit=1G
 ```
 
-From the next promotion of `developer` to `main`, the job installs PHPStan 2.3.5 and checks the file against the
-release's sha256. A PHPStan on your own computer is still yours to choose; use 2.3.5 to see what the job sees.
+The job installs PHPStan 2.3.5 and checks the file against the release's sha256.
 
 The job on GitHub runs the same second command with one more option, which formats the output for GitHub:
 
@@ -141,29 +134,26 @@ phpstan analyse --configuration=phpstan.neon --memory-limit=1G --error-format=gi
 
 ## What happens next
 
-The job sets up PHP 8.2, downloads Joomla, and runs PHPStan. PHPStan prints its findings on the run's page. The
-step is marked so that its result does not fail the job (`continue-on-error: true`), so the check shows green
-whether there are findings or not.
+The job sets up PHP 8.3, downloads Joomla 6.2.0, and runs PHPStan 2.3.5. PHPStan prints its findings on the run's
+page, and any finding turns the check red. A green check means PHPStan found nothing beyond the baseline.
 
 What this means for you:
 
-- A green PHPStan check is not a statement about your code. Open the run from the pull request's list of checks and
-  read the output of the step **Run PHPStan**.
+- A red PHPStan check: open the run from the pull request's list of checks and read the output of the step
+  **Run PHPStan**.
 - PHPStan fixes nothing by itself. A finding in code you changed is yours to fix and push.
 - The AI review is told not to flag findings of this kind.
 
-From the next promotion of `developer` to `main`: the job runs on PHP 8.3 and has no `continue-on-error`, so any
-finding turns the check red. A green check then means PHPStan found nothing. The level, the paths, the ignored
-messages and the baseline do not change.
+(On 2.2.0 the job ran on PHP 8.2 with `continue-on-error: true`, so the check was green whatever it found.)
 
 ## What can go wrong
 
 | What you see | Why | What to do |
 |---|---|---|
 | Very many "class not found" findings on your computer | The `joomla` folder is missing or empty. | Run `scripts/phpstan-fetch-joomla.sh` first. |
-| The script stops | `curl`, `python3` or `unzip` is missing, or the download failed. | Install the missing tool, check the connection, run it again. |
-| The check is red | A step other than the analysis broke, for example the Joomla download. PHPStan's findings cannot turn it red. From the next promotion of `developer` to `main`: also any finding. | Open the run and read the failing step. |
-| Findings changed although the code did not | A new Joomla release or a new PHPStan version. Neither is pinned. From the next promotion of `developer` to `main` both are pinned (PHPStan 2.3.5, Joomla 6.2.0). | Read the new findings as you would any other. |
+| The script stops | `curl`, `unzip`, or `sha256sum` and `shasum` are missing, the download failed, or the file's sha256 differs. | Install the missing tool, check the connection, run it again. |
+| The check is red | PHPStan found something not in the baseline, or a step broke, for example the Joomla download. | Open the run and read the failing step. |
+| Findings on your computer differ from the job's | Another PHPStan version than 2.3.5, or another Joomla than 6.2.0, in the `joomla` folder. | Use the versions the job uses. |
 | A mistyped property name is not reported | "Access to an undefined property" is ignored everywhere. | Test the code path. PHPStan will not catch this one. |
 
 ## A note on @since tags
@@ -173,7 +163,5 @@ The `@since` tags in the analysed folders name many versions. 2.0.0 is the most 
 
 ## Not documented yet
 
-- Which version of PHPStan a run installs. The workflow names none. From the next promotion of `developer` to `main`:
-  2.3.5.
 - Whether the findings also show as notes on the changed lines of a pull request. The workflow asks PHPStan for
   GitHub's output format; what GitHub then shows is not part of the code.

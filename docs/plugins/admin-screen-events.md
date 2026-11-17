@@ -62,8 +62,7 @@ All eight events below are announced to everyone. Each card says "you" for your 
   `rowData()` and `rowValues()`.
 - **What you are expected to do.** Declare your column (see "Declaring a column" below). Do not run a query for each
   row. Read what `onAlfaAdminListRowData` stored.
-- **What happens next.** The list gets one more header cell and one more cell on every row. Planned for 2.2.1,
-  which is not released: each of your cells carries your column's title as `data-alfa-label`, so that on a phone
+- **What happens next.** The list gets one more header cell and one more cell on every row. Each of your cells carries your column's title as `data-alfa-label`, so that on a phone
   the row folds and your value is shown under its name.
 - **If you are missing or you fail.** The column is not shown. Your error is logged.
 
@@ -135,9 +134,7 @@ These slots exist in 2.2.0:
 | `cartrule-sidebar` | Cart rule edit screen, in the side column | `$event->targets('cartrule') && $event->at('cartrule-sidebar')` |
 | `cart-main` | The screen of one cart, under its tabs | `$event->targets('cart') && $event->at('cart-main')` |
 
-The screen of one cart answers `isListScreen()` with true, like the carts list. Tell the two apart with
-`$context->view`: `'cart'` for one cart, `'carts'` for the list. Planned for 2.2.1, which is not released: the screen
-of one cart is an edit screen. `isListScreen()` is false there, and no row or bulk action event is raised on it.
+The screen of one cart is an edit screen (in 2.2.0 it answered `isListScreen()` with true, like the carts list). `isListScreen()` is false there, and no row or bulk action event is raised on it.
 
 ### Declaring a column
 

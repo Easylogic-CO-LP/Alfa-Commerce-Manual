@@ -13,7 +13,7 @@ description: How to write a plugin that adds a new type of field to the customer
 A **form field** is one field of the customer's details: a name, a phone number, a country, a tax office. Staff
 define the fields of their shop, and each field has a **type**. A form field plugin adds one type.
 
-Planned for 2.2.1, which is not released: a new shop has seven fields: name, email, phone, country, address, city
+A new shop has seven fields (since 2.2.1): name, email, phone, country, address, city
 and postcode. The last three are required in the delivery section and may be changed or deleted like the shop's
 own. They are asked for every order, downloads and goods collected in the shop included: a shop that sells only
 those sets them Optional, or hides them, in Form Fields. An update adds no field to an existing shop.
@@ -111,12 +111,9 @@ When step 8 becomes final (the commit) depends on the form:
 | The order screen in the administrator | The same: they are written inside the transaction of the order's save. |
 | The customer's saved details on the storefront, and registration | The row is written on its own, outside any transaction. It is final as soon as it is written. |
 
-At registration, steps 6 and 7 decide whether the form is accepted, but in 2.2.0 the values that are stored are
-the ones the browser sent, not the ones the filters returned. A value sent for a field that a condition hides is
-stored there too.
-
-Planned for 2.2.1, which is not released: registration stores what the filters returned, as the other forms do, and
-nothing for a field that a condition hides. "System - Alfa Commerce Sync" no longer reads customer details from the
+At registration, steps 6 and 7 decide whether the form is accepted, and registration stores what the filters
+returned, as the other forms do, and nothing for a field that a condition hides. (In 2.2.0 registration stored the
+values the browser sent, a hidden field's included.) "System - Alfa Commerce Sync" no longer reads customer details from the
 request when a Joomla account is saved. Details stored before stay as they are.
 
 ## What you must provide
@@ -201,29 +198,25 @@ the `filter` and the `validate` attributes you left on the element.
 
 | What is wrong | What Alfa does |
 |---|---|
-| The plugin is disabled, not installed, or its Access is a level the current visitor does not hold | The field is left out of the form. Nothing is shown in its place and nothing is written to the log. |
-| The same, for one of the two fields every shop must have (see System fields) | The field is left out, an error is written to Joomla's log (category `com_alfa`), and in the administrator the message is also shown on screen |
 | Your `prepareDom()` throws an error | The error is written to Joomla's log (category `com_alfa.cart`) with your plugin's name, the field and the form. The form is still shown. If the error came after `parent::prepareDom()` returned, the field is in the form as the base class described it, without your changes. If it came before, the field is missing. |
 
-A field that is left out is not asked for and not stored, even when staff marked it required.
-
-Planned for 2.2.1, which is not released: a field whose plugin cannot be used (missing, disabled, not loaded for the
-visitor because of its Access, failing to start, or a `prepareDom()` that threw before the field was added) is
-handled by whether the form must ask for it:
+A field whose plugin cannot be used (missing, disabled, not loaded for the visitor because of its Access, failing to
+start, or a `prepareDom()` that threw before the field was added) is handled by whether the form must ask for it:
 
 | The field | What Alfa does |
 |---|---|
 | Required in that form and shown to that customer (system fields included) | It is added as a hidden field whose rule refuses every submission, naming the field: "... cannot be filled in right now, so this form cannot be sent. Please try again later." The log (category `com_alfa`, level ERROR) names the plugin and the reason, and an administrator screen shows the message too. |
-| Optional | It is left out, as in 2.2.0, and a warning is written to the log (category `com_alfa`) once for each field type in the request |
+| Optional | It is left out, not asked for and not stored, and a warning is written to the log (category `com_alfa`) once for each field type in the request |
 
 This holds for the checkout, registration, the customer's saved details, and the customer and order forms staff use.
 The setup checklist's row "Required form fields can be filled in" fails while such a required field has no enabled
-plugin of Public access.
+plugin of Public access. (In 2.2.0 such a field was left out of every form, required or not, and only a system field
+was logged.)
 
 :::warning Access must be Public
 A guest fills the checkout. A form field plugin whose Access (Extensions: Plugins) is not Public is not loaded
-for guests, and its fields silently disappear from their forms. Planned for 2.2.1, which is not released: a required
-field of such a plugin stops the form with a message instead, and an optional one is left out and logged.
+for guests: a required field of such a plugin stops the form with a message, and an optional one is left out and
+logged.
 :::
 
 ### Assets and other events
@@ -251,7 +244,7 @@ When Alfa prints a stored value outside a form, it renders your `tmpl/default.ph
 A template can override your layout by placing a `default.php` in
 `templates/<template>/html/plg_alfa-form-fields_<type>/`.
 
-Planned for 2.2.1, which is not released: staff can choose another layout of your plugin's `tmpl/` folder, or a
+Staff can choose another layout of your plugin's `tmpl/` folder, or a
 template's override, in the field's Layout setting. Alfa keeps the choice in the field's settings as
 `display_layout` and renders that file instead of `default.php`; when the chosen file is missing, `default.php` is
 used. A layout of your plugin is chosen as `_:<name>`, a template's override as `<template>:<name>`. In 2.2.0 the
@@ -296,9 +289,8 @@ Joomla offers two tools, and they do different jobs:
 | A **rule** (`FormRule`) | `validate="name"` | Accept or refuse the value. It cannot change what is stored. |
 | A **filter** (`FormFilterInterface`) | `filter="name"` | Change the value. What the filter returns is what is stored. |
 
-Joomla runs the filters first and the rules second, and keeps what the filters returned (registration is the
-exception in 2.2.0, see "The life of a form field"; planned for 2.2.1, which is not released, it is no exception). A
-rule that rewrites the
+Joomla runs the filters first and the rules second, and keeps what the filters returned (registration too, since
+2.2.1). A rule that rewrites the
 value therefore checks correctly and stores the value exactly as it was typed. If your type has one right shape
 for storage, put the reshaping in a filter and let the rule beside it only say yes or no.
 
@@ -364,8 +356,7 @@ How it behaves:
   the server, which has the last word when the form is sent.
 - A field that a condition hides is taken out of the form on the server before filters and rules run. A hidden
   required field therefore does not block the form, and a value sent for a hidden field is not stored
-  (registration is the exception in 2.2.0, see "The life of a form field"; planned for 2.2.1, which is not
-  released, it is no exception).
+  (registration too, since 2.2.1).
 - In the browser, the inputs of a hidden field are disabled.
 - The delivery section and the invoice section are separate. A condition reads only the fields of its own section.
 - A comparison whose other field is not part of the form is skipped. If every comparison is skipped, the field
@@ -620,7 +611,7 @@ The label, the description and the group title of a field are not the plugin's. 
 | The browser does not check the field before sending | The element lacks the class `validate-<rule>` |
 | A condition never reacts to your widget | The widget does not send `alfa:field-change`, or did not register a value reader |
 | `onAlfaFormFieldsPrepareDom` in `getSubscribedEvents()` is never called | It is not an event. Override `prepareDom()`. |
-| A setting named `layout` breaks the drawing | `layout` is an attribute Joomla reads itself. Name your setting differently. Planned for 2.2.1, which is not released: the field's Layout setting is not this attribute. It is kept as `display_layout` and never reaches the form. |
+| A setting named `layout` breaks the drawing | `layout` is an attribute Joomla reads itself. Name your setting differently. The field's Layout setting is not this attribute. It is kept as `display_layout` and never reaches the form. |
 
 Notes for authors of plugins written for earlier versions:
 
