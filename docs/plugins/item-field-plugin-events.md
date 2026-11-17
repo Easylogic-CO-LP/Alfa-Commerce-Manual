@@ -77,6 +77,11 @@ You may also replace the add to cart area of the page with `setCartLayout(string
 `setCartLayoutData(array|object $data)`, or add a block beside it with `setCartChildLayout()` and
 `setCartChildLayoutData()`. When several fields replace the area, the last one wins.
 
+:::note Known limitation
+A plugin that writes the cart layout or the cart's child layouts directly on the item, instead of through these
+setters, and then throws, leaves its layout in place. Use the setters.
+:::
+
 **What happens next.** Alfa collects the places of every field in order, and the item template renders them. A
 [field condition](./form-field-plugins.md#field-conditions-showon) set on the item field is applied around your
 layout by Alfa.

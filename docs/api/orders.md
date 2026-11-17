@@ -31,12 +31,13 @@ flowchart LR
 [The filters of each list](./overview.md#the-filters-of-each-list): they include filters by payment,
 fulfilment, waiting time, reconciliation, overpayment, date, item and customer.
 
-**Create.** An order made through the API has the source `api` and starts empty. Give it a status, a currency and
-the customer's details. The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
+**Create.** An order made through the API has the source `api` and starts empty. Give it a status and the
+customer's details; it takes the shop's default currency (see [Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
 a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are needed, unless the shop sets
 some of them Optional in Form Fields, and `country` is the id of a published place. A shop that was installed
 earlier keeps its own fields (an update adds none), and needs those its own fields require. A `PATCH` of an
-existing order does not require them.
+existing order does not require them; see [Known limitations](./overview.md#known-limitations) for a shop with a
+required delivery field of its own.
 
 ```bash
 curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \

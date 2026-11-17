@@ -438,8 +438,26 @@ The payments and shipments of one order are under that order: see [Orders](./ord
 
 ## Known limitations
 
-No defect of the API is known. A limitation is described on the page of its route: what the route does, and what a
-program does about it.
+What Alfa Commerce does today that a program or a shop must allow for.
+
+**Over the REST API**
+
+- An order created over the REST API takes the shop's default currency. The `id_currency` sent with it is not used.
+- A `PATCH` of an order that carries only `customer_note` is refused with 400 on a shop that has a required delivery
+  field of its own, because the whole order form is validated on a partial update. Send the required fields with the
+  note.
+
+**On the storefront**
+
+- On the second and later pages of a listing whose search engine
+  [tells which results a shopper saw](../plugins/search-plugins.md#telling-which-results-a-shopper-saw), on a page
+  without the filters module, the search engine is asked twice for the same result. The output is correct; the
+  second request is a cost only.
+- The filters module's form does not carry the listing's keyword: applying a filter on a search result drops the
+  search word.
+
+For plugin authors, see also the cart area in
+[Item field plugin events](../plugins/item-field-plugin-events.md#onitemview).
 
 ## Not documented yet
 
