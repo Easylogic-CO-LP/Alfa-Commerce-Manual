@@ -280,6 +280,9 @@ public function onGetActions($event): void
 | `disabled()` | Takes the action off the list: no button is drawn and the action cannot be run |
 | `meta(string $key, mixed $value)`, `buttonLayout(string $layout)` | Attach your own data, use your own button layout (a layout of your `tmpl` folder; the default is `action_button`) |
 
+An action carries no window layout, title or size of its own: its window shows the layout `onExecuteAction` sets with
+`setLayout()`, under the action's label.
+
 What Alfa does for you before `onExecuteAction` runs:
 
 - An action that changes something must arrive as a POST with a one-time key. A second submit of the same key is
