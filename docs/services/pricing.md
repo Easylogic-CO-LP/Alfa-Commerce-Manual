@@ -6,7 +6,7 @@ description: How Alfa Commerce works out a price, which pricing classes an exten
 
 # Pricing
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Every price a shopper sees comes from one place: the pricing engine in `site/src/Service/Pricing`. This page explains
 the order in which a price is worked out, the classes you may use from an extension or a template, the shape of the
@@ -233,9 +233,9 @@ echo $results[15]->getTotal()->format();
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `__construct(?PriceDataLoader $loader = null, ?PriceComputationEngine $calculator = null)` | Builds the calculator. Core passes no arguments. | | |
-| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. A single quantity given for all items is still taken as at least 1. |
+| `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. A selection that is not empty prices the first id alone, through `calculateVariant()`, and gives one result. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. A single quantity given for all items is used as given. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. |
 | `calculateVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null, ?ExplicitPriceInstruction $price = null): PriceResult` | Prices one item for a chosen combination or chosen options | The item's own taxes and discounts apply as for the plain item. An empty selection gives the same as `calculate()`. | |
-| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. | A map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
+| `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. A single quantity given for all items is taken as at least 1. | A map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
 | `tierStarts(int $itemId, ?int $combinationId, PriceContext $context): array` | Lists the quantities at which the unit price of a line may change | Ascending, without repeats. It may list more quantities than really change the price. | |
 | `breakdownVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null): array` | Gives the net base and one line for each adjustment of a variant | The keys `base_net`, `base_sale`, `tax_factor` and `lines` | |
 
@@ -313,7 +313,8 @@ A `PriceResult` holds the whole line. Amounts are `Money` objects.
 
 `isPriced(): bool` tells whether a price applies at the quantity asked; `pricedFrom(): ?int` names the smallest larger
 quantity from which one applies, or `null` when none does. A result with no price throws a `LogicException` from every
-getter in the tables below, so ask `isPriced()` first.
+getter in the tables below except `getQuantity()`, `getCurrency()`, `hasExplicitPrice()` and `getExplicitPrice()`, so
+ask `isPriced()` first.
 
 | For the whole line | For one unit | Meaning |
 |---|---|---|
@@ -547,10 +548,10 @@ the saving sort read the tax-included saving of one piece, as the price beside t
 
 The product list reads, by key, the row of `#__alfa_items.price_combination_id`: the combination the product's card
 opens on (`#__alfa_items.opening_combination_id`, the default combination when it can be bought, else the first that
-can) when that combination has price rows of its own, else 0. When stock changes which combination that is, the list
-follows once the change is saved. A customer with prices of their own is filtered and sorted by them. The price
-filters, the price sort and the price range use each product's price at the quantity it is sold from; prices for
-larger quantities show on the product page and in the cart.
+can, else the default one, else the first) when that combination has price rows of its own, else 0. When stock
+changes which combination that is, the list follows once the change is saved. A customer with prices of their own is
+filtered and sorted by them. The price filters, the price sort and the price range use each product's price at the
+quantity it is sold from; prices for larger quantities show on the product page and in the cart.
 
 The stored rows grow with the products, the combinations that carry prices of their own, the pricing contexts and the
 periods; a combination without a price of its own adds nothing. A shop of 6,500 products with 50 combinations each,
@@ -558,9 +559,10 @@ periods; a combination without a price of its own adds nothing. A shop of 6,500 
 with its keys), and about 25 million (5.6 GB) if two combinations in five carry their own prices. After a full
 rebuild the index's statistics are refreshed, so the product list keeps reading it by key.
 
-Tools > Database Sync, **Check the price index**, counts what the product list reads: every pricing context holds one
-row at this moment for each published product and for each published combination with prices of its own, no row of a
-product or combination that is unpublished or of a combination without prices of its own, no gap in the periods, and
+Tools > Database Sync, **Check the price index**, counts what the product list reads: every pricing context of a
+customer group set holds one row at this moment for each published product and for each published combination with
+prices of its own, a customer's own context the same for the products their own prices reach, no row of a product or
+combination that is unpublished or of a combination without prices of its own, no gap in the periods, and
 each product's stored opening and price combinations are the ones its card opens on and shows. It names the products
 that could not be priced and the index's size (its rows and its megabytes with the keys), and changes nothing. During
 the build after an update it says so. Run **Rebuild catalogue projections** when it finds something missing.
@@ -583,21 +585,23 @@ Core rebuilds the rows that a change touches, in the same request:
 | Save, publish, unpublish or delete a discount or a tax | The rows of the items in its scope. A rule for every category rewrites every item. |
 | Delete a category or a manufacturer | The rows of the items that lost it |
 | Change which groups customers hold | The pricing contexts of the new group sets are requested, those nobody holds are removed with their rows |
-| Move a place under another place | Every item, by the background job `catalogue.rebuild`, when a stored place sits at or below it. The save says so. A new place needs none. |
+| Move a place under another place, or publish or unpublish a place | The pricing contexts priced at or below it, as their next generation, by the background job `price.set.prepare` (see below). The save says so. A new place needs none. |
 | A catalogue rebuild | An unpublished item's rows are removed, and none are written |
 
 Prices for every period a price, a discount or a tax defines are prepared ahead, so a promotion starts and ends by
 the clock; the background job `price.index.tidy` removes the periods that ended, and the generations a newer one
 replaced, once a day and after each switch.
 
-A pricing context that is new to the shop (a customer group set that customers hold for the first time, a currency or
-a place a price row or a rule names for the first time, a customer given prices of their own) is not written by the
-request that brought it. The background job `price.set.prepare` prepares it, a part of the items at a time, its scope
-`price.set.prepare:<context id>`. A discount or a tax that reaches at least half the catalogue, and a place moved,
-published or unpublished, are prepared beside the prices the list reads, as the context's next generation, and
+A pricing context that is new to the shop (a customer group set that customers hold for the first time, a currency a
+price row names or a place a price row or a rule names for the first time, a customer given prices of their own) is
+not written by the request that brought it. The background job `price.set.prepare` prepares it, a part of the items
+at a time, its scope `price.set.prepare:<context id>`. A shop's first pricing contexts, and those new while the index
+is built after an update, are read at once, and the background job `catalogue.rebuild` writes their rows. A discount
+or a tax that reaches more than fifty products and at least half the catalogue, and a place moved, published or
+unpublished, are prepared beside the prices the list reads, as the context's next generation, and
 replace them whole once complete: until then the list filters and sorts by the prices from before the change, but for
-a product saved meanwhile, which it reads with the change at once. A rule that reaches less than half the catalogue is
-written product by product. A shopper whose customer groups, place or own prices change reads, until their new prices
+a product saved meanwhile, which it reads with the change at once. A rule that reaches fewer products is written
+product by product. A shopper whose customer groups, place or own prices change reads, until their new prices
 are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
 everyone); the product page and the cart charge their own prices throughout.
 
@@ -620,15 +624,17 @@ it lets go.
 - If it does not get the lock, it does not write. The item is marked as owed and the `catalogue.rebuild` job
   rebuilds it later.
 
-`PriceIndexSyncService` takes the lock itself. A caller does not.
+`PriceIndexSyncService` takes the lock itself. A caller need not take it.
 
 ### PriceIndexSyncService
 
 This class is the only writer of the index, and it is core's own. The code names only core callers: the item,
-discount, tax and category models, `ProjectionManager`, the `price.set.prepare` and `price.index.tidy` jobs, the
-Tools screen, the update script, and core's own system plugin (`alfasync`), which calls `syncGroupSets()` when the
-groups customers hold change. The class comment lists a "Public API" and maps each method to the core model that calls it. It does not
-address extensions, and no shipped payment, shipping or field plugin, module or template calls it.
+discount, tax, category and place models, `ProjectionManager`, the `catalogue.rebuild`, `price.set.prepare` and
+`price.index.tidy` jobs and the task runner, the Tools screen, the update script, the readers of the index (the site
+items model, the catalogue API's list of stock and prices, the outgoing notifications, `OpeningCombination`), and
+core's own system plugin (`alfasync`), which calls `syncGroupSets()` when the groups customers hold change. The class
+comment lists a "Public API" and names, for each method, the core code that calls it. It does not address
+extensions, and no shipped payment, shipping or field plugin, module or template calls it.
 
 So the code does not settle whether an extension may call the sync methods, and this page does not recommend it.
 What the code does establish:
@@ -658,18 +664,19 @@ and the reading of the index. Do not call them: `prepareContextChunk()`, `alignC
 `contextWaits()`, `publishedItemCount()`, `preparationState()`, `isBuilding()`, `buildStartedAt()`, `switchedAt()`,
 `writeBuildFlag()`, `startBuild()`, `finishBuild()`, `completeness()`, `oweChainRebuild()`, `accountGroupSet()`,
 `holdsGroupSet()`, `announcing()`, `announceOpenedWindows()`, `tidyCount()`, `removeRetired()`, `removeEndedPeriods()`,
-`ownPriceSql()`, `size()`, `analyze()`, and the read helpers `pricingGroups()`, `slotKey()`, `readableSetKeys()`,
-`readContext()`, `readableSetKey()`, `slotSetJoin()`, `slotPlaces()` and `slotRanking()` that the site items model uses
-to read the index.
+`ownPriceSql()`, `size()`, `analyze()`, and the read helpers: `readContext()`, with which the site items model, the
+catalogue API and the outgoing notifications find a shopper's pricing context; `readableSetKey()`, `slotSetJoin()`,
+`slotPlaces()` and `slotRanking()`, with which the site items model reads the previous index during the build after an
+update; `pricingGroups()` and `readableSetKeys()`, which the class uses itself; and `slotKey()`, which nothing calls.
 
 ### What happens next: the event
 
 After a write to the index is saved for good, Alfa announces `onAlfaPricesChanged` once for the whole write, with
-the items and the rows that changed. A write that was undone is never announced. A plugin that keeps its own copy
-of prices listens to it. A change names its pricing context and, for a customer with prices of their own, that
-customer; its unit is named by its combination, 0 standing for the product and every combination of it without its
-own price rows. The event is described on
-[Item and catalogue events](../events/item-and-catalogue-events.md#onalfapriceschanged).
+the items and the rows that changed; a write of more than 5,000 changed rows outside a larger transaction is announced
+in several parts. A write that was undone is never announced. A plugin that keeps its own copy of prices listens to
+it. A change names its pricing context and, for a customer with prices of their own, that customer; its unit is named
+by its combination, 0 standing for the product and every combination of it without its own price rows. The event is
+described on [Item and catalogue events](../events/item-and-catalogue-events.md#onalfapriceschanged).
 
 ## How an item field changes a price
 
