@@ -83,16 +83,16 @@ These events go in that list:
 | Joomla's own `onAjax...` event, when you use it (see "Calling your own PHP from the browser") |
 
 A few events are addressed to one plugin (they are targeted events). They never go in `getSubscribedEvents()`. A
-plugin of the `alfa` group declares them in a second list, `getTargetedHandlers()`, from
-`TargetedHandlersInterface`:
+plugin handles them with public methods of their names, which Alfa calls on the plugin it addresses; nothing lists
+them:
 
-| Declared in `getTargetedHandlers()` (addressed to one plugin) |
+| Handled by a public method with the event's name (addressed to one plugin) |
 |---|
 | The six `onAlfaPanel...` events of a panel your plugin owns ([Creating an Admin Panel](./admin-panels.md)) |
 | `onExecuteToolAction` (a tool your plugin runs) and `onClearData` (clearing the data your plugin owns) |
 
-An event name is in one list or in the other, never in both. A name in both is written to Joomla's log as an error.
-The plugin on this page handles no targeted event, so it has no second list.
+When Alfa addresses one of them to a plugin that also lists it in `getSubscribedEvents()`, it writes an error to
+Joomla's log. The plugin on this page handles no targeted event, so it has none of these methods.
 
 ### Naming your plugin
 
@@ -406,9 +406,9 @@ six are announced to everyone and go in `getSubscribedEvents()`.
 | A permission | `onAlfaGetAccessActions` | `$event->action('group.element', $name, $titleKey, $descriptionKey)` |
 | A dashboard card | `onAlfaCollectCards` | `$event->top()`, `metrics()`, `main()`, `side()` or `bottom()`, each `('group.element', $id, $titleKey)` |
 | A line in the setup checklist | `onAlfaCollectSetupChecks` | `$event->add('group.element', $id, $labelKey)` |
-| A tool on the Tools screen | `onGetToolActions` | `$event->add('group.element', $id, $labelKey)`, then `->meta('surface', $tab)` to name the tab of Tools it is drawn on: a tool without a surface is not drawn. The tool is then run by `onExecuteToolAction`, which is addressed to your plugin alone and goes in `getTargetedHandlers()`. |
+| A tool on the Tools screen | `onGetToolActions` | `$event->add('group.element', $id, $labelKey)`, then `->meta('surface', $tab)` to name the tab of Tools it is drawn on: a tool without a surface is not drawn. The tool is then run by `onExecuteToolAction`, which is addressed to your plugin alone: its public method `onExecuteToolAction(ExecuteToolActionEvent $event): void`. |
 | Document types | `onCollectDocumentTypeProviders` | `$event->addProvider($provider, 'group.element')`. Here the plugin's name is the second argument. |
-| Clearing your plugin's data | `onClearData` | Addressed to your plugin alone. Declared in `getTargetedHandlers()`. |
+| Clearing your plugin's data | `onClearData` | Addressed to your plugin alone: its public method `onClearData(ClearDataEvent $event): void`. |
 | A whole screen | The six `onAlfaPanel...` events | See [Creating an Admin Panel](./admin-panels.md) |
 
 A registry's entry names its plugin second, after the object it registers: `addProjection()`, `addEngine()` and

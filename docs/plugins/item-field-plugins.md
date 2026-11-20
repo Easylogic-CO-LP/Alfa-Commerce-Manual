@@ -156,9 +156,9 @@ plugins/alfa-item-fields/choice/
 Your class extends `Alfa\Component\Alfa\Administrator\Plugin\ItemFieldsPlugin`
 (`administrator/src/Plugin/ItemFieldsPlugin.php`). A plugin in this group that does not extend it is never called.
 
-**How you declare an event.** You write a public method with the event's name. The base class holds the list of
-the family's targeted events (`TARGETED_EVENTS`) and reports to Alfa each one your class has a method for. Do not
-list them in `getSubscribedEvents()`.
+**How you handle an event.** You write a public method with the event's name; Alfa calls it on the field's own
+plugin. The base class lists the family's targeted events (`TARGETED_EVENTS`). Do not list them in
+`getSubscribedEvents()`.
 
 The base class already has a method for eight of the eleven events, so you only override the ones you need:
 
@@ -272,8 +272,8 @@ The names of fields and values are not the plugin's. Staff type them per languag
 
 Rules every item field plugin follows:
 
-- Every event of this family except `onItemsListPrepare` is addressed to the field's own plugin through
-  `TARGETED_EVENTS`. A plugin that extends the base class has this already.
+- Every event of this family except `onItemsListPrepare` is addressed to the field's own plugin, on its public
+  method with the event's name. A plugin that extends the base class has a method for most of them already.
 - A disabled item field plugin is never started.
 - A cart line that needs an unavailable plugin is never priced without it. It stays in the cart without a price
   and cannot be ordered.

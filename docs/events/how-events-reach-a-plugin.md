@@ -25,7 +25,7 @@ Alfa calls plugins in one of two ways, and every event uses exactly one of them.
 | Who is called | Every enabled plugin that asked to hear the event, whatever its group | One named plugin, and nobody else |
 | Typical use | An order changed status, a list is being drawn, stock moved | Take this payment, price this parcel, draw your own panel |
 | If the plugin is missing | Nothing special. The others still hear it. | The request is refused and staff are told. No other plugin is asked instead. |
-| Where the plugin names the event | `getSubscribedEvents()` | Its targeted declaration (see below) |
+| Where the plugin names the event | `getSubscribedEvents()` | Nowhere: its public method with the event's name is the handler (see below) |
 
 Both ways go through one class, `AlfaPluginHelper` (`administrator/src/Plugin/AlfaPluginHelper.php`). A plugin never
 calls it; it is named here so that you can find the rules in the code.
@@ -158,18 +158,20 @@ For work that belongs to one plugin:
 
 ### What you must provide
 
-How you declare a targeted event depends on what your plugin extends.
+A targeted event is handled by a **public method with the event's name**. Alfa starts the one plugin it addresses and
+calls that method on it, with the event. Nothing else declares it: no list and no interface. A plugin whose class has
+no such method takes no part in the event.
 
-**A payment, shipping, item-field or search plugin** extends its family's base class. The base class holds the list
-of targeted events of that family (its `TARGETED_EVENTS`). You declare one by writing a public method with the
-event's name. Nothing else is needed:
+**A payment, shipping, item-field or search plugin** extends its family's base class. The base class lists the
+targeted events of that family (its `TARGETED_EVENTS`) and already has a method for some of them. Write the methods
+you need:
 
 ```php
 use Alfa\Component\Alfa\Administrator\Plugin\PaymentsPlugin;
 
 final class Mygateway extends PaymentsPlugin
 {
-    // Declared by having the method: the base class reports it to Alfa.
+    // The method is the handler: Alfa calls it by the event's name.
     public function onPaymentWebhook($event): void
     {
         // Handle your provider's callback.
@@ -177,27 +179,22 @@ final class Mygateway extends PaymentsPlugin
 }
 ```
 
-**Any other plugin of the Alfa groups** (a feature plugin in `alfa`, for example) implements
-`TargetedHandlersInterface` and returns each targeted event with the method that handles it:
+**Any other plugin** (a feature plugin in `alfa`, or a plugin of a group Joomla loads itself) writes the method the
+same way:
 
 ```php
 use Alfa\Component\Alfa\Administrator\Event\Tools\ClearDataEvent;
-use Alfa\Component\Alfa\Administrator\Plugin\TargetedHandlersInterface;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\SubscriberInterface;
 
-final class Thanks extends CMSPlugin implements SubscriberInterface, TargetedHandlersInterface
+final class Thanks extends CMSPlugin implements SubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
         return ['onOrderStatusChange' => 'onOrderStatusChange'];
     }
 
-    public function getTargetedHandlers(): array
-    {
-        return ['onClearData' => 'onClearData'];
-    }
-
+    // Addressed to this plugin alone: never in getSubscribedEvents().
     public function onClearData(ClearDataEvent $event): void
     {
         // Remove the data this plugin owns.
@@ -207,16 +204,19 @@ final class Thanks extends CMSPlugin implements SubscriberInterface, TargetedHan
 }
 ```
 
-**A plugin of a group Joomla loads itself** (`system`, `task`, `user`, `content` and the others) writes the same
-public `getTargetedHandlers()` method but does not name the interface, or any other Alfa class, in its class line.
-That way the plugin still loads on a site where Alfa Commerce was uninstalled.
+**A plugin of a group Joomla loads itself** (`system`, `task`, `user`, `content` and the others) names no Alfa class
+in its class line, as above: the event's class appears only in the method's signature. That way the plugin still loads
+on a site where Alfa Commerce was uninstalled.
 
 Three rules apply to all of them:
 
 1. A plugin with targeted handlers is a `SubscriberInterface` plugin, even when its `getSubscribedEvents()` returns an
-   empty list.
-2. An event name goes in **one** of the two lists, never in both. A name in both is reported as an error in the log.
-3. A method that is not declared is never called because of its name.
+   empty list. Joomla puts every public `on...` method of any other plugin on its shared dispatcher, so the same
+   method would also hear an announced event of that name.
+2. A targeted event is never listed in `getSubscribedEvents()`. When Alfa addresses an event to a plugin that also
+   lists it there, it writes an error to the log.
+3. The method is public and has the event's exact name. A method that is protected or private, or has another name,
+   is never called.
 
 ### What happens next
 
@@ -236,7 +236,7 @@ Before calling a targeted handler Alfa checks that the plugin can be used. These
 | `not_loaded` | Enabled, but its Access is a level the current user does not hold, so Joomla does not load it for this request |
 | `unloadable` | Enabled, but it failed while starting |
 | `wrong_family` | It does not extend the base class its group requires |
-| `no_handler` | It did not declare a handler for this event |
+| `no_handler` | Its class has no public method with the event's name |
 
 Alfa never falls back to another plugin. What the person sees depends on what was asked:
 
@@ -259,7 +259,7 @@ Three events about the cart are handed to each feature plugin in turn, on one ev
 
 - They go to the enabled plugins of the `alfa` group that the **customer's** access levels admit, in their order,
   each once.
-- Each plugin declares them as targeted handlers, as above.
+- Each plugin handles them with public methods of their names, as above.
 - A `system` plugin cannot add a charge or refuse a placement.
 
 When staff operate a customer's cart and one of those plugins has an Access the customer holds but the staff account
@@ -323,7 +323,7 @@ contribution without it is refused.
 
 | What you see | The usual cause |
 |---|---|
-| Your method is never called | The event is not listed in `getSubscribedEvents()` (broadcast) or not declared as a targeted handler |
+| Your method is never called | The event is not listed in `getSubscribedEvents()` (broadcast), or the method of a targeted event is not public or its name is not the event's |
 | A targeted event never arrives | It was listed in `getSubscribedEvents()`. A targeted event is never delivered from there. |
 | It works for you and not for guests or providers | The plugin's Access is not Public |
 | A page shows without your part and without an error | Your listener threw an error in an "after" or display event. Look in Joomla's log, category `com_alfa.plugins`. |

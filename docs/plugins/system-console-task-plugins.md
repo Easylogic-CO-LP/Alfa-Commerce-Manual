@@ -57,26 +57,24 @@ Joomla has already loaded the plugin when Alfa announces the event.
 
 ### Events addressed to one plugin (targeted)
 
-A plugin of the Alfa groups declares its targeted events by implementing `TargetedHandlersInterface`. A plugin of a
-group Joomla loads itself must **not** do that. Joomla loads such a plugin whether Alfa Commerce is installed or
-not. If its class line named an Alfa Commerce interface or base class, PHP could not load the class on a site where
-Alfa Commerce was uninstalled.
-
-Such a plugin writes the same method without naming the interface:
+A targeted event is handled by a public method with the event's name, as in every plugin. A plugin of a group Joomla
+loads itself keeps its class line free of Alfa Commerce classes and interfaces: Joomla loads such a plugin whether
+Alfa Commerce is installed or not, and if its class line named an Alfa Commerce interface or base class, PHP could not
+load the class on a site where Alfa Commerce was uninstalled. The event's class appears only in the method's
+signature, which PHP reads when the method is called:
 
 ```php
-public function getTargetedHandlers(): array
+public function onExecuteToolAction(ExecuteToolActionEvent $event): void
 {
-    return ['onExecuteToolAction' => 'runTool'];
+    // Run the tool.
 }
 ```
 
-Alfa reads both forms in one place (`AlfaPluginHelper::declarationOf()`): it first looks for the interface, then
-for a public `getTargetedHandlers()` method. The method returns a list of event name to the name of the public
-method that handles it. Entries that are not text to text are ignored.
+Alfa checks in one place (`AlfaPluginHelper::handles()`) that the class has a public method with the event's name,
+and calls it when it addresses the event to this plugin.
 
-The three rules of the events page hold here too: the plugin is a `SubscriberInterface` plugin, an event name is in
-one of the two lists and never in both, and a method that is not declared is never called.
+The three rules of the events page hold here too: the plugin is a `SubscriberInterface` plugin, a targeted event never
+goes in `getSubscribedEvents()`, and a method that is not public or has another name is never called.
 
 Alfa Commerce classes may appear inside the plugin: as the type of a method's parameter, or in a method's body. PHP
 loads those only when the method runs, and the method runs only when Alfa Commerce raised the event.
@@ -110,10 +108,11 @@ This is a normal Joomla system plugin that also listens to Alfa Commerce. It wri
 `shopnotes.php` in Joomla's log folder when an order is completed, and offers one button on Alfa's Tools screen.
 It is an example of the Alfa side only: it does none of the other things a Joomla system plugin may do.
 The order event is announced to everyone. The tool list (`onGetToolActions`) is announced to everyone too. Running
-the tool (`onExecuteToolAction`) is addressed to this plugin alone, so it is declared in `getTargetedHandlers()`.
+the tool (`onExecuteToolAction`) is addressed to this plugin alone, so it is handled by the public method
+`onExecuteToolAction()` and listed nowhere.
 
 Tools and where their buttons appear are explained in [Admin screens](./admin-screen-plugins.md). They are used here
-only to show a targeted declaration.
+only to show a targeted event.
 
 ```text
 plugins/system/shopnotes/
@@ -211,14 +210,7 @@ final class Shopnotes extends CMSPlugin implements SubscriberInterface
         ];
     }
 
-    // Addressed to this plugin alone. The same method a plugin of the Alfa groups
-    // has through TargetedHandlersInterface, written here without the interface.
-    public function getTargetedHandlers(): array
-    {
-        return [
-            'onExecuteToolAction' => 'onExecuteToolAction',
-        ];
-    }
+    // Addressed to this plugin alone: onExecuteToolAction() below, called by its name.
 
     public function onOrderStatusChange(OrderStatusChangeEvent $event): void
     {
@@ -279,8 +271,8 @@ PLG_SYSTEM_SHOPNOTES_XML_DESCRIPTION="Notes completed orders in Joomla's log."
 | The plugin fails to load after Alfa Commerce was uninstalled | Its class line names an Alfa class or interface. |
 | The tool is not listed on Tools | The plugin lists the tool and declares no `onExecuteToolAction` (Alfa shows a tool only when its plugin can run it), or the tool names no surface with `meta('surface', ...)`. |
 | The targeted method is never called | The event name was put in `getSubscribedEvents()`. A targeted event is never delivered from there. |
-| Alfa's log says an event is listed in both places | The same name is in `getSubscribedEvents()` and in `getTargetedHandlers()`. |
-| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group that declares `onClearData` in a public `getTargetedHandlers()`, enabled or not. If yours is missing, the method is not public or does not name `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
+| Alfa's log says an event is listed in both places | The event is addressed to this plugin and also listed in `getSubscribedEvents()`. |
+| The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group whose class has a public `onClearData()` method, enabled or not. If yours is missing, the method is not public or is not named `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
 
 ## The system plugin that ships: Alfa Commerce Sync
 
@@ -404,7 +396,7 @@ know is refused. An extension cannot register its own.
 
 So a plugin's own timed work uses Joomla's Scheduled Tasks: a plugin of the `task` group, written and set up the
 way Joomla's documentation describes. That is Joomla's feature, not Alfa's. If such a plugin also handles a targeted
-Alfa event, it declares it with `getTargetedHandlers()` and no Alfa interface, as shown above.
+Alfa event, it handles it with a public method of the event's name and no Alfa interface, as shown above.
 
 A plugin's code can still run inside work that Alfa queues, without queuing anything itself. The clearest case is a
 listener of `onOrderStatusChange`: Alfa records each listener's run as part of a task, and staff can run a failed

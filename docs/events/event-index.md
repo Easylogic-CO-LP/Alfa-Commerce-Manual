@@ -23,7 +23,7 @@ One table per area. Every row is one event name.
 |---|---|
 | **Event** | The name your plugin lists or declares |
 | **Class** | The class of the object your handler receives, with its folder under `administrator/src/Event/`. The namespace is `Alfa\Component\Alfa\Administrator\Event\` plus the folder. |
-| **Delivered** | **Announced**: to everyone who listed it in `getSubscribedEvents()` (broadcast). **One plugin**: addressed to one plugin, which declares it as a targeted handler. **Each in turn**: addressed to each enabled plugin of the `alfa` group that the customer's access levels admit, one after the other, each as a targeted handler. |
+| **Delivered** | **Announced**: to everyone who listed it in `getSubscribedEvents()` (broadcast). **One plugin**: addressed to one plugin, whose public method with the event's name handles it. **Each in turn**: addressed to each enabled plugin of the `alfa` group that the customer's access levels admit, one after the other, each through its method with the event's name. |
 | **Can refuse** | **Yes**: a handler can stop what was asked, and the cell says how. **No**: an error in a handler is written to the log and the work goes on. **No veto**: the handler does the work itself, so an error in it is the failure of the request. |
 | **Fires** | **Before the save**: nothing is stored yet. **After the save is final**: the change is stored for good (after the commit). **While a page is drawn**. **On request**: whenever Alfa needs the answer. |
 | **Sent in** | The file and line where the event is handed to plugins, from the root of the repository. The line numbers are those of the current release's code. |
@@ -290,7 +290,7 @@ Follow the link in the last column of the event's row.
 
 | What you see | The usual cause |
 |---|---|
-| An event in this list never reaches your plugin | It is addressed to one plugin and you listed it in `getSubscribedEvents()`, or it is announced and you declared it as a targeted handler. Check the column "Delivered". |
+| An event in this list never reaches your plugin | It is addressed to one plugin and you listed it in `getSubscribedEvents()`, or it is announced and you did not list it in `getSubscribedEvents()`. Check the column "Delivered". |
 | The same name appears in two tables | `onItemView` is sent to payment plugins, shipping plugins and item field plugins, each with its own class. |
 | A line number does not match your copy of the code | The lines are those of the current release. Another copy of the code can hold a call at another line. |
 

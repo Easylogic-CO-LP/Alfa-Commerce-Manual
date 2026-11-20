@@ -108,9 +108,8 @@ All twelve are **addressed to one plugin** (targeted). No other plugin sees them
 Your class must contain three methods: `onItemView()`, `onCartView()` and `onCalculateShippingCost()`. PHP refuses
 to load the class without them, because the base classes declare them abstract.
 
-**How you declare an event.** Write a public method with the event's name. Nothing else. The base class holds the
-list of the twelve names (`ShipmentsPlugin::TARGETED_EVENTS`) and reports to Alfa each one your class has a method
-for.
+**How you handle an event.** Write a public method with the event's name. Nothing else: Alfa calls it on the carrier
+it addresses. The base class lists the twelve names (`ShipmentsPlugin::TARGETED_EVENTS`).
 
 Do not list these events in `getSubscribedEvents()`. The base class returns an empty list there. Add
 to it only for an event of Joomla itself:

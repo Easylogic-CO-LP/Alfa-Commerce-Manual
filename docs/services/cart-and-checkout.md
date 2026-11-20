@@ -377,7 +377,7 @@ methods, and `discard()`. Its class comment says it is "not a plugin API and not
 | You are writing | What you provide |
 |---|---|
 | A plugin that reads the cart | A handler for one of the events above. Nothing else. |
-| A plugin that adds a charge | A handler of `onCartTotals`, declared in `getTargetedHandlers()` |
+| A plugin that adds a charge | Its public method `onCartTotals(CartTotalsEvent $event): void` |
 | A module that shows the cart | A call to `CartService::ambient()->read(CartResolution::Current)`, after `canHaveCart()`. Load the language file `com_alfa` if your module draws Alfa's own layouts, as the shipped module does. |
 
 ## What can go wrong

@@ -56,11 +56,11 @@ The set of classes a panel plugin uses is versioned on its own: `PanelFramework:
 
 ## What you must provide
 
-### The two lists of events
+### The events and their methods
 
-The six panel events are **addressed to one plugin** (targeted): only the owner of the panel is called. They are
-declared in `getTargetedHandlers()`, from `TargetedHandlersInterface`, each event with the method that handles it.
-The menu and permission events are **announced to everyone** (broadcast) and are listed in `getSubscribedEvents()`.
+The six panel events are **addressed to one plugin** (targeted): only the owner of the panel is called, on its public
+method with the event's name. Nothing lists them. The menu and permission events are **announced to everyone**
+(broadcast) and are listed in `getSubscribedEvents()`.
 
 ```php
 public static function getSubscribedEvents(): array
@@ -71,21 +71,20 @@ public static function getSubscribedEvents(): array
     ];
 }
 
-public function getTargetedHandlers(): array
-{
-    return [
-        'onAlfaPanelToolbar'   => 'onAlfaPanelToolbar',
-        'onAlfaPanelListQuery' => 'onAlfaPanelListQuery',
-        'onAlfaPanelView'      => 'onAlfaPanelView',
-        'onAlfaPanelSave'      => 'onAlfaPanelSave',
-        'onAlfaPanelDelete'    => 'onAlfaPanelDelete',
-        'onAlfaPanelTask'      => 'onAlfaPanelTask',
-    ];
-}
+// The panel events, addressed to this plugin alone. Write only the ones you handle.
+public function onAlfaPanelToolbar(PanelToolbarEvent $event): void {}
+public function onAlfaPanelListQuery(PanelListQueryEvent $event): void {}
+public function onAlfaPanelView(PanelViewEvent $event): void {}
+public function onAlfaPanelSave(PanelSaveEvent $event): void {}
+public function onAlfaPanelDelete(PanelDeleteEvent $event): void {}
+public function onAlfaPanelTask(PanelTaskEvent $event): void {}
 ```
 
-Declare only the events you handle. A panel event is never called because a method has its name, and it is never
-delivered from `getSubscribedEvents()`. A name in both lists is written to Joomla's log as an error.
+The event classes are in `Alfa\Component\Alfa\Administrator\Event\Panel`. Write only the methods you handle: an
+event without its method is skipped or refused, as [What can go wrong](#what-can-go-wrong) says. A method that is not
+public, or whose name is not the event's, is never called, and a panel event is never delivered from
+`getSubscribedEvents()`. When Alfa addresses a panel event to a plugin that also lists it there, it writes an error to
+Joomla's log.
 
 ### A menu entry, which is also the gate
 
@@ -175,7 +174,7 @@ and opens no transaction around your handler. It only carries your message and y
 
 Alfa treats the display events and the write events differently.
 
-| The event | Not declared in `getTargetedHandlers()` | Your handler throws an error |
+| The event | No public method with the event's name | Your handler throws an error |
 |---|---|---|
 | `onAlfaPanelToolbar`, `onAlfaPanelListQuery`, `onAlfaPanelView` (display) | Skipped, without a message | Written to Joomla's log (category `com_alfa.panel`). The page is still drawn, without that part. |
 | `onAlfaPanelSave`, `onAlfaPanelDelete`, `onAlfaPanelTask` (writes) | Staff see: "This screen's extension does not support this action, so nothing was changed. Update the extension, or ask its developer." | Staff see: "The action could not be completed. Please try again, and if it keeps failing contact your administrator." The error is logged. |
@@ -190,8 +189,8 @@ could not be completed, even when your code did its work.
 |---|---|
 | "Not authorised" (403) on the panel's address | No menu entry for this exact group, element and panel (compare `->panel('alfa', 'storenotes', 'notes')` with the address), `onAlfaBuildMenu` is not in `getSubscribedEvents()`, the `group.element` argument of `item()` is missing, or the person lacks the entry's permission |
 | "This panel does not exist" (404) | The group in the address is not `alfa`, or the plugin is disabled or not installed |
-| A title and a toolbar with nothing under them | `onAlfaPanelView` is not declared, it returned early (wrong panel name), or `setLayout('notes.list')` names a file that is not at `layouts/notes/list.php` |
-| The list does not show your rows | `onAlfaPanelListQuery` is not declared, or it returned before building the query |
+| A title and a toolbar with nothing under them | The plugin has no public `onAlfaPanelView()` method, it returned early (wrong panel name), or `setLayout('notes.list')` names a file that is not at `layouts/notes/list.php` |
+| The list does not show your rows | The plugin has no public `onAlfaPanelListQuery()` method, or it returned before building the query |
 | An empty list with "This list could not be read" | Your list query failed. The database's message is in the administrator logs, `com_alfa_panel.php`. |
 | An error about an undefined variable in your layout | The layout did not take its values out of `$displayData` first |
 | The edit screen has no fields | `useForm('note')` names a file that is not at `forms/note.xml` |
@@ -265,7 +264,7 @@ All six are addressed to the plugin that owns the panel. No other plugin sees th
 ### onAlfaPanelToolbar
 
 - **When it fires.** On every screen of the panel, before the rows or the form are loaded.
-- **Who receives it.** The owner of the panel, through `getTargetedHandlers()`.
+- **Who receives it.** The owner of the panel, on its public method `onAlfaPanelToolbar()`.
 - **What you are given.** `getToolbar()` (the panel toolbar), `getScreen()` (`'list'`, `'edit'` or a name of your
   own), `getState()` (the list's state on the list screen, `null` elsewhere) and `getIdentity()`.
 - **What you are expected to do.** Add your buttons and, if needed, remove Alfa's (see "The toolbar").
@@ -357,7 +356,7 @@ The screen name is open. `list` and `edit` are what Alfa's own buttons use. Your
 - **If you are missing or you fail.** A task nobody marked as handled is reported as "Unknown panel action".
 
 ```php
-public function onAlfaPanelTask(PanelTaskEvent $event): void
+public function onAlfaPanelTask(PanelTaskEvent $event): void {}
 {
     if ($event->getIdentity()->panel !== 'notes' || $event->getTask() !== 'publish') {
         return;                                   // not mine: leave it unhandled
@@ -485,7 +484,7 @@ by name.
 is for a panel whose rows have a state and whose filter form has a `state` filter:
 
 ```php
-public function onAlfaPanelToolbar(PanelToolbarEvent $event): void
+public function onAlfaPanelToolbar(PanelToolbarEvent $event): void {}
 {
     if ($event->getIdentity()->panel !== 'notes' || $event->getScreen() !== 'list') {
         return;                                   // the edit screen keeps Save and Close, and Cancel

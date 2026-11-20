@@ -126,9 +126,9 @@ Each rule is explained in full on [How events reach a plugin](../events/how-even
 ### Two ways an event reaches a plugin
 
 An event is either **announced to everyone** (broadcast) or **addressed to one plugin** (targeted). You list the
-first kind in `getSubscribedEvents()`. You declare the second kind through your base class, or through
-`getTargetedHandlers()`. An event name goes in one of the two, never in both, and a method that is not declared is
-never called. See
+first kind in `getSubscribedEvents()`. The second kind is handled by a public method with the event's name, which
+Alfa calls on the one plugin it addresses; nothing lists it. A targeted event never goes in `getSubscribedEvents()`,
+and a method that is not public, or does not have the event's name, is never called. See
 [Announced to everyone](../events/how-events-reach-a-plugin.md#announced-to-everyone-broadcast) and
 [Addressed to one plugin](../events/how-events-reach-a-plugin.md#addressed-to-one-plugin-targeted).
 

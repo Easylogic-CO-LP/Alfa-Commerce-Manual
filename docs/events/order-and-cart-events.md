@@ -41,17 +41,16 @@ cart holds. It is the customer's access levels that decide, whoever operates the
 
 ## What you must provide
 
-The first three events are addressed, so a feature plugin declares them in `getTargetedHandlers()`. The last two are
-announced to everyone, so they go in `getSubscribedEvents()`. An event name is in one list, never in both.
+The first three events are addressed: a feature plugin handles them with public methods of their names, and they
+never go in `getSubscribedEvents()`. The last two are announced to everyone, so they go in `getSubscribedEvents()`.
 
 ```php
 namespace Acme\Plugin\Alfa\Thanks\Extension;
 
-use Alfa\Component\Alfa\Administrator\Plugin\TargetedHandlersInterface;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\SubscriberInterface;
 
-final class Thanks extends CMSPlugin implements SubscriberInterface, TargetedHandlersInterface
+final class Thanks extends CMSPlugin implements SubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
@@ -61,16 +60,8 @@ final class Thanks extends CMSPlugin implements SubscriberInterface, TargetedHan
         ];
     }
 
-    public function getTargetedHandlers(): array
-    {
-        return [
-            'onCartTotals'         => 'onCartTotals',
-            'onCartItemDisplay'    => 'onCartItemDisplay',
-            'onOrderPlaceValidate' => 'onOrderPlaceValidate',
-        ];
-    }
-
-    // The five methods are shown one by one below.
+    // onCartTotals(), onCartItemDisplay() and onOrderPlaceValidate() are addressed to this plugin and called by
+    // their names. The five methods are shown one by one below.
 }
 ```
 
@@ -496,7 +487,7 @@ The events about stock and about documents (invoices, credit notes) that follow 
 
 | What you see | The usual cause |
 |---|---|
-| `onCartTotals`, `onCartItemDisplay` or `onOrderPlaceValidate` is never called | It is listed in `getSubscribedEvents()`. These three are declared in `getTargetedHandlers()`. Or the plugin is not in the `alfa` group. |
+| `onCartTotals`, `onCartItemDisplay` or `onOrderPlaceValidate` is never called | It is listed in `getSubscribedEvents()`. These three are handled only by public methods of their names. Or the plugin is not in the `alfa` group. |
 | It works for one customer and not for another | The plugin's Access is a level the second customer does not hold. |
 | Staff cannot place a customer's cart | A plugin is admitted for the customer and not loaded for the member of staff, who may not check out on a customer's behalf. See "When staff operate a customer's cart". |
 | Your charge is missing and there is no error on the page | The charge was incomplete, or it named another plugin. Look in the log, category `com_alfa.cart`. |

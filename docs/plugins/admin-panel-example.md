@@ -136,14 +136,13 @@ use Alfa\Component\Alfa\Administrator\Event\Panel\PanelDeleteEvent;
 use Alfa\Component\Alfa\Administrator\Event\Panel\PanelListQueryEvent;
 use Alfa\Component\Alfa\Administrator\Event\Panel\PanelSaveEvent;
 use Alfa\Component\Alfa\Administrator\Event\Panel\PanelViewEvent;
-use Alfa\Component\Alfa\Administrator\Plugin\TargetedHandlersInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareInterface;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Event\SubscriberInterface;
 
-final class Storenotes extends CMSPlugin implements SubscriberInterface, TargetedHandlersInterface, DatabaseAwareInterface
+final class Storenotes extends CMSPlugin implements SubscriberInterface, DatabaseAwareInterface
 {
     use DatabaseAwareTrait;
 
@@ -170,16 +169,8 @@ final class Storenotes extends CMSPlugin implements SubscriberInterface, Targete
         ];
     }
 
-    /** Addressed to this plugin alone: the panel events it handles. */
-    public function getTargetedHandlers(): array
-    {
-        return [
-            'onAlfaPanelListQuery' => 'onAlfaPanelListQuery',
-            'onAlfaPanelView'      => 'onAlfaPanelView',
-            'onAlfaPanelSave'      => 'onAlfaPanelSave',
-            'onAlfaPanelDelete'    => 'onAlfaPanelDelete',
-        ];
-    }
+    // Addressed to this plugin alone, each called by its name: onAlfaPanelListQuery(), onAlfaPanelView(),
+    // onAlfaPanelSave() and onAlfaPanelDelete() below.
 
     public function onAlfaBuildMenu(BuildMenuEvent $event): void
     {

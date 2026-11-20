@@ -20,9 +20,9 @@ Alfa Commerce delivers an event in one of two ways, and a plugin names it in one
 
 - **Announced to every plugin (broadcast):** named in `getSubscribedEvents()`. The shop's changes are announced this
   way: the stock, price, order status and placed order events below.
-- **Addressed to one plugin (targeted):** named in `getTargetedHandlers()` (the plugin implements
-  `TargetedHandlersInterface`), never in `getSubscribedEvents()`. Both route events on this page are targeted: core
-  sends them to the plugin the address names and to no other.
+- **Addressed to one plugin (targeted):** handled by the plugin's public method with the event's name, never named in
+  `getSubscribedEvents()`. Both route events on this page are targeted: core sends them to the plugin the address
+  names and to no other. A plugin without one of the two methods takes no part, and its addresses answer 404.
 
 [How events reach a plugin](../events/how-events-reach-a-plugin.md) tells the whole story of both.
 
@@ -39,6 +39,23 @@ permission and the size of the body.
 |---|---|---|
 | `onAlfaBeforeApiRoute` | `ApiRoutesEvent` | Write its routes on `getRouter()`, under `getPrefix()`, and do nothing else: it runs before the token is checked |
 | `onAlfaApiRequest` | `ApiRequestEvent` | Read the request and answer it, once |
+
+The two methods, ready to copy:
+
+```php
+use Alfa\Component\Alfa\Administrator\Event\Api\ApiRequestEvent;
+use Alfa\Component\Alfa\Administrator\Event\Api\ApiRoutesEvent;
+
+public function onAlfaBeforeApiRoute(ApiRoutesEvent $event): void
+{
+    // Write the routes on $event->getRouter(), under $event->getPrefix().
+}
+
+public function onAlfaApiRequest(ApiRequestEvent $event): void
+{
+    // Read the request and answer it with one respond...() or refuse().
+}
+```
 
 A plugin adds addresses of its own; it never replaces, removes or shadows a core address. No core route is registered
 under `v1/alfa/ext/`. To change what a core address does, a plugin listens to the events of the services behind it
@@ -143,14 +160,13 @@ use Alfa\Component\Alfa\Administrator\Event\Access\GetAccessActionsEvent;
 use Alfa\Component\Alfa\Administrator\Event\Api\ApiRequestEvent;
 use Alfa\Component\Alfa\Administrator\Event\Api\ApiRoutesEvent;
 use Alfa\Component\Alfa\Administrator\Event\Inventory\InventoryAdjustedEvent;
-use Alfa\Component\Alfa\Administrator\Plugin\TargetedHandlersInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Router\Route;
 
-final class Example extends CMSPlugin implements SubscriberInterface, TargetedHandlersInterface
+final class Example extends CMSPlugin implements SubscriberInterface
 {
     protected $autoloadLanguage = true;
 
@@ -158,11 +174,6 @@ final class Example extends CMSPlugin implements SubscriberInterface, TargetedHa
     public static function getSubscribedEvents(): array
     {
         return ['onAlfaGetAccessActions' => 'onAlfaGetAccessActions', 'onInventoryAdjusted' => 'onInventoryAdjusted'];
-    }
-
-    public function getTargetedHandlers(): array
-    {
-        return ['onAlfaBeforeApiRoute' => 'onAlfaBeforeApiRoute', 'onAlfaApiRequest' => 'onAlfaApiRequest'];
     }
 
     public function onAlfaGetAccessActions(GetAccessActionsEvent $event): void
@@ -333,6 +344,8 @@ background work (below).
 |---|---|---|
 | The shop in maintenance (Clear everything) | 503 with the maintenance sentence; no plugin is loaded | Alfa Commerce |
 | No installed, enabled plugin of that element, or no route that matches | 404 | Joomla |
+| The plugin has no `onAlfaBeforeApiRoute()` method, so it adds no routes | 404 | Joomla |
+| The plugin has no `onAlfaApiRequest()` method | 404, and a warning naming the route in `com_alfa_api.php` | Alfa Commerce |
 | No `Accept` header | Answered in the route's one format. A core address still answers 406: send `Accept: application/vnd.api+json` or `*/*` | Alfa Commerce |
 | No token, a wrong token, an account outside the token plugin's groups or without API Login | 401, in every format | Joomla |
 | The account lacks the route's permission | 403 | Alfa Commerce |
