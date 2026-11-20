@@ -214,7 +214,8 @@ does two things:
 - It delivers a batch when core hands it one (`onAlfaOutboundDeliver`), outside any database transaction, and
   answers each change.
 
-Both events are addressed to the one plugin, as the other targeted events of Alfa Commerce are (see
+Both events are addressed to the one plugin, as the other targeted events of Alfa Commerce are: the plugin takes
+part by having a public method named as the event, nothing else is declared (see
 [How events reach a plugin](../events/how-events-reach-a-plugin.md)).
 
 ```php
