@@ -6,7 +6,7 @@ description: How the Alfa Commerce repository is laid out, with its namespaces a
 
 # Project Structure
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 How the Alfa Commerce repository is organised. Read it before contributing or writing an extension.
 
@@ -72,10 +72,11 @@ Alfa-Commerce/
 ├── libraries/                  # lib_libphonenumber, lib_giggsey_locale
 │
 ├── media/                      # Installed as media/com_alfa
-│   ├── css/  js/               # Each with admin/, site/ and libraries/
+│   ├── css/  js/               # Each with admin/, site/ and libraries/; every file as x.js, x.min.js, x.min.js.gz
 │   ├── images/
 │   └── joomla.asset.json       # Joomla's asset registry
 │
+├── build/media-min/            # build.php makes each style's and script's .min and .min.gz; media-min.lock.json
 ├── scripts/                    # Tools for the automated checks
 ├── alfa.xml                    # The component's manifest
 ├── script.php                  # Install, update and uninstall script
@@ -85,6 +86,11 @@ Alfa-Commerce/
 ├── CONTRIBUTING.md  README.md  SECURITY.md  CODE_OF_CONDUCT.md  LICENSE
 └── .github/workflows/          # code-quality.yml, security-scan.yml, claude-pr-review.yml
 ```
+
+Every stylesheet and script of the component, the modules and the plugins is kept in three forms: the source, its
+`.min` twin and the `.min.gz`. Only the source is edited; `php build/media-min/build.php` makes the other two. See
+[You changed a stylesheet or a script](./contributing#you-changed-a-stylesheet-or-a-script). The `build/` folder is
+not part of the installable package.
 
 `alfa.xml` is a component manifest, not a Joomla package manifest. It lists the plugins, modules and libraries, and
 `script.php` installs them.

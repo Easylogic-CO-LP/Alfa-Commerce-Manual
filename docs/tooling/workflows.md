@@ -6,7 +6,7 @@ description: The three GitHub workflows of Alfa Commerce, when each runs, what e
 
 # Automated checks
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 The code repository holds three **workflows**. A workflow is a file under `.github/workflows/` that tells GitHub to
 run one or more **jobs** when something happens, for example when a pull request is opened. Each job shows on the
@@ -18,6 +18,7 @@ pull request as one check, green or red.
 |---|---|---|
 | Code Quality, **PHP CS Fixer** | Pull requests into `main` or `developer` | No: not a required check (see [Branch rules](#branch-rules)). It turns red when the tool or its commit step breaks. |
 | Code Quality, **Copy-clean** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
+| Code Quality, **Media forms** (a step of the Copy-clean job) | Pull requests into `main` or `developer`, and pushes to them | Yes: it fails the Copy-clean job, a required check. Any finding turns it red. |
 | Code Quality, **PHPStan** | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). A finding beyond the baseline turns it red. See [PHPStan](./phpstan). |
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). |
 | Security Scan, **PHP security scan** (job `php-security`) | Same | No: not a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
@@ -45,7 +46,8 @@ So these four checks must be green before a pull request is merged. PHP CS Fixer
 (`php-security`) are not required: they inform the people who review and merge, as the AI review does.
 Organisation and repository administrators may bypass these rules.
 
-No workflow runs a test suite, builds the installable package or publishes a release.
+Apart from the media forms suite, which only reads files, no workflow runs a test suite, and none builds the
+installable package or publishes a release.
 
 ```mermaid
 sequenceDiagram
@@ -79,7 +81,10 @@ You do not start anything. GitHub starts the workflows by itself:
 ## What you must provide
 
 Nothing to make the checks run. To pass them: comments and texts that follow the
-[Copy-clean rules](../getting-started/contributing#code-conventions), and no live secret anywhere in your commits.
+[Copy-clean rules](../getting-started/contributing#code-conventions), every changed style or script built with
+`php build/media-min/build.php` and committed with what it wrote
+([You changed a stylesheet or a script](../getting-started/contributing#you-changed-a-stylesheet-or-a-script)), and no
+live secret anywhere in your commits.
 After PHP CS Fixer commits to your branch, pull before you commit again.
 
 ## Code Quality
@@ -126,6 +131,33 @@ copy-clean gate: 1676 shipped files, 1666 judged; 44 occurrence(s) allowed by 44
 
 The gate checks itself too: it fails when its planted test lines reach a rule its list does not name, or the list
 names one no planted line reaches. The file counts follow the code.
+
+### Media forms
+
+| | |
+|---|---|
+| Runs | On pull requests and on pushes, as a step of the Copy-clean job. |
+| PHP | 8.3 |
+| What it does | Runs `scripts/media-forms/media-forms-suite.php` over the checked-out code. It reads the media folder of every manifest and checks that every source style and script has its `.min` file; that every `.min` file, made by the build or shipped minified by a library, has a `.gz` that decompresses byte for byte to it; that there is no `.gz` of a source, no `.gz` without its `.min` and no `._` file; that every registration names a `.min` file the package carries (the `joomla.asset.json` files, the registrations in PHP code, a media path written in a script); and that each `.min` file is the one `php build/media-min/build.php` made from its source as the source is now (the build's record, `build/media-min/media-min.lock.json`). It only reads files. |
+| What makes it fail | A source changed without the build, a missing or stray file, a `.gz` that is not its `.min`, or a registration of a source. The run prints each finding with its file. |
+
+Its first arm checks the suite itself: it plants each fault in a throwaway package and proves that the arm meant to
+find it does, and that a clean package passes.
+
+Run it yourself from the root of the repository, with the same command as the workflow:
+
+```bash
+php scripts/media-forms/media-forms-suite.php .
+```
+
+A clean run ends with this line:
+
+```text
+9 passed, 0 failed
+```
+
+The same suite reads a built package too (`php scripts/media-forms/media-forms-suite.php com_alfa-x.y.z.zip`). A
+package carries no build record, so the last arm is skipped there.
 
 ### PHPStan
 

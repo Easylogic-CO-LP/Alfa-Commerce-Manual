@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Contributing
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 This page is the contribution guide of Alfa Commerce. The file `CONTRIBUTING.md` in the code repository only points
 here. For how the code is organised, see [Project Structure](./project-structure).
@@ -61,6 +61,8 @@ libraries. A one line fix and a new feature follow the same path.
 | Git and a GitHub account | To commit and to open the pull request. |
 | GitHub Desktop (optional) | For the path below that needs no terminal. |
 | The permission "Use Maintenance Tools" on that site | The download of your changed files is refused without it. |
+| Debug System on (System, Global Configuration, the System tab) | Joomla then loads the stylesheets and scripts you edit. With it off, Joomla loads their `.min` files, which change only when the [media forms build](#you-changed-a-stylesheet-or-a-script) runs. |
+| Node.js, when you change a script | The media forms build runs a pinned release of the minifier terser through `npx`. |
 
 ### Branches
 
@@ -175,6 +177,41 @@ although the reviewer rulebook still names one.
   repository.
 - In a language file, write one `KEY="text"` on each line, and `&quot;` for a quotation mark inside the text.
 
+#### You changed a stylesheet or a script
+
+Every style and script ships in three forms: the source you edit (`cart.js`), its minified twin (`cart.min.js`) and
+the gzip of the twin (`cart.min.js.gz`). How a site uses them is on
+[Installation](./installation#styles-and-scripts-three-forms-served-compressed). You write only the source; the
+twin and its gzip are made from it. This step is done in the repository, after you extract your files:
+
+```bash
+php build/media-min/build.php
+```
+
+It reads the media folder of every manifest in the repository (the component's, each module's and each plugin's) and,
+for every source that changed or has no twin yet:
+
+- writes the `.min` file: a style through its own minifier, which removes comments and spaces and checks the result
+  against the source (the same braces, the same at-rules, the same text once spaces are set aside); a script through
+  terser at the exact release the build names, checked by `node --check`;
+- writes the `.min.gz` of the `.min` file. A library that ships already minified (a `.min` file with no source
+  beside it) gets its `.gz` only;
+- records the source and the `.min` it made in `build/media-min/media-min.lock.json`;
+- removes what must not ship: a `.gz` of a source, a `.gz` without its `.min`, and the `._` files macOS leaves.
+
+Commit what it wrote together with your change. A second run changes nothing.
+
+- **Never edit a `.min` file.** When a `.min` file no longer matches what the build made while its source still does,
+  the build refuses and writes nothing: carry the change into the source, or delete the `.min` file, and build again.
+- **A new style or script.** Put the source in its media folder, build, and register it by its `.min` name, in
+  `joomla.asset.json` (`"uri": "com_alfa/site/cart/cart.min.js"`) or in PHP
+  (`$wa->registerAndUseScript('com_alfa.x', 'media/com_alfa/js/admin/x.min.js')`). Joomla loads the source under
+  Debug System by itself.
+- **A library.** Add it as its authors ship it minified, with `.min` in its name and no source beside it. The build
+  adds its `.gz`.
+- **To only look:** `php build/media-min/build.php --check` changes nothing and fails on anything missing, out of
+  date or stray. The [Media forms](../tooling/workflows#media-forms) check of a pull request runs the same rules.
+
 #### Every change: the version and the changelog
 
 - Set `<version>` in `alfa.xml` to the new number.
@@ -233,8 +270,10 @@ No formatter or linter checks the JavaScript. This is the rule for every new or 
 read first are `media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.js` and
 `media/js/site/cart/addtocart.js`.
 
-- **Plain JavaScript.** No framework and no library, no jQuery, no build step and no modules. Wrap the code of a file
-  in a function that runs at once, and start it with `'use strict'`.
+- **Plain JavaScript.** No framework and no library, no jQuery, no bundler and no modules: the file you write is the
+  file Joomla loads under Debug System, and its minified twin is made from it (see
+  [You changed a stylesheet or a script](#you-changed-a-stylesheet-or-a-script)). Wrap the code of a file in a function
+  that runs at once, and start it with `'use strict'`.
 - **The server draws the markup.** A layout prints the HTML; the script finds it by its `data-` attributes and
   shows, hides, moves or removes it. Build no HTML from strings. Where one more element is needed, make it with
   `document.createElement()` and fill it with `textContent`. Where a part must be drawn again, let the server draw it
@@ -248,8 +287,9 @@ read first are `media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.
   a failure happened.
 - **Indentation.** Four spaces, as in the PHP.
 - **Where the file lives.** A script of the component goes in `media/js/admin/` or `media/js/site/<area>/`, a
-  module's or a plugin's in its own `media/js/` folder. Register it in that extension's `joomla.asset.json`, and let
-  the layout that needs it ask for it through Joomla's web asset manager (`$wa->useScript()`). The asset version is
+  module's or a plugin's in its own `media/js/` folder. Register it by its `.min` name in that extension's
+  `joomla.asset.json`, and let the layout that needs it ask for it through Joomla's web asset manager
+  (`$wa->useScript()`). The asset version is
   the component's version and moves with a release: see
   [Every change: the version and the changelog](#every-change-the-version-and-the-changelog).
 
@@ -415,6 +455,7 @@ GitHub runs these on your pull request. Each has its own page.
 |---|---|---|
 | [PHP CS Fixer](../tooling/php-cs-fixer) | Formats the PHP code and commits the fixes to your branch. | Only when the tool or its commit step breaks. |
 | [Copy-clean](../tooling/workflows#copy-clean) | Refuses unclean comments and texts, see the rules above. | Yes. |
+| [Media forms](../tooling/workflows#media-forms) | Checks that every style and script has its `.min` and `.min.gz`, that every registration names the `.min` file, and that each `.min` is the one the build made from its source as it is now. It runs in the Copy-clean job. | Yes. |
 | [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | Yes, when it finds something beyond the baseline. Open the run and read what it found. |
 | [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript and the PHP Alfa Commerce ships for security problems, and the history for secrets that are live. | Yes, when it finds a problem in the PHP, a live secret, or one of its steps breaks. |
 | [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. It runs only for a pull request from a branch of this repository, by a person with write access. | It posts comments. Nothing in its file fails a pull request because of a finding. |
@@ -470,6 +511,7 @@ Before you open it, also confirm:
 - A database change is in the install schema and in an update file.
 - Removed and moved files are deleted in the repository and named in the description.
 - The version is raised in `alfa.xml` and in `media/joomla.asset.json`.
+- A changed style or script has its `.min` and `.min.gz` from `php build/media-min/build.php`, committed with it.
 - Every text a person reads is a language key in the right extension's file.
 
 ## What can go wrong
@@ -484,6 +526,9 @@ Before you open it, also confirm:
 | Copy-clean fails | A comment or a text breaks one of the rules above. The run names the file, the line and the rule. | Reword it, or add an exception with its reason if the text must stay. |
 | Your branch has a commit you did not make | PHP CS Fixer formatted your code. | Pull, then continue. |
 | Browsers still show the old CSS or JavaScript | The version in `joomla.asset.json` was not raised. | Set it to the version in `alfa.xml`. |
+| Media forms fails: a source "changed since its .min was made", or "its .min is missing" | The build did not run after the change. | Run `php build/media-min/build.php` and commit what it wrote. |
+| The build refuses: a `.min` "was changed after the build made it" | Someone edited the `.min` file. | Carry the change into the source, or delete the `.min` file, and build again. |
+| Your change to a style or a script does not show on your development site | Debug System is off, so Joomla loads the `.min` file. | Switch Debug System on while you work. |
 
 ## Reporting a security problem
 
