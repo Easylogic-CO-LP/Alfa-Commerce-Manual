@@ -145,7 +145,7 @@ Each unit takes:
 | `combination_id` | The combination; 0 or left out for the product itself. |
 | `prices` | The unit's own price rows, all of them: the rows as a change of one item sends them. A row with the `id` of one of the unit's rows changes it, a row without an `id` is added, and the unit's rows not sent are removed. `[]` removes them all. A combination's row may be of the mode `price` (its own price) or `adjust` (a change of the product's price, with `operation` `+`, `-`, `%` or `-%`); a product's own rows are of the mode `price`. |
 | `prices_state` | The state the unit's prices were read in (the item's `prices_state`, or the combination's in `combinations`). Sent only with `prices`. |
-| `stock` | The unit's stock as one figure of 0 or more, for a unit stocked at one location (or at none yet: the shop's default location). |
+| `stock` | The unit's stock as one figure of 0 or more, at the shop's default location, for a shop that keeps stock at one location. A shop with more locations takes `inventory_stock`. |
 | `inventory_stock` | The unit's stock by location, an object of location id to figure, `{"1": "3", "2": "2"}`. Not with `stock`. |
 
 Each unit is written whole or not at all, on its own: a unit that cannot be written is refused alone, and the others
