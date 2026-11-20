@@ -6,7 +6,7 @@ description: "The REST API of Alfa Commerce: how to call it, how to run the Post
 
 # REST API
 
-<AlfaVersion verified="2.3.0" />
+<AlfaVersion verified="2.2.1" />
 
 Alfa Commerce has a REST API: other programs read and change the shop's data over HTTP, as JSON. It is built on
 Joomla's own Web Services, so the address, the token and the shape of the answers are Joomla's.
@@ -404,7 +404,7 @@ it under `meta.tasks`, each with its state and its own address. See
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
-| 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |
+| 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, an order's `state` other than -2 or 1 or sent with other attributes, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |
 | 500 | A fault on the server. The server's log says what. |
 | 503 | The shop is being maintained (Clear everything), or a PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled. The answer says so in words. |
 
@@ -430,17 +430,18 @@ Deletes that a rule refuses with 409, with the reason, and nothing is deleted:
 Two more rules:
 
 - **From the trash only.** An item, a category, a manufacturer, an item field, a currency, a tax, a discount, a
-  place, a payment or shipping method, a form field, a form field group and an order status are deleted only while
-  they are in the trash (`state` -2), as the administrator deletes them. A record in any other state answers 409
-  and nothing is deleted:
+  cart rule, a place, a payment or shipping method, a form field, a form field group, an order and an order status
+  are deleted only while they are in the trash (`state` -2), as the administrator deletes them. A record in any
+  other state answers 409 and nothing is deleted:
 
   ```json
   {"errors":[{"title":"Only a record in the trash is deleted, as in the administrator: move it to the trash first (PATCH v1/alfa/items/12 with state -2), then delete it. Nothing was deleted.","code":409}]}
   ```
 
   Send a `PATCH` with `"state": -2` first, then the `DELETE`. The refusals listed above are given once the record
-  is in the trash. An id that names no record still answers 404. Stock locations, customers and customer groups have
-  no trash step and are deleted in one call.
+  is in the trash, except an order's sales documents and missing currency, which are named in any state. An id
+  that names no record still answers 404. Stock locations, customers and customer groups have no trash step and are
+  deleted in one call.
 - **A sold item answers 200.** The delete of an item that order lines were sold as answers 200 with the item as it
   now stands, `state` 2 (archived), and `meta.note` saying that it was archived instead of deleted. The item stays,
   for the orders that hold it. An item without order history is deleted and answered 204.
