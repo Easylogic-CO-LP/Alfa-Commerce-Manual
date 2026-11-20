@@ -91,7 +91,25 @@ holds the quantity, the winner is decided in this order (`PriceComputationEngine
 5. A row with a sale price before a row without one.
 6. The lower price.
 
-If no row matches, the line has no price and every figure is zero.
+If no row matches, the item has no price at that quantity. A product shows no price and no add to cart, and cannot be
+added to a cart, when no price row applies to the shopper (their currency, place and customer group) at the quantity it
+opens with or at any larger quantity. In the order builder it is added and waits for a custom price, and over the REST
+API it is added only with one. The catalogue API publishes its price as null. A product whose prices begin at a larger
+quantity than it opens with shows no price at that quantity, keeps its add to cart, and the cart says from which
+quantity it is priced. A product whose prices all end below its minimum quantity shows no price and no add to cart.
+The setup checklist names both. Every page, card and the price index price a product at the quantity it opens with,
+its minimum quantity; the product page at a larger quantity when the shopper states one.
+
+A price of 0.00 is a price: the product is free. It shows 0,00 with its add to cart, is sold at 0 in the cart, the
+order builder and the REST API, and an order whose total is 0 is placed with nothing to collect: no payment is asked
+for.
+
+In the product list a product with no price for the shopper is listed with no price. The price filters, the "on sale"
+and "save at least" filters and the price slider's range leave it out, and the filters' counts beside such a listing
+count what it lists. A sort by price or by saving, low to high or high to low, lists it after the products with a
+price; every other sort lists it as any product. A product priced at 0.00 is listed at 0,00, kept by a price filter or
+range from 0, and first in a sort by price from low to high. The list reads each product at the price of the
+combination its card opens on (see [The stored price index](#the-stored-price-index)).
 
 ### Which discounts and taxes apply (the scope)
 
@@ -290,6 +308,10 @@ quantity without an error.
 
 A `PriceResult` holds the whole line. Amounts are `Money` objects.
 
+`isPriced(): bool` tells whether a price applies at the quantity asked; `pricedFrom(): ?int` names the smallest larger
+quantity from which one applies, or `null` when none does. A result with no price throws a `LogicException` from every
+getter in the tables below, so ask `isPriced()` first.
+
 | For the whole line | For one unit | Meaning |
 |---|---|---|
 | `getBaseTotal()` | `getBasePrice()` | Before discounts, without tax |
@@ -325,8 +347,9 @@ Alfa's own templates do.
 
 ### In a template
 
-The item a template receives carries its result in `$item->price`. Alfa's own templates print it with the layout
-`item.price`, which shows the figures the shop owner switched on:
+The item a template receives carries its result in `$item->price`. A product with no price applying reaches a
+template with `$item->price` null, and `$item->pricedFrom` names the quantity it is priced from, if any. Alfa's own
+templates print the price with the layout `item.price`, which shows the figures the shop owner switched on:
 
 ```php
 use Alfa\Component\Alfa\Site\Helper\Layout;
@@ -357,15 +380,25 @@ if ($price->hasDiscount()) {
 
 The figure names `PriceUnits::page()` knows are `base`, `discount`, `subtotal`, `tax`, `base_with_tax`,
 `discount_with_tax` and `final` (`PriceUnits::FIGURES`). How many decimals a unit price shows follows the shop's
-setting "unit display precision" (`unit_display_precision`).
+setting "unit display precision" (`unit_display_precision`). Under Auto, the default, a unit shows the currency's
+decimals, and more only where its line needs them at the quantity shown: a price of 25.338 shows 25,34 € for one
+piece and 25,338 € beside seven. A price below the currency's smallest unit shows its own decimals (0,004 €), and an
+agreed price shows as agreed. Under Currency decimals every unit shows the currency's decimals. The stored price never
+changes: the price index, the API's `amount` and the price editor keep it exactly.
 
 Keep the attribute `data-item-prices` on the element that wraps the prices. Alfa's scripts use it to refresh the
 price when the quantity or an option changes.
 
+Each product the storefront draws carries `$item->sellsOnline`: false in catalogue-only mode, when an override of the
+product page or the card draws no buy form and asks for none of its scripts; the product's fields then arrive in the
+buy form's slot as plain lists (the layout `item.fields_readonly`).
+
 ### Which figures are shown: PriceSettings
 
 `Alfa\Component\Alfa\Site\Helper\PriceSettings` answers which figures a price block shows. The shop owner sets them
-in the component's options, and can set them again for a customer group.
+in the component's options, and can set them again for a customer group. A customer group's Prices decides how prices
+are displayed to the group; it does not stop buying (see Online sales on the
+[store setup page](../getting-started/store-setup.md)).
 
 ```php
 use Alfa\Component\Alfa\Site\Helper\PriceSettings;
@@ -471,7 +504,7 @@ echo $line->format(false);           // without it
 
 | `Currency` method | What it does |
 |---|---|
-| `Currency::getDefault(): self` | The shop's default currency |
+| `Currency::getDefault(): self` | The shop's default currency (Options, Currencies, Default Currency), a published one. Throws `RuntimeException` when the stored default is not a published currency; the setup checklist's Default currency step reports it. |
 | `Currency::loadById(int $id): self` | By row id. Throws `RuntimeException` when there is none. |
 | `Currency::loadByCode(string $code): self`, `Currency::loadByNumber(int $number): self` | By ISO code (`EUR`) or ISO number (`978`) |
 | `getId()`, `getName()`, `getCode()`, `getNumber()`, `getSymbol()`, `getDecimalPlaces()`, `getDecimalSeparator()`, `getThousandSeparator()`, `getFormatPattern()` | Read the currency |
@@ -488,26 +521,46 @@ out live would be far too slow. So Alfa works the prices out in advance and stor
 `#__alfa_items_price_index`. The price filter, the "on sale" and discount filters, and the sorts by price and by
 discount of a list read that table.
 
+The prices are stored by pricing context. A pricing context (`#__alfa_price_contexts`) is a currency, a place class
+and a set of customer groups, and, for a customer with prices of their own, that customer. A context holds one
+generation of rows that the lists read; a change that reaches the whole context writes the next generation beside it
+and switches them whole once it is complete.
+
 One stored row is the price of:
 
 | Part of the key | Column | Meaning |
 |---|---|---|
+| The pricing context | `context_id` | A row of `#__alfa_price_contexts`. Removing a context removes its rows. |
 | The item | `item_id` | |
-| The combination | `combination_id` | 0 for the item's own row |
-| The currency | `currency_id` | 0 for any |
-| The place | `place_id` | 0 for any, or unknown; otherwise one of the places that discounts, taxes and price rows name. |
-| The customer group set | `group_set_id` | One list of the customer groups that prices, discounts or taxes name and that some customers hold together |
+| The combination | `combination_id` | 0 for the product itself, always present; a published combination that has price rows of its own has a row of its own. A combination without them has its product's price, so the product's row stands for it. |
 | The period | `valid_from` | When the row starts to apply. `valid_until` is its end, empty for "no end". |
 
 Each row stores the same figures the price settings name: `base_price`, `discount_amount`,
-`base_price_with_discounts`, `tax_amount`, `base_price_with_tax`, `final_price` and `discount_percent`. They are
-unit prices at quantity 1.
+`base_price_with_discounts`, `tax_amount`, `base_price_with_tax`, `final_price` and `discount_percent`. They are the
+price of one piece at the quantity the item opens with, its minimum quantity, as its card prints it. A unit with no
+valid price (no price row applies) has empty figures; an explicit price of 0 is the figure 0. The saving filters and
+the saving sort read the tax-included saving of one piece, as the price beside them is.
+
+The product list reads, by key, the row of `#__alfa_items.price_combination_id`: the combination the product's card
+opens on (`#__alfa_items.opening_combination_id`, the default combination when it can be bought, else the first that
+can) when that combination has price rows of its own, else 0. When stock changes which combination that is, the list
+follows once the change is saved. A customer with prices of their own is filtered and sorted by them. The price
+filters, the price sort and the price range use each product's price at the quantity it is sold from; prices for
+larger quantities show on the product page and in the cart.
+
+The stored rows grow with the products, the combinations that carry prices of their own, the pricing contexts and the
+periods; a combination without a price of its own adds nothing. A shop of 6,500 products with 50 combinations each,
+165 pricing contexts and about one combination in sixty with its own price stores about 2 million rows (about 0.5 GB
+with its keys), and about 25 million (5.6 GB) if two combinations in five carry their own prices. Tools, Database,
+Check the price index reports the size: its rows and its megabytes. After a full rebuild the index's statistics are
+refreshed, so the product list keeps reading it by key.
 
 The prices a shopper sees on an item page, on the cards of a list and in the cart are not read from the index.
 They are worked out live.
 
-A list reads the row of the visitor's own place, else of the nearest place above it that a discount or a tax names, else of no place. A place above that only price rows name is passed over,
-because its price rows apply to it alone.
+A list reads the context of the visitor's own place, else of the nearest place above it that a discount or a tax
+names, else of no place. A place above that only price rows name is passed over, because its price rows apply to it
+alone.
 
 ### When it is rebuilt
 
@@ -519,13 +572,29 @@ Core rebuilds the rows that a change touches, in the same request:
 | Unpublish, trash or delete an item | That item's rows are removed |
 | Save, publish, unpublish or delete a discount or a tax | The rows of the items in its scope. A rule for every category rewrites every item. |
 | Delete a category or a manufacturer | The rows of the items that lost it |
-| Change which groups customers hold | New group sets are requested, unused ones are removed |
+| Change which groups customers hold | The pricing contexts of the new group sets are requested, those nobody holds are removed with their rows |
 | Move a place under another place | Every item, by the background job `catalogue.rebuild`, when a stored place sits at or below it. The save says so. A new place needs none. |
 | A catalogue rebuild | An unpublished item's rows are removed, and none are written |
 
-A customer group set that customers hold for the first time is not written by the request that brought it. The
-background job `price.set.prepare` prepares it, a part of the items at a time. Until it is finished, the set is not
-read at all.
+Prices for every period a price, a discount or a tax defines are prepared ahead, so a promotion starts and ends by
+the clock; the background job `price.index.tidy` removes the periods that ended, and the generations a newer one
+replaced, once a day and after each switch.
+
+A pricing context that is new to the shop (a customer group set that customers hold for the first time, a currency or
+a place a price row or a rule names for the first time, a customer given prices of their own) is not written by the
+request that brought it. The background job `price.set.prepare` prepares it, a part of the items at a time, its scope
+`price.set.prepare:<context id>`. A discount or a tax that reaches at least half the catalogue, and a place moved,
+published or unpublished, are prepared beside the prices the list reads, as the context's next generation, and
+replace them whole once complete: until then the list filters and sorts by the prices from before the change, but for
+a product saved meanwhile, which it reads with the change at once. A rule that reaches less than half the catalogue is
+written product by product. A shopper whose customer groups, place or own prices change reads, until their new prices
+are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
+everyone); the product page and the cart charge their own prices throughout.
+
+After an update the price index is built again in the background. Until it is complete, the product list filters and
+sorts by the prices of the version before; an installation that stops part way resumes the build when the package is
+installed again. A product whose price cannot be calculated does not hold the switch: it is listed with no price until
+it can be priced.
 
 A failure never blocks the save. It is logged as a warning, the item is marked as owed, and the background job
 `catalogue.rebuild` rebuilds it.
@@ -545,9 +614,9 @@ it lets go.
 ### PriceIndexSyncService
 
 This class is the only writer of the index, and it is core's own. The code names only core callers: the item,
-discount, tax and category models, `ProjectionManager`, the `price.set.prepare` job, the Tools screen, the update
-script, and core's own system plugin (`alfasync`), which calls `syncGroupSets()` when the groups customers hold
-change. The class comment lists a "Public API" and maps each method to the core model that calls it. It does not
+discount, tax and category models, `ProjectionManager`, the `price.set.prepare` and `price.index.tidy` jobs, the
+Tools screen, the update script, and core's own system plugin (`alfasync`), which calls `syncGroupSets()` when the
+groups customers hold change. The class comment lists a "Public API" and maps each method to the core model that calls it. It does not
 address extensions, and no shipped payment, shipping or field plugin, module or template calls it.
 
 So the code does not settle whether an extension may call the sync methods, and this page does not recommend it.
@@ -568,21 +637,27 @@ methods**: core builds the service first.
 | `syncItems(array $itemIds, string $cause = ..., int $causeId = 0): int` | Rebuilds the rows of a list of items | Returns the number of rows written. Never throws. A part that fails is skipped and logged, the others are written. | |
 | `syncItemsOrFail(array $itemIds, string $cause = ..., int $causeId = 0): int` | The same, but a failure reaches the caller | Core's projection manager calls it | |
 | `syncByDiscount(int $discountId): int`, `syncByTax(int $taxId): int` | Rebuilds the items a discount or a tax can touch | A rule for every category rebuilds everything | Not for a delete: the scope is gone by then. Core's models collect the ids first with `getItemIdsForDiscount()` or `getItemIdsForTax()` and call `syncItems()` after the delete. |
-| `syncAll(string $cause = ..., int $causeId = 0): int` | Rewrites every published item | Safe to run again. It prepares no new group set. On a large catalogue with many group sets it can exceed the request's time limit. | |
-| `syncGroupSets(): int` | Requests the group sets customers hold that the index does not know, and removes the ones nobody holds | Writes no price row itself | |
+| `syncAll(string $cause = ..., int $causeId = 0): int` | Rewrites every published product's rows in every prepared pricing context, after the contexts are aligned | Safe to run again. On a large catalogue with many pricing contexts it can exceed the request's time limit. | |
+| `syncGroupSets(): int` | Brings the pricing contexts in line with the data: requests a context new to the data with its job, and drops a context the data no longer defines, with its rows | Writes no price row itself; returns the number of contexts requested | |
 | `deleteForItem(int $itemId, ...): void`, `deleteForItems(array $itemIds, ...): void` | Removes the rows of items | | |
 | `getItemIdsForDiscount(int $discountId): array`, `getItemIdsForTax(int $taxId): array` | The items a rule can touch | Read before the rule is deleted | |
 
-The following public methods serve the preparation of group sets and the reading of the index. Do not call them:
-`prepareSetChunk()`, `alignSets()`, `queueWaitingSets()`, `waitingSetId()`, `publishedItemCount()`, `preparationState()`, `accountGroupSet()`,
-`holdsGroupSet()`, `announcing()`, and the read helpers `pricingGroups()`, `slotKey()`, `slotSetJoin()` and
-`slotRanking()` that the site items model uses to read the index.
+The following public methods serve the preparation of the pricing contexts, the build after an update, the daily tidy
+and the reading of the index. Do not call them: `prepareContextChunk()`, `alignContexts()`, `queueWaitingContexts()`,
+`contextWaits()`, `publishedItemCount()`, `preparationState()`, `isBuilding()`, `buildStartedAt()`, `switchedAt()`,
+`writeBuildFlag()`, `startBuild()`, `finishBuild()`, `completeness()`, `oweChainRebuild()`, `accountGroupSet()`,
+`holdsGroupSet()`, `announcing()`, `announceOpenedWindows()`, `tidyCount()`, `removeRetired()`, `removeEndedPeriods()`,
+`ownPriceSql()`, `size()`, `analyze()`, and the read helpers `pricingGroups()`, `slotKey()`, `readableSetKeys()`,
+`readContext()`, `readableSetKey()`, `slotSetJoin()`, `slotPlaces()` and `slotRanking()` that the site items model uses
+to read the index.
 
 ### What happens next: the event
 
 After a write to the index is saved for good, Alfa announces `onAlfaPricesChanged` once for the whole write, with
 the items and the rows that changed. A write that was undone is never announced. A plugin that keeps its own copy
-of prices listens to it. The event is described on
+of prices listens to it. A change names its pricing context and, for a customer with prices of their own, that
+customer; its unit is named by its combination, 0 standing for the product and every combination of it without its
+own price rows. The event is described on
 [Item and catalogue events](../events/item-and-catalogue-events.md#onalfapriceschanged).
 
 ## How an item field changes a price
@@ -593,7 +668,9 @@ with tax", "take 10 percent off the net price". Alfa applies the lines in order 
 discounts as for any item. Each line appears as a step of the price breakdown.
 
 The event and the methods of a price line are described on
-[Item field plugins](../plugins/item-field-plugin-events.md#oncalculateitemprice).
+[Item field plugins](../plugins/item-field-plugin-events.md#oncalculateitemprice). A product with no price row is
+priced from a field's lines only when the field says so with `suppliesBase()` on its line, as for a product priced
+from what the buyer fills in; without it, a product with no price row is not priced, whatever the lines.
 
 ## A shipping charge's tax chain
 
@@ -628,7 +705,7 @@ The shipping taxes follow the same order as the goods' taxes (see
 
 | What you see | The usual cause |
 |---|---|
-| Every figure of a result is zero | No price row matched the quantity, the currency, the customer and the place |
+| `LogicException`: this price result carries no figure | No price row matched the quantity, the currency, the customer and the place. Ask `isPriced()` before the figures. |
 | A discount never applies | One of the five parts of its scope does not match, or it is outside its period. Check the visitor's groups, not the groups that may see the item. |
 | An item in a list is priced at its minimum quantity although you passed a quantity | The map given to `PricingIntent::cart()` is not keyed by the integer item id |
 | `calculate()` fails for an array of ids | The quantity map does not hold every id of the array. Give each id a quantity. |
@@ -636,7 +713,7 @@ The shipping taxes follow the same order as the goods' taxes (see
 | `Call to private method PriceSettings::global()` or to an unknown method | `global()` is private, and `compact()`, `full()`, `only()` and `except()` do not exist. Use `get()`, `minimal()` or `make()`. |
 | `Non-static method ... cannot be called statically` on the index service | Its sync methods are instance methods. The service is core's own, see [PriceIndexSyncService](#priceindexsyncservice). |
 | The price filter or the sort by price uses an old price after price data was written without Alfa's models | The index was not rebuilt for those items. Staff rebuild it with Tools > Database Sync, "Rebuild catalogue projections". |
-| The price filter has no stored prices for some customers for a while | Their customer group set is still being prepared by the `price.set.prepare` job |
+| For a while some customers are filtered and sorted by another group's prices | Their pricing context is still being prepared by the `price.set.prepare` job; until then they read the nearest prepared group's prices |
 | `add()` or `subtract()` throws | The two `Money` objects are in different currencies |
 
 ## Not documented yet
