@@ -54,7 +54,7 @@ Two more caches belong to the items module (`mod_alfa_items`), not to the compon
 An update of Alfa Commerce cleans, once and by itself:
 
 - Joomla's page cache (the group `page`);
-- the eight `com_alfa.` groups of the table above other than `com_alfa.notices`, whose marks run out within the hour;
+- the nine `com_alfa.` groups of the table above;
 - the items module's group `mod_alfa_items` (its best sellers ranking and its lists).
 
 So no page or card stored before the update is served after it. Nothing has to be cleared by hand. If a
