@@ -1004,6 +1004,94 @@
 							}
 						},
 						{
+							"name": "Stock and prices (light list)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"pm.test('A page of rows keyed item_id:combination_id, and whether the prices were read', () => { const doc = pm.response.json(); pm.expect(doc.data).to.be.an('array'); doc.data.forEach(r => pm.expect(String(r.id)).to.match(/^\\d+:\\d+$/)); pm.expect(['read', 'not prepared']).to.include(doc.meta.prices); });"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/stockprices?page[limit]=500",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"stockprices"
+									],
+									"query": [
+										{
+											"key": "page[limit]",
+											"value": "500"
+										}
+									]
+								},
+								"description": "What the shop has to sell and at what price: one row for each product without combinations and for each combination of a product, published or not, with `sku`, `gtin`, `state`, `item_state`, `manage_stock`, `available_quantity`, `stock`, `changed_at` (UTC) and `price` (`gross`, `net`, `currency`: what a guest pays in the shop's currency; null when no price row applies). Pages follow the rows' key: `page[limit]` from 1 to 1,000 (100 when none is sent), and `page[after]`, the key `links.next` carries; the last page has no `links.next`. Asks for Items: View."
+							}
+						},
+						{
+							"name": "Stock and prices (light list), changed since",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"pm.test('A page of rows keyed item_id:combination_id, and whether the prices were read', () => { const doc = pm.response.json(); pm.expect(doc.data).to.be.an('array'); doc.data.forEach(r => pm.expect(String(r.id)).to.match(/^\\d+:\\d+$/)); pm.expect(['read', 'not prepared']).to.include(doc.meta.prices); });"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/stockprices?page[limit]=500&filter[changed_since]=2000-01-01T00:00:00Z",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"stockprices"
+									],
+									"query": [
+										{
+											"key": "page[limit]",
+											"value": "500"
+										},
+										{
+											"key": "filter[changed_since]",
+											"value": "2000-01-01T00:00:00Z"
+										}
+									]
+								},
+								"description": "The rows of the products whose stock, prices or own fields changed at or after a UTC time, as on the items list: read a little before your last read; a row read twice holds the current values. A value that is not a date and time answers 400."
+							}
+						},
+						{
 							"name": "Get one",
 							"event": [
 								{

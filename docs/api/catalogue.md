@@ -260,6 +260,33 @@ The price index, which the storefront's lists read, is brought up to date once f
 written, after the last unit. A product it cannot bring up to date at once is done by the shop's background work
 shortly after. Each change is told to the [outgoing notifications](./notifications.md) as a change of one item is.
 
+## The light list of stock and prices
+
+`GET v1/alfa/stockprices` lists what the shop has to sell and at what price, one row for each product without
+combinations and for each combination of a product, published or not (an archived or trashed one is not listed). It
+is for a system that keeps stock and prices in step with the shop: one read a page instead of reading every product.
+
+Each row has the key `item_id:combination_id` as its id (the combination is 0 for a product without combinations),
+and: `sku`, `gtin`, `state` (the row's own: 1 published, 0 unpublished), `item_state` (its product's), `manage_stock`,
+`available_quantity`, `stock`, `changed_at` (when the product's stock, prices or own fields last changed, UTC) and
+`price` with `gross`, `net` and `currency`. The price is what a guest pays in the shop's currency, the one the product
+list filters and sorts by: a combination with prices of its own has its own, any other combination its product's.
+A row with no valid price (an unpublished product, or no price row that applies) has `price` null. A price of 0 is a
+price.
+
+Pages follow the rows' key, never an offset, so walking the list while products change reads each row once:
+`page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries.
+A page that is not full has no `links.next`; when the rows end with a full page, the page after it is empty. `filter[changed_since]` keeps the rows of the products whose stock, prices or own
+fields changed at or after a UTC time, as on the items list: read a little before your last read, a row read twice
+holds the current values. `meta.prices` is `read`, or `not prepared` while the shop builds its prices after an update
+or while no pricing context is prepared yet; every `price` is then null. The list asks for Items: View.
+
+```
+GET /api/index.php/v1/alfa/stockprices?page[limit]=500
+GET /api/index.php/v1/alfa/stockprices?page[limit]=500&page[after]=1287:0
+GET /api/index.php/v1/alfa/stockprices?filter[changed_since]=2026-11-20T09:55:00Z
+```
+
 ## Categories
 
 `v1/alfa/categories`, the five standard routes.

@@ -191,13 +191,14 @@ The five standard routes of a resource, with `items` as the example:
 | `PATCH v1/alfa/items/:id` | Changes a record |
 | `DELETE v1/alfa/items/:id` | Deletes a record |
 
-Twenty-six more routes are single purpose:
+Twenty-seven more routes are single purpose:
 
 | Group | Routes | Page |
 |---|---|---|
 | The storefront's view of an item | 2, read only | [Catalogue](./catalogue.md#the-storefronts-view) |
 | Operations on an order | 12 | [Orders](./orders.md#operations-on-an-order) |
 | The prices and stock of many units | 1 | [Catalogue](./catalogue.md#many-units-in-one-request) |
+| The light list of stock and prices | 1, read only | [Catalogue](./catalogue.md#the-light-list-of-stock-and-prices) |
 | Stock movements | 1, read only | [Customers and configuration](./customers-and-configuration.md#stock-movements) |
 | Sales documents | 5 | [Documents and tasks](./documents-and-tasks.md) |
 | Document types | 2, read only | [Documents and tasks](./documents-and-tasks.md#document-types) |
@@ -278,6 +279,7 @@ list sent where one value is expected (for example `filter[state][]=1`) is answe
 | `documents` | `filter[doc_type]`, `filter[status]`, `filter[id_order]` |
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
+| `stockprices` | `filter[changed_since]`, and no `filter[search]` |
 
 Four lists also take the filters their administrator screens apply, with the same meaning as there.
 
@@ -294,6 +296,7 @@ Four lists also take the filters their administrator screens apply, with the sam
 | `orders` | `filter[source]` | The orders of one channel: `storefront`, `admin`, `renewal`, `api`, or the source a client named |
 | `orders` | `filter[external_source]`, `filter[external_reference]` | The orders of another system, and with both the one order of a pair; each matched whole, letter case counting in the reference |
 | `items` | `filter[changed_since]` | The items whose stock, prices or own fields changed at or after that time (`commerce_changed_at`). A time without a zone is UTC; one with `Z` or an offset is read in its zone. A value that is not a date and time answers 400. |
+| `stockprices` | `filter[changed_since]` | The rows of the products whose stock, prices or own fields changed at or after that time, as on `items` |
 | `documents` | `filter[date_start]`, `filter[date_end]` | The document's issue time (UTC), both bounds included |
 | `inventorymovements` | `filter[date_start]`, `filter[date_end]` | The movement's date, in UTC |
 | `inventorymovements` | `filter[item_id]` | The movements of that item |
