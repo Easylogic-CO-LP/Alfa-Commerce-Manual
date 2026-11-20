@@ -85,11 +85,18 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
-`prices`, `categories`, `manufacturers`, `medias`, `translations`, `fields`, `options`, `combinations`,
+`prices`, `prices_state`, `categories`, `manufacturers`, `medias`, `translations`, `fields`, `options`, `combinations`,
 `informational`, `created_by`, `modified_by`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
 `robots`. Left out, each stays as it was.
+
+**Prices written by two systems.** One record holds `prices_state`, the state of the item's own price rows (32
+hexadecimal digits). A `PATCH` that sends `prices` may send the `prices_state` it read with them: when the item's
+prices changed since, the answer is 409 with the title "prices: the product's prices changed since you read them
+(prices_state). Read it again. Nothing was saved." and nothing of the change is saved. Without `prices_state`, the
+prices are written as sent. `prices_state` sent on a create, without `prices`, or in another shape answers 422. See
+[Two systems that both write prices](./notifications.md#two-systems-that-both-write-prices).
 
 **Options, combinations and item field values** (`fields`, `options`, `combinations`, `informational`) are for
 reading. A program that reads an item and sends it back leaves them out. Set them on the item's page in the

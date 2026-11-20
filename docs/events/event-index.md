@@ -237,6 +237,13 @@ The classes are in `Documents/`.
 |---|---|---|---|---|---|---|
 | `onAlfaNotificationPushed` | `NotificationPushedEvent` in `Notifications/` | Announced | No | After the save is final | `administrator/src/Helper/NotificationHelper.php:477` | [Notification and setup events](./notification-and-setup-events.md) |
 
+## Outgoing notifications
+
+| Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
+|---|---|---|---|---|---|---|
+| `onAlfaOutboundTopics` | `OutboundTopicsEvent` in `Outbound/` | One plugin | No veto | On request: when the plugin is saved or enabled | `administrator/src/Service/Outbound/OutboundConsumers.php:544` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+| `onAlfaOutboundDeliver` | `OutboundDeliverEvent` in `Outbound/` | One plugin | No veto: each change is answered delivered, retry or refused | After the save is final, in the background | `administrator/src/Service/Outbound/OutboundDelivery.php:294` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+
 ## Joomla events Alfa raises or relies on
 
 Joomla's own events are not Alfa events and are not listed above. These are the ones Alfa's code touches.
