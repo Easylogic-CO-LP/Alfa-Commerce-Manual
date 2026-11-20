@@ -106,7 +106,8 @@ How `prices_display` is written:
 A fresh installation comes with a list of currencies. In it the euro has the id 47.
 
 Deleting a currency that orders, item prices or places use is refused with 409 and the reason, and nothing is
-deleted.
+deleted. The shop's default currency and its last published currency stay in service: a change that gives one of them
+another `state` is refused with 400 and the reason.
 
 Currencies, taxes, discounts, places, payment and shipping methods, form fields, form field groups, cart rules and
 orders are deleted only while they are in the trash, as in the administrator. Move the record
@@ -130,7 +131,7 @@ See [Status codes](./overview.md#status-codes).
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the tax applies.
 
-A change that alters prices leaves work for the price index, listed in the answer's `meta.tasks`.
+A change that alters prices can leave work for the price index; the answer's `meta.tasks` lists it.
 
 Reading a tax that does not exist answers 404.
 
@@ -145,7 +146,6 @@ Reading a tax that does not exist answers 404.
   "is_amount": 0,
   "behavior": 0,
   "apply_before_tax": 0,
-  "operation": 0,
   "state": 0
 }
 ```
@@ -175,7 +175,8 @@ a code applies by itself.
 **One record holds also:** `name_customer`, `description`, `max_discount_amount`, `discount_base`,
 `exclude_discounted`, `overridden_lines`, `min_amount`, `min_amount_tax_incl`, `min_amount_base`,
 `combines_product`, `combines_order`, `combines_shipping`, `usage_limit_per_user`, `created`, `modified`,
-`allowedUsers`, `allowedUserGroups`, `groups`, and with `include=translations` its `translations`.
+`allowedUsers`, `allowedUserGroups`, `groups`, and with `include=translations` its `translations`. It has no
+`used_count`.
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `groups`.
 
@@ -203,6 +204,8 @@ exist answers 404.
   (`GR-I` under Greece). A country sent without its codes, or a code of another country, is refused with the
   reason.
 - Deleting a place that has places inside it is refused with 409, naming them, unless they are deleted with it.
+  Deleting the last place a discount or a tax names (the rule would then apply in every place) is refused with 409,
+  naming the rules.
 
 ## Payment methods
 
@@ -224,21 +227,23 @@ A create without `color` and `bg_color` takes the colours the method's edit form
 
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, and with
+**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `medias`, and with
 `include=translations` its `translations`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the method is offered.
 
-Deleting a method that an order used is refused with 409 and the reason, and nothing is deleted. See [Status codes](./overview.md#status-codes) for the cases.
+Deleting a method that an order used is refused with 409 and the reason, and nothing is deleted. See
+[Status codes](./overview.md#status-codes) for the cases.
 
 The payments of one order are not here. They are under the order: see
 [Orders](./orders.md#payments).
 
 ## Shipping methods
 
-`v1/alfa/shipmentmethods`. As payment methods, with one more field: `price_entry_mode` says whether the method's
-prices were typed with tax (`tax_included`) or without (`tax_excluded`).
+`v1/alfa/shipmentmethods`. As payment methods, with two more fields: `price_entry_mode` says whether the method's
+prices were typed with tax (`tax_included`) or without (`tax_excluded`), and `taxes` lists the taxes its charge is
+taxed with (none: no tax on it).
 
 ```json
 {
@@ -255,8 +260,10 @@ prices were typed with tax (`tax_included`) or without (`tax_excluded`).
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `price_entry_mode`,
 `ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`, and with
-`include=translations` its `translations`.
+**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`, `medias`, and
+with `include=translations` its `translations`.
+
+**Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`.
 
 ## Form fields
 
@@ -273,15 +280,18 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 }
 ```
 
-**A list row holds:** `id`, `group_id`, `field_name`, `name`, `type`, `required`, `registration`, `billing`,
-`shipping`, `unique`, `ordering`, `state`, `group_title`.
+**A list row holds:** `id`, `group_id`, `field_name`, `name`, `type`, `registration`, `billing`, `shipping`,
+`unique`, `ordering`, `state`, `group_title`.
 
 **One record holds also:** `field_label`, `field_description`, `users`, `usergroups`, `role` (what the field is to
 the shop: `name`, `email`, `phone`, `country`, `address`, `city`, `postcode`, or null), `params` (the field type's
-settings, in the request's language), and with `include=translations` its `translations`. A choice field's
-`params.options` are the values it takes, each with its text:
+settings, in the request's language), and with `include=translations` its `translations`; it has no `group_title`.
+A choice field's `params.options` are the values it takes, each with its text:
 `{"options0": {"value": "apodeiksi", "text": "Receipt"}, "options1": {"value": "timologio", "text": "Invoice"}}`; an
 order sends the value.
+
+`role` is the shop's: a write leaves it as it is. The `name` and `email` fields are the shop's own: a write keeps their
+`type`, `field_name` and published state, so they cannot be moved to the trash or deleted.
 
 **Related lists you can send:** `users`, `usergroups`.
 
@@ -310,7 +320,7 @@ order sends the value.
 `ordering`, `stock_units`, `stock_physical`, `stock_reserved`.
 
 **One record holds also:** `owner_type`, `owner_id`, `created`, `created_by`, `modified`, `modified_by`, and
-with `include=translations` its `translations`.
+with `include=translations` its `translations`. It has no `stock_units`, `stock_physical` or `stock_reserved`.
 
 ## Stock movements
 
@@ -329,5 +339,5 @@ See [Stock](../services/stock.md) for what the movements mean.
 
 ## Not documented yet
 
-- The meaning and the allowed values of fields such as `behavior`, `operation`, `discount_class`, `action` and
+- The meaning and the allowed values of fields such as `behavior`, `discount_class`, `action` and
   `location_type`. They are the values of the administrator form of the same record.
