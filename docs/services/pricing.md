@@ -508,7 +508,7 @@ echo $line->format(false);           // without it
 
 | `Currency` method | What it does |
 |---|---|
-| `Currency::getDefault(): self` | The shop's default currency (Options, Currencies, Default Currency), a published one. Throws `RuntimeException` when the stored default is not a published currency; the setup checklist's Default currency step reports it. |
+| `Currency::getDefault(): self` | The shop's default currency (Options, Currency, Default Currency), a published one. Throws `RuntimeException` when the stored default is not a published currency; the setup checklist's Default currency step reports it. |
 | `Currency::loadById(int $id): self` | By row id. Throws `RuntimeException` when there is none. |
 | `Currency::loadByCode(string $code): self`, `Currency::loadByNumber(int $number): self` | By ISO code (`EUR`) or ISO number (`978`) |
 | `getId()`, `getName()`, `getCode()`, `getNumber()`, `getSymbol()`, `getDecimalPlaces()`, `getDecimalSeparator()`, `getThousandSeparator()`, `getFormatPattern()` | Read the currency |
