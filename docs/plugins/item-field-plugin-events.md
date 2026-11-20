@@ -78,12 +78,9 @@ Your layout must give its input the name in `$inputName` and the attribute `data
 
 You may also replace the add to cart area of the page with `setCartLayout(string $layout)` and
 `setCartLayoutData(array|object $data)`, or add a block beside it with `setCartChildLayout()` and
-`setCartChildLayoutData()`. When several fields replace the area, the last one wins.
-
-:::note Known limitation
-A plugin that writes the cart layout or the cart's child layouts directly on the item, instead of through these
-setters, and then throws, leaves its layout in place. Use the setters.
-:::
+`setCartChildLayoutData()`. When several fields replace the area, the last one wins. These setters are the only way
+to change the add to cart area from a field event: Alfa keeps the item's `cart` and `cartChildren` itself and gives
+them back to the item after each field, so a change you write on the item directly is not kept.
 
 **What happens next.** Alfa collects the places of every field in order, and the item template renders them. A
 [field condition](./form-field-plugins.md#field-conditions-showon) set on the item field is applied around your
@@ -96,7 +93,7 @@ layout by Alfa.
 | The plugin is disabled, missing or cannot be loaded | The field is not drawn. The page shows without it. |
 | The selector kind does not match the field's use | On a site in debug mode, an error. Otherwise a warning in Joomla's log, category `alfa-item-fields`. |
 | The layout file does not exist | Your layout is not drawn. Alfa falls back to a default layout of its own or to nothing. In debug mode a warning names the missing file. |
-| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an order's item. Whatever your method changed before the error is undone. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
+| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an order's item. Whatever your method set or changed before the error is undone, the add to cart area included; the other fields keep theirs. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
 
 ## onItemListPrepare
 
@@ -120,9 +117,10 @@ card, Alfa turns the card's button into a "Choose options" link to the item page
 never replaced by that link.
 
 **If you are missing or you fail.** A missing plugin draws nothing, and the same log line is written for it. An
-error you throw is written to Joomla's log (category `com_alfa`) with the field's type, and the card keeps its
-normal add to cart area. Whatever your method changed on the card before
-the error is undone, also when your field is the card's last; the card shows the other fields' parts.
+error you throw is written to Joomla's log (category `com_alfa`) with the field's name and your plugin's name
+(`alfa-item-fields.<type>`). Whatever your method set or changed on the card before the error is undone, the add to
+cart area included, also when your field is the card's last; the card shows the other fields' parts and the add to
+cart area they set, or the normal one.
 
 ## onItemsListPrepare
 

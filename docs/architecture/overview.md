@@ -186,7 +186,7 @@ Two classes in `administrator/src/Helper` do this.
 
 | Class | In plain words |
 |---|---|
-| `TransactionState` | Knows whether a transaction is open on the connection and how deep. Closes one level, by a commit (`commitLevel()`) or after a failure (`rollBackLevel()`) |
+| `TransactionState` | Knows whether a transaction is open on the connection and how deep. Closes one level, by a commit (`commitLevel()`) or after a failure (`rollBackLevel()`). `driver()` gives the connection as the database driver it keeps levels on. |
 | `PostCommit` | Holds the work that waits for the commit (`defer()`). Runs it when the outermost transaction has committed, and throws it away on a rollback |
 
 ### What "after the commit" means in the code
@@ -225,7 +225,7 @@ use Alfa\Component\Alfa\Administrator\Helper\PostCommit;
 use Alfa\Component\Alfa\Administrator\Helper\TransactionState;
 use Joomla\CMS\Factory;
 
-$db = Factory::getContainer()->get('DatabaseDriver');
+$db = TransactionState::driver(Factory::getContainer()->get('DatabaseDriver'));
 
 // Open one level: the outermost transaction, or a savepoint inside the caller's.
 $db->transactionStart(true);
@@ -260,6 +260,7 @@ TransactionState::commitLevel($db);
 | Your work runs later than you expect | Your code was called inside someone else's transaction or lock. The work runs when the outermost one ends |
 | An exception "is not changed inside an open transaction" | You asked for a table or column to be made while a transaction was open. MySQL would commit the transaction first, so Alfa refuses. Make the schema before you open the transaction. [Multilingual](multilingual.md) explains the common case |
 | `commitLevel()` throws "No transaction is open to commit" | An inner failure already rolled the whole transaction back, for example a deadlock |
+| `driver()` throws "Alfa Commerce closes its transaction levels through TransactionState, which keeps the levels of a database driver; ... is not one." | The connection is not a Joomla database driver. Every connection Joomla's container hands out is one. |
 
 ## The platform floors
 

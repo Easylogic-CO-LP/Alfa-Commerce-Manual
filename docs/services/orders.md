@@ -335,6 +335,9 @@ also load one with `$this->getOrder($orderId)`.
 `Order::of(object $row): self` makes a reader from an order row. Core uses it. An order handed to you is already a
 reader.
 
+The number the customer knows the order by: `EmailService::orderNumber(order: $order)`, with the reader you were handed
+(`Alfa\Component\Alfa\Administrator\Service\Order\EmailService`). It is the order's id.
+
 A `Payment` reader has `id()`, `orderId()`, `methodId()`, `methodType()`, `type()`, `status()`, `transactionId()`,
 `amount()` and `pluginData()`. A `Shipment` reader has `id()`, `orderId()`, `methodId()`, `methodType()`,
 `status()`, `trackingNumber()`, `weight()`, `cost()`, `costExcl()` and `pluginData()`. Both also have `row()` and
