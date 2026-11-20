@@ -6,7 +6,7 @@ description: What a plugin can do in Alfa Commerce, which plugin types exist, ho
 
 # Plugin overview
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 Alfa Commerce is extended with Joomla plugins. A plugin adds to the shop without changing Alfa's own files, so an
 update of Alfa Commerce does not undo it.
@@ -209,7 +209,7 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 | `namespace` | `path="src"`, then your vendor name, `Plugin`, the group in capitals without the hyphen, and the element: `Alfa\Plugin\AlfaPayments\Standard`. Use your own vendor name in place of `Alfa`. |
 | `files` | The `services` folder carries the attribute `plugin` with the element. It holds `provider.php`, which creates the plugin. `src` holds the class, `tmpl` the layouts, `params` the settings form of a method or a field. |
 | `languages` | Two files per language: the plugin's texts and its `.sys.ini` (the name and description Joomla shows in its lists). Their names are `plg_`, the group, an underscore, the element. |
-| `media` | Only when the plugin has scripts or styles. The destination is named like the language files. |
+| `media` | Only when the plugin has scripts or styles. The destination is named like the language files. Each style and script is shipped as its source, its `.min` twin and the `.min.gz`, and registered by its `.min` name; Joomla loads the source under Debug System by itself (see [Installation](../getting-started/installation#styles-and-scripts-three-forms-served-compressed)). The core repository's `php build/media-min/build.php --root=<your plugin's folder>` makes the two forms from your sources, reading your manifest's `media` folder. |
 
 ### How the shipped plugins are installed and enabled
 

@@ -6,7 +6,7 @@ description: What Alfa Commerce needs, how to install and update it, and what th
 
 # Installation
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 Alfa Commerce is a Joomla component. One ZIP file installs the component together with its plugins, modules and
 libraries.
@@ -26,6 +26,93 @@ Printing sales documents as PDF needs the dompdf library (`lib_dompdf`). It ship
 installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step. The setup checklist has a
 recommended row, "PDF library for sales documents", which fails only when one of these libraries has been removed,
 and says that installing the Alfa Commerce package again restores it.
+
+## Styles and scripts: three forms, served compressed
+
+### What it does
+
+Every stylesheet and every script that Alfa Commerce installs, for the component, its modules and its plugins, is
+there in three forms:
+
+| File | What it is | When it is sent |
+|---|---|---|
+| `cart.js` | The source: readable, with its comments. | When Debug System is on (System, Global Configuration, the System tab). |
+| `cart.min.js` | The same code made smaller: no comments, and no spaces the browser does not need. | When Debug System is off, as on a live shop. |
+| `cart.min.js.gz` | The `.min` file compressed with gzip. | In place of the `.min` file, by the web server, to a browser that accepts gzip. The server reads it from disk and compresses nothing while the page waits. |
+
+Alfa Commerce asks Joomla for the `.min` file of each style and script. With Debug System on, Joomla finds the source
+beside it and sends that instead, so the code can be read as it was written. A library that comes already minified,
+with no source beside it, is sent as it is, and has its `.gz` too. A source never has a `.gz` of its own.
+
+### What you must provide
+
+On Apache, or on a server that reads the same `.htaccess` rules: use Joomla's own `htaccess.txt` as the site's
+`.htaccess` (rename or copy it, as Joomla asks for search engine friendly URLs), and keep its section headed
+`## GZIP & BROTLI` as it is. Nothing else is needed: the package brings the `.gz` files, and that section serves them.
+
+For each request of a `.css` or a `.js` file, the section:
+
+1. checks that the browser accepts gzip (its `Accept-Encoding` header) and that the same file with `.gz` added exists
+   and is not empty;
+2. when both hold, sends the `.gz` file in place of the file asked for, with the query string kept;
+3. sends it with `Content-Encoding: gzip` and the type of the file asked for (`text/css` or `text/javascript`), tells
+   the server's own compression to leave it as it is, and adds `Vary: Accept-Encoding`, so that a proxy keeps the
+   compressed and the plain answer apart.
+
+A browser that does not accept gzip gets the plain `.min` file. The section needs the server's `mod_rewrite` (switched
+on earlier in the same file) and `mod_headers`. This is the section as Joomla 6's `htaccess.txt` carries it:
+
+```apache
+<IfModule mod_headers.c>
+	# Serve gzip compressed CSS files if they exist
+	# and the client accepts gzip.
+	RewriteCond "%{HTTP:Accept-encoding}" "gzip"
+	RewriteCond "%{REQUEST_FILENAME}\.gz" -s
+	RewriteRule "^(.*)\.css" "$1\.css\.gz" [QSA]
+
+	# Serve gzip compressed JS files if they exist
+	# and the client accepts gzip.
+	RewriteCond "%{HTTP:Accept-encoding}" "gzip"
+	RewriteCond "%{REQUEST_FILENAME}\.gz" -s
+	RewriteRule "^(.*)\.js" "$1\.js\.gz" [QSA]
+
+	# Serve correct content types, and prevent mod_deflate double compression.
+	RewriteRule "\.css\.gz$" "-" [T=text/css,E=no-gzip:1,E=no-brotli:1]
+	RewriteRule "\.js\.gz$" "-" [T=text/javascript,E=no-gzip:1,E=no-brotli:1]
+
+	<FilesMatch "(\.js\.gz|\.css\.gz)$">
+		# Serve correct encoding type.
+		Header set Content-Encoding gzip
+
+		# Force proxies to cache gzipped &
+		# non-gzipped css/js files separately.
+		Header append Vary Accept-Encoding
+	</FilesMatch>
+</IfModule>
+```
+
+Another web server needs its own setting to send a `.gz` file that sits beside the file asked for.
+
+### What happens next
+
+To check it, ask for one `.min` file the way a browser does, and save what comes back:
+
+```bash
+curl -s -D - -o list-form.bin -H 'Accept-Encoding: gzip' https://example.com/media/com_alfa/js/site/list-form.min.js
+cmp list-form.bin media/com_alfa/js/site/list-form.min.js.gz
+```
+
+The answer is `200` with `Content-Encoding: gzip` and `Content-Type: text/javascript`, and `cmp`, run against the
+site's own file, prints nothing: the bytes sent are the `.gz` file. The same request without the `Accept-Encoding`
+header answers the plain `.min` file.
+
+### What can go wrong
+
+| What you see | Why | What to do |
+|---|---|---|
+| Pages look unstyled, and the browser's console shows `ERR_CONTENT_DECODING_FAILED` | The server compresses styles and scripts itself as well. | Comment out the GZIP section, as the note at the top of `htaccess.txt` says. |
+| The answer has no `Content-Encoding: gzip` | The site's `.htaccess` is not Joomla's `htaccess.txt`, its GZIP section is commented out, or the server lacks `mod_rewrite` or `mod_headers`. | Use Joomla's file with the section on, or ask the host for the two modules. |
+| A change to a style or a script does not show on a development site | Debug System is off, so Joomla sends the `.min` file, which is made from the source only when the repository's build runs. | Work with Debug System on, and build before you commit: see [Contributing](./contributing#you-changed-a-stylesheet-or-a-script). |
 
 ## Installing
 
