@@ -6,7 +6,7 @@ description: The events a feature plugin handles when an item is edited, saved o
 
 # Item and catalogue events
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 These events let a **feature plugin** (a plugin of the `alfa` group) take part in an item's edit screen, its save and
 its page in the shop, and hear when the catalogue or its stored prices change.
@@ -259,9 +259,9 @@ for each row. A change that was undone is never announced.
 It also fires when a price period stored ahead of time begins: a price, a discount or a tax whose dates were set
 in advance becomes the one the shop reads. Nothing is written at that moment, so the background engine announces
 it at its first turn at least a minute after the moment; on a shop with visitors or cron, within about two
-minutes. The rows were already right from the moment: the event says they became the ones read. Only the periods
-the price index stores are announced, at most eight per item, the nearest ones; a period beyond them is
-announced when a later write of the item stores it.
+minutes. The rows were already right from the moment: the event says they became the ones read. The price index
+stores every period that a price, a discount or a tax defines, however far ahead, so each one is announced when it
+begins.
 
 A **write** is one piece of work that rewrote stored prices. Why it was done is the **cause**:
 
@@ -281,7 +281,8 @@ discounts or taxes name and that some customers hold together (table `#__alfa_pr
 for each **pricing context**, not for each customer: a currency, a place class and a customer group set, and, for a
 customer with prices of their own, that customer (table `#__alfa_price_contexts`). Every customer of the same context
 reads the same rows. A context that is new to the shop, or the next generation of one that a large change reaches, is
-prepared in the background, a part of the items at a time, and each part is a write with the cause `set`.
+prepared a part of the items at a time. Each part its background job prepares is a write with the cause `set`; the
+parts that the save of a discount or a tax prepares itself, in its first seconds, belong to that save's write.
 
 **Who receives it.** Announced to everyone: every loaded plugin that lists it in `getSubscribedEvents()`, a `system`
 plugin included. Alfa loads the `alfa` group first.
@@ -372,8 +373,8 @@ public function onAlfaPricesChanged(PricesChangedEvent $event): void
 
 **If you are missing or you fail.** The prices are stored all the same. An error you throw is written to the log
 and the next listener runs. The event is a notice: it is sent once and is not repeated, and there is no record of
-it under Tools > Tasks. When no plugin listens at all, Alfa does not even compare the rows, so the shop pays nothing
-for the event.
+it under Tools > Tasks. When no plugin listens and no outgoing notification takes price changes, Alfa does not even
+compare the rows, so the shop pays nothing for the event.
 
 ## Keeping your own copy of the catalogue
 
