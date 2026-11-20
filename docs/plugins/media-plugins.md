@@ -37,8 +37,9 @@ So a shop without a media plugin works: images are stored unchanged and thumbnai
 
 The storefront shows each image's thumbnail and never the stored file: the product list's cards, the product page's
 images, the items module's cards and the category and manufacturer images all load the thumbnail. Only the product
-page's lightbox opens the stored file, when the shopper opens it. The thumbnail is what shoppers see, so write it in
-a format and quality fit for display.
+page's lightbox opens the stored file, when the shopper opens it. An image with no thumbnail of its own (not made
+yet, or too large for the memory, see Memory below) shows the shop's placeholder image until one is made. The
+thumbnail is what shoppers see, so write it in a format and quality fit for display.
 
 ## When it is used
 
