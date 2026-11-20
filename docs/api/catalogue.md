@@ -97,7 +97,8 @@ product that tracks stock reads `stock` 0 when it holds none; one that does not 
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
 `prices`, `prices_state`, `categories`, `manufacturers`, `medias`, `translations`, `fields`, `options`, `combinations`,
-`informational`, `related`, `created_by`, `modified_by`.
+`informational`, `related`, `created_by`, `modified_by`. Each combination in `combinations` holds its own
+`prices_state`, the state of its own price rows, for [Many units in one request](#many-units-in-one-request).
 
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
 `robots`. Left out, each stays as it was.
@@ -197,6 +198,67 @@ answers 422 still names the record it made:
 ```
 
 Each image the shop fetched carries `source_url`, the address it came from, in `medias`.
+
+## Many units in one request
+
+`PATCH v1/alfa/items/units` writes the prices and the stock of up to 100 units in one request. A **unit** is a product
+without combinations, or one combination of a product. It asks the permission to edit items, as a change of one item
+does.
+
+```bash
+curl -X PATCH -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \
+  "https://your-shop.example/api/index.php/v1/alfa/items/units" \
+  -d '{
+    "units": [
+      {"item_id": 12, "prices": [{"id": 31, "value": "21.00", "currency_id": 47, "quantity_start": 1}],
+       "prices_state": "3f9c0d0b3b1e4c6c8f0a5d2e7b9a1c44", "stock": "7"},
+      {"item_id": 15, "combination_id": 4, "prices": [{"mode": "price", "value": "31.00", "currency_id": 0}],
+       "stock": "4"},
+      {"item_id": 18, "inventory_stock": {"1": "3", "2": "2"}}
+    ]
+  }'
+```
+
+Each unit takes:
+
+| Key | What it is |
+|---|---|
+| `item_id` | The product. Required. |
+| `combination_id` | The combination; 0 or left out for the product itself. |
+| `prices` | The unit's own price rows, all of them: the rows as a change of one item sends them. A row with the `id` of one of the unit's rows changes it, a row without an `id` is added, and the unit's rows not sent are removed. `[]` removes them all. A combination's row may be of the mode `price` (its own price) or `adjust` (a change of the product's price, with `operation` `+`, `-`, `%` or `-%`); a product's own rows are of the mode `price`. |
+| `prices_state` | The state the unit's prices were read in (the item's `prices_state`, or the combination's in `combinations`). Sent only with `prices`. |
+| `stock` | The unit's stock as one figure of 0 or more, for a unit stocked at one location (or at none yet: the shop's default location). |
+| `inventory_stock` | The unit's stock by location, an object of location id to figure, `{"1": "3", "2": "2"}`. Not with `stock`. |
+
+Each unit is written whole or not at all, on its own: a unit that cannot be written is refused alone, and the others
+are written. A stock figure is the unit's whole stock there, not a change: the shop moves the stock to it as a stock
+correction would, so a sale made meanwhile is not lost.
+
+The answer is 200 when the request could be read, with one answer a unit in the order of the request:
+
+```json
+{
+  "data": [
+    {"type": "units", "id": "0", "attributes": {"pointer": "/units/0", "status": 200, "item_id": 12,
+      "combination_id": 0, "prices_state": "a41d...", "stock": "7", "available_quantity": "7"}},
+    {"type": "units", "id": "1", "attributes": {"pointer": "/units/1/prices_state", "status": 409, "item_id": 15,
+      "combination_id": 4, "title": "The unit's prices changed since you read them (prices_state). Read them again. Nothing of this unit was saved."}}
+  ]
+}
+```
+
+A written unit answers its new `prices_state` and its stock. A refused unit answers the status it would have had
+alone (404 for a product or a combination that does not exist, 409 for prices changed since or stock that orders hold,
+422 for a value that cannot be taken) and the reason, and its `pointer` names what was refused in the request, as a
+JSON pointer: `/units/1/prices_state`, `/units/3/stock`. A unit named twice in one request is refused the second
+time.
+
+The whole request is refused with 422, and nothing is written, when the body is not `{"units": [...]}` with 1 to 100
+units.
+
+The price index, which the storefront's lists read, is brought up to date once for all the products whose prices were
+written, after the last unit. A product it cannot bring up to date at once is done by the shop's background work
+shortly after. Each change is told to the [outgoing notifications](./notifications.md) as a change of one item is.
 
 ## Categories
 
