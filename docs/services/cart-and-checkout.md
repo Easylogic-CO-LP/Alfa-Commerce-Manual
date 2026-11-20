@@ -6,7 +6,7 @@ description: The services behind the cart and the placement of an order, what a 
 
 # Cart and checkout
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 A shopper's cart is calculated again on every request that shows it. When the shopper places the order, the cart is
 turned into an order as one unit and then deleted. This page explains the classes that do this, and says for each
@@ -182,8 +182,8 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `read(CartResolution $mode, int $cartId = 0): CartSnapshot` | Reads a cart | Creates no cart. It is not free of writes: it adopts a guest's cart after sign-in, and lowers a quantity that is no longer in stock. | `CartResolution::Mutable` throws `InvalidArgumentException` |
-| `add(int $itemId, int\|float $quantity): CartAddResult` | Puts an item in the cart. Reads the chosen field values and uploads from the current request. The line and its chosen options are written together, or not at all. | Creates a cart for a first-time visitor. Its comment calls it the only method that may; in the code `chooseShipment()` and `choosePayment()` open the cart the same way, and `createNamedCart()` always makes one. The result carries the line as the cart now prices it. | A request it cannot read, or a write that fails: `added` is `false` and the shopper gets one sentence |
-| `setLineQuantity(int $lineId, int $quantity): CartMutationResult` | Sets how many of one line | The quantity is held to stock and to the item's own rules. The line is removed when it reaches 0. | A line of another cart |
+| `add(int $itemId, int\|float $quantity): CartAddResult` | Puts an item in the cart. Reads the chosen field values and uploads from the current request. The line and its chosen options are written together, or not at all. | Creates a cart for a first-time visitor. Its comment calls it the only method that may; in the code `chooseShipment()` and `choosePayment()` open the cart the same way, and `createNamedCart()` always makes one. The result carries the line as the cart now prices it. | A request it cannot read, or a write that fails: `added` is `false` and the shopper gets one sentence. When the cart already holds every available unit of the item, nothing is added and the shopper reads one notice naming the available quantity ("Your cart already holds the available quantity (1)."); `stockLimit` says so. In the order builder the same case reads, to the member of staff, "The cart already holds the available quantity (1)." |
+| `setLineQuantity(int $lineId, int $quantity): CartMutationResult` | Sets how many of one line | The quantity is held to stock and to the item's own rules. The line is removed when it reaches 0. A quantity cut to the stock is said in one notice naming the available quantity. | A line of another cart |
 | `setLineQuantityAtCheckout(int $lineId, int $quantity, ?int $placeId): CartMutationResult` | The same at checkout, and then checks the chosen methods against what is still offered | A reading only when the change was written | The same |
 | `clear(): bool` | Takes everything out and keeps the cart | Returns `false` only for a storage failure | |
 | `applyCoupon(string $code): string` | Enters a coupon code | Returns one of the `CouponOutcome` constants, which says what happened | A code is kept on the cart only when it applied, or when its rule is real and its conditions are not met yet. Any other code is refused and not kept. |
@@ -233,7 +233,11 @@ shipping method is chosen yet, so the shipping cost is not known. It is not zero
 | `contributionsNotLoaded` | The plugins whose charge is missing because Joomla did not load them for the current user. See [When staff operate a customer's cart](../events/order-and-cart-events.md#when-staff-operate-a-customers-cart). |
 
 `CartMutationResult` has `succeeded`, `cartId` and `snapshot` (which is `null` when no reading was taken).
-`CartAddResult` has `added`, `lineId`, `line`, `itemCount`, `quantity` and `grandTotal`.
+`CartAddResult` has `added`, `lineId`, `line`, `itemCount`, `quantity`, `grandTotal` and `stockLimit`: a `StockLimit`
+when the stock limited the add (its `added` is false when the cart already held the available quantity and true when
+the request was cut to it; its `quantity` is what the cart holds of that stock; its `lowered` is true when a line was
+lowered to that quantity), otherwise null. When nothing was added, `itemCount` and `quantity` are 0, except when the
+cart already held the available quantity: then they are what the cart holds.
 
 ### How the cart is added up
 

@@ -6,7 +6,7 @@ description: How an extension raises, updates and clears a notification for staf
 
 # Notifications
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 A **notification** is a line for staff in the bell at the top of Alfa Commerce's administrator screens: a new
 order, low stock, a plugin that cannot be used. This page is about the helper that writes and clears them,
@@ -221,6 +221,23 @@ dismissed. The numbers are unchanged.
   back into the bell, push with `'constant' => true`, or clear it with `$hard = true` first.
 - Pushing the key of a notification that has expired makes a new one.
 - Expired rows are deleted at most once an hour, from the bell's background refresh. No page waits for it.
+
+### What Alfa Commerce tells you
+
+Alfa Commerce raises some notifications of its own about the site, in the Setup group, for administrators. They tell
+you something you may want to know; none is a step to complete. Each follows what it reports: it appears when the
+condition starts, appears again, unread, when something new or worse holds, and goes when nothing does. When things
+get better it is brought up to date in place and stays read or dismissed as you left it. Dismiss one and it stays
+dismissed until something new or worse holds.
+
+| Notification | When |
+|---|---|
+| Joomla page cache | System - Page Cache is enabled. A note while System - Alfa Commerce Sync runs for visitors who are not logged in, a warning while it does not. It comes back unread only when the state gets worse (the plugin disabled, missing, or its Access changed); put right, the note replaces the warning in place. |
+| PDF library for sales documents | dompdf, or a library it needs, is missing or disabled. Sales documents are not made into PDFs until it is back. |
+| Phone number library | libphonenumber is missing or disabled. Until it is back, phone numbers are refused at the checkout, at sign-up, in the account forms and in the telephone fields of the back office's settings (a shipping method's contact phone). |
+| Alfa Commerce extensions to update | An installed Alfa extension is not built for this version. It opens Tools > Extensions. |
+| Online sales | The shop shows its catalogue only (Options, Cart, Online sales). A note; it opens the Options. |
+| Products priced at the quantity they sell from | Published products sell from a minimum quantity no price covers for every shopper of a currency. It names how many and the first ten, which show no price at the quantity they sell from; raise their minimum or add a price from it. |
 
 ### The bell and the Notifications list
 
