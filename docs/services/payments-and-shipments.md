@@ -6,7 +6,7 @@ description: The two ledgers that write an order's payments and parcels, what th
 
 # Payments and shipments
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 An order's payments and its parcels are each written by one class, called a **ledger**. A plugin never calls a
 ledger. It calls methods of the base class it extends, and the base class calls the ledger for it.
@@ -94,6 +94,29 @@ Extend the base class of your plugin type and call its methods. Nothing else.
 The ledger checks the write, saves the row with its entry in the order's History, and records any move of the order
 as [background work](../reference/glossary.md#background-work). After the save is final, the order moves, and the
 move's own follow-up work runs: stock, documents, the status e-mail, `onOrderStatusChange`.
+
+### Paying an order again
+
+A payment that failed, that the buyer cancelled at the provider, or that the shop released leaves the order owing
+money. While it does, the order's confirmation page and the customer's order e-mail show **Pay now**. The link carries
+the order's id and its payment token (`PaymentToken`, an HMAC of the order id keyed with the order's secret; the secret
+itself never travels) and opens the existing payment step of the same order: nothing is placed again, so there is no
+second order, stock movement or order e-mail. For an order of a customer account, the customer logs in first.
+
+Pay now is offered, and the link works, only while all of this holds; it is checked on every use of the link, under the
+order's lock, and again just before the provider is asked:
+
+| The order | Otherwise the buyer reads |
+|---|---|
+| is there and not in the trash | "This payment link is not valid." |
+| still owes money | "This order has nothing left to pay." |
+| is neither in the cancelled nor in the completed family of statuses | "This order can no longer be paid." |
+| holds no payment authorised at a provider | "A payment of this order is still being processed. Please check again later." |
+| has no refund that is not settled | "This order cannot be paid while a refund of it is in progress." |
+| has a published payment method whose plugin is enabled, other than core's Standard method | "This order cannot be paid online. Please contact the shop." |
+
+The gateway decides what the attempt is: it opens a new one or carries the earlier one on (see
+[Payment plugins](../plugins/payment-plugins.md)).
 
 ## What can go wrong
 

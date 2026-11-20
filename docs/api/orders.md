@@ -6,7 +6,7 @@ description: "The REST API routes for orders and order statuses of Alfa Commerce
 
 # Orders
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -93,11 +93,18 @@ The lists `payments` and `shipments` are where a program reads an order's paymen
 {"errors":[{"title":"id_order_status cannot be changed via PATCH; use POST v1/alfa/orders/:id/status.","code":422}]}
 ```
 
-`customer_note` in a `PATCH` is written. The order edit screen neither shows nor changes it. `state` (the order's
-trash flag, not its status) is refused:
+`customer_note` in a `PATCH` is written. The order edit screen neither shows nor changes it.
+
+`state` is the order's trash flag, not its status. A `PATCH` with `"state": -2` moves the order to the trash and one
+with `"state": 1` takes it out, as the Orders list's Trash and Restore do. Send `state` on its own: with other
+attributes, or with another value, it is refused with 422. It needs the permission to change states. An order another
+user has open in the administrator keeps its state and the answer is 409. Moving an order to the trash changes nothing
+else: its stock, payments, shipments and documents stay as they are. A trashed order is left out of the list unless
+`filter[show_trashed]` is 1, and the storefront no longer shows it: its confirmation page and its downloads answer as
+for an order that is not there.
 
 ```json
-{"errors":[{"title":"state cannot be changed via PATCH: over the API an order has no trash step and is deleted in one call (DELETE v1/alfa/orders/:id); its status changes through POST v1/alfa/orders/:id/status.","code":422}]}
+{"errors":[{"title":"state takes -2 (moves the order to the trash) or 1 (takes it out of the trash).","code":422}]}
 ```
 
 A `PATCH` writes the order's `customer_note` and its delivery and invoice details (`alfa_form_fields`, and
@@ -111,8 +118,9 @@ carries any other field the order publishes, such as `customer_email`, `id_addre
 
 Change the delivery details through `alfa_form_fields`, never by the id of an address record.
 
-**Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
-cancel such an order instead. An order cannot be moved to the trash through the API.
+**Delete.** 204. Only an order in the trash is deleted, as in the administrator: move it to the trash first (`PATCH`
+with `state` -2); an order in any other state answers 409 and nothing is deleted. An order that has sales documents is
+refused with 409, and the answer names the documents: cancel such an order instead.
 
 ## Operations on an order
 
