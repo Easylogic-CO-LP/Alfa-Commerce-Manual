@@ -6,7 +6,7 @@ description: Where to start after installing. The Dashboard's setup checklist an
 
 # Your first shop
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 This manual is written for developers. Setting up a shop is explained inside Alfa Commerce itself, on the live
 screens, so this page only says where to start.
@@ -25,7 +25,9 @@ The checklist has 18 rows in three groups, and says how many are done:
 | **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
-The default currency is one of the published currencies: **Options**, **Currencies**, **Default Currency** lists only
+Item fields moves to the required rows while the shop has item fields and none of them is published.
+
+The default currency is one of the published currencies: **Options**, **Currency**, **Default Currency** lists only
 those.
 
 One of the recommended rows, in more detail:
@@ -38,11 +40,13 @@ at the top of Alfa Commerce's administrator screens) instead: Joomla's page cach
 missing or disabled, an Alfa extension is not built for this version, the shop shows its catalogue only, products
 sell from a quantity no price covers. See [Notifications](../services/notifications.md#what-alfa-commerce-tells-you).
 
-The shop cannot take orders until every required row is done.
+While a required row is not done, the notification centre keeps a notice, which cannot be dismissed, of how many
+required steps remain.
 
-Two rows have a **Create for me** button. On "Storefront menu items" it creates the Shop and Cart pages. On
+Three rows have a **Create for me** button. On "Storefront menu items" it creates the Shop and Cart pages. On
 "Customer pages" it creates the account page and the sign-up page. In both you choose the menu they go in: a new
-menu named Alfa Commerce, made for you, or an existing one.
+menu named Alfa Commerce, made for you, or an existing one. On "Storefront pages linked across languages", a row of a
+site in several languages, it links each storefront page's copies in the different languages to one another.
 
 Each page is titled in its own language; on a site in one language, in the site's default language. The sign-up page
 is made only while Users: Options allows sign-ups (Allow User Registration, which Joomla sets to No when it is
@@ -73,15 +77,15 @@ again when it sells.
 
 ## Currencies
 
-**Options**, **Currencies**, **Default Currency** is the currency your prices are in. The list shows the published
+**Options**, **Currency**, **Default Currency** is the currency your prices are in. The list shows the published
 currencies only; publish a currency on Alfa Commerce's Currencies screen to offer it here. If the stored default currency
 is not published, the field shows "Select a currency" and the Options are not saved until you choose a published
 one.
 
 The store's default currency, and the last currency that is published, always stay in service. Unpublish, Archive,
 Trash and Delete in the list refuse them, and so does the Status on a currency's own edit screen; the message names the
-currency by its id and says why. To retire the default currency, choose another default first in **Options**,
-**Currencies**.
+currency by its name and code, such as Euro (EUR), and says why. To retire the default currency, choose another default
+first in **Options**, **Currency**.
 
 ## Take the guided tours
 
