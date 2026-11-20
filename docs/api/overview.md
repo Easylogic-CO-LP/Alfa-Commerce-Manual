@@ -25,8 +25,9 @@ The shop can also tell another system of its changes as they happen, without bei
 
 ## The Postman collection
 
-Every route is in a Postman collection, with a test on each request. Use it to try the API by hand, or to check a
-shop's API route by route.
+Every route but one is in a Postman collection, with a test on each request: the route that writes the prices and
+stock of many units (`PATCH v1/alfa/items/units`) is not in it. Use it to try the API by hand, or to check a shop's
+API route by route.
 
 ### Two ways to get it
 
@@ -98,16 +99,16 @@ trash, the category and the payment and shipping methods the order used.
 | Folder | What it holds |
 |---|---|
 | Catalogue (storefront) | The read-only view the shop shows a shopper: published items only, with their computed prices. |
-| Catalogue (back office) | The editable catalogue: items, categories, manufacturers and item fields, every row visible. |
+| Catalogue (back office) | The editable catalogue: items, categories, manufacturers and item fields, every row visible, and the light list of stock and prices. |
 | Customers | Customer records and the price settings of customer groups. |
 | Commerce configuration | Currencies, taxes, discounts, cart rules, places, and the payment and shipping methods. |
 | Checkout & registration forms | The form fields and their groups. |
 | Orders | Orders, order statuses, and the operations on an order. |
 | Inventory | Stock locations and stock movements. |
-| Documents | Invoices, credit notes and delivery notes. |
+| Documents | Invoices, credit notes and delivery notes, and the document types. |
 | Tasks | The background work a save leaves. |
 
-Each folder and each request has a description in Postman that says what it does and what it expects.
+Each of these folders and each request has a description in Postman that says what it does and what it expects.
 
 ## What you need
 
@@ -156,7 +157,8 @@ the rules of a save are the same. See
 
 ## The routes at a glance
 
-Alfa Commerce registers 112 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`).
+Alfa Commerce registers 117 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`), and after them the routes its
+plugins add under `v1/alfa/ext/` (see [Adding routes to the REST API](../plugins/api-route-plugins.md)).
 
 Eighteen resources have the five standard routes: list, read one, create, change, delete.
 
@@ -229,9 +231,10 @@ A list has `data` as a list, the links `next` and `last` when there are more pag
 }
 ```
 
-A write that changed what was sent on its own says so in `meta.warnings`: each entry has a `code` that never
-changes, a `detail` in the request's language and a `pointer` into the body you sent. `pointer` is a JSON pointer
-(RFC 6901): a key that holds `~` or `/` is written with `~0` and `~1`, and a key is shown to its first 64 characters.
+A write of an order that changed what was sent on its own says so in `meta.warnings`: each entry has a `code` that
+never changes, a `detail` in words, in the language of the API's messages (not the one `lang` asks for), and a
+`pointer` into the body you sent. `pointer` is a JSON pointer (RFC 6901): a key that holds `~` or `/` is written with
+`~0` and `~1`, and a key is shown to its first 64 characters.
 
 The examples in these pages are shortened where marked.
 
@@ -278,7 +281,7 @@ list sent where one value is expected (for example `filter[state][]=1`) is answe
 | `orders` | `filter[id_order_status]`, `filter[id_payment_method]`, `filter[id_shipment_method]`, `filter[show_trashed]` |
 | `documents` | `filter[doc_type]`, `filter[status]`, `filter[id_order]` |
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
-| `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, and no `filter[search]` |
+| `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, each left out when it is not one value, and no `filter[search]` |
 | `stockprices` | `filter[changed_since]`, and no `filter[search]` |
 
 Four lists also take the filters their administrator screens apply, with the same meaning as there.
@@ -317,7 +320,7 @@ as on the screen.
 | `inventorymovements` | `filter[search]=id:123` | The movements of the item with that id |
 | `inventorymovements` | `filter[search]=op:...` | The movements of one stock operation |
 
-Two questions that come up often:
+Three questions that come up often:
 
 - **The payments and the parcels of an order.** Read the order: `GET v1/alfa/orders/:id` holds the lists
   `payments`, `shipments`, `lines` and `history`. There is no separate list of an order's payments or parcels:
@@ -341,7 +344,7 @@ Rates and stored prices are exact decimal text too (`"24"`, `"19.90"`).
 ## Writing
 
 **Send money and rates as text.** `"19.90"`, not `19.90`. A figure with more decimals than the order's currency
-has is refused with 400.
+has is refused: with 400 by an operation on an order, with 422 in a part of an order's create.
 
 **Texts in several languages.** Translated texts are not columns of the record. A write gives the texts in the same
 `translations` object a read gives, so what you read you can send back:
@@ -361,9 +364,9 @@ without the name, and a `PATCH` that sends the name empty, are refused:
 {"errors":[{"title":"Field required: Name"}]}
 ```
 
-**Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
-`values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
-An item field's `values` cannot be sent at all; a write that carries them answers 422. See
+**Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `places`,
+`users`, `usergroups`, `taxes`, `prices`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were.
+Send `[]` to empty one. An item field's `values` cannot be sent at all; a write that carries them answers 422. See
 [Item fields](./catalogue.md#item-fields).
 
 **Pictures and files of a record.** Send a list named `media`:
@@ -401,9 +404,9 @@ it under `meta.tasks`, each with its state and its own address. See
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
-| 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money, a write of an item that carries its options, combinations, item field values or downloads, a write of an item field that carries its values, a `PATCH` of an order that carries a field its update does not write. |
+| 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |
 | 500 | A fault on the server. The server's log says what. |
-| 503 | A PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled. The answer says so in words. |
+| 503 | The shop is being maintained (Clear everything), or a PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled. The answer says so in words. |
 
 A refusal carries its reason in words:
 
@@ -413,8 +416,9 @@ A refusal carries its reason in words:
 
 Deletes that a rule refuses with 409, with the reason, and nothing is deleted:
 
-- a category that still has sub-categories or is the default category of an item, an order that has sales
-  documents, a record whose removal would widen a discount, a tax or a cart rule;
+- a category that still has sub-categories or is the default category of an item, a place that has places inside
+  it, an order that has sales documents, a refund not settled yet or no currency, or whose payment or shipping
+  plugin cannot be asked, a record whose removal would widen a discount, a tax or a cart rule;
 - an order status that orders are in, or the last status that holds a role;
 - a payment or shipping method that orders, payments, parcels or stored payment references use, and a shipping
   method that a payment method's list of shipping methods names;
@@ -445,7 +449,8 @@ Two more rules:
 
 Every route checks an Alfa Commerce permission, set under **Components**, **Alfa Commerce**, **Options**,
 **Permissions**. Joomla's general rights do not count. A Super User passes every check; any other user needs the
-permission granted. A user without it gets 403, never an empty list.
+permission granted. A user without it gets 403, never an empty list (a task the user may not read answers 404, see
+[Tasks](./documents-and-tasks.md#tasks)).
 
 The permissions are named after the record and the action, for example "Orders: Edit" (`alfa.orders.edit`). The
 operations on an order need "Orders: Edit". The status change needs "Orders: Change State" and "Orders: View".
@@ -493,6 +498,6 @@ For plugin authors, see also the cart area in
 
 - Every field of every record with its type. The resource pages name the fields a read returns; the meaning of
   each is in the administrator form of the same record.
-- Joomla's own routes that the collection uses for setup (`v1/users`, `v1/users/groups`, `v1/media/files`,
-  `v1/config/com_alfa`). See Joomla's documentation.
+- Joomla's own routes: those the collection uses for setup (`v1/users`, `v1/users/groups`) and those these pages
+  name (`v1/media/files`, `v1/config/com_alfa`). See Joomla's documentation.
 - Rate limits.
