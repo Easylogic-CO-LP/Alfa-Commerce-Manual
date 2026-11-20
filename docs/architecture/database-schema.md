@@ -6,7 +6,7 @@ description: The 115 tables of Alfa Commerce, grouped by area, with what each ho
 
 # Database Schema
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 This page is a map of the database, not a copy of it. It groups the tables by area, says in one line what each table
 holds, and shows the main relations in small diagrams.
@@ -57,7 +57,7 @@ flowchart TB
 | `#__alfa_categories_usergroups` | The user groups allowed to see a category (pair key) |
 | `#__alfa_categories_users` | The users allowed to see a category (pair key) |
 | `#__alfa_manufacturers` | Manufacturers: website and meta data |
-| `#__alfa_items_prices` | Price rows of an item. A row can be limited to a combination, a currency, a user group, a user, a country, a quantity range and a publish window. A row is a full price or an adjustment. Its `value` and `override_value` are stored exactly as typed, to eight decimals |
+| `#__alfa_items_prices` | Price rows of an item. A row can be limited to a combination, a currency, a user group, a user, a place (`country_id`), a quantity range and a publish window. A row is a full price or an adjustment. Its `value` and `override_value` are stored exactly as typed, to eight decimals |
 | `#__alfa_items_price_index` | The price index: one row per pricing context, product or combination with price rows of its own, and validity period, with the prepared price figures. Removed with its item and with its pricing context (foreign keys) |
 | `#__alfa_price_contexts` | The pricing contexts of the price index: a currency, a place class, a set of pricing groups and, for a customer with prices of their own, that customer. One row per context and generation; the catalogue reads the live generation |
 | `#__alfa_price_group_sets` | The sets of pricing groups that customers hold. A pricing context names one |
@@ -91,7 +91,7 @@ flowchart TB
 | `#__alfa_item_field_values` | The shared pool of values of each field (S, M, L or Red, Blue) |
 | `#__alfa_item_field_categories` | The categories a field is offered in (pair key). No row means every category |
 | `#__alfa_item_field_overrides` | Per item: the settings of a field that differ from its global ones, and the order of the fields on that item |
-| `#__alfa_item_info_values` | The informational values of an item (specifications, filters) |
+| `#__alfa_item_info_values` | The informational values of an item (specifications, filters), in order (pair key) |
 | `#__alfa_item_option_values` | The option values an item offers, each with an optional price change on the cart line |
 | `#__alfa_item_combinations` | The variants of an item, each with its own SKU, GTIN, MPN and stock figures. An empty value means "as the item" |
 | `#__alfa_item_combination_values` | Which values make up a combination (pair key) |
@@ -284,7 +284,7 @@ requests.
 |---|---|
 | `#__alfa_item_field_value_index` | The filter index: flat rows of item, field and value, used by the catalogue filters |
 | `#__alfa_search_rebuilds` | An index rebuild in progress: one row per search engine, with its position |
-| `#__alfa_search_rebuild_items` | Items saved while a rebuild is walking, so that they are written again before the new index is used |
+| `#__alfa_search_rebuild_items` | Items saved while a rebuild is walking, so that they are written again before the new index is used (pair key) |
 
 ## Tasks and jobs
 
@@ -362,20 +362,23 @@ A plugin declares the columns of its log in its `params/logs.xml` file. The plug
 
 ### Pair keys on the link tables
 
-A link table has two id columns and one row per link. The primary key of every link table is the pair of ids, so the database itself refuses the same link twice. The 36 tables above marked "pair key" are these tables.
+A link table has two id columns and one row per link. The primary key of every link table is the pair of ids, so the
+database itself refuses the same link twice. The 38 tables above marked "pair key" are these tables.
 An insert of a pair that is already there is refused by the database.
 
 ### One collation
 
 Every table is `utf8mb4_unicode_ci`, as Joomla's own tables are, so a text column of one table can be
-compared with a text column of any other. Only a few columns carry a binary collation of their own: five hash and
-key columns that must compare bytes, and the `params` column of `#__alfa_payments`. If your plugin creates a table, give it the same collation, or a query that joins it to an
-Alfa table can fail with "Illegal mix of collations".
+compared with a text column of any other. Only a few columns carry a binary collation of their own: six hash and
+key columns that must compare bytes, two texts compared exactly (`#__alfa_media.source_url` and
+`#__alfa_orders.external_reference`), and the `params` column of `#__alfa_payments`. If your plugin creates a table,
+give it the same collation, or a query that joins it to an Alfa table can fail with "Illegal mix of collations".
 
 ### Wide record numbers
 
 The tables that grow fastest have a `bigint` id: `#__alfa_inventory_movements`, `#__alfa_inventory_operations`,
-`#__alfa_order_activity_log` and `#__alfa_tasks`. Do not store these ids in a 32-bit integer column or variable.
+`#__alfa_order_activity_log`, `#__alfa_tasks` and `#__alfa_outbound_deliveries`. Do not store these ids in a 32-bit
+integer column or variable.
 
 ## How the schema changes between releases
 
@@ -404,8 +407,9 @@ worked out.
 There is no uninstall SQL, on purpose. Uninstalling Alfa Commerce keeps every Alfa table and its rows, and
 installing the same schema again connects to them. For that reason the install file can run over kept tables: every
 table is created only if it does not exist, with its keys inside the statement, and every starting row is written
-only into an empty table. Removing the shop's data is a separate action that staff start themselves, Clear
-everything under Tools. The standard shipping plugin follows the same rule for its log table.
+only into an empty table, or, in `#__alfa_meta` and `#__alfa_maintenance`, only when that row is missing. Removing
+the shop's data is a separate action that staff start themselves, Clear everything under Tools. The standard shipping
+plugin follows the same rule for its log table.
 
 ## Not documented yet
 
