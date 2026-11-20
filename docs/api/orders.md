@@ -84,13 +84,15 @@ pair, the second create is answered 409 and creates nothing (see
 [Where an order comes from](#where-an-order-comes-from)). `payments`, `shipments` and `items` are not parts of a
 create and are refused with 422: send `payment`, `shipment` and `lines`.
 
-Give it a status and the customer's details; it takes the shop's default currency (see
-[Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of
-the shop's checkout fields. On a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are
-needed, unless the shop sets some of them Optional in Form Fields, and `country` is the id of a published place. A
-shop that was installed earlier keeps its own fields (an update adds none), and needs those its own fields require.
-A `PATCH` of an existing order does not require them; see [Known limitations](./overview.md#known-limitations) for a
-shop with a required delivery field of its own.
+Give it a status and the customer's details, and if it is not to be in the shop's default currency, `id_currency`:
+the id of a currency the shop publishes. An `id_currency` the shop does not publish (unpublished, unknown, or not an
+id) is refused with 400 naming the field, and no order is made. The details go in `alfa_form_fields`, keyed by the
+names of the shop's checkout fields. On a fresh installation `name`, `email`, `country`, `address`, `city` and
+`postcode` are needed, unless the shop sets some of them Optional in Form Fields, and `country` is the id of a
+published place. A shop that was installed earlier keeps its own fields (an update adds none), and needs those its
+own fields require. A `PATCH` that does not send `alfa_form_fields` does not ask for them. An update that sends the
+delivery details needs the fields of the shop's own that it requires there, and a required field left out keeps its
+stored value; the name, e-mail, phone, country, address, city and postcode are not asked on an update.
 
 A phone number is read with the order's country when it has no country code: `6941234567`, `694-123-4567` and
 `2310123456` with country 84 (Greece) are stored as `+306941234567` and `+302310123456`. `00` at the start is read
@@ -221,10 +223,16 @@ carries any other field the order publishes, such as `customer_email`, `id_addre
 {"errors":[{"title":"customer_email cannot be written through the API: an order's update writes its customer_note and its delivery and invoice details (alfa_form_fields, and alfa_form_fields_billing with invoice_differs); its status changes through POST v1/alfa/orders/:id/status, its lines, payments and shipments through the order operations, and the other fields are worked out from them or fixed when the order is placed. Nothing was saved.","code":422}]}
 ```
 
-Change the delivery details through `alfa_form_fields`, never by the id of an address record. A part of the
-delivery details keeps the rest. A guest order's e-mail stays required: emptying it is refused with 400. The invoice
-details are kept unless the body sends `invoice_differs` 0 or new invoice details. A fresh installation's invoice
-details have no e-mail field.
+A `PATCH` changes only the detail fields it sends: in `alfa_form_fields` and `alfa_form_fields_billing`, a field
+left out keeps its value, and the details are then checked whole, so a `PATCH` can be refused for a stored value it
+did not send. The invoice details are written with `invoice_differs`, with or without the delivery details: send
+`invoice_differs` with the invoice details; invoice details without it answer 400 naming `invoice_differs`, and
+nothing is saved. `invoice_differs` 1 without the invoice details keeps the order's own invoice details (400 naming
+`alfa_form_fields_billing` when it has none); `invoice_differs` 0 invoices to the delivery details.
+
+Change the delivery details through `alfa_form_fields`, never by the id of an address record. A guest order's
+e-mail stays required: emptying it is refused with 400. The invoice details are kept unless the body sends
+`invoice_differs` 0 or new invoice details. A fresh installation's invoice details have no e-mail field.
 
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.

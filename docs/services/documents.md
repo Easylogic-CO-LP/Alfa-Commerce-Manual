@@ -316,6 +316,48 @@ print view (`DocumentRenderer::render(int $documentId): string`) and hands it to
 
 Both renderers are core's own. They read; they change nothing.
 
+## Numbers in the document's language
+
+A document writes every number the way its own language writes them: the amounts, the quantities and the tax rates.
+The print view, the PDF and the e-mail attachment are the same page, so all three agree. The language is the one the
+document was issued in, kept on the document, never the language of whoever prints it.
+
+| | An English document | A Greek document |
+|---|---|---|
+| An amount | 1,234.56 | 1.234,56 |
+| A quantity | 1,200 or 2.5 | 1.200 or 2,5 |
+| A tax rate | 15.5% or 8.875% | 15,5% or 8,875% |
+
+A tax rate prints as stored, with all its decimals (up to three), never rounded to two. Only the writing follows the
+language: the stored figures, the totals, their rounding and the figures the REST API returns are the same in every
+language. A document is drawn from its stored figures each time it is printed, downloaded or e-mailed, so an older
+document writes its numbers the same way.
+
+| | |
+|---|---|
+| **Where the separators come from** | `DocumentRenderer::separators(?object $document): array` returns `['decimal' => ..., 'thousands' => ...]`, read from Joomla's own administrator file of the document's language (`joomla.ini`, its `DECIMALS_SEPARATOR` and `THOUSANDS_SEPARATOR`). A language whose administrator `joomla.ini` does not name both prints with English's. With no document (`null`), the request's language, by the same rule. |
+| **Where the labels come from** | Alfa Commerce's own translation of the document's language (`com_alfa.ini`), English where it has none. A language that Joomla's administrator has and Alfa Commerce's translations do not prints English labels with its own separators: a French document reads "15,5%" under English labels. |
+| **The back office's own screens** | The order screen prints a line's tax rate in the language of whoever reads it. The issue and credit forms and the order page's history and messages show a document's money with a comma for decimals and a point for thousands. |
+
+### A layout of your own
+
+Two shared partials print every number of a document, and every core layout and the generic one draw their numbers
+through them: `administrator/layouts/documents/partials/lines.php` (the lines) and `taxes_totals.php` (the tax summary
+and the totals). An override of either goes in an administrator template, under
+`html/layouts/com_alfa/documents/partials/`. It reads the separators once and hands them to the money formatters, as
+the shipped partials do:
+
+```php
+$separators = DocumentRenderer::separators(document: $displayData['document'] ?? null);
+$fmt = DocumentMoney::formatter($displayData['document'] ?? null, decimalSeparator: $separators['decimal'], thousandsSeparator: $separators['thousands']);
+$unitFmt = DocumentMoney::unitFormatter(document: $displayData['document'] ?? null, decimalSeparator: $separators['decimal'], thousandsSeparator: $separators['thousands']);
+```
+
+A rate is written with `AlfaHelper::percentDisplay(value: $line->tax_rate, decimalSeparator: $separators['decimal'])`.
+Given no separators, `DocumentMoney::formatter()` and `unitFormatter()` write a comma for decimals and a point for
+thousands. An override that calls them without the separators prints those in every language, and Joomla does not flag
+such an override: compare your copy with the shipped partial after each update and carry the separators over.
+
 ## DocumentRefusedException
 
 Many refusals carry two texts: a technical message for the log, and a sentence for the member of staff. The second

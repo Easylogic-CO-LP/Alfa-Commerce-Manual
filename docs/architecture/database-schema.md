@@ -38,6 +38,7 @@ prepared copy of the final prices, so that listings can sort and filter by price
 flowchart TB
     items["items"] ==>|item_id| links["items_categories<br/>items_manufacturers"]
     owners["categories<br/>manufacturers"] ==>|category_id<br/>manufacturer_id| links
+    items ==>|item_id<br/>linked_item_id| related["items_links"]
     items ==>|item_id| prices["items_prices"]
     items ==>|"item_id (foreign key)"| index["items_price_index"]
     sets["price_group_sets"] ==>|group_set_id| index
@@ -48,6 +49,7 @@ flowchart TB
 | `#__alfa_items` | The item: SKU, GTIN, MPN, size and weight, quantity rules, stock settings, default category, publish window. Its `stock` and `available_quantity` are figures kept up to date by the stock service, for display only |
 | `#__alfa_items_categories` | Which categories an item is in (pair key) |
 | `#__alfa_items_manufacturers` | Which manufacturers an item has (pair key) |
+| `#__alfa_items_links` | Which products a product page shows as related, in order. A row from A to B shows B on A's page only. `link_type` names the kind of link: related is the one kind Alfa Commerce writes and reads (key: the pair and the kind) |
 | `#__alfa_items_usergroups` | The user groups allowed to see an item (pair key) |
 | `#__alfa_items_users` | The users allowed to see an item (pair key) |
 | `#__alfa_categories` | The category tree (`parent_id`), with layouts, listing options and a publish window |

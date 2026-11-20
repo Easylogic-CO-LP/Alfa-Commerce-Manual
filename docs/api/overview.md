@@ -468,13 +468,6 @@ The payments and shipments of one order are under that order: see [Orders](./ord
 
 What Alfa Commerce does today that a program or a shop must allow for.
 
-**Over the REST API**
-
-- An order created over the REST API takes the shop's default currency. The `id_currency` sent with it is not used.
-- A `PATCH` of an order that carries only `customer_note` is refused with 400 on a shop that has a required delivery
-  field of its own, because the whole order form is validated on a partial update. Send the required fields with the
-  note.
-
 **On the storefront**
 
 - On the second and later pages of a listing whose search engine
