@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 111 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
+description: The 115 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -17,11 +17,11 @@ Its comments explain most columns. When a line below says "see the SQL", read th
 
 ## What it does
 
-The install file creates **111 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
+The install file creates **115 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh site with one content language (English) holds 126 tables: these 111, fourteen more language tables and the
+A fresh site with one content language (English) holds 130 tables: these 115, fourteen more language tables and the
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
@@ -352,7 +352,7 @@ that the fields and statuses it creates have English names from the first minute
 ### A plugin's log table
 
 A payment or shipping plugin may keep a log table named `#__alfa_{family}_{name}_logs`. The standard payment
-plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 111. The
+plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 115. The
 standard shipping plugin makes its own, `#__alfa_shipments_standard_logs`, from
 `plugins/alfa-shipments/standard/sql/install.mysql.utf8.sql`. It is the one table a shipped plugin creates itself.
 A plugin declares the columns of its log in its `params/logs.xml` file. The plugin types are introduced in

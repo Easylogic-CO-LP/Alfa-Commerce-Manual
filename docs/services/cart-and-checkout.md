@@ -93,7 +93,7 @@ A cart line (`CartLine`):
 | `name()` | `string` | The item's name in the active language |
 | `width()`, `height()`, `depth()`, `weight()` | `float` | The measurements of one unit: the item's own, replaced by the combination's where the combination sets them. Plain numbers in the shop's units. |
 | `isVirtual()` | `bool` | Nothing here to carry |
-| `isUnavailable()` | `bool` | The item has left the catalogue. The line stays, and nothing may be priced against it. |
+| `isUnavailable()` | `bool` | The line cannot be bought as it stands. It stays in the cart, named, the shopper can remove it, and the checkout refuses it by name. A line is unavailable when its item has left the catalogue (the line has no price); when a field the line carries, or a required field, has a plugin that cannot answer (no price); when no price applies at its quantity (in the order builder the line waits for its custom price); when its quantity is too small to be charged (the line says from which quantity it can be); and when its unit cannot be bought now (out of stock, or a stored combination that was removed or archived). |
 
 The address reader (`AddressView`) gives the checkout fields. The examples in the class comment are:
 
@@ -157,7 +157,7 @@ use Alfa\Component\Alfa\Administrator\Service\Cart\CartResolution;
 use Alfa\Component\Alfa\Site\Service\Cart\CartService;
 
 $cart     = CartService::ambient();
-$snapshot = $cart->canHaveCart() ? $cart->read(CartResolution::Current) : null;
+$snapshot = $cart->canHaveCart() ? $cart->summary(CartResolution::Current) : null;
 
 if ($snapshot !== null && !$snapshot->isEmpty()) {
     $units = $snapshot->quantity;                    // int
@@ -168,8 +168,12 @@ if ($snapshot !== null && !$snapshot->isEmpty()) {
 
 `CartResolution::Current` means "look only": a visitor who has no cart still has none afterwards.
 
+`summary()` is the reading for a module that shows no method: the lines and the totals, with no offers
+(`$snapshot->offers` is null), so no shipping method is asked to quote for a list on every page. A template override
+of the shipped module's layouts reads no offers.
+
 `canHaveCart(): bool` says whether the visitor can have a cart at all (an account, or a well-formed cart key of the
-browser), reading nothing. A module shown on every page asks it before `read()`, as the shipped cart module does, so
+browser), reading nothing. A module shown on every page asks it before it reads the cart, as the shipped cart module does, so
 a first-time visitor costs it no query. The shipped module then hands
 its layouts no reading (`$snapshot` is `null`): a template override of `tmpl/default.php` or `tmpl/default_items.php`
 must accept `null`. An override of `default_items.php` that returns early on `null` opens the drawer with no header,
@@ -182,8 +186,9 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `read(CartResolution $mode, int $cartId = 0): CartSnapshot` | Reads a cart | Creates no cart. It is not free of writes: it adopts a guest's cart after sign-in, and lowers a quantity that is no longer in stock. | `CartResolution::Mutable` throws `InvalidArgumentException` |
+| `summary(CartResolution $mode, int $cartId = 0): CartSnapshot` | Reads a cart for a module that shows no method | The same as `read()`, with no offers (null): no method list is read, and the chosen shipping method is asked only for the shipping total. | Throws `InvalidArgumentException` for `CartResolution::Mutable`, as `read()` does |
 | `add(int $itemId, int\|float $quantity): CartAddResult` | Puts an item in the cart. Reads the chosen field values and uploads from the current request. The line and its chosen options are written together, or not at all. | Creates a cart for a first-time visitor. Its comment calls it the only method that may; in the code `chooseShipment()` and `choosePayment()` open the cart the same way, and `createNamedCart()` always makes one. The result carries the line as the cart now prices it. | A request it cannot read, or a write that fails: `added` is `false` and the shopper gets one sentence. When the cart already holds every available unit of the item, nothing is added and the shopper reads one notice naming the available quantity ("Your cart already holds the available quantity (1)."); `stockLimit` says so. In the order builder the same case reads, to the member of staff, "The cart already holds the available quantity (1)." |
-| `setLineQuantity(int $lineId, int $quantity): CartMutationResult` | Sets how many of one line | The quantity is held to stock and to the item's own rules. The line is removed when it reaches 0. A quantity cut to the stock is said in one notice naming the available quantity. | A line of another cart |
+| `setLineQuantity(int $lineId, int $quantity): CartMutationResult` | Sets how many of one line | The quantity is held to stock and to the item's own rules. The line is removed when it reaches 0. A quantity cut to the stock is said in one notice naming the available quantity. A reading with no offers, as `summary()` gives. | A line of another cart |
 | `setLineQuantityAtCheckout(int $lineId, int $quantity, ?int $placeId): CartMutationResult` | The same at checkout, and then checks the chosen methods against what is still offered | A reading only when the change was written | The same |
 | `clear(): bool` | Takes everything out and keeps the cart | Returns `false` only for a storage failure | |
 | `applyCoupon(string $code): string` | Enters a coupon code | Returns one of the `CouponOutcome` constants, which says what happened | A code is kept on the cart only when it applied, or when its rule is real and its conditions are not met yet. Any other code is refused and not kept. |
@@ -210,9 +215,13 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | `currency` | `Currency` | The cart's currency |
 | `totals` | `CartTotalsView` | What it costs, see below |
 | `rules` | `CartRulesView` | The cart rules applied (`applied`), the codes held (`codes`), rules the shopper is close to (`progress`), and their sum (`total`) |
-| `offers` | `CartOffersView` | The payment and shipping methods offered, and the chosen ones |
+| `offers` | `?CartOffersView` | The payment and shipping methods offered (a shipping method only when its plugin answers a price for the cart as the checkout stands), the chosen ones, and `shipmentNeeds` with `needsKey()`: what the checkout has not given yet that a withheld method waits for. Null on the cart module's reading, `CartService::summary()`, which reads the lines and the totals only. |
 | `customer` | `User` | Whose cart it is |
 | `placeId` | `?int` | The delivery place of this request, and the place the cart's goods are priced at. |
+| `shipmentId` | `int` | The chosen shipping method, or 0, on every reading. |
+
+A checkout form override wraps the delivery fields in an element with `data-cart-delivery-fields`, so a change to
+any of them reads the methods again.
 
 Its methods are `isEmpty()`, `exists()` and `shippingAwaitsChoice()`: the cart needs shipping and no
 shipping method is chosen yet, so the shipping cost is not known. It is not zero.
@@ -386,14 +395,14 @@ methods, and `discard()`. Its class comment says it is "not a plugin API and not
 |---|---|
 | A plugin that reads the cart | A handler for one of the events above. Nothing else. |
 | A plugin that adds a charge | Its public method `onCartTotals(CartTotalsEvent $event): void` |
-| A module that shows the cart | A call to `CartService::ambient()->read(CartResolution::Current)`, after `canHaveCart()`. Load the language file `com_alfa` if your module draws Alfa's own layouts, as the shipped module does. |
+| A module that shows the cart | A call to `CartService::ambient()->summary(CartResolution::Current)` (or `read()` when your module shows the offered methods), after `canHaveCart()`. Load the language file `com_alfa` if your module draws Alfa's own layouts, as the shipped module does. |
 
 ## What can go wrong
 
 | What you see | The usual cause |
 |---|---|
 | A `LogicException` "The final cart total is not available at this stage" | `getTotal()` was called in `onCartTotals` or `onCalculateShippingCost`. Use `getSubtotal()`. |
-| A cart row appears for every visitor | A module read the cart with a method that may create one. Use `read()` with `CartResolution::Current`. |
+| A cart row appears for every visitor | A module read the cart with a method that may create one. Use `summary()` or `read()` with `CartResolution::Current`. |
 | `read()` throws `InvalidArgumentException` | It was called with `CartResolution::Mutable` |
 | Your plugin is called in `onOrderAfterPlace` and finds no cart | The cart is deleted before the save is final. Read the order. |
 | An order exists but has no payment row | The payment plugin failed after the save was final. See the table above. |

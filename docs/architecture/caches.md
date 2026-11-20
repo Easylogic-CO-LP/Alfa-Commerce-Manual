@@ -36,6 +36,7 @@ by one under Joomla's System > Clear Cache.
 | `com_alfa.notifications` | No data. The mark that limits the deletion of expired notifications to once an hour. | 1 hour | Nothing |
 | `com_alfa.stockeffects` | No data. The mark that limits the check for stock movements still owed to once in 10 minutes. | 10 minutes | Nothing |
 | `com_alfa.collation` | No data. The mark that limits the check of the tables' collation to once in 10 minutes. | 10 minutes | Nothing |
+| `com_alfa.notices` | No data. Two marks that stop a look of the notification bell's refresh from running too often: at the products that sell from a quantity no price covers (10 minutes), and at the Alfa extensions not built for this version (1 hour). | As stated | Nothing |
 
 The category cache is the only one with a switch. Alfa's Options have a tab **Cache Settings** with "Enable Cache"
 and "Cache Categories". Both are on after an installation. With either off, categories are read from the database on
@@ -53,7 +54,8 @@ Two more caches belong to the items module (`mod_alfa_items`), not to the compon
 An update of Alfa Commerce cleans, once and by itself:
 
 - Joomla's page cache (the group `page`);
-- the eight `com_alfa.` groups of the table above.
+- the eight `com_alfa.` groups of the table above other than `com_alfa.notices`, whose marks run out within the hour;
+- the items module's group `mod_alfa_items` (its best sellers ranking and its lists).
 
 So no page or card stored before the update is served after it. Nothing has to be cleared by hand. If a
 group cannot be cleaned, that is written to the maintenance log and the update goes on; the group's entries then run

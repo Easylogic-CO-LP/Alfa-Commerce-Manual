@@ -63,8 +63,8 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | When the cart's totals are worked out and the cart has a method of your plugin chosen. Alfa asks once per calculation and keeps the answer. |
-| **Who receives it** | The plugin of the chosen method. |
+| **When it fires** | Before a method of your plugin is listed at checkout, and when the cart's totals are worked out with a method of your plugin chosen. Alfa asks for every method it would list, so the question comes many times on one page and again at placement; keep the answer quick and free of side effects. A method whose plugin does not answer a price is not listed. |
+| **Who receives it** | The plugin of the method being listed or chosen. `$event->getMethod()->isSelected()` says which: true only for the method the cart has chosen (or the one an order is being placed with). For any other method Alfa reads only whether you can carry the cart, so a plugin that prices through an outside service can answer a listing on its own, from what it knows, and call the service for the chosen method. |
 | **What you are given** | `CalculateShippingCostEvent`: the method, and the cart with its lines and its delivery address. See the tables below. |
 | **What you are expected to do** | Answer, always, with exactly one of three calls: `setShippingCost()`, `setUnavailable()` or `setShippingAmounts()`. |
 | **What happens next** | Alfa turns your answer into the shipping charge: net, tax and gross. The cart shows it, and the order keeps it. |
@@ -83,14 +83,14 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | `$cart->delivery()` | The delivery address (`invoice()` is the invoice address). On the storefront, what the shopper has just typed wins over the saved row. In the order builder it is the customer's saved details and the place set in the builder; nothing typed on the storefront is read there. |
 | `$cart->delivery()->places()` | Where the parcel goes: the destination place and every place that contains it, nearest first. Empty when it is not known. |
 | `$cart->delivery()->places(fieldId: $id)` | The same, read from a checkout field that your method's settings name |
-| `$cart->delivery()->field($id)->value()` | The text of one checkout field, or `null`. This is how you read a postcode: Alfa does not know which field holds it, your settings say. A new shop ships a Postcode field (role `postcode`); your settings still name the field you read. |
+| `$cart->delivery()->field($id)` | One checkout field: `exists()` says whether the field is there at all, `value()` its text, or `null` while it is empty. This is how you read a postcode: Alfa does not know which field holds it, your settings say. A new shop ships a Postcode field (role `postcode`); your settings still name the field you read. |
 
 **What you answer**
 
 | Call | Meaning |
 |---|---|
 | `setShippingCost(float $cost)` | The price **as the merchant configured it**. You do not say whether tax is inside it. Alfa reads that from the method (see below) and adds or extracts the method's taxes for the destination. `0.0` means free shipping. |
-| `setUnavailable(string $reasonKey)` | "I cannot carry this cart." Pass a **language key** of your own language file, never a sentence. The shopper reads the translated reason. A refusal wins over a price you also set. |
+| `setUnavailable(string $reasonKey)` | "I cannot carry this cart." Pass a **language key**, never a sentence: one of your own language file, or the key `refusal()` returns after `costFromZones()`, which can be one of core's. The shopper reads the translated reason. A refusal wins over a price you also set. |
 | `setShippingAmounts($taxExcl, $taxAmount, $taxIncl, float $taxRate)` | Only for a carrier whose own service already splits the tax. Alfa takes the three amounts as they are: no price entry mode and no tax rule is applied. The net and the tax must add up to the gross exactly, in the cart's currency, and a charge with tax must name its rate. Otherwise the method comes off the cart. |
 
 **How Alfa turns a price into a charge.** Each shipping method owns two settings, on its own form:
@@ -125,11 +125,21 @@ private function carriageFor(Method $method, Cart $cart): ?float
         zones: (array) $method->param('cost-per-place', []),
         lines: $cart->lines(),
         places: $cart->delivery()->places(fieldId: $method->param('delivery_place_field')),
-        postcode: $cart->delivery()->field((int) $method->param('postcode_field'))->value(),
+        postcode: $this->postcodeOf($method, $cart),
         subtotal: (float) $cart->getSubtotal()->getAmount(),
     );
 }
+
+private function postcodeOf(Method $method, Cart $cart): ?string
+{
+    $field = $cart->delivery()->field((int) $method->param('postcode_field'));
+
+    return $field->exists() ? (string) ($field->value() ?? '') : null;
+}
 ```
+
+The postcode is an empty string while your postcode field is set but unanswered, and null when your method reads no
+postcode field: `costFromZones()` tells the two apart.
 
 `costFromZones()` belongs to the base class. It prices a cart from a table of zones and bands and returns a price,
 `0.0` for free, or `null` for a refusal, whose language key `refusal()` then returns. A plugin that asks a carrier's

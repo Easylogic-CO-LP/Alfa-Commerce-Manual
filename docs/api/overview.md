@@ -191,12 +191,13 @@ The five standard routes of a resource, with `items` as the example:
 | `PATCH v1/alfa/items/:id` | Changes a record |
 | `DELETE v1/alfa/items/:id` | Deletes a record |
 
-Twenty-two more routes are single purpose:
+Twenty-six more routes are single purpose:
 
 | Group | Routes | Page |
 |---|---|---|
 | The storefront's view of an item | 2, read only | [Catalogue](./catalogue.md#the-storefronts-view) |
-| Operations on an order | 9 | [Orders](./orders.md#operations-on-an-order) |
+| Operations on an order | 12 | [Orders](./orders.md#operations-on-an-order) |
+| The prices and stock of many units | 1 | [Catalogue](./catalogue.md#many-units-in-one-request) |
 | Stock movements | 1, read only | [Customers and configuration](./customers-and-configuration.md#stock-movements) |
 | Sales documents | 5 | [Documents and tasks](./documents-and-tasks.md) |
 | Document types | 2, read only | [Documents and tasks](./documents-and-tasks.md#document-types) |

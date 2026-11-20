@@ -333,7 +333,7 @@ stored as JSON in the method's row (`#__alfa_shipments.params`).
 |---|---|
 | `$method->param('key', $default)` | One setting, already decoded |
 | `$method->params()` | All settings, as an array |
-| `$method->id()`, `type()`, `name()`, `description()`, `isSelected()` | The method's id, its plugin's element, its texts in the shopper's language, whether the cart has it chosen |
+| `$method->id()`, `type()`, `name()`, `description()`, `isSelected()` | The method's id, its plugin's element, its texts in the shopper's language, whether the cart has it chosen (true only for that method; a method asked only to be listed reads false) |
 | `$method->get('column', $default)` | Any other column of the method's record |
 
 The other events are different:
@@ -445,6 +445,13 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 - If you use `costFromZones()`, give your file the four keys it can refuse with: `..._NO_ZONE_FOR_DESTINATION`,
   `..._NO_BAND_FITS`, `..._PARCEL_TOO_HEAVY` and `..._PARCEL_TOO_LARGE`. The last two are used only when you pass
   `limits`. The standard plugin passes none and its language file has only the first two.
+- `costFromZones()` can also refuse with two reasons of core's own, worded by core: `ShipmentsPlugin::REFUSAL_NEEDS_PLACE`
+  (no delivery country given yet, and no zone for an unknown one) and `ShipmentsPlugin::REFUSAL_NEEDS_POSTCODE` (your
+  postcode field set but unanswered, and a postcode band would fit). Your language file needs no key for them; pass
+  the refusal on with `setUnavailable($this->refusal())`, and core's text is shown wherever the reason is. A method
+  refused for either is kept off the list until the checkout has the fact, and the list names it when nothing else
+  can be chosen. A method the shopper had chosen is set aside meanwhile, and is chosen again by the shopper once the
+  fact is given.
 
 ## What can go wrong
 
