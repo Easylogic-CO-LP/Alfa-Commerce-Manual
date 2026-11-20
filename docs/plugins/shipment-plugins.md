@@ -8,7 +8,7 @@ description: How to write a shipping plugin for a carrier, the events it receive
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -181,9 +181,10 @@ repairs every old order.
 | **A taxed charge names its rate** | If the gross is above the net and the rate is 0, the save is refused. The rate cannot be worked back from rounded amounts. |
 | **The net is never above the gross** | Refused. |
 | **Shipping is charged once per order** | The order's shipping total is the sum of its parcels. When another parcel of the order already carries a charge, the charge of a new parcel is set to 0, with a notice. |
+| **The order's taxes** | A parcel recorded in `onOrderAfterPlace` keeps the taxes the order's carriage was charged with, which `$this->shipment($order)` copies from the order. The rate you pass must be their combined rate, `$order->shipmentTaxRate()`. Another rate is refused, and so is `cost($taxIncl)` alone on a taxed carriage. |
 | **The order's currency** | An amount in another currency is refused. For an order that names no currency, an error is thrown and nothing is written. |
 | **Parcels that do not count** | A cancelled or returned parcel does not count in the order's total. |
-| **When a write is refused** | `save()` returns `false`, the reason is written to the log (category `com_alfa.orders`) and shown as an error message. Check the return value. |
+| **When a write is refused** | `save()` returns `false` and the reason is written to the log (category `com_alfa.orders`). In the administrator and the API it is also shown as an error message. Check the return value. |
 
 ### Lines and several parcels
 
@@ -230,7 +231,7 @@ if ($verdict === self::WRITE_RACED) {
 | **Signature** | `settleAttempt(ShipmentLedger $write, int $orderId, string $expected, string $reference = ''): int` |
 | **What it does** | Writes the change only while the parcel still has the status `$expected`. The check and the write happen with the row held, so of two callers exactly one writes. |
 | **What it returns** | `self::WRITE_OK` (written), `self::WRITE_RACED` (the parcel had already left that status, nothing written), `self::WRITE_FAILED` (refused or failed) |
-| **What it refuses** | The same as `save()`: a parcel that is not recorded as yours gives `WRITE_FAILED`. |
+| **What it refuses** | The same as `save()`: a parcel that is not recorded as yours gives `WRITE_FAILED` while it has the status `$expected`, and `WRITE_RACED` once it has left it. |
 
 The status names are constants of the base class: `STATUS_PENDING`, `STATUS_SHIPPED`, `STATUS_DELIVERED`,
 `STATUS_CANCELLED`, `STATUS_ON_HOLD`, `STATUS_RETURNED`.
@@ -255,7 +256,7 @@ $data->getString(key: 'parcel_id', default: '');
 | Pass arrays, never JSON | Alfa encodes |
 | Only the keys you name change | The merge happens at `save()` with the row held, so a callback and a staff action cannot erase each other's keys |
 | The merge is one level deep | A key you write replaces everything stored under it |
-| Use text keys | Number keys are appended, not replaced |
+| Use text keys, and scalars, `null` or arrays as values | A number key, an empty key or an object makes `pluginData()` throw a `ValueException` |
 | `null` keeps the key, `removePluginData()` removes it | `has()` tells them apart |
 | A value that cannot be read as the type you ask for throws an error | A default answers only a missing or `null` key |
 
@@ -314,7 +315,7 @@ Declare one field for each status your plugin's parcels can reach: `status_on_sh
 |---|---|
 | **When it runs** | When a **change** to a parcel gives it a new status, and the parcel's method has a setting for that status. A new parcel never moves the order, whatever its status. |
 | **What Alfa does** | Moves the order the same way a status change by staff does, so stock, e-mails, documents and History follow. |
-| **When** | The move is recorded in the same save as the parcel, and carried out after that save is final. Your `save()` returns before the order has moved. If the request stops, [background work](../reference/glossary.md#background-work) carries it out. |
+| **When** | The move is recorded in the same save as the parcel, and carried out once that save is final: before your `save()` returns when no transaction of yours is open around it, and when yours commits otherwise. If the request stops first, [background work](../reference/glossary.md#background-work) carries it out. |
 | **What it guarantees** | The same change arriving twice moves the order once. An order that staff moved in the meantime is left alone, with a line in its History. A busy order is tried again. An order in a cancelled status is never moved out of it. |
 | **What you must not do** | Never move the order yourself for a status the settings can map. |
 
@@ -370,7 +371,7 @@ The webhook address is always the plain form, the site root, `https`, and
 reaches your plugin. A GET reaches it too, without a redirect, while "System - Alfa Commerce Sync" is enabled with its
 Access set to Public. An address a carrier already holds in Joomla's friendly form keeps reaching the same plugin.
 `ShipmentsPlugin::webhookUrlFor(element: 'flat')` builds the address of any shipping plugin by its element. The
-return address is unchanged. See
+return address is routed by Joomla, like any link of the site. See
 [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses) of the payment plugins.
 
 What the carrier's server is answered:
@@ -392,7 +393,7 @@ does not load it for that call. The carrier is answered 503, and the alert tells
 
 ## Logging
 
-You have three places to write to. They are for three different readers.
+You have four places to write to, each for the reader the table names.
 
 | Call | Who reads it | Use it for |
 |---|---|---|
@@ -448,10 +449,10 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 - `costFromZones()` can also refuse with two reasons of core's own, worded by core: `ShipmentsPlugin::REFUSAL_NEEDS_PLACE`
   (no delivery country given yet, and no zone for an unknown one) and `ShipmentsPlugin::REFUSAL_NEEDS_POSTCODE` (your
   postcode field set but unanswered, and a postcode band would fit). Your language file needs no key for them; pass
-  the refusal on with `setUnavailable($this->refusal())`, and core's text is shown wherever the reason is. A method
-  refused for either is kept off the list until the checkout has the fact, and the list names it when nothing else
-  can be chosen. A method the shopper had chosen is set aside meanwhile, and is chosen again by the shopper once the
-  fact is given.
+  the refusal on with `setUnavailable($this->refusal())`, and core's text is shown wherever the reason is. On the
+  storefront, a method refused for either is kept off the list until the checkout has the fact, and the list names
+  the fact when nothing else can be chosen. A method the shopper had chosen is set aside meanwhile, without a notice,
+  and is chosen again once the fact is given: by the shopper, or by the cart when it is then the only method offered.
 
 ## What can go wrong
 
@@ -464,14 +465,14 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 | The shopper pays tax twice, or none | You added or removed tax in your price. Answer the price as configured and let the method's settings do the rest. |
 | The order has no shipping charge and no parcel | Your plugin recorded no parcel and Alfa could not record one either. Staff get a notice naming the carrier and the charge to add by hand on the order's page. Look in the log, categories `com_alfa.orders` and your own. |
 | A parcel marked `core_made` and a notification naming your method | `onOrderAfterPlace()` is missing, threw an error, or its `save()` returned `false`, so Alfa recorded the parcel itself. Look in the log, categories `com_alfa.orders` and your own. |
-| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, or the order's method is not a method of your plugin |
+| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, the rate is not the order's `shipmentTaxRate()` in `onOrderAfterPlace`, or the order's method is not a method of your plugin |
 | `save()` throws a `RuntimeException` on a new parcel | No status was set. Call `pending()` or another status before `save()`. |
 | `save()` returns `false` on a change | The parcel is not recorded as your plugin's. A plugin changes only its own parcels. |
 | A second parcel is saved with a charge of 0 | Shipping is charged once per order. The first parcel carries it. |
 | A setting is never saved | Its field is outside `<fields name="shipmentsparams">` |
 | A setting reads as `null` in a staff action | On the action events the settings are at `$shipment->params->params[...]` |
 | The order does not move when a parcel is delivered | The method has no `status_on_delivered` value, the parcel was created as delivered and not changed to it, or the order was already cancelled |
-| The order moves a moment after your `save()`, not during it | Expected. The move runs after the save is final. |
+| The order has not moved yet while your own transaction is open | Expected. The move runs once the save, and any transaction around it, is final. |
 | The carrier's callbacks are answered 503 | The plugin is disabled, or its Access is not Public |
 | The carrier's callbacks are answered 404 | The address names another element, the class has no `onShipmentWebhook()`, or the plugin is disabled and no shipping method uses it |
 | An event method is never called | It is not public, or its name is not exactly the event's name |
