@@ -356,10 +356,11 @@ An integrator calls with the Joomla API token of an account of its own, never a 
    integrator does (for example Orders: Create), nothing else.
 5. The account signs in once, enables its token on its profile's **Joomla API Token** tab and copies it.
 
-Tools, Security lists every address the enabled plugins add: the method, the full address, the permission and its
-title, the groups granted it, whether each group has API Login and is among the token plugin's groups, and the
-accounts in it with an enabled token, a Super User marked. A plugin that cannot be loaded and the routes refused with
-their rule are listed too.
+Tools, Security lists every address of the REST API in one table, the plugins' beside core's: who adds it, the method,
+the full address, the permission and its title, the groups granted it, whether each group has API Login and is in the
+token groups, and the accounts in it with an enabled token, a Super User marked. A plugin that cannot be loaded and the
+routes refused with their rule are listed under it. See
+[The REST API's addresses](../architecture/integrity-and-security.md#the-rest-apis-addresses).
 
 ## Background work of a plugin
 
