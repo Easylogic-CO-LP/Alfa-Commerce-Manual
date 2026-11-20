@@ -30,8 +30,15 @@ Alfa Commerce and a media plugin share the work on an image:
 | Stores the file as it is when no plugin wrote it | Write the thumbnail in its own format and quality |
 | Works out the image's main colour and stores it | Clean up extra files it made |
 | Makes a thumbnail at the size set in Options when no plugin wrote one | |
+| Checks that the image fits the memory PHP has left before anything decodes it | |
+| Writes a thumbnail again when a plugin made it larger than its image or the size in Options | |
 
 So a shop without a media plugin works: images are stored unchanged and thumbnails are resized by Alfa.
+
+The storefront shows each image's thumbnail and never the stored file: the product list's cards, the product page's
+images, the items module's cards and the category and manufacturer images all load the thumbnail. Only the product
+page's lightbox opens the stored file, when the shopper opens it. The thumbnail is what shoppers see, so write it in
+a format and quality fit for display.
 
 ## When it is used
 
@@ -87,7 +94,9 @@ Two things differ from what many expect:
 - Alfa's own check comes **before** `onAlfaMediaValidate`. A file that is not an image of an allowed type never
   reaches `onAlfaMediaValidate`, `onAlfaMediaBeforeProcess` or `onAlfaMediaAfterProcess`.
 - For a dropped file, and for any new image that arrives without a thumbnail picture, the thumbnail is made
-  **after** the main image is stored, from the stored file. This is the order in the diagram. When the image arrives
+  **after** the main image is stored, from the file as staff gave it (the dropped file, or the picked library file),
+  not from the stored image, so its detail never depends on what a plugin did to the stored image. This is the order
+  in the diagram. When the image arrives
   with a thumbnail picture named (a file picked from the media library names itself, or staff chose another picture
   on the image's tile), `onAlfaMediaThumbnail` fires first, before `onAlfaMediaValidate`, and not again afterwards.
   In that case it also fires before Alfa's own check of the file, so check the source yourself before you read it.
@@ -196,10 +205,10 @@ and setters, with these differences:
 
 | Getter | Meaning |
 |---|---|
-| `getSource()` | The image the thumbnail is made from. |
+| `getSource()` | The image the thumbnail is made from. For a dropped file it is the upload's temporary file, which has no extension. |
 | `getDest()` | The proposed thumbnail file: the image's name with `-thumb` added. |
 | `getOrigin()`, `getField()` | Both `thumbnail`. |
-| `getMaxWidth()`, `getMaxHeight()` | The thumbnail size from Options. A new installation uses 500 by 500. The thumbnail must fit inside this box. |
+| `getMaxWidth()`, `getMaxHeight()` | The thumbnail size from Options, from 100 to 5000 pixels a side. A new installation uses 500 by 500. The thumbnail must fit inside this box and must not be larger than its image. |
 | `getFormat()`, `getQuality()` | Not filled. The format and the quality are yours to choose. |
 
 **What you are expected to do.** Alfa owns the size, you own the format and the quality. Either leave the event
@@ -207,10 +216,22 @@ alone, or write a thumbnail that fits the box, then call `setFinalPath()` and `s
 image.
 
 **What happens next.** When a listener set `processed`, Alfa uses the file at `getFinalPath()` if that file exists.
-If it does not exist, the image gets no thumbnail. When no listener did, Alfa resizes the image itself, in the
+If it does not exist, the image gets no thumbnail. A file wider or taller than the box, or than its image, is written
+again by Alfa from the image, in your format at your path. When no listener did, Alfa resizes the image itself, in the
 source's own format, and falls back to a plain copy only when the server cannot resize it. The plain copy is made only of a source that passed the thumbnail check above.
 
 **If you are missing or you fail.** Alfa's own resize makes the thumbnail.
+
+**Memory.** Before the event, Alfa reads the image's width, height and type from the file's header, without decoding
+it, and works out what decoding it and drawing its thumbnail take: about 4.7 bytes a pixel of the image for a JPEG or
+a WebP, 8.7 for a PNG and 1.1 for a GIF, the thumbnail's own pixels at 4 bytes, and 4 MB more, with a quarter added
+as a margin. When that is more than PHP's `memory_limit` less what the request already uses, the event does not fire
+and Alfa does not resize the image: it keeps no thumbnail, staff are told which image, its size and the memory it
+needs, and the media log has the line. A 1600 by 1200 JPEG needs about 17 MB with the thumbnail size of 500 by 500,
+and about 25 MB with 2000 by 2000; a 5000 by 5000 JPEG about 146 MB at 500 by 500 and about 264 MB at 5000 by 5000.
+Your listener is only given images that fit, so it can decode them as Alfa does.
+Each thumbnail Alfa writes, or fails to, is one line of the media log (`com_alfa_media.php`, written at debug
+priority): the source and its size, the box, the result and its size, and how it was written.
 
 ## onAlfaMediaAfterProcess
 
