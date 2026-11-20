@@ -389,9 +389,26 @@ flowchart TB
             PT["Contributed tabs: one for each named fieldset added in onAlfaAdminForm"]
         end
         S1["Order screen only: slot order-details, right column, under Order Details"]
-        S2["Order screen only: slot order-main, full width, under the totals"]
+        S2["Order screen only: slot order-main, full width, at the end of the Order tab"]
         M ==> TB2 ==> TABS
         TABS ==> S1 ==> S2
+    end
+```
+
+The screen of one cart, the order builder, is one page instead of tabs:
+
+```mermaid
+flowchart TB
+    subgraph C["THE SCREEN OF ONE CART"]
+        direction TB
+        CM["Message bar"]
+        C1["Customer and addresses"]
+        C2["Items: the lines, the coupon and the totals"]
+        C3["Shipment and payment"]
+        C4["Summary and placement"]
+        CP["Contributed sections: one for each named fieldset added in onAlfaAdminForm"]
+        CS["Slot cart-main"]
+        CM ==> C1 ==> C2 ==> C3 ==> C4 ==> CP ==> CS
     end
 ```
 

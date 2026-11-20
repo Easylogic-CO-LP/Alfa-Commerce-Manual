@@ -389,6 +389,46 @@ methods are `isCommitted()`, `hasWarnings()`, `orderId()`, `state()`, `failures(
 `PlacementCart` is the cart as the placement needs it: its lines, its money, its rules, its charges, the offered
 methods, and `discard()`. Its class comment says it is "not a plugin API and not the application API".
 
+## The order builder in the administrator
+
+Staff build an order for a customer on the screen of one cart (Sales > Carts, a cart opened). It is one page, in the
+order an order is worked:
+
+1. **Customer and addresses.** Who the cart is for (read from the cart, never changed on it), the customer's address
+   book, and the delivery and invoice addresses the cart points at.
+2. **Items.** The cart's lines in one table: each line's configuration, quantity, unit price without and with tax,
+   tax, discount and total, and an Edit button that opens the line in a popup (quantity, configuration, a custom price,
+   Remove). The Add item button is in the section's heading. Under the lines, the goods before and after rules, each
+   rule that applied (a coupon code with its remove button), tax, shipping, every plugin's charge and the total; under
+   the table, the coupon box.
+3. **Shipment and payment.** The methods the engine offers this cart, as the storefront offers them.
+4. **Summary and placement.** The cart's state and activity, the codes it holds, and the placement card: the facts the
+   order will carry, the checkout fields, the status the order lands in and whether the customer's credit is spent.
+
+A plugin's section follows these four (a fieldset added in `onAlfaAdminForm` for the target `cart`, see
+[Admin screen events](../plugins/admin-screen-events.md)). Each form on the page posts on its own and the page is drawn
+again from the cart. When the reply has nothing to say, the page opens again at the section the form belongs to; when
+it has a message, it opens at the top, where Joomla prints the message.
+
+The screen reads the administrator's language file. The checkout's notices and refusals it prints come from the
+storefront's file, which it loads first, with the administrator's loaded again over it: a key both files carry reads
+as the administrator's file says it.
+
+### Overriding the builder's layouts
+
+The pieces the builder prints in more than one place are layouts, which an administrator template overrides in
+`html/layouts/com_alfa/`:
+
+| Layout | What it prints | Printed by |
+|---|---|---|
+| `cart.line_selection` | A line's configuration, as a list of "field: value" | The items table |
+| `cart.line_discount` | A priced line's discount, or the saving of its negotiated price | The items table and the line popup's figures |
+| `cart.line_total` | A priced line's total, with the amount it would have been struck through above it | The items table and the line popup's figures |
+| `order.checkout_details` | The customer details, the choice of different invoice details and the billing details | The builder's placement card and the order screen's Order tab |
+
+The page itself (`tmpl/cart/default.php`) and its sections (`default_customer.php`, `default_lines.php`,
+`default_methods.php`, `default_place.php`) are overridden in `html/com_alfa/cart/` of the administrator template.
+
 ## What you must provide
 
 | You are writing | What you provide |
