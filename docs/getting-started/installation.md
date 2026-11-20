@@ -236,6 +236,10 @@ What else an update does:
   the records that name them: one warning on the update page, and one line per file in the media log
   (`com_alfa_media.php` in Joomla's log folder). Nothing is deleted. Look at each file, delete by hand those that are
   not yours to publish, and choose a new thumbnail for the records named.
+- **The thumbnail size.** Thumbnail Max. Width and Thumbnail Max. Height (**Options**, **Media**) take whole pixels
+  from 100 to 5000. A thumbnail size stored below 500 pixels a side is raised to 500, and the update page says so: new
+  images get thumbnails of the new size, and **Tools**, **Media**, **Create missing thumbnails** makes the smaller
+  thumbnails already made again at it. Until that job runs, the thumbnails already made stay as they are.
 - **Plugins.** Each plugin of the package that staff disabled (for example Web Services - Alfa Commerce) stays
   disabled and is named on the update page and in the maintenance log.
 - **Countries.** On a shop whose countries do not yet follow ISO 3166-1, the update brings them to it. The countries

@@ -285,6 +285,7 @@ its thumbnail alone: Alfa deletes them itself, and only when no other image uses
 |---|---|
 | The save of an image is refused with a message, and no row is written | The plugin called `setProcessed(true)` on `onAlfaMediaBeforeProcess` without writing the file. |
 | An image with no thumbnail | The plugin called `setProcessed(true)` on `onAlfaMediaThumbnail` and the file at `getFinalPath()` does not exist. |
+| A thumbnail smaller than the plugin wrote it | The plugin enlarged the image or ignored the box; Alfa wrote it again within the rule. The media log names it. |
 | Images of 0 by 0 pixels, or an error while resizing | The plugin sized the main image by `getMaxWidth()` and `getMaxHeight()`, which are 0 there. |
 | The path on the row looks wrong | `setFinalPath()` was given a path that is not a full path inside the site. |
 | The plugin seems to do nothing, without any message | Its listener threw an error. Look in Joomla's log, category `com_alfa.plugins`. |

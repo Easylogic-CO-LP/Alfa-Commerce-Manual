@@ -629,6 +629,8 @@ What the picture means:
 - **An image that arrives with a thumbnail picture named** fires `onAlfaMediaThumbnail` first, before step 2, and
   not again at step 6. That thumbnail is made only after the image passed Alfa's check and `onAlfaMediaValidate` and
   was stored, so a refused image fires no `onAlfaMediaThumbnail`.
+- **A thumbnail** is made from the file as it was given, and is never larger than the thumbnail size or its image,
+  whatever a plugin writes.
 - **When an image is deleted**, `onAlfaMediaBeforeDelete` is announced before the files are removed, on every delete
   path (Tools > Media, an image removed
   in a form or over the API, a record deleted with its images); inside a save, once the save is final, the rows
