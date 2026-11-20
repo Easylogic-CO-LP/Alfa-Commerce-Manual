@@ -23,9 +23,12 @@ The installer checks Joomla, PHP and the PHP extensions itself and names what is
 database version, so check that one yourself.
 
 Printing sales documents as PDF needs the dompdf library (`lib_dompdf`). It ships with Alfa Commerce and is
-installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step. The setup checklist has a
-recommended row, "PDF library for sales documents", which fails only when one of these libraries has been removed,
-and says that installing the Alfa Commerce package again restores it.
+installed and updated with it, together with the four libraries it needs, so PDFs work with no extra step. While one
+of them is missing or disabled, a PDF is refused with a message and the notification centre says which.
+
+Phone numbers are checked with the libphonenumber library, which ships with Alfa Commerce in the same way. While it
+is missing or disabled, the phone field (Alfa Fields - Phone) and the telephone fields of the back office refuse a
+typed number with a message that it cannot be checked, and the notification centre says so.
 
 ## Styles and scripts: three forms, served compressed
 
@@ -206,8 +209,8 @@ Before updating:
 
 - Read the release's notes in the changelog. Some updates rebuild large tables and are best done at a quiet hour.
 - Update every Alfa Commerce extension you have installed to the same release together with core. After the
-  update, Alfa Commerce names the installed Alfa extensions that are not known to work with it, on the update page,
-  in the maintenance log and in a notification, and the setup checklist keeps a row until each one is updated. See
+  update, Alfa Commerce names the installed Alfa extensions that are not known to work with it in a notification,
+  which opens **Tools**, **Extensions**, and in the maintenance log. See
   [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
 
 The same Joomla and PHP checks run on an update as on an installation. An update also cleans the caches of the

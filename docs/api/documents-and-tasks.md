@@ -39,9 +39,8 @@ Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `fi
 
 **The PDF** needs the dompdf library (`lib_dompdf`), which ships with Alfa Commerce and is installed with it,
 together with the four libraries it needs, so the route works with no extra step. The HTML route does not need it.
-If one of them has been removed, the route
-answers 503 with a sentence that names the library and says that installing the Alfa Commerce package again restores
-it, and the setup checklist's row "PDF library for sales documents" fails.
+If one of them has been removed or disabled, the route answers 503 with a sentence that names the library and says
+that the print view shows the document; the notification centre tells the administrators.
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:

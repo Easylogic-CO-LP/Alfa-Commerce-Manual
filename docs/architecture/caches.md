@@ -29,7 +29,7 @@ by one under Joomla's System > Clear Cache.
 | Group | What is kept | For how long | What clears it before that |
 |---|---|---|---|
 | `com_alfa.cards` | The dashboard's cards, worked out. One copy for each viewer, administrator language, period and set of permissions, so that one person's figures are never shown to another. | 5 minutes | A save, delete, publish or unpublish, made in the administrator, of an order, an item, a payment method or an order status. Installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
-| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again. A payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" enabled or disabled from the Plugins list, and a save of "System - Page Cache" or "System - Alfa Commerce Sync". Installing, updating or uninstalling the dompdf library or one of the four libraries it needs. Installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
+| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again. A payment or shipping plugin enabled or disabled from the Plugins list. Installing, updating, uninstalling, enabling or disabling an Alfa extension, "System - Alfa Commerce Sync" among them (in the Plugins list, in Extensions: Manage, or saved in its own form). |
 | `com_alfa.categories` | The storefront's category data: each category, its path and the category tree. One copy for each language and for each kind of visitor (who may see what, and how the shop treats items that are out of stock). | 1 year | A save, delete, publish, unpublish, move or reorder of a category. A save, delete, publish or unpublish of an item. The Tools action that fills empty translations of categories. |
 | `com_alfa.integrity` | The last answer of the file check under Tools > Security | 24 hours | The button "Recheck now". An update of Alfa Commerce. |
 | `com_alfa.tasks` | No data. Three marks that stop a check from running too often: the notice about failed tasks (2 minutes), the notice that background work is not running (10 minutes), the fallback deletion of finished tasks (1 hour). | As stated | Nothing. They run out. |
@@ -150,10 +150,9 @@ plugin enabled with an Access that visitors who are not logged in do not hold, s
 out of the page cache and what is lost. The warning for a plugin that is disabled or not installed then says that
 the storefront and the administrator pages outside Alfa Commerce no longer start the background work, which then
 runs only from Alfa Commerce's own administrator pages, Tools > Tasks, the cron command and the web-cron address.
-The setup checklist has the recommended row "Joomla page cache": it passes while "System - Page Cache" is off, and
-warns while it is on,
-with or without "System - Alfa Commerce Sync", saying what Alfa keeps out and what the page cache can still store or
-serve.
+The notification centre has the notice "Joomla page cache" while "System - Page Cache" is on: a note while
+"System - Alfa Commerce Sync" runs for visitors who are not logged in, a warning while it is disabled, missing or set
+to an Access they do not hold, saying what Alfa keeps out and what the page cache can still store or serve.
 :::
 
 ## When it is used
@@ -251,7 +250,7 @@ No event lets a plugin tell Alfa "clear your cache". What exists:
 |---|---|
 | A dashboard card of your own | Mark it `live()` when it must be current on every request. A live card is worked out every time and never read from the 5 minute copy. Use it only where needed: its work is then done on every request of the dashboard. See [Notification and setup events](../events/notification-and-setup-events.md). |
 | A dashboard card that may be up to 5 minutes old | Nothing. It refreshes by itself. |
-| A setup check of your own | Nothing to call. The verdict is worked out again when Alfa's Options are saved, when a payment or shipping plugin is saved, when the records listed in the table above are saved, when staff run the checklist again from Tools, on the plugin and library changes listed for `com_alfa.setup` above, when an Alfa extension is installed, updated, uninstalled, enabled or disabled, and after 6 hours. |
+| A setup check of your own | Nothing to call. The verdict is worked out again when Alfa's Options are saved, when a payment or shipping plugin is saved, when the records listed in the table above are saved, when staff run the checklist again from Tools, on the plugin changes listed for `com_alfa.setup` above, when an Alfa extension is installed, updated, uninstalled, enabled or disabled, and after 6 hours. |
 | The storefront's category tree | Nothing to call. Change categories and items through Alfa's own administrator screens, which clear it. A plugin that writes to Alfa's category tables directly leaves a stale tree for up to a year. |
 | A whole page in Joomla's page cache | That is Joomla's cache. Alfa does not clear it when a record is saved. |
 
@@ -285,8 +284,9 @@ No event lets a plugin tell Alfa "clear your cache". What exists:
 - Caches outside Joomla, such as a reverse proxy or a content delivery network that stores whole pages. They do not
   ask Joomla's two questions. Which of Alfa's pages tell such a cache not to store them was read only for the
   order-completed page, so set such a cache up to pass the cart, the checkout and every page of a visitor with a
-  session cookie through to the site. While "System - Alfa Commerce Sync" runs, the "Joomla page cache" row of the setup checklist names what such a cache must keep out: the cart, the
-  checkout, the order pages and the registration page of Alfa Commerce, and every page of a visitor with items in the
-  cart, typed checkout details, or a currency or place of their own.
+  session cookie through to the site. While "System - Page Cache" is on and "System - Alfa Commerce Sync" runs, the
+  "Joomla page cache" notice names what such a cache must keep out: the cart, the checkout, the order pages and the
+  registration page of Alfa Commerce, and every page of a visitor with items in the cart, typed checkout details, or a
+  currency or place of their own.
 - The caching settings of the filters module and the search module. Their forms have Joomla's standard caching
   fields; what they store was not read for this page.

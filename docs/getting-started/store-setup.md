@@ -17,34 +17,26 @@ Open **Components**, **Alfa Commerce**. The Dashboard shows a **setup checklist*
 needs, checked against the shop as it is now, and each row opens the screen where it is done or starts a guided tour
 of it.
 
-The checklist has 21 rows in three groups, and says how many are done:
+The checklist has 18 rows in three groups, and says how many are done:
 
 | Group | Rows |
 |---|---|
 | **Required** | Store name and contact e-mail, default currency, at least one active tax, storefront menu items, at least one published category, at least one published item |
-| **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, PDF library for sales documents, Alfa extensions built for this version, Joomla mail configured, media folder writable, Joomla page cache |
+| **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
 The default currency is one of the published currencies: **Options**, **Currencies**, **Default Currency** lists only
 those.
 
-Four of the recommended rows, in more detail:
+One of the recommended rows, in more detail:
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
   no enabled plugin of Public access, and names each such field.
-- **PDF library for sales documents.** It says that the dompdf library ships with Alfa Commerce and is installed
-  with it, together with the libraries it needs. It fails only when one of them has been removed, says that installing
-  the Alfa Commerce package again restores it, and opens Joomla's extension installer.
-- **Joomla page cache.** It passes while "System - Page Cache" is off, warns while it runs beside "System - Alfa
-  Commerce Sync", and also warns while that plugin is disabled, missing, or not run for visitors who are not logged
-  in, saying what Alfa still keeps out of the page cache and what is lost.
-  See [Caches](../architecture/caches.md#the-page-cache-rule).
-- **Alfa extensions built for this version.** It warns while an installed Alfa extension states a range of Alfa
-  Commerce lines that excludes this one ("needs a compatible build") or states none ("compatibility not stated"),
-  names each with its verdict and the line to update to, and opens **Tools**, **Extensions**. An Alfa extension here
-  is a plugin of a group whose name starts with `alfa` or whose namespace starts with `Alfa\`, or a module whose name
-  starts with `mod_alfa`, another vendor's included; the extensions that ship with Alfa Commerce are never named.
-  See [The Alfa Commerce lines your extension is built for](../plugins/overview.md#the-alfa-commerce-lines-your-extension-is-built-for).
+
+The checklist lists only steps you complete. What is only to be known appears in the notification centre (the bell
+at the top of Alfa Commerce's administrator screens) instead: Joomla's page cache is on, a library a feature needs is
+missing or disabled, an Alfa extension is not built for this version, the shop shows its catalogue only, products
+sell from a quantity no price covers. See [Notifications](../services/notifications.md#what-alfa-commerce-tells-you).
 
 The shop cannot take orders until every required row is done.
 
@@ -75,8 +67,9 @@ default or Clear everything, drops the pages Joomla's page cache stored, so visi
 does not reach another extension's page cache, a server's or a CDN's cache, or the pages browsers keep under Joomla's
 Use Browser Caching: each is purged by its own means.
 
-The site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and
-publish it again when it sells.
+While the shop shows its catalogue only, the notification centre says so, with the note **Online sales**. The
+site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and publish it
+again when it sells.
 
 ## Take the guided tours
 

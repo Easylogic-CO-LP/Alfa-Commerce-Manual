@@ -261,10 +261,8 @@ list is worked out, the check looks at what is true now.
 ### onAlfaCollectSetupChecks
 
 **When it fires.** When the checklist is worked out: when its stored result is older than six hours, after a save in
-the administrator that may change it, and when staff refresh the card. Also after a payment or shipping plugin, "System - Page Cache" or "System - Alfa Commerce Sync" is enabled or
-disabled from the Plugins list, after "System - Page Cache" or "System - Alfa Commerce Sync" is saved, and after
-the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled, and after an Alfa
-extension is installed, updated, uninstalled, enabled or disabled.
+the administrator that may change it, and when staff refresh the card. Also after a payment or shipping plugin is enabled
+or disabled from the Plugins list, and after an Alfa extension is installed, updated, uninstalled, enabled or disabled.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Alfa's own checks are already in the
 event when you receive it.

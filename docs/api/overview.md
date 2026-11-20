@@ -385,7 +385,7 @@ it under `meta.tasks`, each with its state and its own address. See
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
 | 422 | The request is understood but cannot be carried out: an unknown status, a refund of a payment that holds no money, a write of an item that carries its options, combinations, item field values or downloads, a write of an item field that carries its values, a `PATCH` of an order that carries a field its update does not write. |
 | 500 | A fault on the server. The server's log says what. |
-| 503 | A PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, has been removed. The answer says so in words. |
+| 503 | A PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled. The answer says so in words. |
 
 A refusal carries its reason in words:
 

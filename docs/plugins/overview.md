@@ -405,14 +405,14 @@ After Alfa Commerce is installed or updated, every installed Alfa plugin and mod
 
 | What its manifest says | The verdict | What staff see |
 |---|---|---|
-| A range that includes the installed line | Nothing to say | Nothing |
-| A range that excludes it | "needs a compatible build" | The extension is named on the installation page, in one line of the maintenance log (`com_alfa_maintenance.php`) and in one notification for administrators, whose link opens **Tools**, **Extensions**. The setup checklist's recommended row "Alfa extensions built for this version" warns and names it. |
-| No range, or one that cannot be read | "compatibility not stated" | The same, and the maintenance log says why. |
+| A range that includes the installed line | Nothing to say | **Built for this version** on Tools > Extensions |
+| A range that excludes it | "needs a compatible build" | Named in one notification for administrators, whose link opens **Tools**, **Extensions**, where the extension shows **Needs a compatible build** and the lines it is built for, and in one line of the maintenance log (`com_alfa_maintenance.php`) |
+| No range, or one that cannot be read | "compatibility not stated" | The same, with **Compatibility not stated**, and the maintenance log says why |
 
 The extension keeps running in every case: Alfa Commerce's own update is never refused because of an extension.
-The notification is raised again, unread, by every installation of Alfa Commerce, brought up to date when an Alfa
-extension is installed, updated or uninstalled, and cleared when no extension is left to name. The setup row clears
-when each extension named states a range that includes this line.
+The notification is raised again, unread, when an extension is newly named or Alfa Commerce moves to a new line,
+brought up to date when one named is updated or uninstalled, and withdrawn when no extension is left to name. Once
+dismissed, it stays dismissed until something new is named.
 
 Which extensions are judged: the rule that Options > About and **Tools**, **Extensions** already use. A plugin of a
 group whose name starts with `alfa`, a plugin whose namespace starts with `Alfa\`, and a module whose name starts
@@ -442,8 +442,8 @@ This is the policy every Alfa extension follows:
 3. The plugins and modules bundled with Alfa Commerce declare the range and need no gate call. The core package
    installs them itself, so they cannot mismatch the core they arrive with.
 4. Updating Alfa Commerce is never blocked by an extension. After an install or update, Alfa Commerce names every
-   installed Alfa extension outside its range or without one (the installation page, the maintenance log, one
-   notification, the recommended setup row) and keeps running it.
+   installed Alfa extension outside its range or without one (a notification, which opens Tools > Extensions, and the
+   maintenance log) and keeps running it.
 5. An element that cannot be read is refused by the extension's own installer and named by Alfa Commerce's notice.
    A missing element is "compatibility not stated": never refused, and nothing is inferred.
 6. A new line of Alfa Commerce: each extension is tested on it and released again with a raised `max` (a rebuild

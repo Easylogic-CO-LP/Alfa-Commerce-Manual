@@ -49,7 +49,7 @@ Alfa Commerce ships five:
 |---|---|
 | `text` | A one line input. Its Validation setting can turn it into an e-mail or a web address input. |
 | `textarea` | A multi line input |
-| `tel` | A telephone input with a country selector. The number is stored in one international shape. |
+| `tel` | A telephone input with a country selector (Alfa Fields - Phone). The number is stored in one international shape. It is checked with libphonenumber, which ships with Alfa Commerce: while that library is missing or disabled, a typed number is refused with a message that it cannot be checked. |
 | `choice` | A list, radio buttons, checkboxes or buttons to pick from |
 | `country` | A list of places, whose value is the id of a place |
 

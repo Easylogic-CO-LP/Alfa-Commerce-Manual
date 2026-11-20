@@ -291,7 +291,7 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | An API request has been answered | Runs waiting background work for a moment. |
 | Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart, typed checkout details, or a currency or a place of their own in the session, out of the cache. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
 | An administrator page starts | Loads the texts of Alfa's guided tours. |
-| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. Also when a payment or shipping plugin, "System - Page Cache" or this plugin is enabled or disabled from the Plugins list, when "System - Page Cache" or this plugin is saved, and when the dompdf library, or one of the four libraries it needs, is installed, updated or uninstalled. |
+| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. Also when a payment or shipping plugin is enabled or disabled from the Plugins list. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
 | An Alfa extension is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
 | An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Has the dashboard cards and the setup checklist worked out again, and brings a standing notification of extensions not built for this version up to date. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
@@ -322,8 +322,7 @@ The warnings:
 - A third case gets its own warning on every Alfa Commerce administrator page: the plugin is enabled, but its Access
   is a level that visitors who are not logged in do not hold. It says the same about the page cache and about a
   provider's GET, and to set the Access to Public.
-- The setup checklist's row "Joomla page cache" warns in each of the three cases while "System - Page Cache" is
-  enabled. See [Your first shop](../getting-started/store-setup.md).
+- The notification "Joomla page cache" says each of the three cases while "System - Page Cache" is enabled.
 
 ## The console plugin that ships: three commands
 
