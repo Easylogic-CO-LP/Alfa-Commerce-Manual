@@ -31,15 +31,9 @@ flowchart LR
 [The filters of each list](./overview.md#the-filters-of-each-list): they include filters by payment,
 fulfilment, waiting time, reconciliation, overpayment, date, item and customer.
 
-**Create.** An order made through the API has the source `api`, or the one the request names (see
-[Where an order comes from](#where-an-order-comes-from)), and starts empty unless the request carries its lines,
-its parcel and its payment. Give it a status and the
-customer's details; it takes the shop's default currency (see [Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
-a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are needed, unless the shop sets
-some of them Optional in Form Fields, and `country` is the id of a published place. A shop that was installed
-earlier keeps its own fields (an update adds none), and needs those its own fields require. A `PATCH` of an
-existing order does not require them; see [Known limitations](./overview.md#known-limitations) for a shop with a
-required delivery field of its own.
+**Create.** `POST v1/alfa/orders` creates an order in one call: the customer's details and, when you have them, its
+lines, its parcel and its payment. Everything is written together or nothing is. The order has the source `api`, or
+the one the request names (see [Where an order comes from](#where-an-order-comes-from)).
 
 ```bash
 curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \
@@ -47,12 +41,69 @@ curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json"
   -d '{
     "id_order_status": 1,
     "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
-                         "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}
+                         "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"},
+    "customer_note": "Please ring twice",
+    "lines": [{"id_item": 12, "quantity": 2}, {"id_item": 15, "quantity": 1, "custom_unit_price_tax_incl": "7.50"}],
+    "shipment": {"id_shipment_method": 2, "shipping_cost_tax_incl": "5.00", "tracking_number": "TRK123", "carrier": "ACME"},
+    "payment": {"id_payment_method": 1, "amount": "32.50", "transaction_status": "completed", "transaction_id": "tx-123"}
   }'
 ```
 
-The ids are those of a fresh installation: status 1 is "Pending", the status new orders start in, and place 84 is
-Greece. Read `v1/alfa/orderstatuses` (the row with `is_initial`) and `v1/alfa/places` for the ids of your shop.
+The status and the place are those of a fresh installation: status 1 is "Pending", the status new orders start in,
+and place 84 is Greece. Read `v1/alfa/orderstatuses` (the row with `is_initial`) and `v1/alfa/places` for the ids of
+your shop.
+
+| Part | Takes | Needs |
+|---|---|---|
+| `lines` | a list; each `id_item`, `quantity` (1 or more), `id_combination`, `custom_unit_price_tax_incl`, `manual_discount_percent`, `manual_discount_scope`, as [Add a line](#lines) | `id_item`, `quantity` |
+| `shipment` | `id_shipment_method`, the charge (`shipping_cost_tax_incl`, `shipping_cost_tax_excl`, `shipping_tax_rate`, read as [Add a parcel](#shipments) reads them), `tracking_number`, `carrier` | `id_shipment_method` |
+| `payment` | `id_payment_method`, `amount`, `transaction_status` (`pending`, the default, or `completed`), `transaction_id` | `id_payment_method`, `amount` |
+
+A line is priced as the shop prices it for this customer, unless it states its own price. The payment is judged
+against the lines and the shipping charge: it cannot be more than the order owes. The parcel carries no lines yet;
+give it its lines with [Change a parcel](#shipments). An order takes its payment and shipping methods from its
+payments and parcels: send them inside `payment` and `shipment`. `id_payment_method`, `payment_method_name`,
+`id_shipment_method` or `shipment_method_name` at the top level of the body is refused with 422, and nothing is
+created.
+
+A part in a shape the create does not take is refused with 422, a part the shop refuses with 409. The answer names
+the part with a JSON pointer into your body, and no order is created:
+
+```json
+{"errors":[{"title":"/lines/1: Item not found in catalog (ID: 99). The order was not created.","code":409}]}
+```
+
+The status the order opens in sends its e-mail once the order is created, as a status change does: to the customer
+when the status has `notify_customer`, and to the status's administrator recipients (see
+[Order statuses](#order-statuses)). `"silent": true` leaves the customer out. An order created without lines is
+created and sends no e-mail; its lines, parcels, payments and status are then added with the operations below.
+
+A create sent twice without `external_source` and `external_reference` creates two orders: when an answer is lost,
+look the order up (`filter[search]`, or your own reference in `customer_note`) before you send it again. With the
+pair, the second create is answered 409 and creates nothing (see
+[Where an order comes from](#where-an-order-comes-from)). `payments`, `shipments` and `items` are not parts of a
+create and are refused with 422: send `payment`, `shipment` and `lines`.
+
+Give it a status and the customer's details; it takes the shop's default currency (see
+[Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of
+the shop's checkout fields. On a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are
+needed, unless the shop sets some of them Optional in Form Fields, and `country` is the id of a published place. A
+shop that was installed earlier keeps its own fields (an update adds none), and needs those its own fields require.
+A `PATCH` of an existing order does not require them; see [Known limitations](./overview.md#known-limitations) for a
+shop with a required delivery field of its own.
+
+A phone number is read with the order's country when it has no country code: `6941234567`, `694-123-4567` and
+`2310123456` with country 84 (Greece) are stored as `+306941234567` and `+302310123456`. `00` at the start is read
+as `+` (`0030 694 123 4567`), and a number with `+` keeps its own country. A number that is not valid for that
+country is refused with 400.
+
+A choice field takes one of its values, as `GET v1/alfa/formfields/:id` lists them in `params.options` (see
+[Form fields](./customers-and-configuration.md#form-fields)); any other value is refused with 400 naming the
+choices. A field the shop's display rules hide for the details you send, and a key that is no field of the section,
+are not saved; `meta.warnings` names each (`hidden_by_rule`, `not_a_field`) with a pointer to it (see
+[The shape of an answer](./overview.md#the-shape-of-an-answer)).
+
+`customer_note`, the customer's note to the shop, is kept.
 
 The answer, status 201, shortened:
 
@@ -66,10 +117,27 @@ The answer, status 201, shortened:
       "customer_name": "Maria Example",
       "id_order_status": 1,
       "status_name": "Pending",
-      "payment_status": "unpaid",
-      "order_total": {"amount": "0.00", "formatted": "0,00 €", "minor_units": 0},
+      "payment_status": "paid",
+      "order_total": {"amount": "32.50", "formatted": "32,50 €", "minor_units": 3250},
+      "shipping_total": {"amount": "5.00", "formatted": "5,00 €", "minor_units": 500},
+      "balance": {"amount": "0.00", "formatted": "0,00 €", "minor_units": 0},
       "source": "api",
-      "lines": []
+      "customer_note": "Please ring twice",
+      "lines": [
+        {"id": 1, "id_item": 12, "quantity": 2,
+         "total_price_tax_incl": {"amount": "20.00", "formatted": "20,00 €", "minor_units": 2000}},
+        {"id": 2, "id_item": 15, "quantity": 1,
+         "total_price_tax_incl": {"amount": "7.50", "formatted": "7,50 €", "minor_units": 750}}
+      ],
+      "shipments": [{
+        "id": 1, "id_shipment_method": 2, "status": "pending", "carrier_name": "ACME", "tracking_number": "TRK123",
+        "items": [],
+        "shipping_cost_tax_incl": {"amount": "5.00", "formatted": "5,00 €", "minor_units": 500}
+      }],
+      "payments": [{
+        "id": 1, "id_payment_method": 1, "transaction_status": "completed", "transaction_id": "tx-123",
+        "amount": {"amount": "32.50", "formatted": "32,50 €", "minor_units": 3250}
+      }]
     }
   }
 }
@@ -122,6 +190,11 @@ carries is refused with 409 and that order's id, and a change of a pair the orde
 `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `shipments`,
 `contributions`, `history`, `delivery_address`, `invoice_address`. The order's number is its `id`.
 
+`id_payment_method` and `payment_method_name` are the method of the order's latest payment that is not failed or
+cancelled (a payment from the customer's credit is left out); `id_shipment_method` and `shipment_method_name` the
+method of its latest parcel that is not cancelled or returned. A payment or a parcel cancelled and replaced moves
+them to the replacement's method; with no such payment or parcel the order keeps the method it was placed with.
+
 The lists `payments` and `shipments` are where a program reads an order's payments and parcels. The routes under
 [Operations on an order](#operations-on-an-order) write them; none of them reads.
 
@@ -148,17 +221,20 @@ carries any other field the order publishes, such as `customer_email`, `id_addre
 {"errors":[{"title":"customer_email cannot be written through the API: an order's update writes its customer_note and its delivery and invoice details (alfa_form_fields, and alfa_form_fields_billing with invoice_differs); its status changes through POST v1/alfa/orders/:id/status, its lines, payments and shipments through the order operations, and the other fields are worked out from them or fixed when the order is placed. Nothing was saved.","code":422}]}
 ```
 
-Change the delivery details through `alfa_form_fields`, never by the id of an address record.
+Change the delivery details through `alfa_form_fields`, never by the id of an address record. A part of the
+delivery details keeps the rest. A guest order's e-mail stays required: emptying it is refused with 400. The invoice
+details are kept unless the body sends `invoice_differs` 0 or new invoice details. A fresh installation's invoice
+details have no e-mail field.
 
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.
 
 ## Operations on an order
 
-Twelve routes. Each answers 200 with the whole order as it is after the change, so one answer shows the new totals.
-An order id that does not exist, or a line, payment or shipment of another order, answers 404. They do what the
-order screen does, with its rules, and ask the permission it asks: Orders: Edit, and for the status Orders: Edit
-State with Orders: View.
+An existing order is changed with these twelve routes, one change each. Each answers 200 with the whole order as
+it is after the change, so one answer shows the new totals. An order id that does not exist, or a line, payment or
+shipment of another order, answers 404. They do what the order screen does, with its rules, and ask the permission
+it asks: Orders: Edit, and for the status Orders: Edit State with Orders: View.
 
 | Method and address | What it does |
 |---|---|
@@ -232,7 +308,14 @@ item of a line cannot be swapped (409).
 {"amount": "20.00", "id_payment_method": 1, "transaction_status": "pending", "note": "Deposit"}
 ```
 
-The amount is limited to what the order still owes. A refund cannot be recorded through this route (409).
+The amount is limited to what the order still owes. A payment while a pending one already covers it is refused with
+409, naming the pending payment: settle or cancel that one first.
+
+```json
+{"errors":[{"title":"The payment of 439,70 € was not recorded: payment 12 of 439,70 € is pending for what order 1234 owes. Settle or cancel it first.","code":409}]}
+```
+
+A refund cannot be recorded through this route (409).
 
 **Settle.** Moves a payment to another state exactly once. `to_status` is needed. With `from_status` you say which
 state you believe the payment is in, and you are told when it is not:
@@ -287,8 +370,8 @@ the reason. The order's `history` records the removal.
 
 ### Shipments
 
-**Add a parcel.** `id_shipment_method` is needed. Optional: `tracking_number`, `status`, the charge, and `items`,
-the order lines in the parcel with their quantities.
+**Add a parcel.** `id_shipment_method` is needed. Optional: `tracking_number`, `carrier` (the carrier company's name,
+read back as `carrier_name`), `status`, the charge, and `items`, the order lines in the parcel with their quantities.
 
 ```json
 {
@@ -299,9 +382,11 @@ the order lines in the parcel with their quantities.
 }
 ```
 
-`shipping_cost_tax_incl` alone is a charge without tax. A charge with tax needs all three of
+A parcel with no charge needs no rate: send the method alone, or `0.00`. `shipping_cost_tax_incl` alone is a charge
+without tax, which stands only where no shipping tax applies. A charge with tax needs all three of
 `shipping_cost_tax_incl`, `shipping_cost_tax_excl` and `shipping_tax_rate` (text, at most three decimals), and
-they must agree with each other and with the shipping tax that applies to the order.
+they must agree with each other and with the shipping tax that applies to the order. A charge the shop refuses is
+answered 409 with the reason, for example a rate stated where no shipping tax applies.
 
 The order after it, shortened. The parcel's charge is now part of the order's total:
 
@@ -317,9 +402,19 @@ The order after it, shortened. The parcel's charge is now part of the order's to
 }
 ```
 
-**Change a parcel.** `status`, `tracking_number`, `carrier`, `weight`, the charge fields, `items`. For `items`:
-left out keeps the parcel's lines, `[]` empties the parcel, a list replaces them. The status `cancelled` cancels
-the parcel.
+An order is charged shipping once. A parcel added while another open parcel of the order carries a charge goes out
+at 0.00, and the answer says so:
+
+```json
+{"meta": {"warnings": [{"code": "shipping_charged_once", "detail": "Shipping is charged once per order: another parcel of order #1234 already carries the charge, so this parcel's cost was set to 0.", "pointer": "/shipping_cost_tax_incl"}]}}
+```
+
+A line asked for more units than it still has to send is given what is left, and `meta.warnings` carries
+`quantity_cut`. An order may have several open parcels, each with its own lines.
+
+**Change a parcel.** `status`, `tracking_number`, `carrier`, `id_shipment_method`, `weight`, the charge fields,
+`items`. A parcel has no note: a `note` is refused with 422. For `items`: left out keeps the parcel's lines, `[]`
+empties the parcel, a list replaces them. The status `cancelled` cancels the parcel.
 
 ```json
 {"status": "shipped", "tracking_number": "TRK-1002"}
@@ -334,10 +429,13 @@ What a single order carries:
 - `fulfillment_status` and `fulfillment_percentage`, worked out as in the list of orders.
 - Each payment carries `added` (when the payment was recorded) and `refund_reason` (the reason staff gave for a
   refund).
-- Each shipment carries `added` (when the parcel was recorded), `shipping_charge_basis` (what its costs were
-  worked out from: `tax_included`, `tax_excluded` or `carrier_stated`) and `shipping_tax_chain` (the tax rates its
-  charge was calculated with, in the order they apply, each `{"rate": "24", "name": "VAT"}`, the rate as exact
-  decimal text; an older chain may carry the rates with empty names).
+- Each shipment carries `status` (`pending`, `shipped`, `delivered`, `cancelled`, `on_hold` or `returned`),
+  `shipment_method_name`, `carrier_name`, `shipped` and `delivered` (when it went out and arrived, null until then),
+  `items` (the order lines in the parcel, each `{"id_order_item": 1, "quantity": 1}`), `added` (when the parcel was
+  recorded), `shipping_charge_basis` (what its costs were worked out from: `tax_included`, `tax_excluded` or
+  `carrier_stated`) and `shipping_tax_chain` (the tax rates its charge was calculated with, in the order they apply,
+  each `{"rate": "24", "name": "VAT"}`, the rate as exact decimal text; an older chain may carry the rates with empty
+  names).
 
 
 ### The status
@@ -352,7 +450,7 @@ What a single order carries:
 |---|---|
 | `id_order_status` | The status to move to. An id that is not a status answers 422. |
 | `note` | A note for the order's history |
-| `silent` | `true` sends no e-mail to the customer. The staff the status tells are still sent theirs, and everything else still happens. |
+| `silent` | `true` sends no e-mail to the customer. The staff the status tells are still sent theirs, and everything else still happens. The customer is told when the status has `notify_customer`, the staff by the status's administrator recipients (see [Order statuses](#order-statuses)). |
 | `force` | `true` is needed to bring a cancelled order back |
 
 A 200 means the status changed, and that everything the change owes was recorded with it: the stock step, the
@@ -373,8 +471,7 @@ are needed in the default language.
 
 ```json
 {
-  "name_en_gb": "Packed",
-  "name_customer_en_gb": "Being prepared",
+  "translations": {"en_gb": {"name": "Packed", "name_customer": "Being prepared"}},
   "state": 0,
   "color": "rgba(0, 0, 0, 1)",
   "bg_color": "rgba(214, 214, 214, 1)"
@@ -382,9 +479,14 @@ are needed in the default language.
 ```
 
 **A list row holds:** `id`, `name`, `color`, `bg_color`, `stock_operation`, `is_initial`, `is_cancelled`,
-`is_completed`, `ordering`, `state`.
+`is_completed`, `notify_customer`, `notifies_staff`, `ordering`, `state`.
 
-**One record holds also:** `name_customer`, `notify_customer`, `translations`.
+**One record holds also:** `name_customer`, `admin_recipient_ids`, and with `include=translations` its
+`translations`.
+
+`notify_customer` 1 mails the customer when an order enters the status; `notifies_staff` 1 means one of its
+administrator recipients (`admin_recipient_ids`, set on the status's e-mail settings or with a `PATCH` of
+`admin_recipient_ids`) may receive mail. A fresh installation mails nobody until a status says so.
 
 A status can issue sales documents when an order reaches it. Such a status carries `issues_doc_rules`, with or
 without `issues_delivery_note`:
@@ -403,6 +505,6 @@ last role of its kind cannot be moved to the trash, so its delete answers 409.
 ## Not documented yet
 
 - The entries of `contributions`, `history`, `delivery_address` and `invoice_address` field by field.
-- The allowed values of `transaction_status`, `payment_type` and a parcel's `status`.
+- The allowed values of `transaction_status` and `payment_type`.
 - `overpaid`, `excess` and `still_held` one by one. See [Orders](../services/orders.md) for the money terms.
 - An example of a parcel with tax.

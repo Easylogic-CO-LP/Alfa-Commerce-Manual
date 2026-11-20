@@ -227,6 +227,10 @@ A list has `data` as a list, the links `next` and `last` when there are more pag
 }
 ```
 
+A write that changed what was sent on its own says so in `meta.warnings`: each entry has a `code` that never
+changes, a `detail` in the request's language and a `pointer` into the body you sent. `pointer` is a JSON pointer
+(RFC 6901): a key that holds `~` or `/` is written with `~0` and `~1`, and a key is shown to its first 64 characters.
+
 The examples in these pages are shortened where marked.
 
 ## Reading
@@ -236,8 +240,21 @@ The examples in these pages are shortened where marked.
 | Pages | `page[limit]` (20 when left out) and `page[offset]` | An offset past the end is answered 404 |
 | An order of the rows | `list[ordering]` and `list[direction]` | A column the list does not allow is ignored without an error, and a direction that is not `asc` or `desc` counts as `asc` |
 | Some of the rows | `filter[...]` | Each list has its own filters: see [The filters of each list](#the-filters-of-each-list). |
-| Texts in one language | `lang=el-GR` | A language the site does not have falls back to the site's default without an error. The response header `Content-Language` says which language you got. |
+| Texts in one language | `lang=el-GR` | Without `lang`, or with a language the shop does not publish, the texts are in the shop's default content language. `Content-Language` says which language you got. |
 | Storefront prices in a currency or for a place | `currency=` and `place=` on the storefront routes | Without them the shop's defaults are used |
+
+Every read gives a record's texts flat, in that language (`name`, `alias`). Add `include=translations` to a list or a
+single record to also get `translations`, every language's texts keyed by language:
+
+```json
+{"name": "Δράπανο", "translations": {"en_gb": {"name": "Drill", "alias": "drill"}, "el_gr": {"name": "Δράπανο", "alias": "drapano"}}}
+```
+
+Every date the API returns is UTC, written `Y-m-d H:i:s` (a task's times carry fractions of a second); a document's
+`issue_date_local` is the legal day in the shop's time zone. Every date bound you send is UTC too:
+`filter[date_start]=2026-11-19 11:40:14` is that UTC time, and a day alone, `2026-11-19`, is that UTC day from its
+first second to its last. A bound that states its zone is read in it: `2026-11-19T11:40:14Z` or
+`2026-11-19T13:40:14+02:00`. The shop's own time zone plays no part.
 
 ### The filters of each list
 
@@ -269,23 +286,22 @@ Four lists also take the filters their administrator screens apply, with the sam
 | `orders` | `filter[fulfilment]` | `shipped`: in a completed status. `unshipped`: neither completed nor cancelled. |
 | `orders` | `filter[waiting]` | `placed_48`: placed more than 48 hours ago. `untouched_48`: not changed for 48 hours. |
 | `orders` | `filter[reconciliation]`, `filter[overpaid]` | With `1` or `true`: the orders the order page says need reconciliation (and the orders that name no currency); the orders that hold more than they ask. With `0`, `false` or an empty value: no filter. |
-| `orders` | `filter[date_start]`, `filter[date_end]` | The order's date. With `filter[payment]` `failed` or `refunded`, the payment's date. |
+| `orders` | `filter[date_start]`, `filter[date_end]` | The order's date, in UTC. With `filter[payment]` `failed` or `refunded`, the payment's date, in UTC. |
 | `orders` | `filter[item_id]` | The orders with a line of that item |
 | `orders` | `filter[id_user]` | The orders of that Joomla user. `0`: the guests' orders, those placed without an account. |
 | `orders` | `filter[email]` | The orders that carry that e-mail address, matched whole, with letter case and accents set aside (a part of an address finds nothing), a guest's included |
 | `orders` | `filter[source]` | The orders of one channel: `storefront`, `admin`, `renewal`, `api`, or the source a client named |
 | `orders` | `filter[external_source]`, `filter[external_reference]` | The orders of another system, and with both the one order of a pair; each matched whole, letter case counting in the reference |
 | `items` | `filter[changed_since]` | The items whose stock, prices or own fields changed at or after that time (`commerce_changed_at`). A time without a zone is UTC; one with `Z` or an offset is read in its zone. A value that is not a date and time answers 400. |
-| `documents` | `filter[date_start]`, `filter[date_end]` | The document's legal date, `Y-m-d`, both days included |
-| `inventorymovements` | `filter[date_start]`, `filter[date_end]` | The movement's date |
+| `documents` | `filter[date_start]`, `filter[date_end]` | The document's issue time (UTC), both bounds included |
+| `inventorymovements` | `filter[date_start]`, `filter[date_end]` | The movement's date, in UTC |
 | `inventorymovements` | `filter[item_id]` | The movements of that item |
 | `items` | `filter[stock]` | `in`, `low` or `out`, as the dashboard counts them |
 | `items` | `filter[fields]` | `filter[fields][<field id>][]=<value id>`. An item must match every field sent, and any one of the values sent for a field. A field sent with no value keeps the items that use it. |
 
-The date bounds are the shop's local time, as the screens' calendars hold them (`Y-m-d` or `Y-m-d H:i:s`). On orders
-and stock movements an end given as a day (`Y-m-d`) is that whole day, to its last second, and a start given as a day
-is its first second. Documents take days (`Y-m-d`), both days included. A bound that cannot be read (for documents,
-anything that is not a calendar day) is left out, so it does not narrow the list. The screens' date presets ("Today",
+The date bounds are UTC, as [Reading](#reading) says (`Y-m-d` or `Y-m-d H:i:s`, or with their zone). An end given
+as a day (`Y-m-d`) is that whole day, to its last second, and a start given as a day is its first second. A bound
+that cannot be read is left out, so it does not narrow the list. The screens' date presets ("Today",
 "This week") are not read by the API. An empty value is no filter, and a value a list does not know narrows nothing,
 as on the screen.
 
@@ -323,25 +339,23 @@ Rates and stored prices are exact decimal text too (`"24"`, `"19.90"`).
 **Send money and rates as text.** `"19.90"`, not `19.90`. A figure with more decimals than the order's currency
 has is refused with 400.
 
-**Texts in several languages.** Translated texts are not columns of the record. Send them with one key for each
-language, the field's name followed by the language in lower case with an underscore:
+**Texts in several languages.** Translated texts are not columns of the record. A write gives the texts in the same
+`translations` object a read gives, so what you read you can send back:
 
 ```json
-{"name_en_gb": "Cordless drill", "name_el_gr": "Δράπανο μπαταρίας"}
+{"translations": {"en_gb": {"name": "Cordless drill"}, "el_gr": {"name": "Δράπανο μπαταρίας"}}}
 ```
 
-A read returns a `translations` object with every language, and you may send that object back instead of the flat
-keys.
+A create needs the texts in the shop's default content language. A key with a language suffix, such as
+`name_el_gr`, is refused with 422.
 
-**The name in the site's default language is needed on a create.** A `PATCH` that names a required translated field
-in no language keeps the stored texts of that field, so `{"state": 0}` alone is accepted. A create without the name,
-and a `PATCH` that sends the name empty, are refused:
+**The name in the shop's default content language is needed on a create.** A `PATCH` that names a required
+translated field in no language keeps the stored texts of that field, so `{"state": 0}` alone is accepted. A create
+without the name, and a `PATCH` that sends the name empty, are refused:
 
 ```json
 {"errors":[{"title":"Field required: Name"}]}
 ```
-
-The name may be sent as the flat key or inside the `translations` object.
 
 **Lists of related records are kept unless you send them.** Leave out `categories`, `manufacturers`, `prices`,
 `values`, `groups`, `allowedUsers` or `allowedUserGroups` and they stay as they were. Send `[]` to empty one.
@@ -401,6 +415,8 @@ Deletes that a rule refuses with 409, with the reason, and nothing is deleted:
 - a payment or shipping method that orders, payments, parcels or stored payment references use, and a shipping
   method that a payment method's list of shipping methods names;
 - a currency that orders, item prices or places use;
+- an item that still holds stock, has open reservations or open order lines to deliver, or whose stock figures
+  disagree with its stock records (bring its stock to zero first);
 - an item field that items still use.
 
 Two more rules:
@@ -458,8 +474,6 @@ What Alfa Commerce does today that a program or a shop must allow for.
 - A `PATCH` of an order that carries only `customer_note` is refused with 400 on a shop that has a required delivery
   field of its own, because the whole order form is validated on a partial update. Send the required fields with the
   note.
-- An update of an order that sends part of the delivery details (`alfa_form_fields`) replaces the stored delivery
-  details with only the fields sent. Send the whole delivery section when you change any of it.
 
 **On the storefront**
 

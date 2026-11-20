@@ -301,6 +301,10 @@ The shipped `tel` plugin is the model. In `prepareDom()` it sets `filter="teleph
 `TelephoneFilter`. It sets `validate="alfatel"` and calls `FormHelper::addRulePrefix()` with its own rule
 namespace. A filter should never refuse: what it cannot read it passes on untouched, and the rule refuses it.
 
+**The `tel` field's region.** A number typed without its country code is read with the country of the address it
+belongs to, else the field's Default region, else the shop's default country; with none of them it is refused. `00`
+at the start is read as `+`. The phone widget starts on the field's Default region, else the shop's default country.
+
 Two more things to know:
 
 - Joomla's script that checks a form in the browser finds a rule by the CSS class `validate-<name>`, not by the

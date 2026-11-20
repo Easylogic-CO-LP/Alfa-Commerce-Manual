@@ -26,7 +26,8 @@ shop itself, for example when an order reaches a status that issues one. See
 | `POST v1/alfa/documents/:id/void` | Voids the document |
 
 Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `filter[id_order]`, and
-`filter[date_start]` and `filter[date_end]`, the document's legal date (`Y-m-d`, both days included).
+`filter[date_start]` and `filter[date_end]`, the document's issue time (UTC), both bounds included (see
+[Reading](./overview.md#reading)).
 
 **A list row holds:** `id`, `doc_type`, `status`, `number`, `number_formatted`, `issue_date_local`, `id_order`,
 `id_shipment`, `id_corrects`, `buyer_name`, `buyer_vat_number`, `currency_code`, `total_tax_excl`, `total_tax`,
@@ -90,7 +91,8 @@ reads them.
 **A list row holds:** `id`, `alias`, `name`, `family`, `quantity_pool`, `shows_prices`, `movement_mode`,
 `requires_original`, `requires_buyer_tax_id`, `stock_effect`, `icon`, `color`, `ordering`, `state`, `is_core`.
 
-**One record holds also:** `corrects`, `default_layout`, `provider`, `provider_version`, `translations`.
+**One record holds also:** `corrects`, `default_layout`, `provider`, `provider_version`, and with
+`include=translations` its `translations`.
 
 The invoice of a fresh installation has the alias `core.invoice`.
 

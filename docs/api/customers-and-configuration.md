@@ -13,8 +13,9 @@ Read [the overview](./overview.md) first. It has the rules every route follows.
 Every resource on this page has the five standard routes, except stock movements, which can only be listed. For
 each resource this page gives a body that creates a record, the fields a read returns, and what is special.
 
-Where a body below has `name_en_gb`, send the name in your site's default language. A change that leaves the name
-out keeps the stored name (see [Writing](./overview.md#writing)).
+Where a body below has `translations`, its texts are under `en_gb`: put them under the key of your shop's default
+content language (`el_gr` for Greek). A change that leaves the name out keeps the stored name (see
+[Writing](./overview.md#writing)).
 
 ## Customers
 
@@ -118,12 +119,13 @@ See [Status codes](./overview.md#status-codes).
 `v1/alfa/taxes`. The rate is exact decimal text.
 
 ```json
-{"name_en_gb": "Tax 24%", "value": "24", "behavior": "0", "state": 0}
+{"translations": {"en_gb": {"name": "Tax 24%"}}, "value": "24", "behavior": "0", "state": 0}
 ```
 
 **A list row holds:** `id`, `name`, `value`, `behavior`, `state`, `ordering`, `publish_up`, `publish_down`.
 
-**One record holds also:** `desc`, `categories`, `manufacturers`, `places`, `users`, `usergroups`, `translations`.
+**One record holds also:** `desc`, `categories`, `manufacturers`, `places`, `users`, `usergroups`, and with
+`include=translations` its `translations`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the tax applies.
@@ -138,7 +140,7 @@ Reading a tax that does not exist answers 404.
 
 ```json
 {
-  "name_en_gb": "10% off",
+  "translations": {"en_gb": {"name": "10% off"}},
   "value": "10",
   "is_amount": 0,
   "behavior": 0,
@@ -151,8 +153,8 @@ Reading a tax that does not exist answers 404.
 **A list row holds:** `id`, `name`, `value`, `is_amount`, `behavior`, `apply_before_tax`, `state`, `ordering`,
 `publish_up`, `publish_down`.
 
-**One record holds also:** `name_customer`, `categories`, `manufacturers`, `places`, `users`, `usergroups`,
-`translations`.
+**One record holds also:** `name_customer`, `categories`, `manufacturers`, `places`, `users`, `usergroups`, and
+with `include=translations` its `translations`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`.
 
@@ -164,7 +166,7 @@ Reading a discount that does not exist answers 404.
 a code applies by itself.
 
 ```json
-{"name_en_gb": "Summer offer", "code": "SUMMER", "discount_class": "order", "state": 0}
+{"translations": {"en_gb": {"name": "Summer offer"}}, "code": "SUMMER", "discount_class": "order", "state": 0}
 ```
 
 **A list row holds:** `id`, `name`, `code`, `discount_class`, `action`, `action_value`, `priority`, `highlight`,
@@ -173,7 +175,7 @@ a code applies by itself.
 **One record holds also:** `name_customer`, `description`, `max_discount_amount`, `discount_base`,
 `exclude_discounted`, `overridden_lines`, `min_amount`, `min_amount_tax_incl`, `min_amount_base`,
 `combines_product`, `combines_order`, `combines_shipping`, `usage_limit_per_user`, `created`, `modified`,
-`allowedUsers`, `allowedUserGroups`, `groups`, `translations`.
+`allowedUsers`, `allowedUserGroups`, `groups`, and with `include=translations` its `translations`.
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `groups`.
 
@@ -207,7 +209,7 @@ the payment plugin that does the work. See [Payment plugins](../plugins/payment-
 
 ```json
 {
-  "name_en_gb": "Bank transfer",
+  "translations": {"en_gb": {"name": "Bank transfer"}},
   "type": "standard",
   "state": 0,
   "show_on_product": 1,
@@ -220,7 +222,8 @@ A create without `color` and `bg_color` takes the colours the method's edit form
 
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `translations`.
+**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, and with
+`include=translations` its `translations`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the method is offered.
@@ -237,7 +240,7 @@ prices were typed with tax (`tax_included`) or without (`tax_excluded`).
 
 ```json
 {
-  "name_en_gb": "Standard delivery",
+  "translations": {"en_gb": {"name": "Standard delivery"}},
   "type": "standard",
   "price_entry_mode": "tax_included",
   "state": 0,
@@ -250,8 +253,8 @@ prices were typed with tax (`tax_included`) or without (`tax_excluded`).
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `price_entry_mode`,
 `ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`,
-`translations`.
+**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`, and with
+`include=translations` its `translations`.
 
 ## Form fields
 
@@ -261,8 +264,7 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 
 ```json
 {
-  "name_en_gb": "Phone",
-  "field_label_en_gb": "Phone",
+  "translations": {"en_gb": {"name": "Phone", "field_label": "Phone"}},
   "field_name": "phone_2",
   "type": "tel",
   "state": 0
@@ -272,7 +274,12 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 **A list row holds:** `id`, `group_id`, `field_name`, `name`, `type`, `required`, `registration`, `billing`,
 `shipping`, `unique`, `ordering`, `state`, `group_title`.
 
-**One record holds also:** `field_label`, `field_description`, `users`, `usergroups`, `translations`.
+**One record holds also:** `field_label`, `field_description`, `users`, `usergroups`, `role` (what the field is to
+the shop: `name`, `email`, `phone`, `country`, `address`, `city`, `postcode`, or null), `params` (the field type's
+settings, in the request's language), and with `include=translations` its `translations`. A choice field's
+`params.options` are the values it takes, each with its text:
+`{"options0": {"value": "apodeiksi", "text": "Receipt"}, "options1": {"value": "timologio", "text": "Invoice"}}`; an
+order sends the value.
 
 **Related lists you can send:** `users`, `usergroups`.
 
@@ -281,12 +288,13 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 `v1/alfa/formfieldgroups`.
 
 ```json
-{"title_en_gb": "Contact details", "state": 0}
+{"translations": {"en_gb": {"title": "Contact details"}}, "state": 0}
 ```
 
 **A list row holds:** `id`, `title`, `description`, `ordering`, `state`, `field_count`.
 
-**One record holds:** `id`, `title`, `description`, `ordering`, `state`, `translations`.
+**One record holds:** `id`, `title`, `description`, `ordering`, `state`, and with `include=translations` its
+`translations`.
 
 ## Stock locations
 
@@ -299,8 +307,8 @@ needed in the default language. See [Form field plugins](../plugins/form-field-p
 **A list row holds:** `id`, `title`, `name`, `location_type`, `capabilities`, `kind`, `is_default`, `state`,
 `ordering`, `stock_units`, `stock_physical`, `stock_reserved`.
 
-**One record holds also:** `owner_type`, `owner_id`, `created`, `created_by`, `modified`, `modified_by`,
-`translations`.
+**One record holds also:** `owner_type`, `owner_id`, `created`, `created_by`, `modified`, `modified_by`, and
+with `include=translations` its `translations`.
 
 ## Stock movements
 
@@ -309,7 +317,7 @@ are never changed or deleted: a correction is a new movement in the other direct
 here.
 
 Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`, `filter[date_start]` and
-`filter[date_end]` (the movement's date) and `filter[item_id]` (the movements of one item).
+`filter[date_end]` (the movement's date, in UTC) and `filter[item_id]` (the movements of one item).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,
 `source_id`, `source_line_id`, `transfer_id`, `operation_id`, `correlation_id`, `note`, `created`,
