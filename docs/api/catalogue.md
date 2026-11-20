@@ -6,7 +6,7 @@ description: "The REST API routes for items, categories, manufacturers and item 
 
 # Catalogue
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows: the token, pages, languages, how
 texts and money are sent, and the status codes.
@@ -22,6 +22,9 @@ The catalogue can be read in two ways, and the same item id answers differently 
 | Writing | Create, change, delete | Read only |
 
 Build a shop front or an app on the storefront's view. Edit through the back office routes.
+
+In the lists below of what a record holds, `translations` comes only when the read asks for it with
+`include=translations`, on a list row as on one record (see [Reading](./overview.md#reading)).
 
 ## Items
 
@@ -60,8 +63,7 @@ The answer, status 201, shortened:
       "state": 1,
       "prices": [{"id": 1, "value": "19.90", "currency_id": 47, "quantity_start": 1, "state": 1}],
       "categories": [1],
-      "name": "Cordless drill",
-      "translations": {"en_gb": {"name": "Cordless drill", "alias": ""}}
+      "name": "Cordless drill"
     }
   },
   "meta": {
@@ -73,7 +75,8 @@ The answer, status 201, shortened:
 }
 ```
 
-`meta.tasks` is there because a new price leaves work for the price index. See
+`meta.tasks` lists the work the save left to the shop's background work, and is there only when it left some: here
+the price index prepares the prices of a currency the shop's prices did not use before. See
 [Tasks](./documents-and-tasks.md#tasks).
 
 Read it back, with every language:
@@ -97,7 +100,8 @@ product that tracks stock reads `stock` 0 when it holds none; one that does not 
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
 `prices`, `prices_state`, `categories`, `manufacturers`, `medias`, `translations`, `fields`, `options`, `combinations`,
-`informational`, `related`, `created_by`, `modified_by`. Each combination in `combinations` holds its own
+`informational`, `related`, `created_by`, `modified_by`. It has `categories` and `manufacturers` in place of the list's
+`category_ids` and `manufacturer_ids`, and no `combination_count`. Each combination in `combinations` holds its own
 `prices_state`, the state of its own price rows, for [Many units in one request](#many-units-in-one-request).
 
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
@@ -129,24 +133,26 @@ The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]
 
 **What changed since your last read.** `commerce_changed_at` is when the item's stock, its prices or the item itself
 last changed: a stock move (an order's line, a stock count, a delivery), a price written on the item or on one of its
-combinations, a price period stored ahead of time that has begun, a change of its state, a save of the item. It is a
-UTC time to the microsecond, `2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that
-keeps stock and prices in step with another system reads the items changed since its last read instead of every
-item:
+combinations, a price period stored ahead of time that has begun (of its own prices, or of a discount or a tax that
+reaches it), a change of its state, a save of the item. It is a UTC time to the microsecond,
+`2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that keeps stock and prices in step
+with another system reads the items changed since its last read instead of every item:
 
 ```bash
 curl -H "X-Joomla-Token: YOUR_TOKEN" \
-  "https://your-shop.example/api/index.php/v1/alfa/items?filter[changed_since]=2026-11-20T10:00:00Z&list[limit]=100"
+  "https://your-shop.example/api/index.php/v1/alfa/items?filter[changed_since]=2026-11-20T10:00:00Z&page[limit]=100"
 ```
 
 Ask from a minute before your last read: an item read twice is harmless, since a read gives the item as it is now.
 A time without a zone is UTC; `Z` or an offset is read in its zone; a value that is not a date and time answers 400.
-A change of a discount or a tax is not a change of the item and does not move `commerce_changed_at`.
+Saving a discount or a tax is not a change of the item and does not move `commerce_changed_at`; a period of one that
+begins later does, as above.
 
 **Delete.** An item is deleted only while it is in the trash. Move it there first with a `PATCH` of `state` -2; an
 item in any other state answers 409 and nothing is deleted. An item that was never sold is then removed (204). An
 item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
-that it was archived instead of deleted.
+that it was archived instead of deleted. An item that still holds stock or reservations is neither removed nor
+archived: the answer is 409 with the reason; bring its stock to zero first.
 
 ### Images given by their address
 
@@ -166,7 +172,7 @@ What is fetched, and what is not:
 
 - Only an `http` or `https` address whose host resolves to public addresses; a loopback, private, link-local or
   reserved address is refused, and so is a redirect to one. At most three redirects are followed.
-- The file must arrive within the size and the time Options, Media, Images by URL sets (10 MB and 15 seconds by
+- The file must arrive within the size and the time Options, Images, Images by URL sets (10 MB and 15 seconds by
   default), and its content, not its name or the type the server states, must be an image of a type the shop takes.
 - An address the record already holds an image from is not fetched again: sending the same list again changes
   nothing.
@@ -180,8 +186,8 @@ by its place in your request:
 {"result": [
   {"pointer": "/media/0/url", "url": "https://images.example.com/drill-front.jpg", "outcome": "stored", "media_id": 812, "reason": null},
   {"pointer": "/media/1/url", "url": "https://images.example.com/drill-side.jpg", "outcome": "stored", "media_id": 813, "reason": null},
-  {"pointer": "/media/2/url", "url": "https://images.example.com/drill-box.gif", "outcome": "refused", "media_id": null,
-   "reason": "its content is image/gif, not an image of a type the shop takes (Options, Media)"}
+  {"pointer": "/media/2/url", "url": "https://images.example.com/drill-box.tif", "outcome": "refused", "media_id": null,
+   "reason": "its content is image/tiff, not an image of a type the shop takes (Options, Media)"}
 ]}
 ```
 
@@ -213,7 +219,7 @@ curl -X PATCH -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json
       {"item_id": 12, "prices": [{"id": 31, "value": "21.00", "currency_id": 47, "quantity_start": 1}],
        "prices_state": "3f9c0d0b3b1e4c6c8f0a5d2e7b9a1c44", "stock": "7"},
       {"item_id": 15, "combination_id": 4, "prices": [{"mode": "price", "value": "31.00", "currency_id": 0}],
-       "stock": "4"},
+       "prices_state": "9c1e5a7d2b4f6e8a0c3d5f7b9e1a3c5d", "stock": "4"},
       {"item_id": 18, "inventory_stock": {"1": "3", "2": "2"}}
     ]
   }'
@@ -232,7 +238,8 @@ Each unit takes:
 
 Each unit is written whole or not at all, on its own: a unit that cannot be written is refused alone, and the others
 are written. A stock figure is the unit's whole stock there, not a change: the shop moves the stock to it as a stock
-correction would, so a sale made meanwhile is not lost.
+correction would, by the difference from the stock as it stands when the unit is written, so the stock ends at your
+figure and a sale made meanwhile keeps its own movement.
 
 The answer is 200 when the request could be read, with one answer a unit in the order of the request:
 
@@ -242,7 +249,9 @@ The answer is 200 when the request could be read, with one answer a unit in the 
     {"type": "units", "id": "0", "attributes": {"pointer": "/units/0", "status": 200, "item_id": 12,
       "combination_id": 0, "prices_state": "a41d...", "stock": "7", "available_quantity": "7"}},
     {"type": "units", "id": "1", "attributes": {"pointer": "/units/1/prices_state", "status": 409, "item_id": 15,
-      "combination_id": 4, "title": "The unit's prices changed since you read them (prices_state). Read them again. Nothing of this unit was saved."}}
+      "combination_id": 4, "title": "The unit's prices changed since you read them (prices_state). Read them again. Nothing of this unit was saved."}},
+    {"type": "units", "id": "2", "attributes": {"pointer": "/units/2", "status": 200, "item_id": 18,
+      "combination_id": 0, "prices_state": "7c02...", "stock": "5", "available_quantity": "5"}}
   ]
 }
 ```
@@ -266,20 +275,21 @@ shortly after. Each change is told to the [outgoing notifications](./notificatio
 combinations and for each combination of a product, published or not (an archived or trashed one is not listed). It
 is for a system that keeps stock and prices in step with the shop: one read a page instead of reading every product.
 
-Each row has the key `item_id:combination_id` as its id (the combination is 0 for a product without combinations),
-and: `sku`, `gtin`, `state` (the row's own: 1 published, 0 unpublished), `item_state` (its product's), `manage_stock`,
-`available_quantity`, `stock`, `changed_at` (when the product's stock, prices or own fields last changed, UTC) and
-`price` with `gross`, `net` and `currency`. The price is what a guest pays in the shop's currency, the one the product
-list filters and sorts by: a combination with prices of its own has its own, any other combination its product's.
-A row with no valid price (an unpublished product, or no price row that applies) has `price` null. A price of 0 is a
-price.
+Each row has the key `item_id:combination_id` as its id (the combination is 0 for a product without combinations), and:
+`item_id`, `combination_id`, `sku`, `gtin`, `state` (the row's own: 1 published, 0 unpublished), `item_state` (its
+product's), `manage_stock`, `available_quantity`, `stock`, `changed_at` (when the product's stock, prices or own fields
+last changed, UTC) and `price` with `gross`, `net` and `currency`. The price is what a guest pays in the shop's
+currency, the one the product list filters and sorts by: a combination with prices of its own has its own, any other
+combination its product's. A row with no valid price (an unpublished product, or no price row that applies) has `price`
+null. A price of 0 is a price.
 
 Pages follow the rows' key, never an offset, so walking the list while products change reads each row once:
-`page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries.
-A page that is not full has no `links.next`; when the rows end with a full page, the page after it is empty. `filter[changed_since]` keeps the rows of the products whose stock, prices or own
-fields changed at or after a UTC time, as on the items list: read a little before your last read, a row read twice
-holds the current values. `meta.prices` is `read`, or `not prepared` while the shop builds its prices after an update
-or while no pricing context is prepared yet; every `price` is then null. The list asks for Items: View.
+`page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries. A
+page that is not full has no `links.next`; when the rows end with a full page, the page after it is empty.
+`filter[changed_since]` keeps the rows of the products whose stock, prices or own fields changed at or after a UTC time,
+as on the items list: read a little before your last read, a row read twice holds the current values. `meta.prices` is
+`read`, or `not prepared` while the shop builds its prices after an update or while no pricing context is prepared yet;
+every `price` is then null. The list asks for Items: View.
 
 ```
 GET /api/index.php/v1/alfa/stockprices?page[limit]=500
@@ -299,7 +309,7 @@ GET /api/index.php/v1/alfa/stockprices?filter[changed_since]=2026-11-20T09:55:00
 `ancestors`, `level`, `publish_up`, `publish_down`, `modified`, `ordering`.
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `list_options`, `medias`,
-`translations`.
+`translations`. It has no `modified`.
 
 **The products of a category.** `item_count` counts the items assigned to the category itself.
 `item_count_descendants` counts the items assigned to it or to any category below it, at any depth, each item once
@@ -322,8 +332,9 @@ sub-categories reads `item_count` 0 and `item_count_descendants` the number of t
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `robots`.
 
 **Delete.** Only a category in the trash is deleted; any other answers 409. Move it to the trash first (`PATCH`
-with `state` -2). A category that has sub-categories, or that is the default category of an item, is refused with
-409 and the reason.
+with `state` -2). A category that has sub-categories, that is the default category of an item, that is the last
+category a discount or a tax names (the rule would then apply to every category), or that a cart rule excludes, is
+refused with 409 and the reason.
 
 ## Manufacturers
 
@@ -335,10 +346,12 @@ with `state` -2). A category that has sub-categories, or that is the default cat
 
 **A list row holds:** `id`, `name`, `alias`, `website`, `state`, `item_count`, `modified`, `ordering`.
 
-**One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `medias`, `translations`.
+**One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `medias`, `translations`. It has
+no `item_count` and no `modified`.
 
 **Delete.** Only a manufacturer in the trash is deleted; any other answers 409. Move it to the trash first (`PATCH`
-with `state` -2).
+with `state` -2). A manufacturer that is the last one a discount or a tax names (the rule would then apply to every
+manufacturer), or that a cart rule excludes, is refused with 409 and the reason.
 
 ## Item fields
 
@@ -425,7 +438,7 @@ with a price. While the shop shows its catalogue only (Options, Cart, Online sal
 option's `amount` is `null`; the fields and their values are published as when the shop sells.
 
 Each entry of `categories` carries `ancestors` and `level`, as [Categories](#categories) describes them; an
-ancestor the shopper may not see is listed by its `id` and `state` only.
+ancestor the shopper may not see is listed with its `id` and `state`, its `name` and `alias` null.
 
 ## Not documented yet
 
