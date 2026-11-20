@@ -355,8 +355,10 @@ An item field's `values` cannot be sent at all; a write that carries them answer
 ```
 
 An entry you do not send stays. To remove one, send it with `"delete": 1`. A `path` must already exist on the
-site; to upload a new file, send it to Joomla's own route `v1/media/files` first. An `alt` longer than 75
-characters is refused.
+site; to upload a new file, send it to Joomla's own route `v1/media/files` first, or give its address for the shop to
+fetch (`{"type": "image", "url": "https://..."}`, see [Images given by their address](./catalogue.md#images-given-by-their-address)).
+`"type": "url"` is an outside link, shown from its address and never fetched. An `alt` longer than 75 characters is
+refused.
 
 An entry's `thumbnail` must be an image file, of a type Joomla's Media allows, inside one of the Media folders (or
 Alfa Commerce's own image folder). Otherwise the write is refused with 400 and the reason, and nothing is written.

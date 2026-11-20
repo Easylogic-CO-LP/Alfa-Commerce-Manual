@@ -36,7 +36,12 @@ So a shop without a media plugin works: images are stored unchanged and thumbnai
 ## When it is used
 
 - When staff save a record with a **new** image that is a file: one dropped on the page, or one picked from Joomla's
-  media library. An image given as a web address is stored as that address and no media event is raised for it.
+  media library. An image given as a web address (`"type": "url"`) is stored as that address and no media event is
+  raised for it.
+- When a REST API client gives an image by its address for the shop to fetch (`{"type": "image", "url": "..."}`):
+  once the file has arrived and its content is an image of a type the shop takes, it goes through the same events as
+  a dropped file, the fetched file being the source. One or two images are fetched with the request; more are fetched
+  by the background job `media.fetch`, whose events run in that job.
 - When a thumbnail is made: for a new image, when staff pick another picture as an image's thumbnail, and when the
   background work started from Tools > Media makes thumbnails again.
 - When staff delete rows on Tools > Media.

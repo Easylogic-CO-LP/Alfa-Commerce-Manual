@@ -1128,6 +1128,64 @@
 							}
 						},
 						{
+							"name": "Update (an image given by an address that is not public: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 422', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(422));",
+											"pm.test('The image is named by its pointer', () => pm.expect(pm.response.json().errors[0].source.pointer).to.eql('/media/0/url'));",
+											"pm.test('The item is named in meta.id', () => pm.expect(String(pm.response.json().meta.id)).to.eql(pm.collectionVariables.get('itemId')));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{itemId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "An image given by its address, `{\"type\": \"image\", \"url\": \"https://...\"}`, is fetched by the shop and stored as an upload (the image folder, a thumbnail, the main colour, the media plugin events). Only an http or https address whose host resolves to public addresses is fetched, a redirect only to such an address, within the size and the time Options, Media, Images by URL sets, and only a file whose content is an image of a type the shop takes. One or two images are fetched with the request; more by a background job named in `meta.tasks`, whose `result` says what became of each. Here the address is a loopback one: the answer is 422 with the image's pointer, the item saved with the rest, its id in `meta.id`. `\"type\": \"url\"` keeps meaning an outside link, never fetched.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"media\": [\n    {\"type\": \"image\", \"url\": \"http://127.0.0.1/apic-{{run}}.png\", \"alt\": \"Not fetched\"}\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
 							"name": "Update (options: refused)",
 							"event": [
 								{

@@ -125,6 +125,57 @@ item in any other state answers 409 and nothing is deleted. An item that was nev
 item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
 that it was archived instead of deleted.
 
+### Images given by their address
+
+An image the shop should keep as its own file can be given by its address: an entry of `media` with `"type": "image"`
+and a `url`. The shop fetches the file and stores it as an upload is stored: in its image folder, with a thumbnail
+and its main colour, through the media plugins' events. `"type": "url"` keeps its own meaning: an outside link,
+shown from its address, never fetched.
+
+```json
+{"media": [
+  {"type": "image", "url": "https://images.example.com/drill-front.jpg", "alt": "Cordless drill", "ordering": 1},
+  {"type": "image", "url": "https://images.example.com/drill-side.jpg", "alt": "Side view", "ordering": 2}
+]}
+```
+
+What is fetched, and what is not:
+
+- Only an `http` or `https` address whose host resolves to public addresses; a loopback, private, link-local or
+  reserved address is refused, and so is a redirect to one. At most three redirects are followed.
+- The file must arrive within the size and the time Options, Media, Images by URL sets (10 MB and 15 seconds by
+  default), and its content, not its name or the type the server states, must be an image of a type the shop takes.
+- An address the record already holds an image from is not fetched again: sending the same list again changes
+  nothing.
+
+**One or two images** are fetched with the request, and the answer carries them. **More** are fetched in the
+background: the answer is the record as it is, and `meta.tasks` names the job (`media.fetch`). Read the task (see
+[Tasks](./documents-and-tasks.md#tasks)) until its `state` is `done`: its `result` says what became of each image,
+by its place in your request:
+
+```json
+{"result": [
+  {"pointer": "/media/0/url", "url": "https://images.example.com/drill-front.jpg", "outcome": "stored", "media_id": 812, "reason": null},
+  {"pointer": "/media/1/url", "url": "https://images.example.com/drill-side.jpg", "outcome": "stored", "media_id": 813, "reason": null},
+  {"pointer": "/media/2/url", "url": "https://images.example.com/drill-box.gif", "outcome": "refused", "media_id": null,
+   "reason": "its content is image/gif, not an image of a type the shop takes (Options, Media)"}
+]}
+```
+
+`outcome` is `stored`, `kept` (the record already holds an image from that address) or `refused`, with the reason.
+
+**An image the request fetches and cannot store** is answered 422, one error for each such image with its pointer,
+and the record is saved with everything else the request sent; `meta.id` is the record's id, so a create that
+answers 422 still names the record it made:
+
+```json
+{"meta": {"id": 1201},
+ "errors": [{"title": "/media/0/url: the image at http://10.0.0.5/drill.jpg was not stored: its host does not resolve, or resolves to an address that is not public (loopback, private, link-local or reserved). The record was saved with everything else the request sent.",
+             "code": 422, "source": {"pointer": "/media/0/url"}}]}
+```
+
+Each image the shop fetched carries `source_url`, the address it came from, in `medias`.
+
 ## Categories
 
 `v1/alfa/categories`, the five standard routes.
