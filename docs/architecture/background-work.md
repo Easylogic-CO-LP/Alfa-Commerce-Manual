@@ -387,6 +387,10 @@ are due. When a job is due, the tasks get at most half of the budget, so that a 
 | Web cron | The address `index.php?option=com_alfa&task=runner.cron&key=` followed by the shop's secret key. A wrong key gets 403. | 20 seconds |
 | The progress page and the API's process route | On one job, when staff ask | 2 seconds each time |
 
+Work is also due when a price period stored ahead of time began at least a minute ago and has not been announced
+yet: the turn announces it to the listeners of
+[`onAlfaPricesChanged`](../events/item-and-catalogue-events.md#onalfapriceschanged).
+
 The console command and its exit codes are on
 [System, console and task plugins](../plugins/system-console-task-plugins.md).
 

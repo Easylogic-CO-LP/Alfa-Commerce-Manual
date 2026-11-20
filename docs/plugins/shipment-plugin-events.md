@@ -24,7 +24,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | **When it fires** | When the storefront draws an item page, once for each shipping method of your plugin that has "Show on item page" switched on. |
 | **Who receives it** | The plugin of that method. |
 | **What you are given** | `ItemViewEvent`. See the table below. |
-| **What you are expected to do** | Name a layout file of your `tmpl` folder and hand it its data. Never print HTML yourself. |
+| **What you are expected to do** | Name a layout file of your `tmpl` folder and hand it its data. Never print HTML yourself. Alfa draws the method itself first: its image, its title and its description. Your layout adds only what is yours below them (a "pay in instalments" note, for example), never a logo, the title or the description. With nothing to add, set no layout. |
 | **What happens next** | Alfa draws your layout in the shipping methods area of the item page. A site template can override it at `templates/<template>/html/plg_alfa-shipments_<element>/<layout>.php`. |
 | **If you are missing or you fail** | Nothing of yours is drawn. An error is written to Joomla's log (category `com_alfa`) and the page is still shown. |
 

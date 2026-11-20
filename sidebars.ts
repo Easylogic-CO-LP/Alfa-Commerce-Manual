@@ -48,6 +48,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'plugins/overview',
         'plugins/plugin-generator',
+        'plugins/calling-core',
         {
           type: 'category',
           label: 'Payment plugins',

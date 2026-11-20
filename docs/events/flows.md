@@ -569,6 +569,32 @@ What the picture means:
 | `onItemAfterSave` | Everyone who listens | [Item and catalogue events](./item-and-catalogue-events.md) |
 | `onInventoryAdjusted` | Everyone who listens, when a stock figure changed | [Stock events](./stock-events.md) |
 
+### A promotion starts by itself
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Turn as A visit or cron
+    participant Alfa as Alfa Commerce
+    participant L as Plugins that listen
+    Note over Alfa: The moment a stored price period begins passes
+    Turn->>Alfa: A page, the bell, an API request or cron gives the background engine a turn
+    Alfa->>Alfa: Reads the periods that began at least a minute ago and are not yet announced
+    Alfa->>Alfa: Records how far it has announced
+    Note over Alfa: The save is final here
+    Alfa->>L: onAlfaPricesChanged (the cause is window)
+```
+
+What the picture means:
+
+- **Nothing is written when the period begins.** The price index already holds the period, so the shop reads the new
+  price from that moment. The announcement follows at the engine's first turn at least a minute later: on a shop with
+  visitors or cron, within about two minutes.
+- **Step 3 is what makes each period announced once.** Two turns at the same moment announce it once, and no period is
+  passed over. With nothing listening, the turn only records how far it has gone.
+- **Only the periods the price index stores are announced**, at most eight per item, the nearest ones. See
+  [onAlfaPricesChanged](./item-and-catalogue-events.md#onalfapriceschanged).
+
 ## Media
 
 When staff save a record with a new image (an item, a category, a manufacturer or a combination), Alfa checks the

@@ -108,6 +108,10 @@ All twelve are **addressed to one plugin** (targeted). No other plugin sees them
 Your class must contain three methods: `onItemView()`, `onCartView()` and `onCalculateShippingCost()`. PHP refuses
 to load the class without them, because the base classes declare them abstract.
 
+Alfa draws the method on the item page itself: its image, its title and its description. `onItemView()` sets a layout
+only to add something below them; with nothing to add, it sets none. `onCartView()` always sets a layout, even an
+empty one.
+
 **How you handle an event.** Write a public method with the event's name. Nothing else: Alfa calls it on the carrier
 it addresses. The twelve events are on [Shipping plugin events](./shipment-plugin-events.md).
 
@@ -128,7 +132,9 @@ A complete plugin is printed in [A complete minimal shipping plugin](./shipment-
 ## Recording and changing a parcel
 
 A parcel is one **shipment row** of an order. Your plugin never writes the table. It calls the methods below, which
-the base class gives it. Behind them is the [ledger](../reference/glossary.md#saving) (`ShipmentLedger`).
+the base class gives it. Behind them is the [ledger](../reference/glossary.md#saving) (`ShipmentLedger`). Every call of
+the base class, and the few core classes a carrier calls by name, are listed with what each guarantees on
+[Calling core from an extension](./calling-core.md).
 
 Every write made through these methods carries your plugin's name. A new row records your plugin
 as its plugin of record. Every later change, delete or line assignment works only on a row recorded as yours.
@@ -432,6 +438,8 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
   hyphen of the group.
 - The keys start with `PLG_ALFA_SHIPMENTS_<ELEMENT>_`, with an underscore in place of the hyphen.
 - The base class loads your language file when your plugin starts.
+- The `COM_ALFA_` keys are core's: core keeps none for a plugin's screens, and one a plugin borrows can change or go
+  with any update of Alfa Commerce. Every string your plugin shows is in its own files, under its own keys.
 - A refusal reason is a key of your own file. `$this->refusalKey('TOO_HEAVY')` builds
   `PLG_ALFA_SHIPMENTS_<ELEMENT>_TOO_HEAVY` for you.
 - If you use `costFromZones()`, give your file the four keys it can refuse with: `..._NO_ZONE_FOR_DESTINATION`,

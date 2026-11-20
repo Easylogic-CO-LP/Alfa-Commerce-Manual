@@ -285,6 +285,10 @@ unit, and then lets the payment and shipping plugins write their rows.
 It is core's own. Alfa calls it from the storefront's cart controller, and from the back office when staff place an
 order for a customer. An extension takes part through the events in the picture, and never calls it.
 
+In catalogue-only mode (see [Online sales](../getting-started/store-setup.md#online-sales)), every storefront cart
+task but the price recalculation answers 403 with the shop's sentence, and a placement on the storefront is refused;
+the administrator's cart builder and its checkout place orders in either mode.
+
 ### What happens
 
 ```mermaid

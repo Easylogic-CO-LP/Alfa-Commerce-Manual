@@ -264,6 +264,10 @@ anything fails the check too.
 
 How to run it yourself is on [Automated checks](../tooling/workflows#copy-clean).
 
+The same job runs the docblock lint. It refuses a docblock left above another, and a sample in a docblock that names
+a method or an entity the code does not have. Run it from the root of the repository before you open a pull request:
+`php scripts/docblock-lint/docblock-lint.php`.
+
 #### JavaScript
 
 No formatter or linter checks the JavaScript. This is the rule for every new or changed script. Good models to

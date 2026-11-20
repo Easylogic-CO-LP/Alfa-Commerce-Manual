@@ -25,6 +25,9 @@ The checklist has 21 rows in three groups, and says how many are done:
 | **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, PDF library for sales documents, Alfa extensions built for this version, Joomla mail configured, media folder writable, Joomla page cache |
 | **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
 
+The default currency is one of the published currencies: **Options**, **Currencies**, **Default Currency** lists only
+those.
+
 Four of the recommended rows, in more detail:
 
 - **Required form fields can be filled in.** It fails while a form field that is required in a form is served by
@@ -49,8 +52,31 @@ Two rows have a **Create for me** button. On "Storefront menu items" it creates 
 "Customer pages" it creates the account page and the sign-up page. In both you choose the menu they go in: a new
 menu named Alfa Commerce, made for you, or an existing one.
 
+Each page is titled in its own language; on a site in one language, in the site's default language. The sign-up page
+is made only while Users: Options allows sign-ups (Allow User Registration, which Joomla sets to No when it is
+installed). While it does not, the Customer pages row says so, and once sign-ups are on, it offers to make the page.
+
+A recommended or optional step you do not need can be ignored, such as Item fields on a shop whose products have no
+options, or Joomla mail on a test copy that must not send e-mail. **Ignore** on its row moves it under **Ignored**, at
+the end of the checklist, out of the count; **Show again** brings it back. A required step cannot be ignored. The
+choice is the site's, the same for every administrator, and a reset of the Options keeps it.
+
 The first time you open the Dashboard, a short welcome tour starts by itself. You can close it and start it again
 later from the tour menu.
+
+## Online sales
+
+**Options**, **Cart**, **Online sales**: **Catalogue only** shows the products with their details, images and stock,
+and every product field as a plain list of its options, with nothing to choose, no prices and no add to cart. The cart
+page shows a sentence instead of the cart, the cart module shows nothing, and the cart and the checkout refuse every
+change and every order. Orders you take in the administrator or over the REST API, and orders already placed, are not
+affected. The catalogue API publishes prices as null. Switching online sales on or off, by the Options, Reset to
+default or Clear everything, drops the pages Joomla's page cache stored, so visitors see the shop as it is now. It
+does not reach another extension's page cache, a server's or a CDN's cache, or the pages browsers keep under Joomla's
+Use Browser Caching: each is purged by its own means.
+
+The site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and
+publish it again when it sells.
 
 ## Take the guided tours
 

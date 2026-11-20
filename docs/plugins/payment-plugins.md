@@ -45,7 +45,14 @@ row. It never asks another plugin instead, whatever the method's settings say la
 **The base class is the whole payment API.** A gateway records, reads and refunds payments through methods of
 `PaymentsPlugin`. It never calls the ledger class `PaymentLedger` and never reads or writes the table
 `#__alfa_order_payments` itself. A need the base class does not cover is a request to the Alfa Commerce project, not a
-query of your own.
+query of your own. Every call of the base class, and the few core classes a gateway calls by name, are listed with what
+each guarantees on [Calling core from an extension](./calling-core.md).
+
+**The country you send your provider.** When your provider asks for the buyer's delivery or billing country as an ISO
+code, ask `PlaceTree::countryOf($placeId)` (`Alfa\Component\Alfa\Site\Service\Place\PlaceTree`) with the place the
+address holds. It answers the country at the top of the place's chain, with its codes `code2` and `code3` in capitals,
+or `null` for a place that does not exist; empty codes mean the address has no country. A gateway never reads
+`#__alfa_places` itself.
 
 ## When it is used
 
@@ -73,6 +80,10 @@ public function onCartView($event): void;
 public function onOrderProcessView($event): void;
 public function onOrderCompleteView($event): void;
 ```
+
+Alfa draws the method on the item page itself: its image, its title and its description. `onItemView` sets a layout
+only to add something below them; with nothing to add, it sets none. `onCartView` always sets a layout, even an empty
+one.
 
 Every other event is optional. You take part in an event by writing a public method with the event's name. Nothing
 is listed in `getSubscribedEvents()`: all payment events are addressed to one plugin (targeted), and the base class
@@ -364,6 +375,8 @@ Your plugin carries its own texts and loads them.
 - The base class sets `$autoloadLanguage = true`, so your texts are loaded whenever your plugin is started, on the
   storefront and in the administrator. Alfa also loads your file for the method's settings form.
 - Bodies you answer to a provider (`setResponseBody()`) are plain machine text, never translated.
+- The `COM_ALFA_` keys are core's: core keeps none for a plugin's screens, and one a plugin borrows can change or go
+  with any update of Alfa Commerce. Every string your plugin shows is in its own files, under its own keys.
 
 ## What can go wrong
 

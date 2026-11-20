@@ -59,6 +59,9 @@ The places of the item page, each returning a builder:
 On a listing card the image place is drawn once by the card's images
 part, over the first image or over the slider.
 
+In catalogue-only mode the buy slots hold no plugin surface, only core's read-only lists, and the add to cart slot is
+none; a plugin reads `$item->sellsOnline` to decide what it draws in the display slots.
+
 The builder's methods:
 
 | Method | Meaning |
@@ -268,6 +271,10 @@ $event->contribution('engraving.text')
 | `percent(float $percent)`, `subtractPercent(float $percent)` | Add or take off a percentage |
 | `onNet()`, `onGross()` | Apply to the price before tax, or to the price with tax |
 | `sortOrder(int $sortOrder)` | Lines with a lower number are applied first |
+| `suppliesBase()` | The lines of this field are the whole price of the item, as for a product priced from what the buyer fills in |
+
+A product with no price row is priced from a field's lines only when the field says so with `suppliesBase()` on its
+line; without it, a product with no price row is not priced, whatever the lines.
 
 The first argument of `contribution()` is a code of your own that identifies the line. Work the amount out on the
 server from `getConfig()` and the composition. Never take an amount from the browser.

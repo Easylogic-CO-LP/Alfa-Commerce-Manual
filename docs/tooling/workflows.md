@@ -132,6 +132,28 @@ copy-clean gate: 1676 shipped files, 1666 judged; 44 occurrence(s) allowed by 44
 The gate checks itself too: it fails when its planted test lines reach a rule its list does not name, or the list
 names one no planted line reaches. The file counts follow the code.
 
+A second step, the docblock lint (`scripts/docblock-lint/docblock-lint.php`), keeps the docblocks a plugin author
+reads true to the code: no docblock left above another, and the samples name methods and entities that exist. Its
+allow list (`scripts/docblock-lint/docblock-lint-allow.json`) names what waits for another change, each entry with how
+many findings it covers. A finding the list does not cover, or an entry that matches another number of findings,
+fails the job.
+
+Run it yourself from the root of the repository, with the same command as the workflow:
+
+```bash
+php scripts/docblock-lint/docblock-lint.php
+```
+
+A clean run ends with two lines like these:
+
+```text
+docblock lint: 1031 files, 1029 classes; 0 finding(s) allowed by 0 entries; 0 not allowed
+15 passed, 0 failed
+```
+
+Its first checks plant a sample of each rule and prove that the rule finds it. While the allow list has entries, one
+more check counts: each entry matches exactly the findings its count gives.
+
 ### Media forms
 
 | | |

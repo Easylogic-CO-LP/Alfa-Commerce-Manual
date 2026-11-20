@@ -256,6 +256,13 @@ them on each page. This store is the **price index**. Alfa announces every chang
 **When it fires.** After a write to the price index is final (after the commit), once for the whole write, not once
 for each row. A change that was undone is never announced.
 
+It also fires when a price period stored ahead of time begins: a price, a discount or a tax whose dates were set
+in advance becomes the one the shop reads. Nothing is written at that moment, so the background engine announces
+it at its first turn at least a minute after the moment; on a shop with visitors or cron, within about two
+minutes. The rows were already right from the moment: the event says they became the ones read. Only the periods
+the price index stores are announced, at most eight per item, the nearest ones; a period beyond them is
+announced when a later write of the item stores it.
+
 A **write** is one piece of work that rewrote stored prices. Why it was done is the **cause**:
 
 | `cause()` | The constant | What happened | `causeId()` |
@@ -267,6 +274,7 @@ A **write** is one piece of work that rewrote stored prices. Why it was done is 
 | `manufacturer` | `CAUSE_MANUFACTURER` | A manufacturer was saved, renamed, changed state or was deleted | The manufacturer, 0 for several |
 | `set` | `CAUSE_SET` | A customer group set is being prepared (see below) | The set |
 | `rebuild` | `CAUSE_REBUILD` | The index was rebuilt | 0 |
+| `window` | `CAUSE_WINDOW` | A stored price period began (see above) | 0 |
 
 A **customer group set** (in the code, a set of pricing groups) is one list of the customer groups that prices,
 discounts or taxes name and that some customers hold together. Alfa stores prices for each set, not for each
@@ -302,6 +310,10 @@ cannot be changed:
 | `validUntil` | When the period ends, `null` when it has no end. For a removed row, the value it had. |
 | `oldFinalPrice` | The final price before, as exact decimal text. `null` for a new row. |
 | `newFinalPrice` | The final price after, as exact decimal text. `null` for a removed row. |
+
+For the cause `window`, `oldFinalPrice` is the final price of the period that ended at that moment and
+`newFinalPrice` that of the period that began; a row whose price did not move is not named. A row with no
+period before it has `oldFinalPrice` `null`, as a new row has.
 
 The event has no setters.
 
@@ -341,8 +353,6 @@ public function onAlfaPricesChanged(PricesChangedEvent $event): void
 
 **What it does not tell you.**
 
-- A stored price period that starts by itself when its date arrives. Nothing is written then. Read `validFrom` and
-  `validUntil` to know of future periods.
 - The prices the item page and the cart calculate live from their rules.
 - Whether a place may buy.
 - The rows of a deleted place. Learn of the place from `onAlfaAdminAfterDelete`

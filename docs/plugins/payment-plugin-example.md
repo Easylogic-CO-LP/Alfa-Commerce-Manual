@@ -26,7 +26,6 @@ plugins/alfa-payments/offline/
   services/provider.php
   src/Extension/Offline.php
   params/params.xml
-  tmpl/default_item_view.php
   tmpl/default_cart_view.php
   tmpl/default_order_completed.php
   language/en-GB/plg_alfa-payments_offline.ini
@@ -116,8 +115,7 @@ final class Offline extends PaymentsPlugin
 
     public function onItemView($event): void
     {
-        $event->setLayout('default_item_view');
-        $event->setLayoutData(['method' => $event->getMethod()]);
+        // Alfa draws the method's image, title and description; this plugin adds nothing.
     }
 
     public function onCartView($event): void
@@ -210,24 +208,6 @@ final class Offline extends PaymentsPlugin
 ```
 
 **`params/params.xml`** is printed in full under [Method settings](./payment-plugins.md#method-settings).
-
-**`tmpl/default_item_view.php`**
-
-```php
-<?php
-
-\defined('_JEXEC') or die;
-
-extract($displayData);
-
-if (!isset($method)) {
-    return;
-}
-?>
-<div>
-    <h5><?= htmlspecialchars((string) $method->name, ENT_QUOTES, 'UTF-8'); ?></h5>
-</div>
-```
 
 **`tmpl/default_cart_view.php`**
 

@@ -158,6 +158,11 @@ why:
 Open **Components**, **Alfa Commerce**. The Dashboard shows a setup checklist that leads you through the first
 steps. See [Your first shop](./store-setup.md).
 
+An installation stores the Options of Alfa Commerce with the defaults the Options screen shows; an update adds any
+default a newer release brings and keeps every setting you saved. Hide Subcategories When Filtered is Yes by default:
+on a listing, once a filter other than price, sale or discount is chosen, the subcategory strip is left out, because
+its links would drop the filter.
+
 ### The download store check
 
 Files that shoppers buy as downloads are kept in the folder `alfa-downloads` inside the site, unless **Options**,

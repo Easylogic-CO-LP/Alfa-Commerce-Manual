@@ -254,6 +254,12 @@ used. A layout of your plugin is chosen as `_:<name>`, a template's override as 
 Every form field is one column of the table `#__alfa_user_info`. One row of that table is one set of customer
 details: a delivery record or an invoice record. The column's name is the field's `field_name`.
 
+A field name is lowercase letters, digits, underscores and hyphens, at most 64 characters, since it names the
+column. Any other character becomes a hyphen, and letters of other alphabets are spelled in Latin letters of the
+site's default language, so `VAT number` is saved as `vat-number` and `vat_number` stays `vat_number`. A name
+that leaves no letters, or is longer than 64 characters, is refused before anything is saved. When the name is
+left empty, it is made from the field's title by the same rule. Saving a field again keeps its column.
+
 | When staff | Alfa |
 |---|---|
 | Save a new field | Saves the field, then adds a column of the `sql_type` your settings name |

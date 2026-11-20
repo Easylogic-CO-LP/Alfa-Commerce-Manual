@@ -196,6 +196,11 @@ Two classes in `administrator/src/Helper` do this.
   the outermost transaction commits, not before.
 - **A rollback discards the waiting work** of the level that was rolled back. Nothing is sent for a save that did
   not happen.
+- **Every level closes through `TransactionState`.** Every level in which work may be deferred is closed through
+  `TransactionState::commitLevel()` or `rollBackLevel()`: the helper runs the work after the outermost commit, hands
+  a savepoint's work to the level around it, and drops what a rollback discards. A level closed by the driver's own
+  commit or rollback would leave that work waiting, or lose it to a later rollback. The inventory audit reads one
+  read-only snapshot in a transaction of its own, always rolled back; it runs only outside any other transaction.
 - **With no transaction open, the work runs at once.**
 - **Locks count too.** While Alfa holds one of its named locks (an order's money lock, a shipment's booking lock),
   waiting work stays waiting until the lock is released, so that it does not run while another request is being

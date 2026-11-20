@@ -25,7 +25,6 @@ plugins/alfa-shipments/flat/
     services/provider.php
     src/Extension/Flat.php
     params/params.xml
-    tmpl/default_item_view.php
     tmpl/default_cart_view.php
     language/en-GB/plg_alfa-shipments_flat.ini
     language/en-GB/plg_alfa-shipments_flat.sys.ini
@@ -109,11 +108,9 @@ use Joomla\CMS\Log\Log;
 
 final class Flat extends ShipmentsPlugin
 {
-    // The item page: draw the method's name and description.
+    // The item page: Alfa draws the method's image, title and description; this plugin adds nothing.
     public function onItemView($event): void
     {
-        $event->setLayout('default_item_view');
-        $event->setLayoutData(['method' => $event->getMethod()]);
     }
 
     // The cart: this plugin has nothing to add beside its method.
@@ -179,25 +176,6 @@ final class Flat extends ShipmentsPlugin
         </fieldset>
     </fields>
 </form>
-```
-
-**tmpl/default_item_view.php**
-
-```php
-<?php
-
-\defined('_JEXEC') or die;
-
-extract($displayData);
-
-if (!isset($method)) {
-    return;
-}
-?>
-<div>
-    <h5><?= htmlspecialchars((string) $method->name, ENT_QUOTES, 'UTF-8'); ?></h5>
-    <p><?= htmlspecialchars((string) $method->description, ENT_QUOTES, 'UTF-8'); ?></p>
-</div>
 ```
 
 **tmpl/default_cart_view.php**

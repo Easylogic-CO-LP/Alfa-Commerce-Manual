@@ -676,12 +676,21 @@ PLG_ALFA_SEARCH_EXAMPLE_XML_DESCRIPTION="An example search engine for Alfa Comme
 
 The base class loads the plugin's language file by itself (`$autoloadLanguage`).
 
+## The search module's results
+
+The search module shows each product's first picture, as the catalogue's cards do, or the shop's placeholder for a
+product without one when the shop shows placeholders for products. Its results are drawn by the layout
+`result.php`: copy `modules/mod_alfa_search/tmpl/result.php` to `templates/<your template>/html/mod_alfa_search/result.php`
+to change them. The layout receives `products` (each with `name`, `link`, `short_desc` and `medias`, its pictures,
+the first one being `medias[0]->thumbnail_url`), `categories`, `manufacturers`, `suggestions` and the module's
+`params`.
+
 ## Not documented yet
 
 - A complete, working engine (reader and writer). None ships to take it from. The reader and the writer
   printed above are stubs.
 - The inside of `SearchDocument`'s parts (`FacetRef`, `FieldValue`, `SearchCombination`, `SearchDescriptions`) and
   the helper classes `LanguageTag`, `SearchScope`, `QueryNormalizer` and `PlainText`.
-- The search module (`mod_alfa_search`) and the JSON format of the search endpoint.
+- The rest of the search module (`mod_alfa_search`), and the JSON format of the search endpoint.
 - Running a rebuild from the command line. No console command for it ships.
 - The background work engine is described on its own page, [Background work](../architecture/background-work.md).

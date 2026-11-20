@@ -54,8 +54,10 @@ the item page.
 | `getItem()` | The item being shown |
 | `getMethod()` | The method's record: `id`, `name`, `description`, and `params` already decoded to an array |
 
-**What you are expected to do.** Call `setLayout('<file in tmpl, without .php>')` and `setLayoutData([...])`. To draw
-somewhere else on the page, ask for a place and set its layout: `paymentMethods()` (the default place),
+**What you are expected to do.** Call `setLayout('<file in tmpl, without .php>')` and `setLayoutData([...])`. Alfa
+draws the method itself first: its image, its title and its description. Your layout adds only what is yours below
+them (a "pay in instalments" note, for example), never a logo, the title or the description. With nothing to add, set
+no layout. To draw somewhere else on the page, ask for a place and set its layout: `paymentMethods()` (the default place),
 `title()` (beside the item's title) or `nearAddToCart()`; each returns a builder with `setLayout()` and `setData()`.
 Change nothing on the item.
 
