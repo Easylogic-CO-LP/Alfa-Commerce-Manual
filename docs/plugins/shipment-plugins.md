@@ -109,7 +109,7 @@ Your class must contain three methods: `onItemView()`, `onCartView()` and `onCal
 to load the class without them, because the base classes declare them abstract.
 
 **How you handle an event.** Write a public method with the event's name. Nothing else: Alfa calls it on the carrier
-it addresses. The base class lists the twelve names (`ShipmentsPlugin::TARGETED_EVENTS`).
+it addresses. The twelve events are on [Shipping plugin events](./shipment-plugin-events.md).
 
 Do not list these events in `getSubscribedEvents()`. The base class returns an empty list there. Add
 to it only for an event of Joomla itself:

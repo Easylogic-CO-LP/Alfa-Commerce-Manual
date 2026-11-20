@@ -16,7 +16,7 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
 - [A complete payment plugin](./payment-plugin-example.md)
 
-All sixteen events of `PaymentsPlugin::TARGETED_EVENTS` are addressed to one plugin. Which plugin depends on the
+All sixteen events on this page are addressed to one plugin, each to its public method of the event's name. Which plugin depends on the
 event: the plugin of an offered method, the plugin recorded on the order, the plugin recorded on the payment row, or
 the plugin named in the address. If that plugin cannot be used, Alfa never asks another one:
 

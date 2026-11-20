@@ -236,8 +236,7 @@ the live tables.
 list).
 
 **Who receives it.** Addressed to one plugin (targeted): the plugin that registered the configured engine, and only
-when that plugin is in the group `alfa-search`. `SearchEnginePlugin` lists this event in its `TARGETED_EVENTS`, so
-you declare it by writing a public method with this name.
+when that plugin is in the group `alfa-search`. You handle it by writing a public method with this name.
 
 **What you are given.** `SearchInputLayoutEvent`.
 
@@ -379,7 +378,7 @@ The search index itself needs no projection of yours. Alfa's own search projecti
 
 ### onClearData
 
-`SearchEnginePlugin` also lists `onClearData` in its `TARGETED_EVENTS`. A plugin that writes a public
+`onClearData` is addressed to one engine plugin too. A plugin that writes a public
 `onClearData(ClearDataEvent $event)` method is asked to remove the data it owns when staff clear an extension's data
 or clear the whole shop. It is the same event for every plugin type.
 

@@ -157,8 +157,7 @@ Your class extends `Alfa\Component\Alfa\Administrator\Plugin\ItemFieldsPlugin`
 (`administrator/src/Plugin/ItemFieldsPlugin.php`). A plugin in this group that does not extend it is never called.
 
 **How you handle an event.** You write a public method with the event's name; Alfa calls it on the field's own
-plugin. The base class lists the family's targeted events (`TARGETED_EVENTS`). Do not list them in
-`getSubscribedEvents()`.
+plugin. Do not list these events in `getSubscribedEvents()`.
 
 The base class already has a method for eight of the eleven events, so you only override the ones you need:
 

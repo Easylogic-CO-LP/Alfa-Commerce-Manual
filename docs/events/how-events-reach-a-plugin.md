@@ -162,9 +162,8 @@ A targeted event is handled by a **public method with the event's name**. Alfa s
 calls that method on it, with the event. Nothing else declares it: no list and no interface. A plugin whose class has
 no such method takes no part in the event.
 
-**A payment, shipping, item-field or search plugin** extends its family's base class. The base class lists the
-targeted events of that family (its `TARGETED_EVENTS`) and already has a method for some of them. Write the methods
-you need:
+**A payment, shipping, item-field or search plugin** extends its family's base class, which already has a method for
+some of the family's events. Write the methods you need; the family's page lists its events:
 
 ```php
 use Alfa\Component\Alfa\Administrator\Plugin\PaymentsPlugin;

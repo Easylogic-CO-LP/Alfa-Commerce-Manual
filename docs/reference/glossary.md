@@ -23,7 +23,7 @@ lists the ones it handles in `getSubscribedEvents()`.
 
 **Addressed to one plugin (a targeted event).** An event that is the job of one named plugin. No other plugin sees
 it. A plugin handles the ones it takes with public methods of their names, which Alfa calls on the plugin it
-addresses; nothing lists them (a family's base class lists its family's in `TARGETED_EVENTS`, for reference).
+addresses; nothing lists them.
 
 **"Before" and "after" events.** A "before" event asks whether something may happen; a listener that throws an error
 stops it. An "after" event reports what already happened; a listener that fails is logged and the others still run.
