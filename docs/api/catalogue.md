@@ -81,7 +81,7 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 
 **A list row holds:** `id`, `name`, `alias`, `sku`, `gtin`, `mpn`, `state`, `stock`, `available_quantity`,
 `manage_stock`, `stock_action`, `is_virtual`, `combination_count`, `id_category_default`, `category_ids`,
-`manufacturer_ids`, `publish_up`, `publish_down`, `modified`, `ordering`.
+`manufacturer_ids`, `publish_up`, `publish_down`, `modified`, `commerce_changed_at`, `ordering`.
 
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
@@ -101,8 +101,24 @@ refused change leaves the item as it was; it is not checked out. The keys are `f
 item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
 item without them; nothing was saved."
 
-The list also takes `filter[stock]` and `filter[fields]`. See
+The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
+
+**What changed since your last read.** `commerce_changed_at` is when the item's stock, its prices or the item itself
+last changed: a stock move (an order's line, a stock count, a delivery), a price written on the item or on one of its
+combinations, a price period stored ahead of time that has begun, a change of its state, a save of the item. It is a
+UTC time to the microsecond, `2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that
+keeps stock and prices in step with another system reads the items changed since its last read instead of every
+item:
+
+```bash
+curl -H "X-Joomla-Token: YOUR_TOKEN" \
+  "https://your-shop.example/api/index.php/v1/alfa/items?filter[changed_since]=2026-11-20T10:00:00Z&list[limit]=100"
+```
+
+Ask from a minute before your last read: an item read twice is harmless, since a read gives the item as it is now.
+A time without a zone is UTC; `Z` or an offset is read in its zone; a value that is not a date and time answers 400.
+A change of a discount or a tax is not a change of the item and does not move `commerce_changed_at`.
 
 **Delete.** An item is deleted only while it is in the trash. Move it there first with a `PATCH` of `state` -2; an
 item in any other state answers 409 and nothing is deleted. An item that was never sold is then removed (204). An
@@ -117,11 +133,21 @@ that it was archived instead of deleted.
 {"name_en_gb": "Tools", "parent_id": 0, "state": 1}
 ```
 
-**A list row holds:** `id`, `name`, `alias`, `parent_id`, `state`, `item_count`, `publish_up`, `publish_down`,
-`modified`, `ordering`.
+**A list row holds:** `id`, `name`, `alias`, `parent_id`, `state`, `item_count`, `item_count_descendants`,
+`publish_up`, `publish_down`, `modified`, `ordering`.
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `list_options`, `medias`,
 `translations`.
+
+**The products of a category.** `item_count` counts the items assigned to the category itself.
+`item_count_descendants` counts the items assigned to it or to any category below it, at any depth, each item once
+however many of those categories it is in. Both count the items the administrator's items list shows by default,
+published and unpublished; trashed and archived items are not counted. A category whose items all sit in its
+sub-categories reads `item_count` 0 and `item_count_descendants` the number of those items:
+
+```json
+{"name": "Mobile phones", "parent_id": 0, "item_count": 0, "item_count_descendants": 128}
+```
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `robots`.
 

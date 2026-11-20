@@ -31,7 +31,9 @@ flowchart LR
 [The filters of each list](./overview.md#the-filters-of-each-list): they include filters by payment,
 fulfilment, waiting time, reconciliation, overpayment, date, item and customer.
 
-**Create.** An order made through the API has the source `api` and starts empty. Give it a status and the
+**Create.** An order made through the API has the source `api`, or the one the request names (see
+[Where an order comes from](#where-an-order-comes-from)), and starts empty unless the request carries its lines,
+its parcel and its payment. Give it a status and the
 customer's details; it takes the shop's default currency (see [Known limitations](./overview.md#known-limitations)). The details go in `alfa_form_fields`, keyed by the names of the shop's checkout fields. On
 a fresh installation `name`, `email`, `country`, `address`, `city` and `postcode` are needed, unless the shop sets
 some of them Optional in Form Fields, and `country` is the id of a published place. A shop that was installed
@@ -73,12 +75,48 @@ The answer, status 201, shortened:
 }
 ```
 
+### Where an order comes from
+
+**The source.** `source` names the channel an order comes from: lower-case letters, digits, `_` and `-`, up to 32
+characters, for example `base` for a marketplace's connector. Without it the order is `api`. `storefront`, `admin`
+and `renewal` are the sources Alfa Commerce writes for its own orders (the shop's checkout, the order screen, a
+renewal) and are refused with 422, as is a value in another shape. The source is written when the order is created
+and never changed; `filter[source]` lists the orders of one channel.
+
+**The other system's id.** An order that another system made (a marketplace, an ERP, a connector) can carry that
+system's name in `external_source` (the same shape as `source`) and its id of the order in `external_reference` (text
+of up to 64 characters, compared exactly: letter case counts). Send both or neither; one without the other is refused
+with 422.
+
+```json
+{"id_order_status": 1, "source": "base", "external_source": "base", "external_reference": "OR-2026-551",
+ "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
+                      "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}}
+```
+
+One pair names one order. A create that sends a pair an order already carries creates nothing and answers 409, with
+that order's id in `meta.existing_id`:
+
+```json
+{"meta": {"existing_id": 1052},
+ "errors": [{"title": "/external_reference: order 1052 already carries external_source \"base\" with this external_reference, and one pair names one order. The order was not created.", "code": 409}]}
+```
+
+So a connector that sends an order again after a timeout or a lost answer never makes a second one: it reads the
+order with `GET v1/alfa/orders/1052` and goes on. It needs no map of its own of the orders it sent. The database
+holds each pair once, so two such requests at the same moment make one order, and the second is answered in the
+same way.
+
+`filter[external_source]` lists the orders of one system, and with `filter[external_reference]` it finds the one
+order of a pair. An order without a pair can be given one with a `PATCH` of the order, once: a pair another order
+carries is refused with 409 and that order's id, and a change of a pair the order already carries with 422.
+
 **A list row holds:** `id`, `reference`, `customer_name`, `customer_email`, `id_order_status`, `status_name`,
 `id_payment_method`, `payment_method_name`, `id_shipment_method`, `shipment_method_name`, `payment_status`,
 `payment_percentage`, `balance`, `overpaid`, `excess`, `still_held`, `fulfillment_status`,
 `fulfillment_percentage`, `order_total`, `order_total_tax_excl`, `items_total`, `shipping_total`,
-`discount_total`, `total_paid_real`, `total_refunded_real`, `id_currency`, `currency`, `source`, `state`,
-`created`, `modified`.
+`discount_total`, `total_paid_real`, `total_refunded_real`, `id_currency`, `currency`, `source`,
+`external_source`, `external_reference`, `state`, `created`, `modified`.
 
 **One record holds also:** `id_user`, `conversion_rate`, `delivery_date`, `id_address_delivery`,
 `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `shipments`,
@@ -100,8 +138,9 @@ trash flag, not its status) is refused:
 {"errors":[{"title":"state cannot be changed via PATCH: over the API an order has no trash step and is deleted in one call (DELETE v1/alfa/orders/:id); its status changes through POST v1/alfa/orders/:id/status.","code":422}]}
 ```
 
-A `PATCH` writes the order's `customer_note` and its delivery and invoice details (`alfa_form_fields`, and
-`alfa_form_fields_billing` with `invoice_differs`), and nothing else. A body that
+A `PATCH` writes the order's `customer_note`, its delivery and invoice details (`alfa_form_fields`, and
+`alfa_form_fields_billing` with `invoice_differs`) and, once, `external_source` with `external_reference`, and
+nothing else. A body that
 carries any other field the order publishes, such as `customer_email`, `id_address_delivery`, `created` or
 `order_total`, is refused with 422 before anything is saved, and the answer names the fields:
 
@@ -116,8 +155,10 @@ cancel such an order instead. An order cannot be moved to the trash through the 
 
 ## Operations on an order
 
-Nine routes. Each answers 200 with the whole order as it is after the change, so one answer shows the new totals.
-An order id that does not exist, or a line, payment or shipment of another order, answers 404.
+Twelve routes. Each answers 200 with the whole order as it is after the change, so one answer shows the new totals.
+An order id that does not exist, or a line, payment or shipment of another order, answers 404. They do what the
+order screen does, with its rules, and ask the permission it asks: Orders: Edit, and for the status Orders: Edit
+State with Orders: View.
 
 | Method and address | What it does |
 |---|---|
@@ -127,8 +168,11 @@ An order id that does not exist, or a line, payment or shipment of another order
 | `POST v1/alfa/orders/:id/payments` | Records a payment |
 | `POST v1/alfa/orders/:id/payments/:paymentId/settle` | Moves a payment to another state, for example to completed |
 | `POST v1/alfa/orders/:id/payments/:paymentId/refund` | Records a refund of a payment |
+| `PATCH v1/alfa/orders/:id/payments/:paymentId` | Changes a payment's method, reference or note |
+| `DELETE v1/alfa/orders/:id/payments/:paymentId` | Removes a payment that moved no money |
 | `POST v1/alfa/orders/:id/shipments` | Adds a parcel |
 | `PATCH v1/alfa/orders/:id/shipments/:shipmentId` | Changes a parcel |
+| `DELETE v1/alfa/orders/:id/shipments/:shipmentId` | Removes a parcel |
 | `POST v1/alfa/orders/:id/status` | Changes the order's status |
 
 ### Lines
@@ -223,6 +267,24 @@ Only a completed payment can be refunded:
 After a refund of 5.00 the order read: `payment_status` "partially_refunded", `total_refunded_real` 5.00, and a
 new entry in `payments` with `payment_type` "refund" and `refund_type` "partial".
 
+**Change a payment.** `id_payment_method`, `transaction_id` (the payment provider's reference) and `note`, as the
+payment window of the order screen changes them. The order's payment method follows its latest payment that is not
+failed or cancelled.
+
+```json
+{"id_payment_method": 2, "transaction_id": "PSP-77812", "note": "Paid by card at the counter"}
+```
+
+A payment its gateway collected keeps its method and its provider's reference, and a payment that refunds or the
+provider's reports name keeps its method: such a change is refused with 409 and the reason. The amount and the state
+are not changed here; a payment is settled with `settle` and money is returned with `refund`. Any other field is
+refused with 422, and so is an `id_payment_method` that is not a payment method of the shop.
+
+**Remove a payment.** `DELETE` removes a payment that moved no money: one that is pending, authorized, failed or
+cancelled. A completed or refunded payment, a refund not settled yet (it reserves its amount), a reversal or a
+chargeback the provider reported, and a payment one of them names are history: the delete is refused with 409 and
+the reason. The order's `history` records the removal.
+
 ### Shipments
 
 **Add a parcel.** `id_shipment_method` is needed. Optional: `tracking_number`, `status`, the charge, and `items`,
@@ -262,6 +324,10 @@ the parcel.
 ```json
 {"status": "shipped", "tracking_number": "TRK-1002"}
 ```
+
+**Remove a parcel.** `DELETE` removes a parcel, as the order screen's delete does: its lines are free again for
+another parcel, and the order's `history` records the removal. The carrier is not told: a parcel booked with a
+carrier is removed from the order only, so cancel the booking with the carrier first.
 
 What a single order carries:
 

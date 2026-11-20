@@ -245,7 +245,7 @@ list sent where one value is expected (for example `filter[state][]=1`) is answe
 
 | List | Filters besides `filter[search]` |
 |---|---|
-| `items` | `filter[state]`, `filter[category]`, `filter[manufacturer]` |
+| `items` | `filter[state]`, `filter[category]`, `filter[manufacturer]`, `filter[changed_since]` |
 | `catalog/items` | `filter[category]`, `filter[manufacturer]` |
 | `categories`, `manufacturers`, `currencies`, `taxes`, `discounts`, `places`, `paymentmethods`, `shipmentmethods`, `orderstatuses`, `documenttypes`, `formfieldgroups` | `filter[state]` |
 | `itemfields` | `filter[state]`, `filter[type]`, `filter[informational]` |
@@ -270,6 +270,9 @@ Four lists also take the filters their administrator screens apply, with the sam
 | `orders` | `filter[item_id]` | The orders with a line of that item |
 | `orders` | `filter[id_user]` | The orders of that Joomla user. `0`: the guests' orders, those placed without an account. |
 | `orders` | `filter[email]` | The orders that carry that e-mail address, matched whole, with letter case and accents set aside (a part of an address finds nothing), a guest's included |
+| `orders` | `filter[source]` | The orders of one channel: `storefront`, `admin`, `renewal`, `api`, or the source a client named |
+| `orders` | `filter[external_source]`, `filter[external_reference]` | The orders of another system, and with both the one order of a pair; each matched whole, letter case counting in the reference |
+| `items` | `filter[changed_since]` | The items whose stock, prices or own fields changed at or after that time (`commerce_changed_at`). A time without a zone is UTC; one with `Z` or an offset is read in its zone. A value that is not a date and time answers 400. |
 | `documents` | `filter[date_start]`, `filter[date_end]` | The document's legal date, `Y-m-d`, both days included |
 | `inventorymovements` | `filter[date_start]`, `filter[date_end]` | The movement's date |
 | `inventorymovements` | `filter[item_id]` | The movements of that item |
