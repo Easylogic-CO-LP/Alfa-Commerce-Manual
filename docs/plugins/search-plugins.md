@@ -380,7 +380,8 @@ The search index itself needs no projection of yours. Alfa's own search projecti
 
 `onClearData` is addressed to one engine plugin too. A plugin that writes a public
 `onClearData(ClearDataEvent $event)` method is asked to remove the data it owns when staff clear an extension's data
-or clear the whole shop. It is the same event for every plugin type.
+or clear the whole shop. It is the same event for every plugin type. A transaction the method leaves open is rolled
+back, everything it deferred until a commit inside it is discarded with it, and the clear is reported as a failure.
 
 ## Telling which results a shopper saw
 

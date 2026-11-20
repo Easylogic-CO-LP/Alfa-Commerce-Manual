@@ -346,4 +346,4 @@ $event->setRefresh(true);
 | **What you are given** | `ClearDataEvent` (`administrator/src/Event/Tools/ClearDataEvent.php`). `getSource()` says which of the three asked. |
 | **What you are expected to do** | Remove the data your plugin owns (its log rows, for example). Call `setMessage()` with one translated line about what was removed. If something could not be removed, call `setError()` with a translated line and return. |
 | **What happens next** | Staff see your message on the result page. |
-| **If you are missing or you fail** | Without the method, staff are told that automatic Clear Data is not supported, and nothing of yours is touched. An error you throw is logged and the clear counts as failed. |
+| **If you are missing or you fail** | Without the method, staff are told that automatic Clear Data is not supported, and nothing of yours is touched. An error you throw is logged and the clear counts as failed. A transaction you leave open is rolled back, everything you deferred until a commit inside it is discarded with it, and the clear counts as failed. |

@@ -398,4 +398,5 @@ removed, call `setError(string $error)`.
 **What happens next.** Staff see your message or your error.
 
 **If you are missing or you fail.** Without the method, staff are told that automatic Clear Data is not supported
-and nothing is touched. An error you throw is logged and reported as a failure.
+and nothing is touched. An error you throw is logged and reported as a failure. A transaction you leave open is rolled
+back, everything you deferred until a commit inside it is discarded with it, and the clear is reported as a failure.

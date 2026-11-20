@@ -71,6 +71,18 @@ While the shop shows its catalogue only, the notification centre says so, with t
 site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and publish it
 again when it sells.
 
+## Currencies
+
+**Options**, **Currencies**, **Default Currency** is the currency your prices are in. The list shows the published
+currencies only; publish a currency on Alfa Commerce's Currencies screen to offer it here. If the stored default currency
+is not published, the field shows "Select a currency" and the Options are not saved until you choose a published
+one.
+
+The store's default currency, and the last currency that is published, always stay in service. Unpublish, Archive,
+Trash and Delete in the list refuse them, and so does the Status on a currency's own edit screen; the message names the
+currency by its id and says why. To retire the default currency, choose another default first in **Options**,
+**Currencies**.
+
 ## Take the guided tours
 
 Alfa Commerce installs 33 guided tours. A tour walks through one screen step by step, on the screen itself:

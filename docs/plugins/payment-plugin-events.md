@@ -471,4 +471,5 @@ Extensions, or run Clear everything.
 **What happens next.** Staff see your line on the result page.
 
 **If you are missing or you fail.** A plugin without this method is shown as "Automatic Clear Data not supported" and
-none of its data is touched. A thrown error, or a transaction left open, is reported as a failure.
+none of its data is touched. A thrown error, or a transaction left open, is reported as a failure. A transaction you
+leave open is rolled back, and everything you deferred until a commit inside it is discarded with it.

@@ -514,6 +514,7 @@ echo $line->format(false);           // without it
 | `format(float $amount, bool $includeSymbol = true): string` | A number as the currency writes it |
 | `equals(Currency $other): bool`, `is(string $code): bool` | Comparisons |
 | `toArray(): array` | The currency as data, as in `toArray()` above |
+| `formatUnit(float\|int\|string $unit, float\|int\|string $lineTotal, float\|int\|string $quantity, float\|int\|string\|null $rate = null, bool $includeSymbol = true, ?bool $auto = null, bool $stated = false): string` | A unit price as the currency writes it beside its quantity and its line's total, with the decimals the shop's unit display precision gives (see [In a template](#in-a-template)). `$rate` is the line's agreed rate, beside a price with tax only; `$auto` true writes the Auto form whatever the setting. `stated: true` for a unit that is a stored price (a price row's own value, a sale's own price) |
 
 ## The stored price index
 
@@ -731,7 +732,7 @@ The shipping taxes follow the same order as the goods' taxes (see
 - The remaining public methods of `Money` (`abs()`, `negate()`, `nonNegative()`, `round()`, `convertTo()`, `avg()`,
   `allocateToTargets()`, `toArray()`, `perUnitAtMaxScale()`, `ofRateTimesQuantity()`, `roundToCurrency()`,
   `timesRatioSum()`, `scaleCount()`, `percentOf()`, `floatDigits()`) and of `Currency` (`atScale()`, `formatRate()`,
-  `formatUnit()`, `formatStored()`, `unitFigure()`, `rateDecimals()`, `groupFigure()`, `unitPrecisionIsAuto()`,
+  `formatStored()`, `unitFigure()`, `rateDecimals()`, `groupFigure()`, `unitPrecisionIsAuto()`,
   `fromDatabase()`).
 - The other methods of `PriceUnits` (`line()`, `publishedLine()`, `exact()`, `published()`).
 - `DiscountSummary`, `TaxSummary` and `PriceBreakdown` beyond their data shape.
