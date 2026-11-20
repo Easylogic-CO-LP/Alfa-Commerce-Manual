@@ -6,7 +6,7 @@ description: How Alfa Commerce compares its installed files with the signed list
 
 # Integrity check and Tools > Security
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.2.2" />
 
 Alfa Commerce can tell whether its files on a site are the files of the official release. It compares them with a
 list that is published for every release and signed by the publisher. The result is shown under **Tools > Security**
@@ -220,6 +220,52 @@ or older than the version the extension needs. The gate never refuses anything b
 and it never refuses an uninstall. It is documented on [Plugin overview](../plugins/overview.md), under "The
 installer gate".
 
+## The error log
+
+### What it does
+
+When a page of the shop, the administrator or the REST API fails with a server error, Alfa Commerce writes one line
+about it to `administrator/logs/com_alfa_errors.php` (Joomla's log folder; the file starts with Joomla's PHP header, so
+a browser cannot read it). The visitor sees only a reference:
+
+> The page could not be shown because of an error on the server. Reference: 3f9a1c07b2d4e815
+
+The same reference is sent in the response header `X-Alfa-Error-Reference`. The status stays a server error (500, or
+the error's own 5xx). A page that is not found, or that the visitor may not open (a 4xx), is Joomla's own and is not
+recorded. Nothing is retried and nothing is hidden: the page still fails, and the log keeps what happened.
+
+### What the line holds
+
+Joomla writes the date and time, the priority and the visitor's address. Alfa Commerce adds, separated by `|`:
+
+| Part | What it is |
+|---|---|
+| `reference` | The 16 characters the visitor was shown. Search the file for it. |
+| The client | `site`, `administrator` or `api`. |
+| The method and the address | For example `GET /index.php?option=com_alfa&view=items`. A parameter that looks like a token, a key or a password is shown as `***`. |
+| `referrer` | The host of the page the visitor came from, no more. |
+| `agent` | The browser's user agent, at most 200 characters. |
+| `session` | The first 12 characters of a SHA-256 hash of the session id. The id itself is never written. |
+| `user` | The user id, 0 for a guest. |
+| `error`, then `cause` | The error and up to four of its causes: the class, the code, for a database error its error number (and SQLSTATE when the database gives one), the message, and the first place in Alfa Commerce's code it passed through. The database's user, host, name and password, and the site's folder, are taken out of the message (`<user>`, `<host>`, `<schema>`, `<password>`). A message is cut at 500 characters. |
+| `memory`, `time` | The request's peak memory and how long it ran. |
+
+### When it is used
+
+System - Alfa Commerce Sync records the error, so it must be enabled (it is, after installation). It records every
+failure that happens once Joomla has loaded its system plugins. A failure before that, such as a database server that
+refuses new connections while Joomla reads the session, happens before any plugin can listen. To have Joomla write those
+too, set **System**, **Global Configuration**, **Logging**: **Log Categories** `error`, **Log Category Mode** Include,
+and the priorities Critical, Emergency, Alert and Error. Joomla then writes them to `administrator/logs/custom-logging.php`.
+
+With **Debug System** on, Joomla's error page also shows the original error under the reference, for the developer.
+Keep Debug System off on a live shop.
+
+### What happens next
+
+The file grows by one line for each failed request. Joomla's **Rotate Logs** task (System, Scheduled Tasks) rotates it
+with the site's other logs. Joomla's own error log line, when its error category is logged, carries the same reference.
+
 ## How to report a security problem
 
 The rules are in the file `SECURITY.md` in the repository:
@@ -259,6 +305,7 @@ commit secrets or credentials, and give database operations no more rights than 
 | A language file is reported as extra | It lies inside Alfa's own folders. A language pack belongs in Joomla's language folders. |
 | The red banner stays after you fixed the files | The last answer is kept for 24 hours. Press Recheck now. |
 | A user cannot find Tools | The user lacks the permission Use Maintenance Tools. |
+| A visitor reports a page with a reference | A server error. | Search `administrator/logs/com_alfa_errors.php` for the reference: its line says what failed and where. |
 | Your extension's request fails with status 503 | The shop is in maintenance during Clear everything |
 
 ## Not documented yet
