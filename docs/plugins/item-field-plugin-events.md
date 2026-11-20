@@ -358,8 +358,7 @@ permission to edit orders.
 
 | Method | Outcome |
 |---|---|
-| `setLayout(string $layout)`, `setLayoutData(array $data)` | Show one of your layouts in a popup |
-| `setModalTitle(string $title)` | Read by nothing, and deprecated: do not use it, it will be removed. The popup's title is the action's label. |
+| `setLayout(string $layout)`, `setLayoutData(array $data)` | Show one of your layouts in a popup, under the action's label as its title |
 | `addButton(string $label, array $opts = [])` | A footer button of the popup. Without options it closes. `['reload' => true]` closes and reloads. `['action' => 'id']` runs another of your actions in the same popup. |
 | `setMessage(string $message)` | Report a result |
 | `setError(string $message)` | Report a failure |

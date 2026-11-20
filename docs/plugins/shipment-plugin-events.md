@@ -222,7 +222,7 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 |---|---|
 | **When it fires** | When a shopper's browser comes back to the shop from a page of the carrier (a pickup point map, for example), at the return address of your plugin. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. `getOrder()` is `null`: Alfa does not know which order the return is about. Read the request yourself. `getOrder()` is deprecated: do not use it, it will be removed. |
+| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. There is no order on the event: Alfa does not know which order the return is about. Read the request yourself. |
 | **What you are expected to do** | Check that the return is genuine, find the order from what the carrier sent, do your work, and call `setRedirectUrl()`. Without a redirect the shopper is sent to the cart with the message that the choice could not be confirmed with the shipping service. Set a redirect all the same: only you know where the shopper belongs. |
 | **What happens next** | Alfa sends the shopper to the address you set. An address inside the shop written as `index.php?option=...` is turned into its friendly form for you. |
 | **If you are missing or you fail** | If the plugin cannot be used, the shopper is sent to the shop's home page with the message that the shipping method of the return could not be identified. If your class has no such method, the shopper is sent to the cart. An error you throw shows Joomla's error page. |
@@ -233,7 +233,7 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 |---|---|
 | **When it fires** | When the carrier's server calls your plugin's webhook address: picked up, delivered, returned, a label is ready. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element, `getOrder()` is `null`. There is no shopper, no session and no token. Read the request yourself. `getOrder()` is deprecated: do not use it, it will be removed. |
+| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element. There is no order on the event, no shopper, no session and no token. Read the request yourself. |
 | **What you are expected to do** | Three duties. Check that the call is genuine (the carrier's signature or shared secret): Alfa checks nothing. Find the parcel yourself. Cope with the same call arriving twice, with `settleAttempt()` (see below). Then set the answer. |
 | **What happens next** | Alfa sends your answer to the carrier and ends the request. |
 | **If you are missing or you fail** | See [Return and webhook addresses](./shipment-plugins.md#return-and-webhook-addresses). |
@@ -264,7 +264,6 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 | `confirm($message)` | Ask before running |
 | `readOnly()` | The action changes nothing (details, logs). It may be opened from a link. |
 | `mutating()` | The action changes something. This is the default: such an action runs only from a POST with a one-time key, so a reload cannot repeat it. |
-| `modal($layout, $title, $size)` | Records a layout, a title and a size on the action. Nothing reads them: every button opens the action popup, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. Deprecated, with `hasResponseLayout()`: do not use them, they will be removed. |
 | `data([...])` | Fields posted with the action. Read them from the request in `onExecuteAction`. |
 | `priority(200)` | Higher comes first. The default is 100. |
 | `tooltip($text)`, `meta($key, $value)`, `buttonLayout($layout)` | Hint, extra data, your own button layout |
@@ -296,8 +295,7 @@ $event->add('mark_shipped', Text::_('PLG_ALFA_SHIPMENTS_STANDARD_MARK_SHIPPED'))
 | `setError($text)` | The action failed, with this message |
 | `setRefresh(true)` | Reload the order page afterwards |
 | `setRedirectUrl($url)` | Send staff elsewhere. Wins over the reload. |
-| `setLayout($name)`, `setLayoutData([...])` | Draw a layout of your `tmpl` folder in the popup |
-| `setModalTitle($title)` | Read by nothing. The popup's title is the button's label. `setModalTitle()` and `getModalTitle()` are deprecated: do not use them, they will be removed. |
+| `setLayout($name)`, `setLayoutData([...])` | Draw a layout of your `tmpl` folder in the popup, under the button's label as its title |
 | `addButton($label, $opts)` | A button under the popup. `$opts` may hold `action` (run another action of this shipment), `data`, `reload`, `class`. |
 
 From the standard plugin, shortened to the writing part:

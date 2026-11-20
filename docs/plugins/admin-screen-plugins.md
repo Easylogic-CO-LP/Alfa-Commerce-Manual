@@ -407,12 +407,16 @@ six are announced to everyone and go in `getSubscribedEvents()`.
 | A dashboard card | `onAlfaCollectCards` | `$event->top()`, `metrics()`, `main()`, `side()` or `bottom()`, each `('group.element', $id, $titleKey)` |
 | A line in the setup checklist | `onAlfaCollectSetupChecks` | `$event->add('group.element', $id, $labelKey)` |
 | A tool on the Tools screen | `onGetToolActions` | `$event->add('group.element', $id, $labelKey)`, then `->meta('surface', $tab)` to name the tab of Tools it is drawn on: a tool without a surface is not drawn. The tool is then run by `onExecuteToolAction`, which is addressed to your plugin alone: its public method `onExecuteToolAction(ExecuteToolActionEvent $event): void`. |
-| Document types | `onCollectDocumentTypeProviders` | `$event->addProvider($provider, 'group.element')`. Here the plugin's name is the second argument. |
+| Document types | `onCollectDocumentTypeProviders` | `$event->addProvider('group.element', $provider, $version)` |
 | Clearing your plugin's data | `onClearData` | Addressed to your plugin alone: its public method `onClearData(ClearDataEvent $event): void`. |
 | A whole screen | The six `onAlfaPanel...` events | See [Creating an Admin Panel](./admin-panels.md) |
 
-A registry's entry names its plugin second, after the object it registers: `addProjection()`, `addEngine()` and
-both `addProvider()` (document types, and stock allocation). The other contributions name the plugin first.
+Every contribution names the plugin first, then what it contributes: the entries above and the four registries,
+`addProjection()`, `addEngine()` and both `addProvider()` (document types, and stock allocation). A call that builds an
+entry answers the entry, so its settings chain on it (`$event->item('group.element', $id)->title($key)->view($view)`);
+a registry answers the event, so a plugin's contributions chain on it
+(`$event->addProvider('alfa.mypack', $invoices, '1.0.0')->addProvider('alfa.mypack', $credits, '1.0.0')`). There is one
+way to make each call; passing the object first is refused with a type error.
 
 How stock is allocated is not one of these. It belongs to a plugin family of its own, `alfa-inventory`.
 

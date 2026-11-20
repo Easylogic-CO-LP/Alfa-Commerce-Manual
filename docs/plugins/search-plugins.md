@@ -218,8 +218,8 @@ item save, for the rebuild. A storefront page asks once.
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` are loaded.
 
-**What you are given.** `CollectSearchEnginesEvent`, with `addEngine(SearchEngineInterface $engine, string
-$contributor, string $version = '')`.
+**What you are given.** `CollectSearchEnginesEvent`, with `addEngine(string $contributor, SearchEngineInterface
+$engine, string $version = ''): static` (the plugin first, as every contribution; it answers the event).
 
 **What you are expected to do.** Nothing. `SearchEnginePlugin` handles it and calls `addEngine()` with your engine,
 your plugin's group.element and your manifest's version.
@@ -362,8 +362,9 @@ from the catalogue).
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 
-**What you are given.** `CollectCatalogProjectionsEvent`, with `addProjection(ProjectionInterface $projection,
-string $contributor, string $version = '')`. The contributor is your plugin's group.element.
+**What you are given.** `CollectCatalogProjectionsEvent`, with `addProjection(string $contributor,
+ProjectionInterface $projection, string $version = ''): static`. The contributor, first, is your plugin's
+group.element; it answers the event, so further projections chain on.
 
 **What you are expected to do.** Only if your plugin keeps item data of its own besides the search index: add an
 object that implements `ProjectionInterface` (`syncItem(int $itemId)`, `syncItems(array $itemIds)`,

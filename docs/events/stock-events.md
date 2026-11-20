@@ -472,7 +472,7 @@ the highest priority first. The first usable answer wins.
 
 | Method | What it does |
 |---|---|
-| `addProvider(StockAllocationProviderInterface $provider, string $contributor, int $priority = 0): void` | Offers your provider. `$contributor` is your plugin's name as group.element, for example `alfa-inventory.mainstore`. A higher `$priority` is asked earlier. |
+| `addProvider(string $contributor, StockAllocationProviderInterface $provider, int $priority = 0): static` | Offers your provider. `$contributor` comes first and is your plugin's name as group.element, for example `alfa-inventory.mainstore`; then the provider. A higher `$priority` is asked earlier. It answers the event, so further providers chain on. |
 | `getProviders(): array` | The providers offered so far. Alfa reads it; a plugin has no need to. |
 
 **What you are expected to do.** Call `addProvider()` once for each provider you offer.
@@ -542,8 +542,8 @@ final class Mainstore extends CMSPlugin implements SubscriberInterface
     public function onCollectStockAllocationProviders(CollectStockAllocationProvidersEvent $event): void
     {
         $event->addProvider(
-            new MainStoreAllocation((int) $this->params->get('location_id', 0)),
             'alfa-inventory.mainstore',
+            new MainStoreAllocation((int) $this->params->get('location_id', 0)),
             100,
         );
     }
