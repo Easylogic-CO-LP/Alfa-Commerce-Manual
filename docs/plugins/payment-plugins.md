@@ -8,7 +8,7 @@ description: How to write a payment plugin for Alfa Commerce, what it must provi
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -135,6 +135,13 @@ What the picture means:
   shopper's return only decides which page the shopper sees.
 - **An offline method stops after step 7.** It sets nothing in `onOrderProcessView`, the shopper goes to the
   completed page, and staff settle the payment later with a button.
+- **Step 7 can come again for the same order.** While an order still owes money, its confirmation page and the
+  customer's order e-mail show Pay now, which leads the buyer back to the process page of the same order; nothing is
+  placed again. Your `onOrderProcessView` then runs for an order that may already hold an earlier attempt of yours:
+  open a fresh attempt (close the earlier pending one with `supersedeAttempt()`) or carry the earlier one on, as your
+  provider allows. Core offers Pay now only while the order is not in the trash, owes money, is neither cancelled nor
+  completed, holds no authorised payment and no unsettled refund, and its method is published with its plugin
+  enabled; core's Standard method never gets it.
 - **Settling is its own save.** When your plugin settles a payment, Alfa writes the payment row and makes that save
   final. Only then, and after Alfa's locks are released, does the order move to the status the method's settings name
   (see [The order's status](./payment-plugin-money.md#the-orders-status)).

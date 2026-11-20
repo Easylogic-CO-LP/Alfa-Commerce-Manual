@@ -6,7 +6,7 @@ description: "The REST API of Alfa Commerce: how to call it, how to run the Post
 
 # REST API
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce has a REST API: other programs read and change the shop's data over HTTP, as JSON. It is built on
 Joomla's own Web Services, so the address, the token and the shape of the answers are Joomla's.
@@ -439,8 +439,8 @@ Two more rules:
   ```
 
   Send a `PATCH` with `"state": -2` first, then the `DELETE`. The refusals listed above are given once the record
-  is in the trash. An id that names no record still answers 404. Cart rules, stock locations, customers, customer
-  groups and orders have no trash step and are deleted in one call.
+  is in the trash. An id that names no record still answers 404. Stock locations, customers and customer groups have
+  no trash step and are deleted in one call.
 - **A sold item answers 200.** The delete of an item that order lines were sold as answers 200 with the item as it
   now stands, `state` 2 (archived), and `meta.note` saying that it was archived instead of deleted. The item stays,
   for the orders that hold it. An item without order history is deleted and answered 204.

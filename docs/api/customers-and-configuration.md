@@ -6,7 +6,7 @@ description: "The REST API routes for customers, customer groups, currencies, ta
 
 # Customers and configuration
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -108,10 +108,10 @@ A fresh installation comes with a list of currencies. In it the euro has the id 
 Deleting a currency that orders, item prices or places use is refused with 409 and the reason, and nothing is
 deleted.
 
-Currencies, taxes, discounts, places, payment and shipping methods, form fields and form field groups are deleted
-only while they are in the trash, as in the administrator. Move the record
+Currencies, taxes, discounts, places, payment and shipping methods, form fields, form field groups, cart rules and
+orders are deleted only while they are in the trash, as in the administrator. Move the record
 to the trash first (`PATCH` with `state` -2), then delete it; a record in any other state answers 409 and nothing is
-deleted. Cart rules, stock locations, customers and customer groups have no trash step and are deleted in one call.
+deleted. Stock locations, customers and customer groups have no trash step and are deleted in one call.
 See [Status codes](./overview.md#status-codes).
 
 ## Taxes
@@ -179,8 +179,10 @@ a code applies by itself.
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `groups`.
 
-A cart rule is published or unpublished. It has no trash: `state` -2 is refused with 400, and the rule is deleted
-directly. Reading a cart rule that does not exist answers 404.
+A cart rule is published (1), unpublished (0) or in the trash (-2). A rule in the trash applies to no cart; orders
+placed with it keep what it gave them. The list leaves the trash out unless `filter[state]` is -2. A rule is deleted
+only from the trash: move it there first (`PATCH` with `state` -2), then delete it. Reading a cart rule that does not
+exist answers 404.
 
 ## Places
 
