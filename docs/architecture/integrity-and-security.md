@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: Integrity check and Tools > Security
-description: How Alfa Commerce compares its installed files with the signed list published for the release, what each outcome means, the table of the REST API's addresses and who may call them, what the other Tools tabs do, and how to report a security problem.
+description: How Alfa Commerce compares its installed files with the signed list published for the release, what each outcome means, the REST API's endpoints and who may call them, what the other Tools tabs do, and how to report a security problem.
 ---
 
 # Integrity check and Tools > Security
@@ -150,37 +150,61 @@ the download of the list. The Security tab says so itself: a clean result is str
 tampered with, not an absolute guarantee. The signed list cannot be forged on the site, because the signing key is
 never there.
 
-## The REST API's addresses
+## The REST API's endpoints
 
-The Security tab has a second card, **REST API addresses and who may call them**: one table with a row for each
-address of the REST API, the ones of Alfa Commerce and the ones its enabled plugins add.
+The Security tab has a second card, **REST API endpoints and who may call them**. It lists every Alfa Commerce
+endpoint of the REST API: the ones of Alfa Commerce and the ones its enabled extensions add. Joomla's own REST
+endpoints (articles, users and the others) are not in it.
+
+A line at the top counts the endpoints, how many of them extensions add, the accounts with an enabled token and how
+many of them are Super Users. Under it, Joomla's search tools filter by who adds the endpoint and by permission, and
+search the endpoints in any case. Like the filters of a Joomla list, they are remembered for you: Tools opens with
+your last choice until you clear it. While a filter is set, a line says how many endpoints are shown of all.
+
+The rest of the card is in sections you open when you need them, each with a count in its title:
+
+| Section | What it holds |
+|---|---|
+| Alfa Commerce endpoints | One row for each endpoint of Alfa Commerce: its method, its full address and the permission it asks |
+| Extension endpoints | One section for each extension that adds endpoints, with the same three columns; the endpoints it declares that are not added, with the rule each one breaks (a **Not added** badge on its title); and, for an extension that cannot be loaded, a **Cannot answer** badge and the reason its endpoints answer 503 |
+| API internals | Who may sign in with a token, who holds each permission, and the formats and body limits |
+
+While a filter is set, the sections that hold what it keeps are open; without one, every section is closed.
 
 | Column | What it shows |
 |---|---|
-| Added by | Alfa Commerce, or the name of the plugin that adds the address |
 | Method | GET, POST, PATCH, PUT or DELETE |
-| Address | The full address, for example `https://shop.example/api/index.php/v1/alfa/orders/:id/status`. A word after a colon stands for a value you put there, such as a record's id. |
-| Permission | The permission the address asks, with its name in Options, Permissions and its key, for example "Orders: Change State" (`alfa.orders.edit.state`). An address that asks two shows both, and an account needs both. **Per record** means the address decides for each record: a task is read by the account that made it, or by an account with the permission of its work. |
-| Groups that hold it | The user groups granted the permission (a Super Users group holds every one), each marked **API Login allowed** or **not allowed** (Global Configuration, Permissions) and **In the token groups** or **Not in the token groups** (the Allowed User Groups of the plugin "User - Joomla API Token"). A group needs both to call the address with a token. |
-| Accounts with an enabled token | The accounts in those groups that have an enabled Joomla API token, a Super User marked |
+| Endpoint | The full address, for example `https://shop.example/api/index.php/v1/alfa/orders/:id/status`. A word after a colon stands for a value you put there, such as a record's id. |
+| Permission | The permission the endpoint asks, with its name in Options, Permissions and its key, for example "Orders: Change State" (`alfa.orders.edit.state`). An endpoint that asks two shows both, and an account needs both. **Per record** means the endpoint decides for each record: a task is read by the account that made it, or by an account with the permission of its work. |
 
-A line above the table counts the addresses, how many of them plugins add, the accounts with an enabled token in the
-table and how many of them are Super Users. The search tools above the table filter it by who adds the address and by
-permission, and search the addresses in any case; a line then says how many rows are shown of all. Under the table, two
-short lists name the addresses a plugin declares that are not added, with the rule each one breaks, and the plugins that
-cannot be loaded, whose addresses answer 503.
+**API internals** has three parts:
 
-The table reads what the REST API itself reads. The rows of Alfa Commerce come from the route list of the plugin "Web
-Services - Alfa Commerce" (`ApiRouteRegistrar::collectCore()`), each with the permission its controller declares
-(`taskAccess()`), the declaration the address checks before it answers; the plugins' rows come from the same reading
-that adds their routes (`ApiRouteRegistrar::collect()`). The table and the API cannot differ. It shows the permission
-an address asks before it answers; the refusals a request can meet after that are on [REST API](../api/overview.md).
+- **Signing in with a token.** The user groups whose accounts may sign in with a Joomla API token: the Allowed User
+  Groups of the plugin "User - Joomla API Token", Super Users when that plugin is not enabled, every group when it
+  names none. An account calls an endpoint with its token when its group has API Login (Global Configuration,
+  Permissions) and is in the token groups, itself or through a group above it, and the account is not blocked, has no
+  activation pending and no password reset required.
+- **Who holds each permission.** One row for each permission the shown endpoints ask (or two asked together): how
+  many endpoints ask it, the user groups granted it (a Super Users group holds every one), each marked **API Login
+  allowed** or **not allowed** and **In the token groups** or **Not in the token groups**, and the accounts in those
+  groups that can sign in with an enabled token, a Super User marked.
+- **Formats and body limits.** Alfa Commerce's own endpoints answer JSON:API (`application/vnd.api+json`) and take
+  the body the server allows. Each extension endpoint is listed with the one format it answers and the largest body it
+  takes.
 
-A warning above the table says when the plugin "Web Services - Alfa Commerce" is disabled (then no address answers) or
-the plugin "API Authentication - Web Services Joomla Token" is disabled (then no address can be called with a token).
-Like the integrity card, the table is drawn from one fixed file (`administrator/src/View/Tools/_apiroutes.php`), not
-through Joomla's layout overrides, so a template override cannot hide an address or an account. How an integrator's
-account is set up is on [Adding routes to the REST API](../plugins/api-route-plugins.md#the-integration-account).
+The card reads what the REST API itself reads. The endpoints of Alfa Commerce come from the route list of the plugin
+"Web Services - Alfa Commerce" (`ApiRouteRegistrar::collectCore()`), each with the permission its controller declares
+(`taskAccess()`), the declaration the endpoint checks before it answers; the extensions' endpoints come from the same
+reading that adds their routes (`ApiRouteRegistrar::collect()`). The card and the API cannot differ. It shows the
+permission an endpoint asks before it answers; the refusals a request can meet after that are on
+[REST API](../api/overview.md).
+
+A warning at the top says when the plugin "Web Services - Alfa Commerce" is disabled (then no Alfa Commerce endpoint
+answers, and Alfa Commerce's own are not listed) or the plugin "API Authentication - Web Services Joomla Token" is
+disabled (then no endpoint can be called with a token). Like the integrity card, this card is drawn from one fixed
+file (`administrator/src/View/Tools/_apiroutes.php`), not through Joomla's layout overrides, so a template override
+cannot hide an endpoint or an account. How an integrator's account is set up is on
+[Adding routes to the REST API](../plugins/api-route-plugins.md#the-integration-account).
 
 ## The other tabs of Tools
 
@@ -194,7 +218,7 @@ registry of tool actions, so a plugin's own tool looks and behaves like core's. 
 | Database Sync | Actions listed in the order to run them: users and groups, language tables, backfill of empty translations, catalogue projections, list prices for customer groups, outstanding stock movements, the search index | `administrator/src/Service/Tools/CoreToolProvider.php` |
 | Tasks | Failed and held tasks, the jobs, the deletion of finished tasks, and how background work runs. See [Background work](./background-work.md). | `administrator/src/Controller/TasksController.php`, `administrator/src/Service/Task/TaskStaff.php` |
 | GitHub - Commit & Pull Request | A guide for contributing, and two downloads: the whole package, or only the files the integrity check reports as changed. Neither download carries the files of the bundled libraries, so a changed library file is shown on the Security tab only. | `ToolsController::exportPackage()` in `administrator/src/Controller/ToolsController.php`, `administrator/src/Helper/PackageHelper.php` |
-| Security | The integrity check of this page, and the table of the REST API's addresses and who may call them | `administrator/src/Helper/IntegrityHelper.php`, `administrator/src/View/Tools/_integrity.php`; `administrator/src/Service/Api/ApiAddressListing.php`, `administrator/src/View/Tools/_apiroutes.php` |
+| Security | The integrity check of this page, and every Alfa Commerce endpoint of the REST API and who may call it | `administrator/src/Helper/IntegrityHelper.php`, `administrator/src/View/Tools/_integrity.php`; `administrator/src/Service/Api/ApiAddressListing.php`, `administrator/src/View/Tools/_apiroutes.php` |
 | Reset and clear | **Reset to default** gives Alfa's Options back their installation values. **Clear everything** removes the shop's data and makes a fresh installation. Each opens its own page that lists what would change before anything changes. | `administrator/src/Service/Maintenance/ResetToDefault.php`, `administrator/src/Service/Maintenance/FactoryReset.php` |
 | Extensions | The separately installed Alfa extensions: **Clear Data** of an extension, remove it, or remove it with its data | `administrator/src/Controller/ExtensionsController.php` |
 | Setup | Run the setup checklist again, and reseed or export the guided tours | `administrator/src/Service/Tools/CoreToolProvider.php` |

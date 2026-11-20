@@ -423,8 +423,9 @@ The permissions are named after the record and the action, for example "Orders: 
 operations on an order need "Orders: Edit". The status change needs "Orders: Change State" and "Orders: View".
 Voiding a document needs the documents' Change State permission.
 
-Tools, Security lists every route with the permission it asks, the groups that hold it and the accounts in them with
-an enabled token. See [The REST API's addresses](../architecture/integrity-and-security.md#the-rest-apis-addresses).
+Tools, Security lists every Alfa Commerce endpoint with the permission it asks, and in its API internals the groups
+that hold it and the accounts in them with an enabled token. See
+[The REST API's endpoints](../architecture/integrity-and-security.md#the-rest-apis-endpoints).
 
 ## Renamed and removed routes
 

@@ -369,11 +369,11 @@ An integrator calls with the Joomla API token of an account of its own, never a 
    integrator does (for example Orders: Create), nothing else.
 5. The account signs in once, enables its token on its profile's **Joomla API Token** tab and copies it.
 
-Tools, Security lists every address of the REST API in one table, the plugins' beside core's: who adds it, the method,
-the full address, the permission and its title, the groups granted it, whether each group has API Login and is in the
-token groups, and the accounts in it with an enabled token, a Super User marked. A plugin that cannot be loaded and the
-routes refused with their rule are listed under it. See
-[The REST API's addresses](../architecture/integrity-and-security.md#the-rest-apis-addresses).
+Tools, Security lists every Alfa Commerce endpoint: the plugin's endpoints in a section of their own beside core's,
+each with its method, its full address and the permission it asks, the routes refused with their rule, and a mark when
+the plugin cannot be loaded. Its API internals name the groups that hold each permission, whether each has API Login
+and is in the token groups, the accounts in them with an enabled token, and each endpoint's format and largest body. See
+[The REST API's endpoints](../architecture/integrity-and-security.md#the-rest-apis-endpoints).
 
 ## Background work of a plugin
 
