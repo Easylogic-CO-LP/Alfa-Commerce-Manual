@@ -476,14 +476,11 @@ What Alfa Commerce does today that a program or a shop must allow for.
   second request is a cost only.
 - The filters module's form does not carry the listing's keyword: applying a filter on a search result drops the
   search word.
-- While the price index prepares the figures of a combination of customer groups new to the shop, its customers are
-  filtered and sorted by a guest's figures. When the guest group is moved in Users: Options, a visitor with no account
-  has no figures until the new guest group's are prepared. A customer's own prices do not decide what a price filter
-  lists for them. After the update, the price filters and the sort read a product's earlier figure until the
-  background rebuild has written its list prices, and one with no figure yet is left out of the price filters and
-  listed last by the sort; if the first change of the index after the update is a price row, a discount or a tax
-  naming a customer group for the first time, the customers it changes have no figures until theirs are prepared,
-  once.
+- A shopper whose customer groups, place or own prices change is filtered and sorted, until their new prices are
+  prepared, by the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
+  everyone). When an update changes the price index's tables, the price filters and the sort keep reading the shop's
+  earlier prices until the new index is complete. The prices the storefront routes return are worked out live
+  throughout. See [The stored price index](../services/pricing.md#the-stored-price-index).
 
 For plugin authors, see also the cart area in
 [Item field plugin events](../plugins/item-field-plugin-events.md#onitemview).

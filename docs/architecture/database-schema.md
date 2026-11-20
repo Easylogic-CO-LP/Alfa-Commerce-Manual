@@ -25,7 +25,7 @@ A fresh site with one content language (English) holds 126 tables: these 111, fo
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
-that holds the link. The database enforces only three of these links with a foreign key (they are marked "foreign
+that holds the link. The database enforces only four of these links with a foreign key (they are marked "foreign
 key" in the text). All the others are id columns that the code keeps in step.
 
 ## Catalogue
@@ -41,12 +41,13 @@ flowchart TB
     items ==>|item_id<br/>linked_item_id| related["items_links"]
     items ==>|item_id| prices["items_prices"]
     items ==>|"item_id (foreign key)"| index["items_price_index"]
-    sets["price_group_sets"] ==>|group_set_id| index
+    contexts["price_contexts"] ==>|"context_id (foreign key)"| index
+    sets["price_group_sets"] ==>|group_set_id| contexts
 ```
 
 | Table | What it holds |
 |---|---|
-| `#__alfa_items` | The item: SKU, GTIN, MPN, size and weight, quantity rules, stock settings, default category, publish window. Its `stock` and `available_quantity` are figures kept up to date by the stock service, for display only |
+| `#__alfa_items` | The item: SKU, GTIN, MPN, size and weight, quantity rules, stock settings, default category, publish window. Its `stock` and `available_quantity` are figures kept up to date by the stock service, for display only. `opening_combination_id` is the combination its card opens on, `price_combination_id` the combination whose price the product list reads: the opening one when it has price rows of its own, else 0 |
 | `#__alfa_items_categories` | Which categories an item is in (pair key) |
 | `#__alfa_items_manufacturers` | Which manufacturers an item has (pair key) |
 | `#__alfa_items_links` | Which products a product page shows as related, in order. A row from A to B shows B on A's page only. `link_type` names the kind of link: related is the one kind Alfa Commerce writes and reads (key: the pair and the kind) |
@@ -56,9 +57,20 @@ flowchart TB
 | `#__alfa_categories_usergroups` | The user groups allowed to see a category (pair key) |
 | `#__alfa_categories_users` | The users allowed to see a category (pair key) |
 | `#__alfa_manufacturers` | Manufacturers: website and meta data |
-| `#__alfa_items_prices` | Price rows of an item. A row can be limited to a combination, a currency, a user group, a user, a country, a quantity range and a publish window. A row is a full price or an adjustment |
-| `#__alfa_items_price_index` | The price index: one row per item, combination, currency, place, set of pricing groups and validity period, with the prepared price figures |
-| `#__alfa_price_group_sets` | The sets of pricing groups that customers hold. The price index is keyed by them. A set is read only once it is fully prepared |
+| `#__alfa_items_prices` | Price rows of an item. A row can be limited to a combination, a currency, a user group, a user, a country, a quantity range and a publish window. A row is a full price or an adjustment. Its `value` and `override_value` are stored exactly as typed, to eight decimals |
+| `#__alfa_items_price_index` | The price index: one row per pricing context, product or combination with price rows of its own, and validity period, with the prepared price figures. Removed with its item and with its pricing context (foreign keys) |
+| `#__alfa_price_contexts` | The pricing contexts of the price index: a currency, a place class, a set of pricing groups and, for a customer with prices of their own, that customer. One row per context and generation; the catalogue reads the live generation |
+| `#__alfa_price_group_sets` | The sets of pricing groups that customers hold. A pricing context names one |
+
+`#__alfa_items_price_index` holds the resolved price of what a product sells in every pricing context and period,
+maintained by `PriceIndexSyncService`: a row for the product itself (`combination_id` 0), always, and one for each
+published combination that has price rows of its own; a combination without them has its product's price, so the
+product's row stands for it. A pricing context (`#__alfa_price_contexts`) is a currency, a place class and a set of
+customer groups, and, for a customer with prices of their own, that customer; one row per context and generation, the
+catalogue reading the live generation. A unit with no valid price (no price row applies) has NULL figures; an explicit
+price of 0 is the figure 0. The catalogue reads, by key, the row of `#__alfa_items.price_combination_id`: the
+combination a product's card opens on (`#__alfa_items.opening_combination_id`) when it has price rows of its own, else
+0.
 
 ## Item fields, values and combinations
 

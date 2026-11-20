@@ -65,7 +65,10 @@ flowchart TD
 Each step in plain words:
 
 1. **The price row.** An item can have several price rows: for a quantity range, for one customer, for a customer
-   group, with or without publish dates. One row wins (see [Which price row is used](#which-price-row-is-used)).
+   group, with or without publish dates. One row wins (see [Which price row is used](#which-price-row-is-used)). A
+   row's price and sale price are stored exactly as typed, to eight decimals: a price that is not a number, has more
+   than eight decimals or more than sixteen digits before the point is refused, and the save names the row (the
+   product's prices) or the combination (the combinations grid) and what was typed.
 2. **The line.** The row's unit price is multiplied by the quantity before anything is rounded. If the row carries a
    sale price (`override_value`), the sale replaces every regular discount of step 3 and step 6.
 3. **Discounts before tax** are taken from that exact amount.
@@ -397,8 +400,8 @@ buy form's slot as plain lists (the layout `item.fields_readonly`).
 
 `Alfa\Component\Alfa\Site\Helper\PriceSettings` answers which figures a price block shows. The shop owner sets them
 in the component's options, and can set them again for a customer group. A customer group's Prices decides how prices
-are displayed to the group; it does not stop buying (see Online sales on the
-[store setup page](../getting-started/store-setup.md)).
+are displayed to the group; it does not stop buying (see
+[Online sales](../getting-started/store-setup.md#online-sales) on the store setup page).
 
 ```php
 use Alfa\Component\Alfa\Site\Helper\PriceSettings;
@@ -551,9 +554,15 @@ larger quantities show on the product page and in the cart.
 The stored rows grow with the products, the combinations that carry prices of their own, the pricing contexts and the
 periods; a combination without a price of its own adds nothing. A shop of 6,500 products with 50 combinations each,
 165 pricing contexts and about one combination in sixty with its own price stores about 2 million rows (about 0.5 GB
-with its keys), and about 25 million (5.6 GB) if two combinations in five carry their own prices. Tools, Database,
-Check the price index reports the size: its rows and its megabytes. After a full rebuild the index's statistics are
-refreshed, so the product list keeps reading it by key.
+with its keys), and about 25 million (5.6 GB) if two combinations in five carry their own prices. After a full
+rebuild the index's statistics are refreshed, so the product list keeps reading it by key.
+
+Tools > Database Sync, **Check the price index**, counts what the product list reads: every pricing context holds one
+row at this moment for each published product and for each published combination with prices of its own, no row of a
+product or combination that is unpublished or of a combination without prices of its own, no gap in the periods, and
+each product's stored opening and price combinations are the ones its card opens on and shows. It names the products
+that could not be priced and the index's size (its rows and its megabytes with the keys), and changes nothing. During
+the build after an update it says so. Run **Rebuild catalogue projections** when it finds something missing.
 
 The prices a shopper sees on an item page, on the cards of a list and in the cart are not read from the index.
 They are worked out live.
@@ -591,10 +600,11 @@ written product by product. A shopper whose customer groups, place or own prices
 are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
 everyone); the product page and the cart charge their own prices throughout.
 
-After an update the price index is built again in the background. Until it is complete, the product list filters and
-sorts by the prices of the version before; an installation that stops part way resumes the build when the package is
-installed again. A product whose price cannot be calculated does not hold the switch: it is listed with no price until
-it can be priced.
+When an update changes the price index's tables, the index is built again in the background. Until it is complete,
+the product list filters and sorts by the prices the shop had until the update, then it switches by itself; Tools >
+Database Sync, Rebuild catalogue projections, says since when and how many items are still owed a rebuild. An
+installation that stops part way resumes the build when the package is installed again. A product whose price cannot
+be calculated does not hold the switch: it is listed with no price until it can be priced.
 
 A failure never blocks the save. It is logged as a warning, the item is marked as owed, and the background job
 `catalogue.rebuild` rebuilds it.

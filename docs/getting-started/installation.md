@@ -226,8 +226,12 @@ What else an update does:
   one of them by name stops working. On MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the
   table's definition; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet
   hour.
-- **The prices.** Until the rebuild ends, the item list may sort and filter some customers by the earlier price,
-  while the item page and the cart already show the new one. A discount or a tax scoped to a place reaches the
+- **The prices.** When an update changes the price index's tables, it builds the index again in the background.
+  Until it is complete, the product list filters and sorts by the prices the shop had until the update, while the
+  product page and the cart already show the new ones; then it switches by itself. Tools > Database Sync, Rebuild
+  catalogue projections, says since when and how many items are still owed a rebuild. A product whose price cannot be
+  calculated does not hold the switch: it is listed with no price until it can be priced. An installation that stops
+  part way resumes the build when the package is installed again. A discount or a tax scoped to a place reaches the
   places inside it; on a shop whose rules were saved before that, the update page names the published discounts and
   taxes that now reach further. A shop whose places are all countries has none.
 - **The PDF libraries.** The package installs dompdf and the four libraries it needs. A `lib_dompdf` that was

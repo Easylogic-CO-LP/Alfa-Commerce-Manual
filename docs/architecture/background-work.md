@@ -76,8 +76,10 @@ Alfa creates tasks at these moments:
 | A refund is settled that completes a payment's refunds | Marking that payment refunded |
 | A notification is raised while something is being saved | The notification, written as soon as the save is final |
 
-Alfa creates jobs for: preparing the list prices of a new combination of customer groups, rebuilding catalogue
-entries of items, rebuilding the search index, applying stock movements that are still owed, recreating thumbnails,
+Alfa creates jobs for: preparing the list prices of a pricing context that is new to the shop, or its next
+generation (`price.set.prepare`, one job a context, its scope `price.set.prepare:<context id>`), removing the
+generations of the price index that a newer one replaced and the periods that ended (`price.index.tidy`, once a day
+and after each switch), rebuilding catalogue entries of items, rebuilding the search index, applying stock movements that are still owed, recreating thumbnails,
 deleting finished tasks, and telling each consumer of the shop's changes what it is owed (`outbound.deliver`, one job
 a consumer; see [Outgoing notifications](../api/notifications.md)). The changes a consumer is owed are written in
 the save of the change itself, as a task is.

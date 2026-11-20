@@ -272,15 +272,16 @@ A **write** is one piece of work that rewrote stored prices. Why it was done is 
 | `tax` | `CAUSE_TAX` | A tax was saved, published, unpublished or deleted | The tax, 0 when several were deleted |
 | `category` | `CAUSE_CATEGORY` | A category was saved, renamed, changed state or was deleted | The category, 0 for several |
 | `manufacturer` | `CAUSE_MANUFACTURER` | A manufacturer was saved, renamed, changed state or was deleted | The manufacturer, 0 for several |
-| `set` | `CAUSE_SET` | A customer group set is being prepared (see below) | The set |
+| `set` | `CAUSE_SET` | A pricing context is being prepared (see below) | The pricing context |
 | `rebuild` | `CAUSE_REBUILD` | The index was rebuilt | 0 |
 | `window` | `CAUSE_WINDOW` | A stored price period began (see above) | 0 |
 
 A **customer group set** (in the code, a set of pricing groups) is one list of the customer groups that prices,
-discounts or taxes name and that some customers hold together. Alfa stores prices for each set, not for each
-customer: every customer with the same list reads the same rows (table `#__alfa_price_group_sets`). A set that
-customers hold for the first time is prepared in the background, a part of the items at a time, and each part is a
-write with the cause `set`.
+discounts or taxes name and that some customers hold together (table `#__alfa_price_group_sets`). Alfa stores prices
+for each **pricing context**, not for each customer: a currency, a place class and a customer group set, and, for a
+customer with prices of their own, that customer (table `#__alfa_price_contexts`). Every customer of the same context
+reads the same rows. A context that is new to the shop, or the next generation of one that a large change reaches, is
+prepared in the background, a part of the items at a time, and each part is a write with the cause `set`.
 
 **Who receives it.** Announced to everyone: every loaded plugin that lists it in `getSubscribedEvents()`, a `system`
 plugin included. Alfa loads the `alfa` group first.
@@ -302,14 +303,21 @@ cannot be changed:
 | Property | Meaning |
 |---|---|
 | `itemId` | The item. |
-| `combinationId` | The combination, 0 for the item's own row. |
-| `currencyId` | The currency, 0 for any. |
-| `placeId` | The place, 0 for any. |
-| `groupSetId` | The customer group set. |
+| `combinationId` | The combination with price rows of its own; 0 for the product's own row, the price of every combination of it without its own price rows. |
+| `currencyId` | The context's currency, 0 for every currency no price row names. |
+| `placeId` | The place the context is priced at, 0 for none. |
+| `groupSetId` | The context's customer group set. |
 | `validFrom` | When the row's period starts. `1000-01-01 00:00:00` marks the row with no start date (the "live" period). |
 | `validUntil` | When the period ends, `null` when it has no end. For a removed row, the value it had. |
-| `oldFinalPrice` | The final price before, as exact decimal text. `null` for a new row. |
-| `newFinalPrice` | The final price after, as exact decimal text. `null` for a removed row. |
+| `oldFinalPrice` | The final price before, as exact decimal text. `null` for a new row, or a row with no valid price. |
+| `newFinalPrice` | The final price after, as exact decimal text. `null` for a removed row, or a row with no valid price. |
+| `contextId` | The pricing context. |
+| `userId` | The context's customer, 0 for the context of a customer group set. |
+
+A change names its unit by `combinationId`: 0 is the product itself, and stands for every combination of it without
+its own price rows; a combination with its own price rows has a change of its own. A combination that gains or loses
+its own price rows shows as its row added or removed. A missing old or new price means no row or no valid price; 0 is
+a price.
 
 For the cause `window`, `oldFinalPrice` is the final price of the period that ended at that moment and
 `newFinalPrice` that of the period that began; a row whose price did not move is not named. A row with no
@@ -328,11 +336,11 @@ public function onAlfaPricesChanged(PricesChangedEvent $event): void
 {
     foreach ($event->changes() as $change) {
         if ($change->newFinalPrice === null) {
-            // The row was removed: forget your copy of it.
+            // The row was removed, or has no valid price: forget your copy of it.
             continue;
         }
 
-        // Refresh your copy of $change->itemId, $change->combinationId and $change->groupSetId
+        // Refresh your copy of $change->itemId, $change->combinationId and $change->contextId
         // with $change->newFinalPrice. $change->oldFinalPrice is null for a new row.
     }
 }
@@ -357,7 +365,8 @@ public function onAlfaPricesChanged(PricesChangedEvent $event): void
 - Whether a place may buy.
 - The rows of a deleted place. Learn of the place from `onAlfaAdminAfterDelete`
   ([Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete)).
-- The rows of a customer group set that no customer holds any more.
+- The rows of a pricing context the shop does not have any more, such as one of a customer group set that no customer holds
+  any more.
 
 **What happens next.** Nothing depends on your answer.
 
