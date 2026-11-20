@@ -6,7 +6,7 @@ description: The words this manual uses, each in plain language with the name it
 
 # Glossary
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 The words this manual uses, in plain language. Where a word has a name in the code, that name follows in brackets.
 Each page explains a word the first time it uses it; this page collects them.
@@ -18,8 +18,8 @@ Each page explains a word the first time it uses it; this page collects them.
 
 **Listener.** The method of a plugin that Alfa calls for an event.
 
-**Announced to everyone (a broadcast event).** An event every enabled plugin may hear, whatever its group. A plugin
-lists the ones it handles in `getSubscribedEvents()`.
+**Announced to everyone (a broadcast event).** An event every enabled plugin loaded in the request may hear, whatever
+its group. A plugin lists the ones it handles in `getSubscribedEvents()`.
 
 **Addressed to one plugin (a targeted event).** An event that is the job of one named plugin. No other plugin sees
 it. A plugin handles the ones it takes with public methods of their names, which Alfa calls on the plugin it
@@ -67,11 +67,11 @@ still be undone; after it, nothing can.
 notifications. It never runs for a change that was undone.
 
 **Lock.** A short reservation that keeps two requests from changing the same thing at the same moment. Alfa locks an
-order's row while it writes a payment or a refund (`PaymentLedger`). The shipment ledger takes no lock on the order:
-its conditional write (`updateIfStatus()`) holds the shipment's own row. Two further locks exist for plugins: a
-payment plugin may hold `OrderMoneyLock` around its own capture or release, and for a refund never across the call
-to the provider. A shipping plugin may hold `ShipmentBookingLock` around a booking. See
-[Orders](../services/orders.md).
+order's row while it writes a payment or a refund (`PaymentLedger`) and while it writes a parcel (`ShipmentLedger`);
+the shipment ledger's conditional write (`updateIfStatus()`) also holds the shipment's own row. Two further locks
+exist for plugins: a payment plugin may hold `OrderMoneyLock` while it records and books its own capture, release or
+refund, never across a call to the provider. A shipping plugin may hold `ShipmentBookingLock` around a booking, the
+carrier's call included. See [Orders](../services/orders.md).
 
 **Ledger.** The one place that writes an order's payments and refunds (`PaymentLedger`) or its shipments
 (`ShipmentLedger`). Plugins reach the ledgers through their base class, never directly.
@@ -91,11 +91,15 @@ example, rebuilding the search entry of every item.
 **Held.** A task whose outcome cannot be known (an e-mail that may or may not have left). Alfa does not try it again
 by itself; it waits for staff to decide.
 
-Only Alfa Commerce itself creates tasks and jobs. A plugin cannot register its own.
+The kinds of task and job are Alfa Commerce's own: a plugin cannot add one. The background work of a plugin of an
+Alfa group is an extension job (`ExtensionJob::enqueue()`), which the task runner hands back to the plugin with
+`onAlfaExtensionJob`.
+See [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin).
 
 ## Catalogue and prices
 
-**Item.** What the shop sells. The manual and the product say "item", not "product".
+**Item.** What the shop sells, a product. The administrator lists them under Items; the manual says item or product
+for the same thing.
 
 **Item field.** A property of an item that the shopper sees or chooses, such as a size or a colour (plugin group
 `alfa-item-fields`).
@@ -105,12 +109,14 @@ Only Alfa Commerce itself creates tasks and jobs. A plugin cannot register its o
 **Form field.** A field of the customer's details at registration and checkout, such as a phone number or a country
 (plugin group `alfa-form-fields`). Not to be confused with an item field.
 
-**Customer group.** A Joomla user group with Alfa's own settings on it, used to give some customers their own prices, taxes and discounts.
+**Customer group.** A Joomla user group with Alfa's own settings on it, used to give some customers their own prices,
+taxes and discounts.
 
 **Price index.** The prices of every item, worked out in advance and stored, so that the price and discount filters and
 sorting by price do not have to calculate them. The prices shown on a page are still worked out when the page is
-drawn. Core alone writes the index: when an item, a discount or a tax changes, and when a category or a manufacturer is
-deleted. It announces each write with the event `onAlfaPricesChanged`. See [Pricing](../services/pricing.md).
+drawn. Core alone writes the index, whenever something a price depends on changes: an item, a discount, a tax, a
+category, a manufacturer, a place, the customers' groups. It announces the rows each write changed, and each stored
+price period that begins, with the event `onAlfaPricesChanged`. See [Pricing](../services/pricing.md).
 
 **Projection.** Stored data that is derived from the catalogue and can always be rebuilt from it, such as the search
 entry of an item. Tools > Database Sync rebuilds projections.
@@ -132,8 +138,8 @@ Countries/States.
 **Claim.** What an order's status asks of the stock: nothing, a reservation, or the goods themselves taken from
 stock. When a status changes, Alfa moves the stock to match the new status's claim.
 
-**Stock movement.** One recorded change of stock, with its reason. The quantity shown on an item follows the movements; it is
-not a figure to write to directly.
+**Stock movement.** One recorded change of stock, with its reason. The quantity shown on an item follows the
+movements; it is not a figure to write to directly.
 
 ## Documents and languages
 
