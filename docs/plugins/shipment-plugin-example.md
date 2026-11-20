@@ -103,7 +103,6 @@ namespace Acme\Plugin\AlfaShipments\Flat\Extension;
 
 use Alfa\Component\Alfa\Administrator\Event\Shipments\CalculateShippingCostEvent;
 use Alfa\Component\Alfa\Administrator\Plugin\ShipmentsPlugin;
-use Joomla\CMS\Log\Log;
 
 \defined('_JEXEC') or die;
 
@@ -138,24 +137,12 @@ final class Flat extends ShipmentsPlugin
         $event->setShippingCost((float) $price);
     }
 
-    // The order exists: record its parcel with the charge the order holds.
+    // The order exists, and Alfa has recorded its parcel with the charge and every item: name the carrier on it.
     public function onOrderAfterPlace($event): void
     {
-        $order = $event->getOrder();
-
-        $shipmentId = $this->shipment($order)
-            ->pending()
-            ->withAllItems()
-            ->cost($order->shipmentTotal(), $order->shipmentTotalExcl(), $order->shipmentTaxRate())
+        $this->shipmentUpdate($event->getShipmentId())
+            ->carrier('Flat rate')
             ->save();
-
-        if (!$shipmentId) {
-            Log::add(
-                'Flat shipping: no parcel was recorded for order #' . $order->id(),
-                Log::ERROR,
-                $this->logCategory(),
-            );
-        }
     }
 }
 ```

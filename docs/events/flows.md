@@ -117,7 +117,8 @@ sequenceDiagram
     participant L as Plugins that listen
     Alfa->>Alfa: Reads the saved order, raises the new order alert, uses customer credit if asked
     Alfa->>M: onOrderAfterPlace, to the payment plugin (it records the payment)
-    Alfa->>M: onOrderAfterPlace, to the shipping plugin (it records the parcel)
+    Alfa->>Alfa: Records the order's parcel: its shipping charge and every item
+    Alfa->>M: onOrderAfterPlace, to the shipping plugin (it completes the parcel)
     Alfa->>L: onInventoryReserved, and onInventoryCommitted if goods were taken
     Alfa->>Alfa: Runs the steps it owes: download access, then the confirmation e-mail
     Alfa->>L: onAlfaNotificationPushed, for the new order alert

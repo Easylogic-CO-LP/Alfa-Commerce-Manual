@@ -160,46 +160,36 @@ on nothing.
 
 | | |
 |---|---|
-| **When it fires** | Right after the order is saved for good (after the commit). |
+| **When it fires** | Right after the order is saved for good (after the commit), once per order. |
 | **Who receives it** | The plugin of the method the order was placed with. |
-| **What you are given** | `OrderAfterPlaceEvent`. `getOrder()` returns the saved order as an `Order` reader. |
-| **What you are expected to do** | Record the first parcel of the order (see [Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)). Take the charge from the order: `shipmentTotal()`, `shipmentTotalExcl()` and `shipmentTaxRate()`. |
-| **What happens next** | The order shows its parcel. The order's shipping total is the sum of its parcels' charges, so an order needs one. If the order has no parcel on its shipping method once your method has run (you recorded none, your `save()` was refused, you threw an error, or your plugin could not be used), Alfa records one, pending, with every item and the charge the order froze, marked `core_made` in its plugin data. A notification tells staff which method recorded nothing and that a pickup point or locker the customer chose must be chosen again on the order's page. A parcel you record, in any status, is never doubled, and this event fires once per order. |
-| **If you are missing or you fail** | The order stands, it cannot be undone. The failure is written to the log (category `com_alfa.orders`), as critical when your method threw an error and as an error when your plugin could not be used, and the shopper is told that part of the order could not be set up. A `save()` that returns `false` is not logged as such a failure; Alfa then records the parcel itself, as above. |
+| **What you are given** | `OrderAfterPlaceEvent`. `getOrder()` returns the saved order as an `Order` reader. `getShipmentId()` is the order's parcel: Alfa recorded it just before this event, pending, with the charge the customer accepted (with and without tax, its rate, its tax chain and how its figures were formed) and every item, on your method. |
+| **What you are expected to do** | Complete that parcel with what is yours, through `$this->shipmentUpdate($event->getShipmentId())`: a tracking number, a carrier name, a locker or pickup point and your other keys in its plugin data. Record no parcel of your own: the order has its parcel. A plugin with nothing to add writes no `onOrderAfterPlace()`. |
+| **What happens next** | The order shows its parcel, with what you added. The order's shipping total is the sum of its parcels' charges. A parcel you add later is charged 0: shipping is charged once per order. |
+| **If you are missing or you fail** | The order stands with its parcel, its charge and its items. A method that throws is written to the log (category `com_alfa.orders`, critical), and the shopper is told that part of the order could not be set up. If Alfa cannot record the parcel at all, it does not call you (there is nothing to complete): the log says so as critical, and staff get a notice naming your method and the charge to record by hand. |
 
-The standard plugin, as it ships (comments removed):
+A carrier that books a label writes, for example:
 
 ```php
-public function onOrderAfterPlace($event): void
+public function onOrderAfterPlace(OrderAfterPlaceEvent $event): void
 {
-    $order = $event->getOrder();
+    $label = $this->api()->createLabel($event->getOrder());
 
-    if (!$order || empty($order->id())) {
-        return;
-    }
-
-    $shippingCostIncl = $order->shipmentTotal();
-    $shippingCostExcl = $order->shipmentTotalExcl();
-    $shippingTaxRate = $order->shipmentTaxRate();
-
-    $shipmentId = $this->shipment($order)
-        ->pending()
-        ->withAllItems()
-        ->cost($shippingCostIncl, $shippingCostExcl, $shippingTaxRate)
+    $this->shipmentUpdate($event->getShipmentId())
+        ->trackingNumber($label->trackingNumber)
+        ->carrier('Carrier A')
+        ->pluginData(['label_id' => $label->id])
         ->save();
-
-    if (!$shipmentId) {
-        Log::add(
-            'Standard shipment: Failed to create initial shipment for order #' . $order->id(),
-            Log::ERROR,
-            $this->logCategory(),
-        );
-    }
 }
 ```
 
+`shipmentUpdate()` names your plugin as the writer, so it writes only a parcel of one of your methods. A carrier that
+splits the order keeps in the parcel what goes now, with `assignShipmentItems($event->getShipmentId(), $order->id(),
+$lines)`, and records the rest as further parcels with `$this->shipment($order)` (see
+[Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)).
+
 **The tax chain.** A shipping charge can be taxed by several rules, one after the other. The ordered list of their
-rates is the charge's **tax chain**. During `onOrderAfterPlace` you can read it:
+rates is the charge's **tax chain**. Alfa copies it onto the parcel it records; during `onOrderAfterPlace` you can read
+it on the order too:
 
 ```php
 $chain = $order->shipmentTaxChain();
@@ -208,8 +198,8 @@ $chain = $order->shipmentTaxChain();
 // null                                      the order states none (it is read outside onOrderAfterPlace)
 ```
 
-Each entry holds the rate as exact decimal text and the name of the tax rule. You do not have to pass it on:
-`$this->shipment($order)` copies the chain, and how the figures were formed, from the order onto the parcel.
+Each entry holds the rate as exact decimal text and the name of the tax rule. You do not have to pass it on: the
+parcel carries it, and `$this->shipment($order)` copies it, and how the figures were formed, onto a further parcel.
 
 Each entry is `['rate' => ..., 'name' => ...]`.
 
