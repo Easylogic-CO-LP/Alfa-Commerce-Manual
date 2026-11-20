@@ -114,6 +114,17 @@ Change the delivery details through `alfa_form_fields`, never by the id of an ad
 **Delete.** 204. An order that has sales documents is refused with 409, and the answer names the documents:
 cancel such an order instead. An order cannot be moved to the trash through the API.
 
+## Reading an order's payments and parcels
+
+| Method and address | What it answers |
+|---|---|
+| `GET v1/alfa/orders/:id/payments` | The order's payments, a JSON:API list of type `orderpayments` |
+| `GET v1/alfa/orders/:id/shipments` | The order's parcels, a JSON:API list of type `ordershipments` |
+
+Each resource carries the values `GET v1/alfa/orders/:id` gives the same row under `payments` or `shipments`: one
+reading of a row, two addresses. The lists take `page[offset]` and `page[limit]`. They ask the order's own permission,
+Orders: View (403 without it), and an order that does not exist answers 404.
+
 ## Operations on an order
 
 Nine routes. Each answers 200 with the whole order as it is after the change, so one answer shows the new totals.
