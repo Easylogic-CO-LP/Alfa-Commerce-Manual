@@ -35,7 +35,7 @@ shop.
 curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json" \
   "https://your-shop.example/api/index.php/v1/alfa/items" \
   -d '{
-    "name_en_gb": "Cordless drill",
+    "translations": {"en_gb": {"name": "Cordless drill"}},
     "sku": "DRILL-18V",
     "state": 1,
     "manage_stock": 0,
@@ -76,8 +76,19 @@ The answer, status 201, shortened:
 `meta.tasks` is there because a new price leaves work for the price index. See
 [Tasks](./documents-and-tasks.md#tasks).
 
+Read it back, with every language:
+
+```bash
+curl -H "X-Joomla-Token: YOUR_TOKEN" "https://your-shop.example/api/index.php/v1/alfa/items/12?include=translations"
+```
+
 **Stock.** Stock is not a field to overwrite. A stock figure in the body is an instruction to the stock service
-and counts only when the body carries `stock`. See [Stock](../services/stock.md).
+and counts only when the body carries `stock` or `inventory_stock`. For a product stocked at one location send
+`stock`, one figure. For several locations send `inventory_stock`, an object of location id to figure, each figure
+the stock to hold there: `{"manage_stock": 1, "inventory_stock": {"1": "3", "2": "2"}}`. The ids are those of
+`v1/alfa/locations`. A product with combinations holds its stock on them. Another shape is refused with 422. A
+product that tracks stock reads `stock` 0 when it holds none; one that does not track stock reads null. See
+[Stock](../services/stock.md).
 
 **A list row holds:** `id`, `name`, `alias`, `sku`, `gtin`, `mpn`, `state`, `stock`, `available_quantity`,
 `manage_stock`, `stock_action`, `is_virtual`, `combination_count`, `id_category_default`, `category_ids`,
@@ -86,7 +97,7 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
 `prices`, `prices_state`, `categories`, `manufacturers`, `medias`, `translations`, `fields`, `options`, `combinations`,
-`informational`, `created_by`, `modified_by`.
+`informational`, `related`, `created_by`, `modified_by`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
 `robots`. Left out, each stays as it was.
@@ -103,10 +114,14 @@ reading. A program that reads an item and sends it back leaves them out. Set the
 administrator. A create or change that carries any of these keys answers 422 naming them, and nothing is saved. A
 refused change leaves the item as it was; it is not checked out. The keys are `fields`,
 `options`, `combinations`, `informational`, and the item form's `combinations_default`, `deleted_combination_ids`,
-`deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required` and
-`item_downloads`. For a body that carries `options`, the reason reads: "options cannot be written through the API: an
-item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
-item without them; nothing was saved."
+`deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required`,
+`item_downloads` and `related`. For a body that carries `options`, the reason reads: "options cannot be written through
+the API: an item's options, combinations, item field values, downloads and related products are edited on its page in
+the administrator. Send the item without them; nothing was saved."
+
+`related` lists the ids of the products the item's page shows as related, in their order. It is for reading: set them
+on the product's Related tab in the administrator. A create or change that carries it answers 422 naming it, and
+nothing is saved; a change that leaves it out keeps the item's related products.
 
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
@@ -188,11 +203,11 @@ Each image the shop fetched carries `source_url`, the address it came from, in `
 `v1/alfa/categories`, the five standard routes.
 
 ```json
-{"name_en_gb": "Tools", "parent_id": 0, "state": 1}
+{"translations": {"en_gb": {"name": "Tools"}}, "parent_id": 0, "state": 1}
 ```
 
 **A list row holds:** `id`, `name`, `alias`, `parent_id`, `state`, `item_count`, `item_count_descendants`,
-`publish_up`, `publish_down`, `modified`, `ordering`.
+`ancestors`, `level`, `publish_up`, `publish_down`, `modified`, `ordering`.
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `list_options`, `medias`,
 `translations`.
@@ -207,6 +222,14 @@ sub-categories reads `item_count` 0 and `item_count_descendants` the number of t
 {"name": "Mobile phones", "parent_id": 0, "item_count": 0, "item_count_descendants": 128}
 ```
 
+**Where a category sits.** `ancestors` lists the categories above it from the top down, each with `id`, `name`,
+`alias` and `state`; `level` is 1 for a top-level category:
+
+```json
+{"name": "MOTOROLA", "parent_id": 7, "level": 2,
+ "ancestors": [{"id": 7, "name": "ΚΙΝΗΤΑ ΤΗΛΕΦΩΝΑ", "alias": "kinita-tilefona", "state": 1}]}
+```
+
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `robots`.
 
 **Delete.** Only a category in the trash is deleted; any other answers 409. Move it to the trash first (`PATCH`
@@ -218,7 +241,7 @@ with `state` -2). A category that has sub-categories, or that is the default cat
 `v1/alfa/manufacturers`, the five standard routes.
 
 ```json
-{"name_en_gb": "Acme Tools", "website": "https://example.com", "state": 1}
+{"translations": {"en_gb": {"name": "Acme Tools"}}, "website": "https://example.com", "state": 1}
 ```
 
 **A list row holds:** `id`, `name`, `alias`, `website`, `state`, `item_count`, `modified`, `ordering`.
@@ -235,7 +258,7 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 [Item field plugins](../plugins/item-field-plugins.md).
 
 ```json
-{"name_en_gb": "Colour", "field_name": "colour", "type": "choice", "state": 1}
+{"translations": {"en_gb": {"name": "Colour"}}, "field_name": "colour", "type": "choice", "state": 1}
 ```
 
 **A list row holds:** `id`, `field_name`, `name`, `type`, `informational`, `required`, `filterable`,
@@ -305,6 +328,15 @@ One item, shortened:
 
 The price here is worked out when you ask, by the same pricing code as the item page. See
 [Pricing](../services/pricing.md).
+
+`price` is `null` for an item with no price for the shopper (no price row applies to the currency, place and
+customer group asked), and for an item priced only from a larger quantity than it opens with; the quantity it is
+priced from is not published. Such an item is in the list, and a sort by price or by saving lists it after the items
+with a price. While the shop shows its catalogue only (Options, Cart, Online sales), `price` is `null` and each
+option's `amount` is `null`; the fields and their values are published as when the shop sells.
+
+Each entry of `categories` carries `ancestors` and `level`, as [Categories](#categories) describes them; an
+ancestor the shopper may not see is listed by its `id` and `state` only.
 
 ## Not documented yet
 
