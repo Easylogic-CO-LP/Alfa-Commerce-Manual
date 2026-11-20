@@ -6,7 +6,7 @@ description: "The REST API routes for orders and order statuses of Alfa Commerce
 
 # Orders
 
-<AlfaVersion verified="2.3.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -17,7 +17,7 @@ hands the request to the service that owns those rules. See [Orders](../services
 
 ```mermaid
 flowchart LR
-    A["POST orders<br/>(the order, empty)"] --> B["POST orders/:id/lines<br/>(what is sold)"]
+    A["POST orders<br/>(the order, and its parts if you have them)"] --> B["POST orders/:id/lines<br/>(what is sold)"]
     B --> C["POST orders/:id/payments<br/>(money expected or received)"]
     C --> D["POST .../payments/:paymentId/settle<br/>(the money arrived)"]
     B --> E["POST orders/:id/shipments<br/>(a parcel)"]
@@ -145,42 +145,6 @@ The answer, status 201, shortened:
 }
 ```
 
-### Where an order comes from
-
-**The source.** `source` names the channel an order comes from: lower-case letters, digits, `_` and `-`, up to 32
-characters, for example `base` for a marketplace's connector. Without it the order is `api`. `storefront`, `admin`
-and `renewal` are the sources Alfa Commerce writes for its own orders (the shop's checkout, the order screen, a
-renewal) and are refused with 422, as is a value in another shape. The source is written when the order is created
-and never changed; `filter[source]` lists the orders of one channel.
-
-**The other system's id.** An order that another system made (a marketplace, an ERP, a connector) can carry that
-system's name in `external_source` (the same shape as `source`) and its id of the order in `external_reference` (text
-of up to 64 characters, compared exactly: letter case counts). Send both or neither; one without the other is refused
-with 422.
-
-```json
-{"id_order_status": 1, "source": "base", "external_source": "base", "external_reference": "OR-2026-551",
- "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
-                      "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}}
-```
-
-One pair names one order. A create that sends a pair an order already carries creates nothing and answers 409, with
-that order's id in `meta.existing_id`:
-
-```json
-{"meta": {"existing_id": 1052},
- "errors": [{"title": "/external_reference: order 1052 already carries external_source \"base\" with this external_reference, and one pair names one order. The order was not created.", "code": 409}]}
-```
-
-So a connector that sends an order again after a timeout or a lost answer never makes a second one: it reads the
-order with `GET v1/alfa/orders/1052` and goes on. It needs no map of its own of the orders it sent. The database
-holds each pair once, so two such requests at the same moment make one order, and the second is answered in the
-same way.
-
-`filter[external_source]` lists the orders of one system, and with `filter[external_reference]` it finds the one
-order of a pair. An order without a pair can be given one with a `PATCH` of the order, once: a pair another order
-carries is refused with 409 and that order's id, and a change of a pair the order already carries with 422.
-
 **A list row holds:** `id`, `reference`, `customer_name`, `customer_email`, `id_order_status`, `status_name`,
 `id_payment_method`, `payment_method_name`, `id_shipment_method`, `shipment_method_name`, `payment_status`,
 `payment_percentage`, `balance`, `overpaid`, `excess`, `still_held`, `fulfillment_status`,
@@ -190,7 +154,8 @@ carries is refused with 409 and that order's id, and a change of a pair the orde
 
 **One record holds also:** `id_user`, `conversion_rate`, `delivery_date`, `id_address_delivery`,
 `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `shipments`,
-`contributions`, `history`, `delivery_address`, `invoice_address`. The order's number is its `id`.
+`contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's number is its
+`id`.
 
 `id_payment_method` and `payment_method_name` are the method of the order's latest payment that is not failed or
 cancelled (a payment from the customer's credit is left out); `id_shipment_method` and `shipment_method_name` the
@@ -243,14 +208,53 @@ e-mail stays required: emptying it is refused with 400. The invoice details are 
 
 **Delete.** 204. Only an order in the trash is deleted, as in the administrator: move it to the trash first (`PATCH`
 with `state` -2); an order in any other state answers 409 and nothing is deleted. An order that has sales documents is
-refused with 409, and the answer names the documents: cancel such an order instead.
+refused with 409, and the answer names the documents: cancel such an order instead. An order with a refund not
+settled yet, an order that names no currency, and an order whose payment or shipping plugin cannot be asked are
+refused with 409 and the reason too.
+
+### Where an order comes from
+
+**The source.** `source` names the channel an order comes from: lower-case letters, digits, `_` and `-`, up to 32
+characters, for example `base` for a marketplace's connector. Without it the order is `api`. `storefront`, `admin`
+and `renewal` are the sources Alfa Commerce writes for its own orders (the shop's checkout, the order screen, a
+renewal) and are refused with 422, as is a value in another shape. The source is written when the order is created
+and never changed; `filter[source]` lists the orders of one channel.
+
+**The other system's id.** An order that another system made (a marketplace, an ERP, a connector) can carry that
+system's name in `external_source` (the same shape as `source`) and its id of the order in `external_reference` (text
+of up to 64 characters, compared exactly: letter case counts). Send both or neither; one without the other is refused
+with 422.
+
+```json
+{"id_order_status": 1, "source": "base", "external_source": "base", "external_reference": "OR-2026-551",
+ "alfa_form_fields": {"name": "Maria Example", "email": "maria@example.invalid", "country": 84,
+                      "address": "1 Example Street", "city": "Example Town", "postcode": "123 45"}}
+```
+
+One pair names one order. A create that sends a pair an order already carries creates nothing and answers 409, with
+that order's id in `meta.existing_id`:
+
+```json
+{"meta": {"existing_id": 1052},
+ "errors": [{"title": "/external_reference: order 1052 already carries external_source \"base\" with this external_reference, and one pair names one order. The order was not created.", "code": 409}]}
+```
+
+So a connector that sends an order again after a timeout or a lost answer never makes a second one: it reads the
+order with `GET v1/alfa/orders/1052` and goes on. It needs no map of its own of the orders it sent. The database
+holds each pair once, so two such requests at the same moment make one order, and the second is answered in the
+same way.
+
+`filter[external_source]` lists the orders of one system, and with `filter[external_reference]` it finds the one
+order of a pair. An order without a pair can be given one with a `PATCH` of the order, once: a pair another order
+carries is refused with 409 and that order's id, and a change of a pair the order already carries with 422.
 
 ## Operations on an order
 
 An existing order is changed with these twelve routes, one change each. Each answers 200 with the whole order as
 it is after the change, so one answer shows the new totals. An order id that does not exist, or a line, payment or
-shipment of another order, answers 404. They do what the order screen does, with its rules, and ask the permission
-it asks: Orders: Edit, and for the status Orders: Edit State with Orders: View.
+shipment of another order, answers 404; a line added to an order that does not exist answers 409, "Order not
+found". They do what the order screen does, with its rules, and ask the permission it asks: Orders: Edit, and for
+the status Orders: Change State with Orders: View.
 
 | Method and address | What it does |
 |---|---|
@@ -387,7 +391,8 @@ the reason. The order's `history` records the removal.
 ### Shipments
 
 **Add a parcel.** `id_shipment_method` is needed. Optional: `tracking_number`, `carrier` (the carrier company's name,
-read back as `carrier_name`), `status`, the charge, and `items`, the order lines in the parcel with their quantities.
+read back as `carrier_name`), `status`, `weight`, the charge, and `items`, the order lines in the parcel with their
+quantities.
 
 ```json
 {
@@ -504,8 +509,8 @@ are needed in the default language.
 administrator recipients (`admin_recipient_ids`, set on the status's e-mail settings or with a `PATCH` of
 `admin_recipient_ids`) may receive mail. A fresh installation mails nobody until a status says so.
 
-A status can issue sales documents when an order reaches it. Such a status carries `issues_doc_rules`, with or
-without `issues_delivery_note`:
+A status can issue sales documents when an order reaches it: a create or a `PATCH` of the status sends
+`issues_doc_rules`, with or without `issues_delivery_note` (a read of the status does not return them):
 
 ```json
 {
