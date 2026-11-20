@@ -81,7 +81,7 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 
 **A list row holds:** `id`, `name`, `alias`, `sku`, `gtin`, `mpn`, `state`, `stock`, `available_quantity`,
 `manage_stock`, `stock_action`, `is_virtual`, `combination_count`, `id_category_default`, `category_ids`,
-`manufacturer_ids`, `publish_up`, `publish_down`, `modified`, `ordering`.
+`manufacturer_ids`, `publish_up`, `publish_down`, `modified`, `commerce_changed_at`, `ordering`.
 
 **One record holds also:** `short_desc`, `full_desc`, `meta_title`, `meta_desc`, `quantity_min`, `quantity_max`,
 `quantity_step`, `stock_low`, `backorder`, `min_qty`, `width`, `height`, `depth`, `weight`, `meta_data`, `robots`,
@@ -108,13 +108,80 @@ refused change leaves the item as it was; it is not checked out. The keys are `f
 item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
 item without them; nothing was saved."
 
-The list also takes `filter[stock]` and `filter[fields]`. See
+The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
+
+**What changed since your last read.** `commerce_changed_at` is when the item's stock, its prices or the item itself
+last changed: a stock move (an order's line, a stock count, a delivery), a price written on the item or on one of its
+combinations, a price period stored ahead of time that has begun, a change of its state, a save of the item. It is a
+UTC time to the microsecond, `2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that
+keeps stock and prices in step with another system reads the items changed since its last read instead of every
+item:
+
+```bash
+curl -H "X-Joomla-Token: YOUR_TOKEN" \
+  "https://your-shop.example/api/index.php/v1/alfa/items?filter[changed_since]=2026-11-20T10:00:00Z&list[limit]=100"
+```
+
+Ask from a minute before your last read: an item read twice is harmless, since a read gives the item as it is now.
+A time without a zone is UTC; `Z` or an offset is read in its zone; a value that is not a date and time answers 400.
+A change of a discount or a tax is not a change of the item and does not move `commerce_changed_at`.
 
 **Delete.** An item is deleted only while it is in the trash. Move it there first with a `PATCH` of `state` -2; an
 item in any other state answers 409 and nothing is deleted. An item that was never sold is then removed (204). An
 item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
 that it was archived instead of deleted.
+
+### Images given by their address
+
+An image the shop should keep as its own file can be given by its address: an entry of `media` with `"type": "image"`
+and a `url`. The shop fetches the file and stores it as an upload is stored: in its image folder, with a thumbnail
+and its main colour, through the media plugins' events. `"type": "url"` keeps its own meaning: an outside link,
+shown from its address, never fetched.
+
+```json
+{"media": [
+  {"type": "image", "url": "https://images.example.com/drill-front.jpg", "alt": "Cordless drill", "ordering": 1},
+  {"type": "image", "url": "https://images.example.com/drill-side.jpg", "alt": "Side view", "ordering": 2}
+]}
+```
+
+What is fetched, and what is not:
+
+- Only an `http` or `https` address whose host resolves to public addresses; a loopback, private, link-local or
+  reserved address is refused, and so is a redirect to one. At most three redirects are followed.
+- The file must arrive within the size and the time Options, Media, Images by URL sets (10 MB and 15 seconds by
+  default), and its content, not its name or the type the server states, must be an image of a type the shop takes.
+- An address the record already holds an image from is not fetched again: sending the same list again changes
+  nothing.
+
+**One or two images** are fetched with the request, and the answer carries them. **More** are fetched in the
+background: the answer is the record as it is, and `meta.tasks` names the job (`media.fetch`). Read the task (see
+[Tasks](./documents-and-tasks.md#tasks)) until its `state` is `done`: its `result` says what became of each image,
+by its place in your request:
+
+```json
+{"result": [
+  {"pointer": "/media/0/url", "url": "https://images.example.com/drill-front.jpg", "outcome": "stored", "media_id": 812, "reason": null},
+  {"pointer": "/media/1/url", "url": "https://images.example.com/drill-side.jpg", "outcome": "stored", "media_id": 813, "reason": null},
+  {"pointer": "/media/2/url", "url": "https://images.example.com/drill-box.gif", "outcome": "refused", "media_id": null,
+   "reason": "its content is image/gif, not an image of a type the shop takes (Options, Media)"}
+]}
+```
+
+`outcome` is `stored`, `kept` (the record already holds an image from that address) or `refused`, with the reason.
+
+**An image the request fetches and cannot store** is answered 422, one error for each such image with its pointer,
+and the record is saved with everything else the request sent; `meta.id` is the record's id, so a create that
+answers 422 still names the record it made:
+
+```json
+{"meta": {"id": 1201},
+ "errors": [{"title": "/media/0/url: the image at http://10.0.0.5/drill.jpg was not stored: its host does not resolve, or resolves to an address that is not public (loopback, private, link-local or reserved). The record was saved with everything else the request sent.",
+             "code": 422, "source": {"pointer": "/media/0/url"}}]}
+```
+
+Each image the shop fetched carries `source_url`, the address it came from, in `medias`.
 
 ## Categories
 
@@ -124,11 +191,21 @@ that it was archived instead of deleted.
 {"name_en_gb": "Tools", "parent_id": 0, "state": 1}
 ```
 
-**A list row holds:** `id`, `name`, `alias`, `parent_id`, `state`, `item_count`, `publish_up`, `publish_down`,
-`modified`, `ordering`.
+**A list row holds:** `id`, `name`, `alias`, `parent_id`, `state`, `item_count`, `item_count_descendants`,
+`publish_up`, `publish_down`, `modified`, `ordering`.
 
 **One record holds also:** `desc`, `meta_title`, `meta_desc`, `meta_data`, `robots`, `list_options`, `medias`,
 `translations`.
+
+**The products of a category.** `item_count` counts the items assigned to the category itself.
+`item_count_descendants` counts the items assigned to it or to any category below it, at any depth, each item once
+however many of those categories it is in. Both count the items the administrator's items list shows by default,
+published and unpublished; trashed and archived items are not counted. A category whose items all sit in its
+sub-categories reads `item_count` 0 and `item_count_descendants` the number of those items:
+
+```json
+{"name": "Mobile phones", "parent_id": 0, "item_count": 0, "item_count_descendants": 128}
+```
 
 **Related lists you can send:** `allowedUsers`, `allowedUserGroups`, `robots`.
 

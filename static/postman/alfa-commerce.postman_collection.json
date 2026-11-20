@@ -954,6 +954,56 @@
 							}
 						},
 						{
+							"name": "List (filter[changed_since])",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"pm.test('The item, with the time it last changed', () => { const r = pm.response.json().data.find(x => String(x.id) === pm.collectionVariables.get('itemId')); pm.expect(r).to.be.an('object'); pm.expect(r.attributes.commerce_changed_at).to.be.a('string'); });"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items?filter[search]=SKU-{{run}}&filter[changed_since]=2000-01-01T00:00:00Z",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items"
+									],
+									"query": [
+										{
+											"key": "filter[search]",
+											"value": "SKU-{{run}}"
+										},
+										{
+											"key": "filter[changed_since]",
+											"value": "2000-01-01T00:00:00Z"
+										}
+									]
+								},
+								"description": "The items whose stock, prices or own fields changed at or after a time (`commerce_changed_at`, UTC to the microsecond): a time without a zone is UTC, `Z` or an offset is read in its zone, a value that is not a date and time answers 400."
+							}
+						},
+						{
 							"name": "Get one",
 							"event": [
 								{
@@ -1069,6 +1119,64 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"name_el_gr\": \"Νέο προϊόν {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"New product {{run}} (updated)\",\n  \"state\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Update (an image given by an address that is not public: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 422', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(422));",
+											"pm.test('The image is named by its pointer', () => pm.expect(pm.response.json().errors[0].source.pointer).to.eql('/media/0/url'));",
+											"pm.test('The item is named in meta.id', () => pm.expect(String(pm.response.json().meta.id)).to.eql(pm.collectionVariables.get('itemId')));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{itemId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "An image given by its address, `{\"type\": \"image\", \"url\": \"https://...\"}`, is fetched by the shop and stored as an upload (the image folder, a thumbnail, the main colour, the media plugin events). Only an http or https address whose host resolves to public addresses is fetched, a redirect only to such an address, within the size and the time Options, Media, Images by URL sets, and only a file whose content is an image of a type the shop takes. One or two images are fetched with the request; more by a background job named in `meta.tasks`, whose `result` says what became of each. Here the address is a loopback one: the answer is 422 with the image's pointer, the item saved with the rest, its id in `meta.id`. `\"type\": \"url\"` keeps meaning an outside link, never fetched.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"media\": [\n    {\"type\": \"image\", \"url\": \"http://127.0.0.1/apic-{{run}}.png\", \"alt\": \"Not fetched\"}\n  ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1624,7 +1732,8 @@
 											"        pm.expect(doc.data.attributes).to.be.an('object');",
 											"        pm.expect(String(doc.data.id)).to.eql(String(pm.collectionVariables.get('categoryId')));",
 											"    });",
-											"}"
+											"}",
+											"pm.test('The product counts: its own and with its sub-categories', () => { const a = pm.response.json().data.attributes; pm.expect(a.item_count).to.be.a('number'); pm.expect(a.item_count_descendants).to.be.a('number'); pm.expect(a.item_count_descendants).to.be.at.least(a.item_count); });"
 										]
 									}
 								}
@@ -8598,6 +8707,159 @@
 							}
 						},
 						{
+							"name": "Create (with the other system's id)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 201', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(201));",
+											"if (pm.response.code === 201) {",
+											"    pm.collectionVariables.set('externalOrderId', String(pm.response.json().data.id));",
+											"    const a = pm.response.json().data.attributes;",
+											"    pm.test('The source and the pair are kept', () => { pm.expect(a.source).to.eql('apicoll'); pm.expect(a.external_source).to.eql('apicoll'); pm.expect(a.external_reference).to.eql('APIC-' + pm.collectionVariables.get('run')); });",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders"
+									]
+								},
+								"description": "Creates an order another system made: `source` names the channel (lower-case letters, digits, `_` and `-`, up to 32 characters; without it the order is `api`; `storefront`, `admin` and `renewal` are refused with 422), and `external_source` with `external_reference` carry that system's name and its id of the order, both or neither. One pair names one order.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"source\": \"apicoll\",\n  \"external_source\": \"apicoll\",\n  \"external_reference\": \"APIC-{{run}}\",\n  \"id_order_status\": {{initialStatusId}},\n  \"id_currency\": 47,\n  \"alfa_form_fields\": {\n    \"name\": \"API Collection Customer {{run}}\",\n    \"email\": \"api-collection-{{runLower}}@example.invalid\",\n    \"country\": {{countryId}},\n    \"address\": \"1 Example Street\",\n    \"city\": \"Larisa\",\n    \"postcode\": \"412 22\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Create (the same pair again: the order it made)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 409', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(409));",
+											"pm.test('meta.existing_id is the order the pair names', () => pm.expect(String(pm.response.json().meta.existing_id)).to.eql(pm.collectionVariables.get('externalOrderId')));",
+											"pm.test('The error names external_reference', () => pm.expect(pm.response.json().errors[0].title).to.match(/^\\/external_reference: order \\d+ already carries/));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders"
+									]
+								},
+								"description": "The same `external_source` and `external_reference` again, as a connector sends an order again after a timeout or a lost answer: nothing is created, and the answer is 409 with the order the pair names in `meta.existing_id`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"source\": \"apicoll\",\n  \"external_source\": \"apicoll\",\n  \"external_reference\": \"APIC-{{run}}\",\n  \"id_order_status\": {{initialStatusId}},\n  \"id_currency\": 47,\n  \"alfa_form_fields\": {\n    \"name\": \"API Collection Customer {{run}}\",\n    \"email\": \"api-collection-{{runLower}}@example.invalid\",\n    \"country\": {{countryId}},\n    \"address\": \"1 Example Street\",\n    \"city\": \"Larisa\",\n    \"postcode\": \"412 22\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "List (filter[external_source] and filter[external_reference])",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"pm.test('The one order of the pair', () => pm.expect(pm.response.json().data.map(r => String(r.id))).to.eql([pm.collectionVariables.get('externalOrderId')]));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders?filter[external_source]=apicoll&filter[external_reference]=APIC-{{run}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders"
+									],
+									"query": [
+										{
+											"key": "filter[external_source]",
+											"value": "apicoll"
+										},
+										{
+											"key": "filter[external_reference]",
+											"value": "APIC-{{run}}"
+										}
+									]
+								},
+								"description": "The one order of a pair: `filter[external_source]` lists the orders of one system, and with `filter[external_reference]` the one order of the pair. `filter[source]` lists the orders of one channel."
+							}
+						},
+						{
 							"name": "List",
 							"event": [
 								{
@@ -9075,6 +9337,53 @@
 										}
 									}
 								}
+							}
+						},
+						{
+							"name": "Clean up: delete the other system's order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 204', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(204));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{externalOrderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "Removes the order of the other system the collection made."
 							}
 						},
 						{
@@ -10545,6 +10854,74 @@
 							}
 						},
 						{
+							"name": "Change a payment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('The answer is the full order', () => { const a = pm.response.json().data.attributes; pm.expect(a).to.have.property('lines'); pm.expect(a).to.have.property('payments'); pm.expect(a).to.have.property('shipments'); pm.expect(a).to.have.property('order_total'); });",
+											"    const p = pm.response.json().data.attributes.payments.find(x => String(x.id) === pm.collectionVariables.get('paymentId'));",
+											"    pm.test('The reference and the note are written, the status is not', () => { pm.expect(p.transaction_id).to.eql('APIC-' + pm.collectionVariables.get('run') + '-P'); pm.expect(p.note).to.eql('API collection payment, changed'); pm.expect(p.transaction_status).to.eql('pending'); });",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/payments/:paymentId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"payments",
+										":paymentId"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										},
+										{
+											"key": "paymentId",
+											"value": "{{paymentId}}",
+											"description": "Sub-resource id."
+										}
+									]
+								},
+								"description": "`PATCH v1/alfa/orders/:id/payments/:paymentId` `{id_payment_method?, transaction_id?, note?}`, as the payment window of the order screen changes a payment, with its rules: a payment its gateway collected keeps its method and reference (409), and the order's payment method follows its latest live payment. The amount and the status stay with the settle and the refund; any other key is refused with 422.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"transaction_id\": \"APIC-{{run}}-P\",\n  \"note\": \"API collection payment, changed\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
 							"name": "Refund (a payment not yet completed)",
 							"event": [
 								{
@@ -10752,6 +11129,61 @@
 										}
 									}
 								}
+							}
+						},
+						{
+							"name": "Remove a payment (completed: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 409', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(409));",
+											"pm.test('The reason is given', () => pm.expect(pm.response.json().errors[0].title).to.not.include('could not be updated'));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/payments/:paymentId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"payments",
+										":paymentId"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										},
+										{
+											"key": "paymentId",
+											"value": "{{paymentId}}",
+											"description": "Sub-resource id."
+										}
+									]
+								},
+								"description": "`DELETE v1/alfa/orders/:id/payments/:paymentId` removes a payment that moved no money (pending, authorized, failed or cancelled), as the order screen does. A completed payment is history: 409 with the reason, and it stays."
 							}
 						},
 						{
@@ -11424,6 +11856,122 @@
 										}
 									}
 								}
+							}
+						},
+						{
+							"name": "Add a shipment (to remove)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) { const s = pm.response.json().data.attributes.shipments.pop(); if (s) { pm.collectionVariables.set('removedShipmentId', String(s.id)); } }"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/shipments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"shipments"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "A second parcel, to be removed next.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"id_shipment_method\": {{opsShipmentMethodId}}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Remove a shipment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('The answer is the full order', () => { const a = pm.response.json().data.attributes; pm.expect(a).to.have.property('lines'); pm.expect(a).to.have.property('payments'); pm.expect(a).to.have.property('shipments'); pm.expect(a).to.have.property('order_total'); });",
+											"    pm.test('The parcel is gone', () => pm.expect(pm.response.json().data.attributes.shipments.map(s => String(s.id))).to.not.include(pm.collectionVariables.get('removedShipmentId')));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/shipments/:shipmentId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"shipments",
+										":shipmentId"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										},
+										{
+											"key": "shipmentId",
+											"value": "{{removedShipmentId}}",
+											"description": "Sub-resource id."
+										}
+									]
+								},
+								"description": "`DELETE v1/alfa/orders/:id/shipments/:shipmentId` removes a parcel, as the order screen does: its lines are free again for another parcel and the order's history records the removal. The carrier is not told."
 							}
 						},
 						{
