@@ -182,6 +182,23 @@ Like the integrity card, the table is drawn from one fixed file (`administrator/
 through Joomla's layout overrides, so a template override cannot hide an address or an account. How an integrator's
 account is set up is on [Adding routes to the REST API](../plugins/api-route-plugins.md#the-integration-account).
 
+## Webhooks: what leaves the shop
+
+A webhook sends the shop's changes to an outside address ([Outgoing notifications](../api/notifications.md)). What
+keeps it safe:
+
+- **The address.** https only, and its host must resolve to public addresses: loopback, private, link-local (a cloud's
+  metadata address), unique-local, shared and reserved addresses are refused when the webhook is saved and again
+  before every request. The connection goes to the address checked, so a name that changes its answer in between
+  cannot point inside the shop's network, and a redirect is not followed. The image address check of the media
+  screen uses the same rule.
+- **The secret.** The shop makes it, shows it once after the save that made it, and never again: no screen, list,
+  card, log line or API route returns it, and the admin events of a webhook's save are not handed it. Every request
+  is signed with it (HMAC-SHA256 over the moment and the body), so the receiver can refuse a request that is not the
+  shop's, or one replayed later.
+- **Who may set one up.** The Webhooks permissions of Options, Permissions; no group holds them until a Super User
+  grants them. The card of Tools, Tasks needs Tools.
+
 ## The other tabs of Tools
 
 Tools is one screen (`administrator/tmpl/tools/default.php`) with these tabs. Every card on them is drawn from one

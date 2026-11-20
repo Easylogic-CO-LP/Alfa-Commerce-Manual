@@ -78,7 +78,9 @@ Alfa creates tasks at these moments:
 
 Alfa creates jobs for: preparing the list prices of a new combination of customer groups, rebuilding catalogue
 entries of items, rebuilding the search index, applying stock movements that are still owed, recreating thumbnails,
-and deleting finished tasks.
+deleting finished tasks, and telling each consumer of the shop's changes what it is owed (`outbound.deliver`, one job
+a consumer; see [Outgoing notifications](../api/notifications.md)). The changes a consumer is owed are written in
+the save of the change itself, as a task is.
 
 The picture of a status change, with each task in its place, is on [Event flows](../events/flows.md).
 

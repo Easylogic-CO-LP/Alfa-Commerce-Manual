@@ -20,6 +20,9 @@ This page has the rules that hold for every route. The routes themselves are on 
   shipments, status)
 - [Documents and tasks](./documents-and-tasks.md): sales documents, document types and background work
 
+The shop can also tell another system of its changes as they happen, without being asked: see
+[Outgoing notifications](./notifications.md).
+
 ## The Postman collection
 
 Every route is in a Postman collection, with a test on each request. Use it to try the API by hand, or to check a
