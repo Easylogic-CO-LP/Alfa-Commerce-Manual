@@ -378,7 +378,7 @@ commit secrets or credentials, and give database operations no more rights than 
 | A language file is reported as extra | It lies inside Alfa's own folders. A language pack belongs in Joomla's language folders. |
 | The red banner stays after you fixed the files | The last answer is kept for 24 hours. Press Recheck now. |
 | A user cannot find Tools | The user lacks the permission Use Maintenance Tools. |
-| A visitor reports a page with a reference | A server error. | Search `administrator/logs/com_alfa_errors.php` for the reference: its line says what failed and where. |
+| A visitor reports a page with a reference | A server error. Search `administrator/logs/com_alfa_errors.php` for the reference: its line says what failed and where. |
 | Your extension's request fails with status 503 | The shop is in maintenance during Clear everything |
 
 ## Not documented yet
