@@ -6,7 +6,7 @@ description: "The REST API routes for sales documents, document types and backgr
 
 # Documents and tasks
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -36,7 +36,8 @@ Filters of the list: `filter[search]`, `filter[doc_type]`, `filter[status]`, `fi
 **One record holds also:** `is_combined`, `issue_date`, the buyer's and the seller's details (`buyer_...`,
 `seller_...`), `currency`, `conversion_rate`, the transport details (`movement_purpose`, `carrier_name`,
 `vehicle_number`, `movement_start`, `ship_from`, `ship_to`), `payment_method_name`, `authority_uid`, `qr_url`,
-`note`, `print_note`, `voided_at`, `voided_by`, `void_reason`, and the lists `series`, `lines`, `taxes`.
+`note`, `print_note`, `voided_at`, `voided_by`, `void_reason`, `created_by`, `series` (the series' `id`, `code`,
+`title`, `prefix` and `branch_code`, in place of the list's `series_code`), and the lists `lines` and `taxes`.
 
 **The PDF** needs the dompdf library (`lib_dompdf`), which ships with Alfa Commerce and is installed with it,
 together with the four libraries it needs, so the route works with no extra step. The HTML route does not need it.
@@ -45,7 +46,8 @@ that the print view shows the document; the notification centre tells the admini
 
 **Void.** The only correction of an issued document. The document and its number stay; it is marked void with
 your reason. A reason is needed (400 without one, 500 characters at most). Only an issued document can be voided:
-a second void is refused with 409. The token's user needs the documents' Change State permission.
+a second void is refused with 409, and so is a void of a document that corrective documents not voided name (void
+those first). The token's user needs the documents' Change State permission.
 
 ```json
 {"reason": "Issued to the wrong customer"}
@@ -72,7 +74,7 @@ With a series in place, an invoice issued by a status change reads like this in 
 }
 ```
 
-After a void, `status` is 2 and `voided_at`, `voided_by` and `void_reason` are filled. The two refusals of a void:
+After a void, `status` is 2 and `voided_at`, `voided_by` and `void_reason` are filled. Two refusals of a void:
 
 ```json
 {"errors":[{"title":"reason is required to void a document","code":400}]}
@@ -103,7 +105,7 @@ price index to rebuild. See [Background work](../architecture/background-work.md
 shows them in two places.
 
 **In the answer of a write.** `meta.tasks` lists the work the request left, each with its state and its own
-address:
+address (shortened):
 
 ```json
 {
@@ -125,7 +127,7 @@ records.
 | Method and address | What it does | Who may |
 |---|---|---|
 | `GET v1/alfa/tasks` | Lists tasks. Filters: `filter[state]`, `filter[type]`, `filter[owner]`. `page[limit]` is 100 at most. | Users with the Tools permission |
-| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it, or a user with the permission of its work |
+| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it; for a single of an order, a user with Orders: View; for any other task, a user with the Tools permission |
 | `POST v1/alfa/tasks/:id/process` | Works on a job for up to 2 seconds | Users with the Tools permission |
 
 A task you may not read answers 404, the same as a task that does not exist, so the API never reveals that a
@@ -141,12 +143,12 @@ sequenceDiagram
     participant C as Your program
     participant A as Alfa Commerce
     C->>A: POST v1/alfa/items (a new price)
-    A->>C: 200, meta.tasks names job 2
+    A->>C: 201, meta.tasks names job 2
     loop until the answer is 200
         C->>A: POST v1/alfa/tasks/2/process
         A->>C: 202 with Location and Retry-After 5 (still working)
     end
-    A->>C: 200 with the task (done, failed or resolved)
+    A->>C: 200 with the task (no longer pending or running)
 ```
 
 You do not have to call `process`. The shop does its background work by itself, as described in
@@ -159,8 +161,9 @@ Only a job can be processed:
 {"errors":[{"title":"Only a job can be processed; a single runs after the save that wrote it.","code":409}]}
 ```
 
-Only Alfa Commerce itself creates tasks. The API has no route that creates one, and a plugin cannot
-register its own.
+The API has no route that creates a task: tasks are left by the shop's own saves, and by a plugin that owes
+background work of its own (see
+[Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin)).
 
 ## Not documented yet
 
