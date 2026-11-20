@@ -170,7 +170,8 @@ On the card:
 - **Pause** and **Resume** stop and restart a consumer, as the webhook's state does.
 
 A stock or price change that is given up does not block its unit: the unit's next change is told with the newest
-figure. Changes that were taken are kept for 7 days, changes given up or discarded for 30 days, then removed.
+figure. Changes that were taken, or that no consumer took, are kept for 7 days, changes given up or discarded for 30
+days, then removed.
 
 The card needs the permission **Tools** of Alfa Commerce.
 
@@ -179,8 +180,9 @@ The card needs the permission **Tools** of Alfa Commerce.
 A system that keeps its own copy of the shop's catalogue and orders:
 
 1. **First sync.** When it connects, it reads what it needs once through the REST API: the items with their stock
-   and prices (`v1/alfa/items`, page by page, and one record per item for its prices and `prices_state`), and the
-   orders it follows. See [Catalogue](./catalogue.md) and [Orders](./orders.md).
+   and prices (`v1/alfa/items`, page by page, and one record per item for its prices, its `prices_state` and each
+   combination's `prices_state`), and the orders it follows. See [Catalogue](./catalogue.md) and
+   [Orders](./orders.md).
 2. **Then it is told.** A webhook (or the integration's plugin) tells it each change from then on. It stores each
    change's `id` and drops a change it has already seen.
 3. **One reconciliation read a day**, outside busy hours, through the same reads as the first sync. It heals what a
@@ -198,8 +200,10 @@ When the shop and another system both change prices, neither must overwrite the 
   (prices_state). Read it again. Nothing was saved.", and nothing of the change is saved. The system reads the item
   again, merges, and sends again with the new state.
 - A change sent without `prices_state` is written as sent: the last write wins.
+- The same holds for many units in one request (`PATCH v1/alfa/items/units`): each unit may send the `prices_state`
+  it read, a combination's included, and a unit whose prices changed since is refused alone with 409.
 
-See [Catalogue](./catalogue.md#items).
+See [Catalogue](./catalogue.md#items) and [Many units in one request](./catalogue.md#many-units-in-one-request).
 
 ## Telling through a plugin
 
@@ -248,6 +252,10 @@ public function onAlfaOutboundDeliver(OutboundDeliverEvent $event): void
 A change the plugin does not answer is sent again later, on the same waits as a webhook's. A handler that throws has
 every change of the batch sent again, and the failure is written to the log `com_alfa.outbound`. A plugin that
 cannot be loaded leaves the batch waiting. A reason must never contain a credential: staff read it on the card.
+
+A plugin that names topics but has no `onAlfaOutboundDeliver` method takes no change. Its changes are settled as taken
+by **no consumer**: they are not sent again, not given up and not counted, no notice is shown, and the card shows its
+last delivery as taken, the reason naming no consumer. This is not an error: the plugin has nothing to tell.
 
 A plugin that writes prices on its system's behalf asks first whether a price change of that unit still waits for it:
 `OutboundFeed::waiting($consumerId, 'price', $itemId, $combinationId)`, where `$consumerId` is

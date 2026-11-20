@@ -281,7 +281,7 @@ Work that runs after a save or in the background. See [Background work](backgrou
 | `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps |
 | `#__alfa_task_slots` | Named slots that limit how many jobs run at once (one heavy job at a time) |
 | `#__alfa_outbound_consumers` | Who the shop tells of its changes: a webhook (an https address, its signing secret, its topics) or a plugin consumer, delivering or paused, with its last delivery and the answer. See [Outgoing notifications](../api/notifications.md) |
-| `#__alfa_outbound_deliveries` | What each consumer is owed: one row a change, written in the transaction of the change; a stock or price change waits once per unit; pending, sent, given up or discarded, with its attempts and the last error |
+| `#__alfa_outbound_deliveries` | What each consumer is owed: one row a change, written in the transaction of the change; a stock or price change waits once per unit; pending, sent, taken by no consumer (a plugin with no delivery), given up or discarded, with its attempts and the last error |
 
 ## Notifications
 

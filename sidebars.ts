@@ -141,6 +141,7 @@ const sidebars: SidebarsConfig = {
         'api/customers-and-configuration',
         'api/orders',
         'api/documents-and-tasks',
+        'api/notifications',
       ],
     },
   ],
