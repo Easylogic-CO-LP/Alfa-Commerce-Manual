@@ -16,7 +16,6 @@ a counter of the items or the quantity, and the **drawer** it opens: the cart's 
 cart is on [Cart and checkout](../services/cart-and-checkout.md). In a shop that shows its catalogue only, the module
 draws nothing (see [Online sales](../getting-started/store-setup.md#online-sales)).
 
-
 ## The button and the drawer
 
 - **The button** is a real button: the keyboard reaches it with Tab, and Enter or Space opens the drawer. It is named
