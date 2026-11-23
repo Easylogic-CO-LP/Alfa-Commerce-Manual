@@ -181,8 +181,8 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 	<creationDate>2025-03-04</creationDate>
 	<authorEmail>info@easylogic.gr</authorEmail>
 	<authorUrl>http://easylogic.gr</authorUrl>
-	<version>2.2.1</version>
-	<alfacore min="2.2" max="2.2"/>
+	<version>2.3.0</version>
+	<alfacore min="2.3" max="2.3"/>
 	<description>PLG_ALFA_PAYMENTS_STANDARD_XML_DESCRIPTION</description>
 	<namespace path="src">Alfa\Plugin\AlfaPayments\Standard</namespace>
 	<files>

@@ -142,7 +142,7 @@ paths.
 This is one release's group of `OBSOLETE_FILES`, shortened to two of its entries and without their comments:
 
 ```php
-'2.2.2' => [
+'2.3.0' => [
     'plugins/alfa-payments/standard/tmpl/default_item_view.php' => ['031d61b4d1714c3dd1a10bed3325a62f31987a41d4dedc422b1e43d1b725d203'],
     'administrator/components/com_alfa/tmpl/cart/default_items.php' => [
         '7a50f5b9ab44059ac470c04d6c75d55e6966cc91e221e6df07161c661de52601',
