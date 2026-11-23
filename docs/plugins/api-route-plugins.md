@@ -348,7 +348,7 @@ background work (below).
 | The plugin has no `onAlfaBeforeApiRoute()` method, so it adds no routes | 404 | Joomla |
 | The plugin has no `onAlfaApiRequest()` method | 404, and a warning naming the route in `com_alfa_api.php` | Alfa Commerce |
 | No `Accept` header | Answered in the route's one format. A core address still answers 406: send `Accept: application/vnd.api+json` or `*/*` | Alfa Commerce |
-| No token, a wrong token, an account outside the token plugin's groups or without API Login | 401, in every format | Joomla |
+| No token, a wrong token, an account outside the token plugin's groups or without Web Services Login | 401, in every format | Joomla |
 | The account lacks the route's permission | 403 | Alfa Commerce |
 | A body larger than the route takes | 413 | Alfa Commerce |
 | The plugin is enabled but cannot be loaded, or throws while it declares its routes | 503 with `Retry-After: 600`, and one notification for staff | Alfa Commerce |
@@ -363,7 +363,7 @@ caller reads one shape; on a JSON:API route each is a JSON:API error.
 An integrator calls with the Joomla API token of an account of its own, never a Super User:
 
 1. A user group of its own (for example "Example connection", under Public), and one account in it alone.
-2. Global Configuration, Permissions, that group: **API Login** allowed. **Administrator Login** too, only so the
+2. Global Configuration, Permissions, that group: **Web Services Login** allowed. **Administrator Login** too, only so the
    account can sign in to read its own token; nothing else.
 3. The plugin **User - Joomla API Token**: **Allowed User Groups** includes the group. Its default is Super Users only.
 4. Alfa Commerce, Options, Permissions, the group: the route's permission and the core permissions of what the
@@ -372,8 +372,8 @@ An integrator calls with the Joomla API token of an account of its own, never a 
 
 Tools, Security lists every Alfa Commerce endpoint: the plugin's endpoints in a section of their own beside core's,
 each with its method, its full address and the permission it asks, the routes refused with their rule, and a mark when
-the plugin cannot be loaded. Its API internals name the groups that hold each permission, whether each has API Login
-and is in the token groups, the accounts in them with an enabled token, and each endpoint's format and largest body. See
+the plugin cannot be loaded. Its API internals name the groups that hold each permission, whether each has Web Services
+Login and is in the token groups, the accounts in them with an enabled token, and each endpoint's format and largest body. See
 [The REST API's endpoints](../architecture/integrity-and-security.md#the-rest-apis-endpoints).
 
 ## Background work of a plugin

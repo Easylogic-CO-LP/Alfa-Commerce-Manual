@@ -242,7 +242,7 @@ The classes are in `Documents/`.
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
 | `onAlfaOutboundTopics` | `OutboundTopicsEvent` in `Outbound/` | One plugin | No | On request: when the plugin is saved or enabled | `administrator/src/Service/Outbound/OutboundConsumers.php:544` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
-| `onAlfaOutboundDeliver` | `OutboundDeliverEvent` in `Outbound/` | One plugin | No veto: each change is answered delivered, retry or refused | After the save is final, in the background | `administrator/src/Service/Outbound/OutboundDelivery.php:298` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+| `onAlfaOutboundDeliver` | `OutboundDeliverEvent` in `Outbound/` | One plugin | No veto: each change is answered delivered, retry or refused | After the save is final, in the background | `administrator/src/Service/Outbound/OutboundDelivery.php:300` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
 
 ## The REST API and background work
 

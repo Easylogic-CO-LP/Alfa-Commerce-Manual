@@ -115,7 +115,7 @@ Each of these folders and each request has a description in Postman that says wh
 |---|---|
 | **The address** | `https://your-shop.example/api/index.php/v1/alfa/...` |
 | **The plugin that adds the routes** | "Web Services - Alfa Commerce" (`plugins/webservices/alfa`). The installer enables it. |
-| **A token** | A Joomla API token of a user. In the administrator: **Users**, **Manage**, open the user, the tab **Joomla API Token**. Joomla's plugins "User - Joomla API Token" and "API Authentication - Web Services Joomla Token" must be enabled. Joomla installs them enabled. |
+| **A token** | A Joomla API token of a user. Joomla shows a token to its own account only: the user signs in to the administrator and opens their own profile, the tab **Joomla API Token**. Its group needs Web Services Login (Global Configuration, Permissions) and a place in the **Allowed User Groups** of "User - Joomla API Token". See [Connecting another system](./integrating.md). Joomla's plugins "User - Joomla API Token" and "API Authentication - Web Services Joomla Token" must be enabled. Joomla installs them enabled. |
 | **The permission** | The token's user must hold the Alfa Commerce permission of the route. See [Permissions](#permissions). |
 
 Send the token in one of two headers:
@@ -406,8 +406,9 @@ or applied it with a remark, answers with `meta.warnings`, one sentence each. Se
 | 202 | A task is still working. See [Tasks](./documents-and-tasks.md#tasks). |
 | 204 | Deleted. No body. |
 | 400 | The input cannot be used: a required field is missing, an amount is finer than the currency, a list is sent where one value is expected. |
-| 401 | No token, or a token that is not valid. |
+| 401 | No token, a token that is not valid, or an account without Web Services Login or outside the token plugin's Allowed User Groups. |
 | 403 | The token's user lacks the permission. |
+| 406 | A core route asked without `Accept: application/vnd.api+json` (or `*/*`). |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
 | 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, an order's `state` other than -2 or 1 or sent with other attributes, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a payment method that is not one of the shop's, a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, a `PATCH v1/alfa/items/units` that does not send 1 to 100 units, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |

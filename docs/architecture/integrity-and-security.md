@@ -183,8 +183,8 @@ While a filter is set, the sections that hold what it keeps are open; without on
 
 - **Signing in with a token.** The user groups whose accounts may sign in with a Joomla API token: the Allowed User
   Groups of the plugin "User - Joomla API Token", Super Users when that plugin is not enabled, every group when it
-  names none. An account calls an endpoint with its token when its group has API Login (Global Configuration,
-  Permissions) and is in the token groups, itself or through a group above it, and the account is not blocked, has no
+  names none. An account calls an endpoint with its token when its group has Web Services Login (Global
+  Configuration, Permissions) and is in the token groups, itself or through a group above it, and the account is not blocked, has no
   activation pending and no password reset required.
 - **Who holds each permission.** One row for each permission the shown endpoints ask (or two asked together): how
   many endpoints ask it, the user groups granted it (a Super Users group holds every one), each marked **API Login
