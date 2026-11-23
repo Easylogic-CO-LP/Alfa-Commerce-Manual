@@ -6,9 +6,16 @@ description: The one way to save a product from an extension's code, the same sa
 
 # Saving a product
 
-A product is saved one way: through `ItemWriteService`. The item screen and the REST API use it, and an extension's
-code uses it the same way. The save is the item save the screen runs, with its rules, its refusals and its one
-transaction: the product, its texts, prices, categories, images and stock are saved together, or none of them is.
+<AlfaVersion verified="2.3.0" />
+
+A product is saved one way: through `ItemWriteService`. The item screen and the REST API's create and update use it,
+and an extension's code uses it the same way. The save is the item save the screen runs, with its rules, its refusals
+and its one transaction: the product, its texts, prices, categories, images, variants and stock are saved together,
+or none of them is. Two parts can be refused on their own once the product is written, its stock figure and the
+changes to its variants: the rest is then saved, and the save answers a warning for the part refused.
+
+The items list's quick edit of a name, a SKU or a stock figure, and the REST API's `PATCH v1/alfa/items/units` of
+prices and stock, write only those, each on a path of its own.
 
 ## The calls
 
@@ -45,7 +52,7 @@ empty refuses the save. The caller checks its own permission first: the service 
 
 ## What a change keeps
 
-On a change, a field you do not give keeps its stored value. That covers the lists the save would otherwise empty
+On a change, a field you do not give keeps its stored value. That covers the fields the save would otherwise empty
 (`categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`, `robots`, `related`) and every
 translated field in every language. A list you give replaces the stored one; give `[]` to empty it. The REST API's
 `PATCH` keeps what it is not sent by the same list.
@@ -74,5 +81,13 @@ foreach ($result->warnings as $warning) {
 }
 ```
 
-A save with warnings is saved: the product and everything else it carried are written. The REST API gives the same
-warnings in `meta.warnings`.
+A save with warnings is saved: the product is written with everything else it carried, except what a warning names.
+The REST API gives the same warnings in `meta.warnings`.
+
+## One SKU, one product or variant
+
+A SKU names one unit: a product, or one of its variants. A save that gives the product, or one of its variants, a SKU
+another product or variant holds is refused, and nothing is written. Letter case does not count: `smx-128` is held
+when `SMX-128` is. The refusal is a sentence in `refusals` that names the SKU and the product or variant holding it:
+"%1$s is the SKU of %2$s: a SKU names one product or variant. Nothing was saved." (`COM_ALFA_SKU_IN_USE`). A unit
+that keeps the SKU it held before the save is never refused for it.
