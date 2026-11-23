@@ -95,7 +95,7 @@ $this->dispute(paymentId: $id, reference: $ref)->won()->asOf(utc: '2026-12-09 08
 | `amount(string $amount, string $currency)` | The disputed amount as the provider states it: a decimal text and an ISO 4217 code. A new case needs it. |
 | `amountInOrderCurrency(string $amount)` | The amount in the order's currency, when the provider stated it in another one and you know the order's figure. Refused for a case stated in the order's currency. |
 | `reason(string $code, string $text = '')` | One of `DisputeLedger::REASON_FRAUD`, `REASON_NOT_RECEIVED`, `REASON_NOT_AS_DESCRIBED`, `REASON_DUPLICATE`, `REASON_CREDIT_NOT_PROCESSED`, `REASON_CANCELLED`, `REASON_UNRECOGNISED`, `REASON_OTHER`; and the provider's own words. |
-| `evidenceDueBy(?string $utc)` | The deadline, UTC `Y-m-d H:i:s`. |
+| `evidenceDueBy(?string $utc)` | The deadline, UTC `Y-m-d H:i:s`, at most a year ahead; `null` for none. |
 | `fee(string $amount, string $currency)`, `feeReturned(string $amount, string $currency)` | The provider's fee and the part it gave back, as it states them. Shown to staff, never booked: the fee is the provider's charge to the shop, not the customer's money. |
 | `providerLink(string $url)` | The https address of the case at the provider. |
 | `note(string $text)` | A note on the order's timeline. |
@@ -121,14 +121,16 @@ own:
 | `lock_not_taken` | Another operation held the order: nothing written | 503 |
 | `write_failed` | Nothing written; the reason is in the payments log | 503 |
 
-The codes of a refusal: `dispute_not_collected` (not a completed or refunded payment), `dispute_wallet` (paid from the
-customer's wallet), `dispute_not_own` (another plugin's payment or case), `dispute_transition` (a move the states do not
-allow), `dispute_closed` (the case is closed: a later dispute is a new case), `dispute_amount` (no amount, not a
-positive decimal, finer than the order's scale, more than the payment), `dispute_staff_only` (a call only staff make),
-`dispute_follows_provider` (staff changing a fact the provider sets), `dispute_no_reference`, `dispute_no_currency`,
-`dispute_value` (a malformed date, link, reason or fee), `dispute_missing`, `dispute_books_refused` and
-`dispute_books_out_of_step` (the books could not take the booking; staff look). A code never changes; a later release
-may add codes, never kinds, so handle a code you do not know as its kind.
+The codes of a refusal: `dispute_not_collected` (no such payment, or not a completed or refunded payment),
+`dispute_wallet` (paid from the customer's wallet), `dispute_not_own` (another plugin's payment or case),
+`dispute_transition` (a move the states do not allow), `dispute_closed` (the case is closed: a later dispute is a new
+case), `dispute_amount` (no amount, not a positive decimal, finer than the order's scale, more than the payment),
+`dispute_staff_only` (a call only staff make), `dispute_follows_provider` (staff changing a fact the provider sets),
+`dispute_no_reference`, `dispute_no_currency`, `dispute_value` (a malformed date, link, reason, fee or `closed()`
+reason, a deadline more than a year ahead, a fee returned in another currency than the fee), `dispute_missing` (core's
+own call names a record that does not exist), `dispute_books_refused` and `dispute_books_out_of_step` (the books could
+not take the booking; staff look). A code never changes; a later release may add codes, never kinds, so handle a code
+you do not know as its kind.
 
 A payment write answers its provider the same way: `PaymentWriteVerdict::providerStatus()` gives 200 when written or
 raced (another delivery of the same word won) and 503 otherwise; a refused payment write is also written to the
@@ -146,19 +148,21 @@ payments log as CRITICAL.
 Staff may record a dispute from the bank's letter before your notification arrives. When they typed your provider's
 dispute id as its reference, your word is that record and it follows you from then on. When they did not, your word
 makes a record of its own that **waits**: it books nothing, and staff answer on the order whether it is the same
-dispute. Your answer is still `written` (with `waitsForStaff` true); nothing is joined by guesswork.
+dispute. Your answer is still `written` (with `waitsForStaff` true); nothing is joined by guesswork. A record made from
+a chargeback row that had no case of its own (source `migrated`) counts as one made by hand.
 
 ## What your plugin never does
 
 It never books a chargeback or a reversal of one, never converts a currency, never builds a `Money` for a dispute,
 never writes a staff record for a dispute and never decides the HTTP status by itself. It calls with nothing of its
-own held: the save takes the order's lock in its own transaction. `recordReversal()` stays for refunds; a chargeback
-row given to it is refused, since a chargeback follows its dispute.
+own held: the save takes the order's lock in its own transaction. `recordReversal()` is for refunds only; a
+chargeback row given to it is refused, since a chargeback follows its dispute.
 
 ## Two optional handlers
 
 Alfa calls them on the plugin recorded on the disputed payment, by method name. A plugin without the method takes no
-part and the order screen offers no button for it.
+part and the order screen offers no button for it. Both buttons are offered only on a case that carries the provider's
+dispute id, and Accept is sent only after staff type that id to confirm.
 
 | Method | When Alfa calls it | What your plugin does |
 |---|---|---|
@@ -185,8 +189,9 @@ public function onAlfaDisputeAccept(DisputeAcceptEvent $event): void
 }
 ```
 
-Alfa writes nothing itself on Accept: the money moves only when the loss is recorded. A handler that throws is written to
-the payments log (category `com_alfa.payments`) and staff read that the provider could not be asked; nothing is written.
+Alfa writes nothing on the case itself on Accept, only the User Actions Log row that staff asked: the money moves only
+when the loss is recorded. A handler that throws is written to the payments log (category `com_alfa.payments`) and staff
+read that the provider could not be asked; Alfa writes nothing more.
 
 ## Mapping your provider's words
 
