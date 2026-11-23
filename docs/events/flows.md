@@ -1,12 +1,12 @@
 ---
 sidebar_position: 5
 title: Event flows
-description: Nine pictures that show, step by step, the order in which Alfa Commerce calls plugins when an order is placed, a status changes, money or parcels move, stock, documents, prices, images and search are updated.
+description: Pictures that show, step by step, the order in which Alfa Commerce calls plugins when an order is placed, a status changes, money or parcels move, stock, documents, prices, images and search are updated.
 ---
 
 # Event flows
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 One thing a person does in a shop, such as placing an order, makes Alfa Commerce call several plugins, one after the
 other. This page shows the **order** of those calls, across all plugin types, for the nine things that happen most.
@@ -22,7 +22,7 @@ Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. Words su
 Each flow below has the same four parts:
 
 1. Two or three sentences that say what the flow is and when it happens.
-2. One or two pictures. Read them from top to bottom. Each numbered arrow is one step.
+2. One to three pictures. Read them from top to bottom. Each numbered arrow is one step.
 3. Notes on what the picture means for a plugin.
 4. A table: the event, who receives it, and the page that documents it.
 
@@ -128,16 +128,19 @@ sequenceDiagram
 
 What the picture means:
 
-- **The order exists for good in every step.** A plugin that fails in step 2 or 3 does not undo the order. The order
-  stays without a payment row or without a parcel, and the shopper is told that part of the order could not be set
-  up.
-- **Each row a plugin writes in step 2 or 3 is a save of its own**, final when the plugin's `save()` returns.
-- **Steps 4, 5 and 6 wait for steps 2 and 3.** Alfa holds its own after-work until both plugins are done, so the
+- **The order exists for good in every step.** A failure in step 2, 3 or 4 does not undo the order. The order stays
+  without a payment row, without a parcel (when Alfa could not record it, staff are told the charge to record by
+  hand), or with a parcel the carrier did not complete, and the shopper is told that part of the order could not be
+  set up.
+- **Each row written in steps 2 to 4 is a save of its own**: the parcel Alfa records in step 3, and each row a plugin
+  writes, final when the plugin's `save()` returns. The shipping plugin records no parcel of its own: it completes
+  the one it is handed.
+- **Steps 5, 6 and 7 wait for steps 2 to 4.** Alfa holds its own after-work until both plugins are done, so the
   confirmation e-mail shows the order with its payment and its parcel.
-- **If the payment is completed already in step 2** (customer credit paid it, or the plugin settled it), the order's
-  move to the status that the method's settings name runs inside step 5, before the confirmation e-mail. That move
+- **If the payment is completed already by step 2** (customer credit paid it, or the plugin settled it), the order's
+  move to the status that the method's settings name runs inside step 6, before the confirmation e-mail. That move
   is the flow [Changing an order's status](#changing-an-orders-status).
-- **Step 7 is the last step on purpose.** A listener of `onAlfaOrderPlaced` sees the order as the shopper completed
+- **Step 8 is the last event on purpose.** A listener of `onAlfaOrderPlaced` sees the order as the shopper completed
   it.
 
 | Event | Who receives it | Documented on |
@@ -205,9 +208,11 @@ What the two pictures mean:
   only when the status notifies. `onOrderStatusChange` is announced only when something listens.
 - **The steps run in this order:** stock, download access, documents, e-mail, `onOrderStatusChange`.
 - **Which stock events fire** depends on what the new status asks of the stock. See [Stock](#stock).
-- **A refusal in a stock or document "before" event stops that step only.** The stock movement stays owed and is
-  tried again. A refused document raises an alert for staff. A stock plugin that refuses on purpose (`InventoryRefusedException`) is not asked again by itself; any other failure is
-  tried again up to seven times. See [Stock events](./stock-events.md).
+- **A refusal in a stock or document "before" event stops that step only.** The stock movement stays owed. A
+  refused document raises an alert for staff. A stock plugin that refuses on purpose (`InventoryRefusedException`)
+  is not asked again by itself: an order's refused movement is tried again when a new status changes the order's
+  stock claim. Any other failure is tried up to seven times in all, the first at once, then after waits that grow
+  from a minute to a day. See [Stock events](./stock-events.md).
 - **`onOrderStatusChange` is delivered listener by listener.** Each listener's result is recorded. A listener that
   failed can be run again by staff, alone, without the others running twice. It is never run again automatically.
 - **When the change comes from inside another save** (a payment being settled, for example), the steps wait until
@@ -264,10 +269,11 @@ What the picture means:
 - **Steps 5 and 10 can arrive in either order**, and each can arrive twice.
 - **An offline method stops after step 3.** Staff settle the payment later with a button of the plugin. That is
   `onExecuteAction`, as in the next picture.
-- **The order page opens only this session's order.** After the return
-  (step 10), the completed page, and the process page, open an order only when the shopper placed it in this browser
-  session or the plugin called `authenticatedReturnFor()` for it. Any other is refused: the shopper is sent to the
-  cart with a neutral message, and nothing of the order is shown.
+- **The order page opens only this session's order.** After the return (step 10), the completed page, and the
+  process page, open an order only when the shopper placed it in this browser session, the plugin called
+  `authenticatedReturnFor()` for it, or the shopper opened the order's **Pay now** address (`SessionOrder::PAY_AGAIN`;
+  the process page asks again whether the order may still be paid before it asks the plugin). Any other is refused:
+  the shopper is sent to the cart with a neutral message, and nothing of the order is shown.
 
 ### A refund through a provider
 
@@ -315,10 +321,11 @@ What the picture means:
 
 ## Booking a shipment
 
-The shipping plugin of the order's method records the order's first parcel right after the order is saved. If the
-carrier takes bookings, the plugin books the parcel with the carrier first. Later the carrier reports progress, or
-staff press one of the plugin's buttons on the order page. Every event here is addressed to one shipping plugin.
-The pictures agree with the one on [Shipping plugins](../plugins/shipment-plugins.md).
+Right after the order is saved, Alfa records the order's parcel on the order's shipping method: the shipping charge
+and every item. It hands that parcel to the shipping plugin of the method, which completes it, after booking it with
+the carrier if the carrier takes bookings. Later the carrier reports progress, or staff press one of the plugin's
+buttons on the order page. Every event here is addressed to one shipping plugin. The pictures agree with the one on
+[Shipping plugins](../plugins/shipment-plugins.md).
 
 ### At the placement, and when the carrier calls back
 
@@ -328,9 +335,11 @@ sequenceDiagram
     participant Alfa as Alfa Commerce
     participant P as The shipping plugin
     participant C as The carrier
-    Alfa->>P: onOrderAfterPlace (the order is saved already)
+    Alfa->>Alfa: Records the order's parcel: its shipping charge and every item
+    Note over Alfa: The save is final here
+    Alfa->>P: onOrderAfterPlace, with the parcel (the order is saved already)
     P->>C: Books the parcel, if the carrier takes bookings
-    P->>Alfa: Records the parcel
+    P->>Alfa: Completes the parcel
     Note over Alfa: The save is final here
     C->>Alfa: Calls back: the parcel was delivered
     Alfa->>P: onShipmentWebhook
@@ -361,8 +370,9 @@ sequenceDiagram
 
 What the two pictures mean:
 
-- **Each write to a parcel is a save of its own**, made by the ledger (`ShipmentLedger`) when the plugin calls
-  `save()`.
+- **Each write to a parcel is a save of its own**, made by the ledger (`ShipmentLedger`): Alfa's record of the
+  order's parcel at step 1, and each write of the plugin when it calls `save()`. The plugin records no second parcel
+  for the order: it completes the one it is handed (`getShipmentId()` on the event).
 - **A new parcel never moves the order.** Only a change that gives a parcel a new status does, and only when the
   method's settings name an order status for it. The move is recorded in the same save as the parcel and carried out
   after that save is final. It is the flow [Changing an order's status](#changing-an-orders-status).
@@ -381,7 +391,7 @@ What the two pictures mean:
 ## Stock
 
 Stock moves when an order is placed, when an order's status changes, when a document that moves stock is issued, and
-when staff correct a figure or move goods between locations. Each movement is one command of `InventoryService`
+when staff correct a figure. Each movement is one command of `InventoryService`
 (`administrator/src/Service/Inventory/InventoryService.php`). What an order's status asks of the stock is decided by
 `StockPolicy::claimFor()` (`administrator/src/Service/Order/StockPolicy.php`). Every command follows the same
 order.
@@ -432,7 +442,7 @@ What the picture means:
 | Event | Who receives it | Documented on |
 |---|---|---|
 | `onInventoryBeforeReserve`, `onInventoryBeforeCommit`, `onInventoryBeforeRelease` | Everyone who listens | [Stock events](./stock-events.md) |
-| `onInventoryReserved`, `onInventoryCommitted`, `onInventoryReleased`, `onInventoryAdjusted`, `onInventoryTransferred` | Everyone who listens | [Stock events](./stock-events.md) |
+| `onInventoryReserved`, `onInventoryCommitted`, `onInventoryReleased`, `onInventoryAdjusted` | Everyone who listens | [Stock events](./stock-events.md) |
 | `onInventoryRestored` | Everyone who listens | [Stock events](./stock-events.md#oninventoryrestored) |
 | `onCollectStockAllocationProviders` | Everyone who listens, after the group `alfa-inventory` is loaded | [Stock events](./stock-events.md) |
 
@@ -592,15 +602,16 @@ What the picture means:
   visitors or cron, within about two minutes.
 - **Step 3 is what makes each period announced once.** Two turns at the same moment announce it once, and no period is
   passed over. With nothing listening, the turn only records how far it has gone.
-- **Only the periods the price index stores are announced**, at most eight per item, the nearest ones. See
-  [onAlfaPricesChanged](./item-and-catalogue-events.md#onalfapriceschanged).
+- **Every period that begins is announced.** The price index keeps every period that the item's own prices and the
+  discounts and taxes reaching it define, with no horizon. A turn announces at most 5,000 of them, and the next turn
+  goes on where it stopped. See [onAlfaPricesChanged](./item-and-catalogue-events.md#onalfapriceschanged).
 
 ## Media
 
-When staff save a record with a new image (an item, a category, a manufacturer or a combination), Alfa checks the
-file, lets media plugins change or store it, makes a thumbnail and writes the image's row. All five media events are
-announced to everyone, after the plugins of the group `alfa-media` are loaded. The code is `MediaHelper`
-(`administrator/src/Helper/MediaHelper.php`). The picture is the same as on
+When staff save a record with a new image (an item, a category, a manufacturer, a combination, a payment method or a
+shipping method), Alfa checks the file, lets media plugins change or store it, makes a thumbnail and writes the
+image's row. All five media events are announced to everyone, after the plugins of the group `alfa-media` are
+loaded. The code is `MediaHelper` (`administrator/src/Helper/MediaHelper.php`). The picture is the same as on
 [Media plugins](../plugins/media-plugins.md).
 
 ```mermaid
@@ -614,7 +625,7 @@ sequenceDiagram
     Alfa->>L: onAlfaMediaValidate (may refuse the file)
     Alfa->>L: onAlfaMediaBeforeProcess (a plugin may write the file itself)
     Alfa->>Alfa: Stores the original if nobody wrote it, reads the main colour
-    Alfa->>L: onAlfaMediaThumbnail, if no thumbnail was made yet
+    Alfa->>L: onAlfaMediaThumbnail, for the image's thumbnail
     Alfa->>L: onAlfaMediaAfterProcess
     Alfa->>Alfa: Writes the image's row
     Alfa->>Staff: Shows the saved record
@@ -626,9 +637,9 @@ What the picture means:
   plain write and opens no save of its own. Whether that write is final at once depends on the screen that called
   it. So a media event does not tell a plugin whether the record's own save is final.
 - **A refusal in step 3** (`setValid(false)`) skips that one file. The record is still saved.
-- **An image that arrives with a thumbnail picture named** fires `onAlfaMediaThumbnail` first, before step 2, and
-  not again at step 6. That thumbnail is made only after the image passed Alfa's check and `onAlfaMediaValidate` and
-  was stored, so a refused image fires no `onAlfaMediaThumbnail`.
+- **Every thumbnail is made at step 6**, after the image is stored and its colour read, and before
+  `onAlfaMediaAfterProcess`: from the picture chosen as the image's thumbnail when one is chosen, and from the image
+  itself when none is or that picture gives none. A refused image fires no `onAlfaMediaThumbnail`.
 - **A thumbnail** is made from the file as it was given, and is never larger than the thumbnail size or its image,
   whatever a plugin writes.
 - **When an image is deleted**, `onAlfaMediaBeforeDelete` is announced before the files are removed, on every delete
@@ -706,8 +717,8 @@ What the picture means:
 - **Step 5 is not an event.** Alfa builds the item's search documents and calls the writer of the engine that
   Options names. A failure there is recorded and does not stop the save.
 - **Steps 3, 4 and 8 are announced to everyone**, after the plugins of `alfa-search` and `alfa` are loaded.
-  Steps 3 and 8 are announced at once, right after the writes of steps 2 and 7. They do not wait for a bigger save
-  around them.
+  Step 3 follows the item's save once it is final. Step 8 follows the write of step 7: a manufacturer's at once, a
+  category's once no save around it is still open.
 - **Where each write becomes final** is marked in the two pictures of
   [Catalogue and price rebuild](#catalogue-and-price-rebuild). This picture leaves the line out so that it is not
   marked twice.
@@ -741,7 +752,7 @@ what you may set.
 
 | What you see | The usual cause |
 |---|---|
-| Your "after" listener reads old data | It runs before a later step of the same flow. On an item save, `onAlfaAdminAfterSave` comes before the prices are written. Listen to `onItemAfterSave` or `onAlfaPricesChanged`. |
+| Your "after" listener reads old data | It runs before a later step of the same flow. On an item save, `onAlfaAdminAfterSave` comes before the price index, the field values and the search entry are rebuilt. Listen to `onItemAfterSave` or `onAlfaPricesChanged`. |
 | Your refusal did not stop the order's status | A status change has no "before" event. A refusal in a stock or document event stops that step only. |
 | Your listener of `onOrderStatusChange` ran in a later request | The steps of a status change are background work. They run later when the request that saved the status stopped early. |
 | Your "after" stock listener was not called | The save around the stock command was undone. "After" events are never announced for a change that was undone. |
