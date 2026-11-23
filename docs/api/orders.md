@@ -61,13 +61,12 @@ your shop.
 
 A line is priced as the shop prices it for this customer, unless it states its own price. The payment is judged
 against the lines and the shipping charge: it cannot be more than the order owes. The parcel carries every unit of the
-lines the create wrote, so a shipping method that does not deliver one of their categories is refused with 409 at
-`/shipment`, naming the method and the products (see
-[Shipping restrictions per category](../services/payments-and-shipments.md#shipping-restrictions-per-category)).
-An order takes its payment and shipping methods from its
-payments and parcels: send them inside `payment` and `shipment`. `id_payment_method`, `payment_method_name`,
-`id_shipment_method` or `shipment_method_name` at the top level of the body is refused with 422, and nothing is
-created.
+lines the create wrote, so a shipping method that does not deliver one of them (a product to download is not judged)
+is refused with 409 at `/shipment`, naming the method and the products (see
+[Shipping restrictions per category](../services/payments-and-shipments.md#shipping-restrictions-per-category)). An
+order takes its payment and shipping methods from its payments and parcels: send them inside `payment` and
+`shipment`. `id_payment_method`, `payment_method_name`, `id_shipment_method` or `shipment_method_name` at the top
+level of the body is refused with 422, and nothing is created.
 
 A part in a shape the create does not take is refused with 422, a part the shop refuses with 409. The answer names
 the part with a JSON pointer into your body, and no order is created:
@@ -447,7 +446,9 @@ A parcel with no charge needs no rate: send the method alone, or `0.00`. `shippi
 without tax, which stands only where no shipping tax applies. A charge with tax needs all three of
 `shipping_cost_tax_incl`, `shipping_cost_tax_excl` and `shipping_tax_rate` (text, at most three decimals), and
 they must agree with each other and with the shipping tax that applies to the order. A charge the shop refuses is
-answered 409 with the reason, for example a rate stated where no shipping tax applies.
+answered 409 with the reason, for example a rate stated where no shipping tax applies. So is a parcel whose method does
+not deliver one of its `items`, when it is added and when a change gives it another method or other `items` (see
+[Shipping restrictions per category](../services/payments-and-shipments.md#shipping-restrictions-per-category)).
 
 The order after it, shortened. The parcel's charge is now part of the order's total:
 
