@@ -443,7 +443,7 @@ page shows the links as the failing listener left them.
 | `links()` | The links, in the order they will be judged. |
 | `add(RelatedLink $link, ?int $at = null)` | Add a link, at the end or at a place (0 for the first). Returns the event, so calls chain. |
 | `remove(int $itemId)` | Remove the links to a product. Returns the event. |
-| `setLinks(array $links)` | Put these links in place of the others, in this order. Returns the event. |
+| `replaceWith(array $links)` | Put these links in place of the others, in this order. Returns the event. |
 
 Nothing a listener adds is trusted. Every link is judged as a stored one is: the product must be one the visitor may
 see in the lists, its combination a published one of the product, its values ones the product offers; a unit out of
