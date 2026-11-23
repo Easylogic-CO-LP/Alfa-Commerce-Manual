@@ -6,7 +6,7 @@ description: The service that issues, voids, replaces and credits sales document
 
 # Documents
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A **document** is an invoice, a receipt, a credit note or a delivery note issued for an order. Every document is
 issued and voided by one class, `DocumentIssuer` (`administrator/src/Service/Document/DocumentIssuer.php`). This page
@@ -40,7 +40,7 @@ The events are on [Document events](../events/document-events.md). The words **d
 |---|---|
 | Staff | On the order's screen: issue a document, issue a credit note, void, void and replace |
 | Alfa Commerce | When an order enters a status that issues documents, or when a payment settles on an order whose status issues only once the order is paid. This is [background work](../reference/glossary.md#background-work). |
-| The REST API | To void a document and to read one as a PDF |
+| The REST API | To void a document. Its routes that read a document, as PDF or as HTML, use the renderers below. |
 
 When the shop's setting says an outside system issues its documents (`documents_issuer` set to `external`), Alfa
 issues nothing automatically, and the order screen's own tasks do nothing either: issue a document, issue a
@@ -75,7 +75,7 @@ What the picture means:
 - **The order is locked first (step 5).** Two documents for the same order are issued one after the other, never
   at the same moment.
 - **The number is drawn last (step 7), inside the save.** If the save fails, the number is not used.
-- **The save is final at `DocumentIssuer.php` line 485** (the commit). The document exists from there.
+- **The save is final at `DocumentIssuer.php` line 531** (the commit). The document exists from there.
 - **Steps 9 and 10 run only after the save is final.** When the document is issued inside a bigger save, they wait
   for that save. If that save is undone, they never run.
 - **The stock step (step 9) cannot undo the document.** If it fails, the document stays, the stock step stays owed
@@ -139,7 +139,7 @@ in the comment above `issue()`.
 | A draft that breaks a rule: a credit without `id_corrects`, `id_corrects` on a type that is not a credit, a type that requires the buyer's name or tax number and has none, a delivery note without the purpose of the movement, a line without a name, without a quantity above 0 or without unit prices, a shipping, fee or adjustment line of a sales document or a credit without the charge it bills (`id_source`) | Inside the save |
 | More than the order holds, or for a credit more than the corrected document can still give back | Inside the save |
 | A type with no series given and no default series, a series that is unpublished, or a series of another type | Inside the save |
-| A call inside an open transaction with a draft that `beforeIssue()` did not answer, or a draft changed after it was answered | Before anything |
+| A call inside an open transaction with a draft that `beforeIssue()` did not answer, or a draft changed after it was answered | After the permission, before anything else |
 
 A refusal made inside the save reaches the caller as a `RuntimeException` whose message starts with
 `DocumentIssuer: issue failed:`. A refusal made before the save keeps its own form: the issuer's own checks throw a
@@ -226,7 +226,7 @@ The class `VoidAndReplace` prepares the call. It is core's own.
 
 | | |
 |---|---|
-| **Its own permission** | The acting user must hold "Void and replace sales documents" (`documents.replace`). The rights to issue and to void do not include it. `replace()` checks this itself. |
+| **Its own permission** | The acting user must hold "Void & Replace Sales Documents" (`documents.replace`). The rights to issue and to void do not include it. `replace()` checks this itself. |
 | **What staff confirmed is what is issued** | The replacement is built again with the order locked and compared with the preview staff confirmed (`draftFingerprint()`). A difference is refused and staff review again. |
 | **A new number** | The replacement takes the next number of its type's default series and today's date. The old document's number is never reused. |
 | **Listeners are asked first** | `onDocumentBeforeIssue` is asked about the replacement before the save opens. After the save is final, `onDocumentVoided` is announced, then `onDocumentIssued`. |
@@ -236,14 +236,16 @@ The class `VoidAndReplace` prepares the call. It is core's own.
 
 The refusals `replace()` states itself carry a `DocumentRefusedException`, itself or in the exception's chain, with
 a sentence for staff: an empty reason, a missing permission, a call inside another `replace()` or inside
-`envelope()`, a source that is not issued, that moved stock, that a live credit note corrects, that a refund has
-settled, or whose customer credit can no longer be taken back, a replacement with nothing left to cover, and a
-replacement that no longer matches the confirmed preview. Nothing is voided and nothing is issued.
+`envelope()`, a source that is not issued, that belongs to a broken replacement chain, that moved stock, that a live
+credit note corrects, that a refund has settled, or whose customer credit can no longer be taken back, a replacement
+with nothing left to cover, a replacement the issuer's checks refuse, a replacement that no longer matches the
+confirmed preview or that did not land as previewed, and a transaction that ended while the replacement was being
+built. Nothing is voided and nothing is issued.
 
-Two refusals carry no such sentence of Alfa's. Both reach the caller inside a `RuntimeException` whose message
-starts with `DocumentIssuer: void and replace failed:`. One is a call inside an open transaction, which
-`beforeIssue()` refuses. The other is a listener of `onDocumentBeforeIssue` that refuses the replacement: the chain
-holds what the listener threw.
+Other refusals carry no such sentence of Alfa's. They reach the caller inside a `RuntimeException` whose message
+starts with `DocumentIssuer: void and replace failed:`: a call inside an open transaction, which `beforeIssue()`
+refuses; a listener of `onDocumentBeforeIssue` that refuses the replacement or leaves a transaction open, the chain
+holding what the listener threw; and the caller's own check (`$beforeNumbering`), the chain holding what it threw.
 
 ## Credit
 
@@ -283,7 +285,7 @@ What is kept on the document, as it was at the issue:
 |---|---|
 | The buyer: name, tax number, tax office, activity, country, e-mail, address | The draft |
 | Each line's name, quantity, prices, tax rate and totals | The draft |
-| Each line's item, combination and the limit of its stock movement | The draft. The stock step later moves what the document kept, not what the order holds then. |
+| Each line's item, combination and the limit of its stock movement | The draft, or where it names none the order line (for a credit, the line of the document it corrects). The stock step later moves what the document kept, not what the order holds then. |
 | The formatted number, the series, the issue date | The issue |
 | The currency | The order's. For a credit, the corrected document's. |
 
@@ -299,7 +301,7 @@ state it; the issuer takes it from where the line's money comes from:
 | A line of a credit | The document it corrects, and nowhere else |
 | A fee, an adjustment or a free-text line | None |
 
-An older document whose lines carry no tax names keeps none, and a credit that corrects it has none either. The tax
+A document whose lines carry no tax names keeps none, and a credit that corrects it has none either. The tax
 rules are never read again at issue, so renaming a tax later does not change a document.
 
 ## A PDF needs the dompdf library
@@ -330,13 +332,13 @@ document was issued in, kept on the document, never the language of whoever prin
 
 A tax rate prints as stored, with all its decimals (up to three), never rounded to two. Only the writing follows the
 language: the stored figures, the totals, their rounding and the figures the REST API returns are the same in every
-language. A document is drawn from its stored figures each time it is printed, downloaded or e-mailed, so an older
-document writes its numbers the same way.
+language. A document is drawn from its stored figures each time it is printed, downloaded or e-mailed, so every document
+writes its numbers this way, whenever it was issued.
 
 | | |
 |---|---|
 | **Where the separators come from** | `DocumentRenderer::separators(?object $document): array` returns `['decimal' => ..., 'thousands' => ...]`, read from Joomla's own administrator file of the document's language (`joomla.ini`, its `DECIMALS_SEPARATOR` and `THOUSANDS_SEPARATOR`). A language whose administrator `joomla.ini` does not name both prints with English's. With no document (`null`), the request's language, by the same rule. |
-| **Where the labels come from** | Alfa Commerce's own translation of the document's language (`com_alfa.ini`), English where it has none. A language that Joomla's administrator has and Alfa Commerce's translations do not prints English labels with its own separators: a French document reads "15,5%" under English labels. |
+| **Where the labels come from** | Alfa Commerce's own translation of the document's language (`com_alfa.ini`), read over the labels the request already holds. A language that Joomla's administrator has and Alfa Commerce's translations do not prints with its own separators under the labels the request holds: English, unless the request has read Alfa Commerce's English labels and another language's over them, as a back office in another language has. A French document reads "15,5%" under English labels from an English back office and under Greek labels from a Greek one. |
 | **The back office's own screens** | The order screen prints a line's tax rate in the language of whoever reads it. The issue and credit forms and the order page's history and messages show a document's money with a comma for decimals and a point for thousands. |
 
 ### A layout of your own
