@@ -236,6 +236,7 @@ echo $results[15]->getTotal()->format();
 | `calculate($productIds, $quantities = 1, ?PriceContext $context = null, ?VariantSelection $selection = null, ?ExplicitPriceInstruction $price = null)` | Prices one item or many | One id gives one `PriceResult`. An array of ids gives an array of results keyed by item id. A selection that is not empty prices the first id alone, through `calculateVariant()`, and gives one result. Without a context it uses the current visitor's (`PriceContext::fromSession()`). The data of all the items is loaded together. A single quantity given for all items is used as given. | An agreed price (`$price`) together with an array of ids: `InvalidArgumentException`. Also a map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item. |
 | `calculateVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null, ?ExplicitPriceInstruction $price = null): PriceResult` | Prices one item for a chosen combination or chosen options | The item's own taxes and discounts apply as for the plain item. An empty selection gives the same as `calculate()`. | |
 | `calculateBatch(array $itemIds, $quantities = 1, ?PriceContext $context = null, array $selections = []): array` | Prices many items in one pass, each with its own selection | Results keyed by item id. A fixed number of queries for the whole list. A single quantity given for all items is taken as at least 1. | A map of quantities that leaves out one of the items, or gives one a quantity that is not a whole number of at least 1: `InvalidArgumentException` naming the item |
+| `calculateUnits(array $units, $quantities, PriceContext $context): array` | Prices every unit of many products in one pass: each product itself and the combinations named for it | Results by product id, then by combination id (0 for the product). A combination is priced as a chosen combination is. The price index and the outgoing notifications call it. | |
 | `tierStarts(int $itemId, ?int $combinationId, PriceContext $context): array` | Lists the quantities at which the unit price of a line may change | Ascending, without repeats. It may list more quantities than really change the price. | |
 | `breakdownVariant(int $itemId, int $quantity, VariantSelection $selection, ?PriceContext $context = null): array` | Gives the net base and one line for each adjustment of a variant | The keys `base_net`, `base_sale`, `tax_factor` and `lines` | |
 
@@ -416,6 +417,7 @@ $custom   = PriceSettings::make()->show('final')->show('base', false)->get();
 |---|---|---|
 | `PriceSettings::get(?int $userId = null): array` | The settings for the current visitor, or for one account | When several of the customer's groups have their own settings, the nearest group in the group tree decides. With none, the component's options apply. On any error it falls back to the component's options. The answer is kept for the request. |
 | `PriceSettings::minimal(): array` | Only the final price, without label | |
+| `PriceSettings::netSaving(array $settings): bool` | Whether a price block drawn with these settings shows the net saving first: it shows a net figure, and the saving's row sits beside one | The price block draws its saving rows by it, and the saving filter and sort compare on the same basis |
 | `PriceSettings::make(): PriceSettingsBuilder` | Starts a builder with everything hidden | |
 | `PriceSettingsBuilder::show(string $element, bool $withLabel = true): self` | Shows one figure | A name it does not know is ignored, without an error |
 | `PriceSettingsBuilder::hide(string $element): self` | Hides one figure | |
@@ -529,8 +531,9 @@ discount of a list read that table.
 
 The prices are stored by pricing context. A pricing context (`#__alfa_price_contexts`) is a currency, a place class
 and a set of customer groups, and, for a customer with prices of their own, that customer. A context holds one
-generation of rows that the lists read; a change that reaches the whole context writes the next generation beside it
-and switches them whole once it is complete.
+generation of rows that the lists read; a change that reaches the whole context writes the next generation beside it.
+Once no next generation is still being prepared, they all switch in one transaction, so the change replaces the
+prices of every context at the same moment. A context's first generation switches once it is complete.
 
 One stored row is the price of:
 
@@ -544,8 +547,10 @@ One stored row is the price of:
 Each row stores the same figures the price settings name: `base_price`, `discount_amount`,
 `base_price_with_discounts`, `tax_amount`, `base_price_with_tax`, `final_price` and `discount_percent`. They are the
 price of one piece at the quantity the item opens with, its minimum quantity, as its card prints it. A unit with no
-valid price (no price row applies) has empty figures; an explicit price of 0 is the figure 0. The saving filters and
-the saving sort read the tax-included saving of one piece, as the price beside them is.
+valid price (no price row applies) has empty figures; an explicit price of 0 is the figure 0. The "save at least"
+filter and the sort by saving compare the saving of one piece on the basis the shopper's price block shows it first
+(`PriceSettings::netSaving()`): the net saving when the block shows it beside a net price, else the tax-included
+saving. The "on sale" filter keeps a product whose saving is above zero.
 
 The product list reads, by key, the row of `#__alfa_items.price_combination_id`: the combination the product's card
 opens on (`#__alfa_items.opening_combination_id`, the default combination when it can be bought, else the first that
@@ -595,15 +600,15 @@ replaced, once a day and after each switch.
 
 A pricing context that is new to the shop (a customer group set that customers hold for the first time, a currency a
 price row names or a place a price row or a rule names for the first time, a customer given prices of their own) is
-not written by the request that brought it. The background job `price.set.prepare` prepares it, a part of the items
-at a time, its scope `price.set.prepare:<context id>`. A shop's first pricing contexts, and those new while the index
-is built after an update, are read at once, and the background job `catalogue.rebuild` writes their rows. A discount
-or a tax that reaches more than fifty products and at least half the catalogue, and a place moved, published or
-unpublished, are prepared beside the prices the list reads, as the context's next generation, and
-replace them whole once complete: until then the list filters and sorts by the prices from before the change, but for
-a product saved meanwhile, which it reads with the change at once. A rule that reaches fewer products is written
-product by product. A shopper whose customer groups, place or own prices change reads, until their new prices
-are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
+not written by the request that brought it. The background job `price.set.prepare` prepares it, a part of the items at
+a time, its scope `price.set.prepare:<context id>`. A shop's first pricing contexts, and those new while the index is
+built after an update, are read at once, and the background job `catalogue.rebuild` writes their rows. A discount or a
+tax that reaches more than fifty products and at least half the catalogue, and a place moved, published or
+unpublished, are prepared beside the prices the list reads, as the contexts' next generations, and replace them whole,
+in every context at once, when all are complete: until then the list filters and sorts by the prices from before the
+change, but for a product saved meanwhile, which it reads with the change at once. A rule that reaches fewer products
+is written product by product. A shopper whose customer groups, place or own prices change reads, until their new
+prices are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
 everyone); the product page and the cart charge their own prices throughout.
 
 When an update changes the price index's tables, the index is built again in the background. Until it is complete,
@@ -654,8 +659,8 @@ methods**: core builds the service first.
 | `syncItem(int $itemId, string $cause = PricesChangedEvent::CAUSE_REBUILD, int $causeId = 0): void` | Rebuilds one item's rows | Never throws. A failure is logged and the item is owed to the background job. | An id of 0 or less does nothing |
 | `syncItems(array $itemIds, string $cause = ..., int $causeId = 0): int` | Rebuilds the rows of a list of items | Returns the number of rows written. Never throws. A part that fails is skipped and logged, the others are written. | |
 | `syncItemsOrFail(array $itemIds, string $cause = ..., int $causeId = 0): int` | The same, but a failure reaches the caller | Core's projection manager calls it | |
-| `syncByDiscount(int $discountId): int`, `syncByTax(int $taxId): int` | Rebuilds the items a discount or a tax can touch | A rule for every category rebuilds everything | Not for a delete: the scope is gone by then. Core's models collect the ids first with `getItemIdsForDiscount()` or `getItemIdsForTax()` and call `syncItems()` after the delete. |
-| `syncAll(string $cause = ..., int $causeId = 0): int` | Rewrites every published product's rows in every prepared pricing context, after the contexts are aligned | Safe to run again. On a large catalogue with many pricing contexts it can exceed the request's time limit. | |
+| `syncByDiscount(int $discountId): int`, `syncByTax(int $taxId): int` | Rebuilds the items a discount or a tax can touch | A rule for every category rebuilds everything. Never throws: a failure is logged and the products are owed to the `catalogue.rebuild` job. | Not for a delete: the scope is gone by then. Core's models collect the ids first with `getItemIdsForDiscount()` or `getItemIdsForTax()` and call `syncItems()` after the delete. |
+| `syncAll(string $cause = ..., int $causeId = 0): int` | Rewrites every published product's rows in every prepared pricing context, after the contexts are aligned | Safe to run again. On a large catalogue with many pricing contexts it can exceed the request's time limit. Never throws: a failure is logged and every product is owed to the `catalogue.rebuild` job. | |
 | `syncGroupSets(): int` | Brings the pricing contexts in line with the data: requests a context new to the data with its job, and drops a context the data no longer defines, with its rows | Writes no price row itself; returns the number of contexts requested | |
 | `deleteForItem(int $itemId, ...): void`, `deleteForItems(array $itemIds, ...): void` | Removes the rows of items | | |
 | `getItemIdsForDiscount(int $discountId): array`, `getItemIdsForTax(int $taxId): array` | The items a rule can touch | Read before the rule is deleted | |
@@ -663,19 +668,22 @@ methods**: core builds the service first.
 The following public methods serve the preparation of the pricing contexts, the build after an update, the daily tidy
 and the reading of the index. Do not call them: `prepareContextChunk()`, `alignContexts()`, `queueWaitingContexts()`,
 `contextWaits()`, `publishedItemCount()`, `preparationState()`, `isBuilding()`, `buildStartedAt()`, `switchedAt()`,
-`writeBuildFlag()`, `startBuild()`, `finishBuild()`, `completeness()`, `oweChainRebuild()`, `accountGroupSet()`,
-`holdsGroupSet()`, `announcing()`, `announceOpenedWindows()`, `tidyCount()`, `removeRetired()`, `removeEndedPeriods()`,
-`ownPriceSql()`, `size()`, `analyze()`, and the read helpers: `readContext()`, with which the site items model, the
-catalogue API and the outgoing notifications find a shopper's pricing context; `readableSetKey()`, `slotSetJoin()`,
-`slotPlaces()` and `slotRanking()`, with which the site items model reads the previous index during the build after an
-update; `pricingGroups()` and `readableSetKeys()`, which the class uses itself; and `slotKey()`, which nothing calls.
+`writeBuildFlag()`, `startBuild()`, `finishBuild()`, `completeness()`, `switchReady()`, `oweChainRebuild()`,
+`accountGroupSet()`, `holdsGroupSet()`, `announcing()`, `announceOpenedWindows()`, `tidyCount()`, `removeRetired()`,
+`removeEndedPeriods()`, `ownPriceSql()`, `size()`, `analyze()`, and the read helpers: `readContext()`, with which the
+site items model, the catalogue API and the outgoing notifications find a shopper's pricing context;
+`readableSetKey()`, `slotSetJoin()`, `slotPlaces()` and `slotRanking()`, with which the site items model reads the
+previous index during the build after an update; `pricingGroups()` and `readableSetKeys()`, which the class uses
+itself; and `slotKey()`, which nothing calls.
 
 ### What happens next: the event
 
 After a write to the index is saved for good, Alfa announces `onAlfaPricesChanged` once for the whole write, with
 the items and the rows that changed; a write of more than 5,000 changed rows outside a larger transaction is announced
-in several parts. A write that was undone is never announced. A plugin that keeps its own copy of prices listens to
-it. A change names its pricing context and, for a customer with prices of their own, that customer; its unit is named
+in several parts. A write that was undone is never announced. Prices prepared beside the live ones (a context's first
+generation, the next generation of a change) are not announced while they are written; their switch is, once it is
+committed, with the rows that differ from the prices they replaced. A plugin that keeps its own copy of prices listens
+to it. A change names its pricing context and, for a customer with prices of their own, that customer; its unit is named
 by its combination, 0 standing for the product and every combination of it without its own price rows. The event is
 described on [Item and catalogue events](../events/item-and-catalogue-events.md#onalfapriceschanged).
 
@@ -715,7 +723,7 @@ Each entry of a chain names the tax rule of its rate:
 
 A carrier plugin that passes its own `shipping_tax_chain` to the shipment ledger writes each entry either as a rate
 text (`'24'`) or as exactly the two keys `rate` and `name`. A rate is plain decimal text above zero. Anything else
-is refused. An older chain stored as rate texts alone (`['10', '5']`) is still read, as rates with no rule named.
+is refused. A stored chain that holds the rates alone (`['10', '5']`) is read as rates with no rule named.
 
 The shipping taxes follow the same order as the goods' taxes (see
 [When several discounts or taxes apply](#when-several-discounts-or-taxes-apply-the-behaviour)).
