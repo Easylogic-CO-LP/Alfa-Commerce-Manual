@@ -76,3 +76,48 @@ foreach ($result->warnings as $warning) {
 
 A save with warnings is saved: the product and everything else it carried are written. The REST API gives the same
 warnings in `meta.warnings`.
+
+## Saving a variant
+
+A product's variant (combination) is created, changed and removed one way: through `CombinationService`. The variant
+window and the REST API use it, and an extension's code uses it the same way; the rules, the refusals and the one
+transaction are the window's.
+
+```php
+use Alfa\Component\Alfa\Administrator\Service\Catalog\CombinationService;
+
+// A new variant, by one value of each of the product's variant fields (field id => value id).
+$result = CombinationService::create(itemId: 42)
+    ->values([5 => 12, 6 => 23])
+    ->set('sku', 'SMX-WHT-512')
+    ->prices([['_mode' => 'adjust', 'operation' => '+', 'value' => '250.00', 'price_status' => '1']])
+    ->opening([1 => '5'])
+    ->save();
+
+// A change of a variant: the window's fields, publication, the variant the product opens on, stock.
+$result = CombinationService::change(itemId: 42, combinationId: 305)
+    ->set('sku', 'SMX-WHT-512-EU')
+    ->set('state', 0)
+    ->stock(figures: [1 => '7'], read: [1 => '5'])
+    ->save();
+
+// Removed as the variants' grid removes it.
+$result = CombinationService::remove(itemId: 42, combinationIds: [305]);
+```
+
+| Call | What it does |
+|---|---|
+| `create(int $itemId)`, `values(array $values)` | A new variant, made by its values on the generator's rules |
+| `change(int $itemId, int $combinationId)` | A change of a variant; its values never change |
+| `set(string $field, mixed $value)`, `with(array $fields)` | The window's fields: `sku`, `gtin`, `mpn`, the overrides and quantity rules, `manage_stock`, a name by its language key (`name_en_gb`), `state`, `default` |
+| `prices(array $rows)` | The variant's price rows, as the window writes them |
+| `stock(array $figures, array $read)` | Tracked figures by location, each with the figure it was read with |
+| `opening(array $figures)` | Opening stock, when the save switches tracking on or the variant is new |
+| `from(string $origin)` | `admin`, `api` or `sync`, for the event |
+| `refusals()` | What `save()` would refuse, nothing written |
+| `save(): CombinationWriteResult` | Saves: `saved`, `id`, `refusals`, `warnings` |
+| `remove(int $itemId, array $combinationIds)` | Removes: refused while a variant holds stock; archived where order history names it |
+
+`onAlfaCombinationsChanged` is raised once a write, after its commit: `itemId()`, `created()`, `changed()`,
+`archived()`, `removed()`, `origin()`. `CombinationReader::of(itemId:)` and `CombinationReader::one(itemId:,
+combinationId:)` read the variants staff manage with their values, price rows, stock by location, overrides and names.

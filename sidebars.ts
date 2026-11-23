@@ -138,6 +138,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'api/overview',
         'api/catalogue',
+        'api/variants',
         'api/customers-and-configuration',
         'api/orders',
         'api/documents-and-tasks',

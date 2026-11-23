@@ -142,6 +142,56 @@ operation, and `expireDueReservations()` writes one without returning its id. A 
 | `transfer(int $itemId, ?int $combinationId, float $quantity, int $sourceLocationId, int $destinationLocationId, ?InventoryContext $context = null): array` | Moves a quantity from one location to another | One "out" and one "in" movement, saved together. No caller. | An untracked unit. A quantity that is not above zero. The same location twice. A disabled destination. A source that would go below its reservations. |
 | `writeOffStock(int $itemId, int $combinationId, string $reason, InventoryContext $context): array` | Sets to zero the stock left on a unit that can no longer be sold (an archived combination, an archived item, stock left on an item that now has combinations) | One adjustment for each record. The records stay, at zero. | A unit that is still for sale. No reason or no signed-in member of staff. Stock that is set aside or that open order lines still wait for. |
 
+### Setting or correcting stock: InventoryCommands
+
+Every stock editor of Alfa (the item's stock figure, the items list's Stock cell, the variants' grid, the variant
+window) and the REST API's adjustments set or correct stock one way: an adjustment built with `InventoryCommands`.
+An extension's code builds the same:
+
+```php
+use Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryCommands;
+use Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryContext;
+
+$result = InventoryCommands::adjust()
+    ->set(itemId: 42, combinationId: 304, locationId: 1, quantity: 7)       // the figure the record takes
+    ->delta(itemId: 42, combinationId: 301, locationId: 1, quantity: -2)    // a signed change
+    ->by(new InventoryContext(userId: 5, note: 'Stock take'))
+    ->apply();
+
+if (!$result->applied) {
+    foreach ($result->refusals as $refusal) {
+        echo $refusal->sentence;    // the editors' own sentence; $refusal->code, ->pointer, ->status
+    }
+}
+```
+
+| Call | What it does |
+|---|---|
+| `InventoryCommands::adjust()` | A new adjustment |
+| `set(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: the figure a unit's record at a location takes |
+| `delta(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: a signed change, positive for goods received |
+| `lines(array $lines)` | Lines as the REST API takes them: by `sku`, or `item_id` and `combination_id`; `location_id`; `set` or `delta` |
+| `source(string $type, int $id = 0)` | What the movements record as their source (`catalog_edit` for the editors, `api` for the REST API) |
+| `by(InventoryContext $context)` | Who adjusts and why: the movements' user, correlation and note |
+| `once(int $userId, string $key, array $request)` | Applied once under a client's key: the same request again answers its lines and applies nothing |
+| `apply(): InventoryAdjustment` | Judges every set line as the editors do, then applies every line in one transaction, or none |
+
+`apply()` answers an `InventoryAdjustment`: `applied`; `lines`, each with its figure `before` and `after`, the
+`delta` and the `operation_id` that recorded it; or `refusals` (each a `Refusal`: code, sentence, the line's JSON
+pointer, the HTTP status the REST API answers it with), `problems` (the dry run's findings as `validateTargets()` states
+them) and `failure` (the exception that ended the transaction). The lines are applied in product, combination and
+location order, the products' stock records locked first; the movements and their events follow the commit.
+
+### One SKU, one unit: SkuIndex
+
+Every SKU in use is kept once, a product's own and each variant's, archived ones included, compared without regard to
+letter case. `SkuIndex::unit('SMX-WHT-256')` gives the unit it names (`SkuUnit`: `itemId`, `combinationId`) or a
+`Refusal` saying why none: unknown, held by more than one unit, archived, or a product whose stock its variants hold.
+Every writer of a SKU keeps the registry in its own transaction: it reads the product's SKUs before its write
+(`SkuIndex::skusOf()`) and calls `SkuIndex::keep(itemId:, before:)` after it; a SKU another unit holds throws
+`SkuInUseException`, and the write rolls back. A unit that keeps a SKU it already shared before the registry is saved
+and stays out of it, named by the setup checklist until each has its own.
+
 ### The structure of an item's stock
 
 | Method | What it does | What it refuses |
