@@ -397,6 +397,11 @@ Which one to choose:
 
 The first two are notices: sent once, not repeated.
 
+A product's variants written through `CombinationService` (the variant window and the REST API) raise
+`onAlfaCombinationsChanged` once a write, after it is final, with `itemId()`, `created()`, `changed()`, `archived()`,
+`removed()` and `origin()` (`admin`, `api` or `sync`). The variants grid of an item's save and the Generate panel
+write variants on their own paths and raise none. See [Saving a variant](../services/products.md#saving-a-variant).
+
 The events about an item's stock have a page of their own: [Stock events](./stock-events.md).
 
 ## What can go wrong

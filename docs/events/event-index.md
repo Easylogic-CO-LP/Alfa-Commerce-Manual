@@ -40,16 +40,16 @@ One table per area. Every row is one event name.
 
 | What was counted | Count |
 |---|---|
-| Files under `administrator/src/Event/` | 146 |
-| Event classes that can be created (not abstract) | 109 |
-| Of those, sent to plugins | 105 |
+| Files under `administrator/src/Event/` | 147 |
+| Event classes that can be created (not abstract) | 110 |
+| Of those, sent to plugins | 106 |
 | Of those, defined and not sent | 4 |
 | Abstract bases, interfaces and traits | 22 |
 | Other helper classes and enums in the folder | 15 |
-| Different event names sent | 96 |
+| Different event names sent | 97 |
 
 Eight names are sent with more than one class, because a payment plugin, a shipping plugin and an item field plugin
-each get their own class under the same name. That is why 96 names use 105 classes. Two of the helper classes are
+each get their own class under the same name. That is why 97 names use 106 classes. Two of the helper classes are
 `OrderPlaceRefusedException` in `Orders/`, an exception a listener of `onOrderPlaceValidate` may throw, and
 `SurfaceMap` in `ItemFields/`, the read-only surfaces of a page.
 
@@ -174,6 +174,7 @@ so that a developer sees it.
 | `onItemPrepareForm` | `ItemPrepareFormEvent` in `Items/` | Announced | No | While a page is drawn | `administrator/src/Model/ItemModel.php:427` | [Item and catalogue events](./item-and-catalogue-events.md) |
 | `onItemAfterSave` | `ItemAfterSaveEvent` in `Items/` | Announced | No | After the whole item's save is final, never for a save that was undone | `administrator/src/Model/ItemModel.php:1388` | [Item and catalogue events](./item-and-catalogue-events.md) |
 | `onAlfaPricesChanged` | `PricesChangedEvent` in `Catalog/` | Announced | No | After the save is final, and when a stored price period begins | `administrator/src/Service/PriceIndexSyncService.php:2741` | [Item and catalogue events](./item-and-catalogue-events.md) |
+| `onAlfaCombinationsChanged` | `CombinationsChangedEvent` in `Catalog/` | Announced, after `alfa` is loaded; each listener on its own | No | Once a write of a product's variants through `CombinationService`, after it is final | `administrator/src/Service/Catalog/CombinationService.php:650` | [Saving a product](../services/products.md#saving-a-variant) |
 | `onAlfaCatalogEntityChanged` | `CatalogEntityChangedEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | Right after the record is written. It does not wait for a bigger save around it. | `administrator/src/Service/Catalog/EntityChangeNotifier.php:73` | [Search engine plugins](../plugins/search-plugins.md#onalfacatalogentitychanged) |
 | `onCatalogVisibilityChanged` | `VisibilityChangedEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | Right after the record is written. It does not wait for a bigger save around it. | `administrator/src/Service/Catalog/VisibilityNotifier.php:113` | [Search engine plugins](../plugins/search-plugins.md#oncatalogvisibilitychanged) |
 | `onCollectCatalogProjections` | `CollectCatalogProjectionsEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | On request | `administrator/src/Service/Projection/ProjectionManager.php:119` | [Search engine plugins](../plugins/search-plugins.md#oncollectcatalogprojections) |

@@ -329,7 +329,10 @@ are never changed or deleted: a correction is a new movement in the other direct
 here.
 
 Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`, `filter[date_start]` and
-`filter[date_end]` (the movement's date, in UTC) and `filter[item_id]` (the movements of one item).
+`filter[date_end]` (the movement's date, in UTC), `filter[item_id]` (the movements of one item),
+`filter[combination_id]` (of one variant, 0 for the product's own), `filter[operation_id]` (of one stock operation,
+the `operation_id` an adjustment answers) and `filter[source_type]` (of one source: `api`, `catalog_edit`, `order`
+and the others).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,
 `source_id`, `source_line_id`, `transfer_id`, `operation_id`, `correlation_id`, `note`, `created`,

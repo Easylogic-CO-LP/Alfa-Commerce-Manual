@@ -280,7 +280,7 @@ answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take 
 | `users`, `usergroups` | None |
 | `orders` | `filter[id_order_status]`, `filter[id_payment_method]`, `filter[id_shipment_method]`, `filter[show_trashed]` |
 | `documents` | `filter[doc_type]`, `filter[status]`, `filter[id_order]` |
-| `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
+| `inventorymovements` | `filter[movement_type]`, `filter[location_id]`, `filter[combination_id]`, `filter[operation_id]`, `filter[source_type]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, each left out when it is not one value, and no `filter[search]` |
 | `stockprices` | `filter[changed_since]`, and no `filter[search]` |
 | `orders/:id/payments`, `orders/:id/shipments` | None, and no `filter[search]` |
