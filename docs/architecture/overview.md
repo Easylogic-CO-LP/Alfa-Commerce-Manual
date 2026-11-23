@@ -64,13 +64,6 @@ CartRules, Checkout, Data, Facet, FieldState, Order, Place, Pricing, Shipping, S
 storefront router `Router.php`. The services a developer calls are described in
 [Services](../services/overview.md).
 
-:::note Classes that do not exist
-Code written for 1.x used the classes `CartHelper`, `OrderPlaceHelper`, `OrderPaymentHelper` and
-`OrderShipmentHelper`. None of them exists. Use `CartService`, `OrderPlacement`, `PaymentLedger` and
-`ShipmentLedger` from the table above. `OrderHelper`, `OrderStatusHelper`, `OrderTotalHelper`, `OrderHistoryHelper`
-and `OrderLabels` still exist in `administrator/src/Helper`.
-:::
-
 ## When it is used
 
 Two examples show the layers at work: a page that only reads, and a request that saves.
@@ -272,7 +265,7 @@ and refuses with a message when a floor is not met.
 | Joomla | 6.1.0 or a later 6.x. Joomla 7 is refused |
 | PHP | 8.3.0 or newer. 8.4 is recommended |
 | PHP extensions | bcmath, intl, mbstring, gd, openssl |
-| An existing Alfa Commerce | A stable release. A 1.x beta install is refused, because a beta has no schema to update from |
+| An update | From the 2.2.x line to 2.3.0, the one supported upgrade path |
 
 Write your extension for these floors. You may use PHP 8.3 syntax and Joomla 6.1 classes.
 

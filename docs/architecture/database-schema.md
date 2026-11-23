@@ -398,7 +398,6 @@ worked out.
 
 | What happens | Why |
 |---|---|
-| The installer refuses to update a 1.x beta shop | The update files start from the first stable release, so a 1.x beta cannot be updated in place |
 | The installer refuses to install over kept tables | The tables are at another schema version than the one this install file creates. The version is read from `#__alfa_meta` before anything is changed |
 | A statement in an update file fails and the update goes on | The statement carries Joomla's marker `/** CAN FAIL **/`. It is used where a second run must not stop, for example a key that already exists |
 

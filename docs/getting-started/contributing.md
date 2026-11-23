@@ -107,8 +107,6 @@ Rules for an update file:
   semicolon. Never put the marker on a statement that fills in data: Joomla records the file as applied even when
   such a statement failed, so it never runs again.
 - Do not add an uninstall SQL file. Uninstalling keeps every Alfa table and its data, on purpose.
-- The update files start from the first stable release. The installer refuses to install over a 1.x beta, so no
-  update file has to bring a beta's schema forward.
 
 Two statements from a shipped update file, as a model:
 

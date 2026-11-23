@@ -153,8 +153,7 @@ why:
 2. Joomla is 7.0 or newer.
 3. PHP is older than 8.3.
 4. A required PHP extension is missing (each one is named).
-5. A 1.x beta of Alfa Commerce is installed (see [From a 1.x beta](#from-a-1x-beta)).
-6. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
+5. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
 
 ## After installing
 
@@ -198,9 +197,9 @@ it from cron with the console command `alfa:tasks:run`.
 
 ## Updating
 
-Alfa Commerce updates in place through Joomla's own update system (update server
-`https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new ZIP over the installed version. Joomla
-runs each release's database changes itself.
+The supported upgrade path is from the 2.2.x line to 2.3.0. Alfa Commerce updates in place through Joomla's own
+update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new ZIP over the
+installed version. Joomla runs each release's database changes itself.
 
 An update also removes the files the new version no longer ships, cleans Joomla's page cache and Alfa Commerce's
 own caches, and pauses the shop's background work while it runs (at most ten minutes).
@@ -257,18 +256,6 @@ What else an update does:
   [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
   finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the
   folder to copy each one into. It moves and deletes nothing.
-
-### From a 1.x beta
-
-A stable release cannot be installed over a 1.x beta, and the installer refuses before anything is changed. To move from a beta:
-
-1. Back up the site.
-2. Uninstall the beta.
-3. Delete every database table whose name still starts with your table prefix followed by `alfa_`. The beta's
-   uninstaller leaves some behind.
-4. Install the current release.
-
-The beta's data is not carried over.
 
 ## Uninstalling
 
