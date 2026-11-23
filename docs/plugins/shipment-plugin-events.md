@@ -26,7 +26,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | **What you are given** | `ItemViewEvent`. See the table below. |
 | **What you are expected to do** | Ask the event for a place, then name a layout file of your `tmpl` folder and hand it its data: `$event->shipmentMethods()->setLayout('default_item_view')->setData([...])`. Never print HTML yourself. Alfa draws the method itself first: its image, its title and its description. Your layout adds only what is yours below them (a "ships in two days" note, for example), never a logo, the title or the description. With nothing to add, draw nothing. |
 | **What happens next** | Alfa draws your layout in the place you asked for. A site template can override it at `templates/<template>/html/plg_alfa-shipments_<element>/<layout>.php`. |
-| **If you are missing or you fail** | Nothing of yours is drawn. An error is written to Joomla's log (category `com_alfa`) and the page is still shown. |
+| **If you are missing or you fail** | A missing plugin draws nothing. A thrown error is written to Joomla's log (category `com_alfa`) and the page is still shown; a place or a redirect you set before it still counts. |
 
 | Method of the event | Meaning |
 |---|---|
@@ -61,7 +61,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | Before a method of your plugin is listed at the storefront's checkout, and when the cart's totals are worked out with a method of your plugin chosen. On the storefront Alfa asks for every method it would list, so the question comes many times on one page and again at placement; keep the answer quick and free of side effects. A method whose plugin does not answer a price is not listed there. The order builder in the administrator lists the methods without asking, and asks only the chosen one. |
+| **When it fires** | Before a method of your plugin is listed at the storefront's checkout, and when the cart's totals are worked out with a method of your plugin chosen. On the storefront Alfa asks for every method it would list, and again at placement; within one request it asks once for each state of the cart and keeps your answer for every later reading (see [One answer per cart state per request](./shipment-plugins.md#one-answer-per-cart-state-per-request)). Keep the answer quick and free of side effects. A method whose plugin does not answer a price is not listed there. The order builder in the administrator lists the methods without asking, and asks only the chosen one. |
 | **Who receives it** | The plugin of the method being listed or chosen. `$event->getMethod()->isSelected()` says which: true only for the method the cart has chosen (or the one an order is being placed with). For any other method Alfa reads only whether you can carry the cart, so a plugin that prices through an outside service can answer a listing on its own, from what it knows, and call the service for the chosen method. |
 | **What you are given** | `CalculateShippingCostEvent`: the method, and the cart with its lines and its delivery address. See the tables below. |
 | **What you are expected to do** | Answer, always, with exactly one of three calls: `setShippingCost()`, `setUnavailable()` or `setShippingAmounts()`. |
