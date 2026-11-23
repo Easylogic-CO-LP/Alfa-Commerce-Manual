@@ -21,14 +21,14 @@ the order completed page and the account's order page together.
 | Page | Address | Who opens it |
 |---|---|---|
 | My orders | The menu item type **My orders** (`index.php?option=com_alfa&view=orders`) | The customer logged in. A visitor who is not is sent to log in and comes back. |
-| The order's page | `index.php?option=com_alfa&view=order&id=<id>`, under My orders in the address (`/my-orders/123`) | The order's customer, logged in. Any other visitor, and an order in the trash, get "Order not available" with status 404. |
+| The order's page | `index.php?option=com_alfa&view=order&id=<id>`, under My orders in the address (`/my-orders/123`) | The order's customer, logged in. A visitor who is not is sent to log in and comes back; anyone else, and an order in the trash, get "Order not available" with status 404. |
 | The order completed page | `index.php?option=com_alfa&view=cart&layout=default_order_completed&id=<id>&key=<key>` | A guest's order by its key alone; an account's order by its key and its customer logged in. This is the one page a guest reaches. |
 
 An order belongs to a customer by its account (`id_user`) alone, never by an e-mail address or a name. A guest's
 orders under the same e-mail address are not in that customer's list.
 
-The setup checklist's **Customer pages** row creates My orders with the account page and the sign-up page, in every
-language of the site.
+The setup checklist's **Customer pages** row creates My orders with the account page and, while Joomla accepts sign-ups,
+the sign-up page, in every language of the site.
 
 ### My orders
 
@@ -40,16 +40,17 @@ order's own currency. The page shows the site's list limit of orders at a time, 
 From top to bottom:
 
 - **Order #n**;
-- the facts: the date, the status, the shipping and payment methods, how much is paid;
+- the facts: the date, the status, the shipping and payment methods, and whether it is paid (Paid, Partly paid, Awaiting
+  payment, Refunded);
 - **Pay now**, while the order still owes money and may be paid again (see [Payments and
   shipments](./payments-and-shipments.md));
-- the payment method's own block, asked of the plugin the order was paid with;
-- **Tracking**: each parcel that has a tracking number, with its carrier (the carrier's name, else the shipping
-  method's);
+- the payment method's own block, asked of the payment plugin the order recorded;
+- **Tracking**: each parcel that has a tracking number and is not cancelled or returned, with its carrier (the
+  carrier's name, else the shipping method's);
 - **Documents**: the order's invoices, receipts and credit notes (see [Documents](#documents));
 - the products, the totals and the addresses;
-- **Cancel order**, where the shop allows it (see [Cancelling](#cancelling)), **Order again**, **Print** and **My
-  orders**.
+- **Cancel order**, where the shop allows it (see [Cancelling](#cancelling)), **Order again** while the shop sells
+  online, **Print** and **My orders**.
 
 Print opens the same address with `tmpl=component&print=1`, which shows the order alone and opens the print dialog.
 
@@ -58,8 +59,8 @@ Print opens the same address with `tmpl=component&print=1`, which shows the orde
 A guest reaches their order on the order completed page's address, which carries the order's key. The order e-mails
 the customer receives link to it (**View your order**): for a guest's order the keyed address, for an account's order
 the order's page in the account, with no key. The keyed page shows the same order block as the account's page. It
-never offers Cancel order. It offers Order again, and **See it in your account**, to the order's customer when they are
-logged in.
+never offers Cancel order. It offers **See it in your account**, and Order again while the shop sells online, to the
+order's customer when they are logged in.
 
 ### Neither stored nor indexed
 
@@ -140,7 +141,7 @@ availability, never the order's. Each line is added on its own:
 | Its product is for sale, its options are still offered | Added with the same options |
 | The stock holds fewer than the order had | Added with what is available; the message says "2 of 3 added" |
 | Its product is no longer for sale to this customer | Not added: "no longer available" |
-| Its price was set by the shop for that order (a line priced in the order builder) | Not added: ask the shop |
+| Its price was set by the shop for that order (a price staff gave the line) | Not added: ask the shop |
 | It was made to the customer's own choices (a field that took an upload or a design) | Not added: choose them again on the product's page |
 | One of its options is no longer offered | Not added |
 | The cart refuses it | Not added |
