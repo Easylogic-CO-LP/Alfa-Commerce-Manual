@@ -400,7 +400,10 @@ order an order is worked:
    tax, discount and total, and an Edit button that opens the line in a popup (quantity, configuration, a custom price,
    Remove). The Add item button is in the section's heading. Under the lines, the goods before and after rules, each
    rule that applied (a coupon code with its remove button), tax, shipping, every plugin's charge and the total; under
-   the table, the coupon box.
+   the table, the coupon box. A code that is not taken comes back with the reason, worded for staff: no rule has it,
+   its rule is unpublished, not started or ended, its uses are spent, this customer may not use it, a better discount
+   already applies and the two do not combine, or the cart does not meet its conditions yet (the code is then kept). A
+   code that applied says nothing: its rule's row in the table shows it.
 3. **Shipment and payment.** The methods the engine offers this cart, as the storefront offers them.
 4. **Summary and placement.** The cart's state and activity, the codes it holds, and the placement card: the facts the
    order will carry, the checkout fields, the status the order lands in and whether the customer's credit is spent.
