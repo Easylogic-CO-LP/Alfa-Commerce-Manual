@@ -127,7 +127,7 @@ A payment method can charge a fee, such as a cash on delivery fee. Its **Fee** t
 |---|---|
 | Fixed fee (`fee_amount`) | An amount in the order's currency. `0` for none. |
 | Fee percentage (`fee_percent`) | A percentage of the order total before the fee: the goods after their discounts, the shipping after its rules and the other charges. `0` for none, at most 100. |
-| Fee entered (`fee_entry_mode`) | Tax included (the customer pays the figures with the tax inside; the percentage is taken of the total with tax) or tax excluded (the tax is added on top; the percentage is taken of the total without tax). Tax included by default. |
+| Fee entered (`fee_entry_mode`) | Tax included (the customer pays the figures with the tax inside; the percentage is taken of the total with tax) or tax excluded (the tax is added on top; the percentage is taken of the total without tax). Tax included by default; a method with no fee needs none. |
 | Fee taxes (`fee_taxes`) | The tax rules the fee is taxed with. Each rule's places, customer groups and dates decide whether it applies, at the delivery destination, as for a shipping method's taxes. None: the fee is untaxed. |
 
 The fee is the fixed amount plus the percentage, the percentage rounded once to the currency's decimals. It is

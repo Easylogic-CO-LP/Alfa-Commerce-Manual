@@ -238,8 +238,10 @@ the method is offered.
 order total before the fee; the fee is both added together, and `0` for both means no fee. `fee_entry_mode` says what
 the figures mean: `tax_included` (the customer pays them with the tax inside, and the percentage is taken of the
 total with tax) or `tax_excluded` (the tax is added on top, and the percentage is taken of the total without tax).
-`fee_taxes` lists the tax rules the fee is taxed with (none: no tax on it). A figure below 0, or a percentage above 100,
-is refused with the reason and nothing is saved; a `PATCH` that does not send `fee_taxes` keeps them. See
+`fee_taxes` lists the tax rules the fee is taxed with (none: no tax on it). None of the four is needed: a method sent
+without them charges no fee, and `fee_entry_mode` left out or sent empty is `tax_included` for a new method and the
+method's own otherwise. A figure below 0, or a percentage above 100, is refused with the reason and nothing is saved; a
+`PATCH` that does not send `fee_taxes` keeps them. See
 [A payment method's fee](../services/payments-and-shipments.md#a-payment-methods-fee).
 
 ```json
