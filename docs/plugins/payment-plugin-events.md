@@ -67,9 +67,10 @@ other places are `title()` (beside the item's title) and `nearAddToCart()`. Each
 **What happens next.** Alfa draws your layout in the place you asked for: under the method in the payment methods
 area, beside the title, or next to the add to cart button.
 
-**If you are missing or you fail.** Alfa still draws the method's image, title and description, and the page is
-shown. A missing plugin adds nothing. A thrown error is written to Joomla's log (category `com_alfa`); a place or a
-redirect you set before it still counts.
+**If you are missing or you fail.** A method whose plugin is disabled or not installed is not shown on the item page.
+Otherwise Alfa draws the method's image, title and description whatever your plugin does, and the page is shown: a
+plugin that cannot be loaded adds nothing. A thrown error is written to Joomla's log (category `com_alfa`); a place or
+a redirect you set before it still counts.
 
 ## onCartViewAssets
 
@@ -141,9 +142,10 @@ public function onCartView($event): void
 **What happens next.** Alfa draws your layout under the method in the cart, after the method's radio, image, title
 and description.
 
-**If you are missing or you fail.** Your markup is left out and the failure is logged as a warning (category
-`com_alfa.cart`). The method stays offered and the cart is shown. With Joomla's Debug System on, the error is thrown
-instead of logged.
+**If you are missing or you fail.** A method whose plugin is disabled or not installed is not offered. When you
+throw, your markup is left out, a panel you set before the error included, and the failure is logged as a warning
+(category `com_alfa.cart`). The method stays offered and the cart is shown. With Joomla's Debug System on, the error
+is thrown instead of logged.
 
 ## onOrderBeforePlace
 
@@ -220,7 +222,7 @@ before it is read.
 | Getter | Meaning |
 |---|---|
 | `getOrder()` | The order, as an `Order` object |
-| `getMethod()` | The order's method record (`params` decoded to an array), or `null` |
+| `getMethod()` | The order's method record (`params` decoded to an array), or `false` when the method no longer exists |
 
 **What you are expected to do.** One of three things:
 
