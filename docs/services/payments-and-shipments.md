@@ -176,7 +176,8 @@ Where the fee appears:
   so the shopper pays it and the gateway is asked for a total that includes it.
 - **On the order.** Placement totals the order with the fee of the method the submission names and freezes it in
   `#__alfa_order_contributions`. A later change of the order's lines by staff does not work it out again.
-- **On the documents and in the e-mails**, as the order's other charges: its own line at its rate.
+- **On the documents**, as the order's other charges: its own line at its rate. **In the e-mails** it is counted in
+  the order's "Fees" row, the sum of its charges.
 - **In the REST API**, in the order's `contributions` with its code, amounts, tax and rate. See
   [Orders](../api/orders.md).
 
