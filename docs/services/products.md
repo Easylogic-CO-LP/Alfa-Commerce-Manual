@@ -73,7 +73,14 @@ way. The save judges every link before anything is written and refuses the whole
 for a link the product cannot take: a product named twice, a combination that is not a current one of the product,
 a value of another field or one the product does not take, dimension values no combination carries together. Values
 that name every dimension are stored as their combination. Read an item's links with
-`RelatedItems::links($db, $itemId)`. The events are on [Item and catalogue events](../events/item-and-catalogue-events.md#related-products).
+`RelatedItems::links($db, $itemId)`.
+
+On the item screen the Related tab is the field `RelatedProducts`: Joomla's repeatable subform of
+`administrator/forms/related_link.xml`, each row a product picker and the field `RelatedVariant` (the product's
+default, each current combination, or Choose values with a select for each dimension, and a select for each option it
+offers). A row whose product changes gets its variant cell from the server, drawn by the field. Both draw com_alfa
+layouts a template overrides: `html/layouts/com_alfa/form/field/relatedproducts.php` and
+`html/layouts/com_alfa/form/field/relatedvariant.php` in the administrator template. The events are on [Item and catalogue events](../events/item-and-catalogue-events.md#related-products).
 
 ## What the save answers
 
