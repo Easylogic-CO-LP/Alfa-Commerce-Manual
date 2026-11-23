@@ -175,10 +175,11 @@ The rule is read in one place, `MethodCategoryScope` (`site/src/Service/Cart/`),
 - **The order builder** shows the same sentences in its shipping section.
 - **Placement** refuses a method that is not offered, as it always does.
 - **The shipments ledger** refuses a parcel of such a method that carries such a line: on the order screen, through
-  `POST v1/alfa/orders/:id/shipments` with its `items`, and when a parcel is moved to another method or given other
-  lines (`PATCH v1/alfa/orders/:id/shipments/:shipmentId`). The reason is "Courier X does not deliver Sofa A; nothing
-  was written." Parcels already written are not judged again, and a parcel that carries no lines is not judged: the
-  parcel of an order created over the REST API in one call names no lines.
+  `POST v1/alfa/orders/:id/shipments` with its `items`, in an order created over the REST API in one call (its parcel
+  carries the order's lines; the create answers 409 and no order is made), and when a parcel is moved to another
+  method or given other lines (`PATCH v1/alfa/orders/:id/shipments/:shipmentId`). The reason is "Courier X does not
+  deliver Sofa A; nothing was written." A product to download on the parcel is not judged, as at the checkout.
+  Parcels already written are not judged again, and a parcel that carries no lines is not judged.
 
 ## What can go wrong
 
