@@ -29,9 +29,10 @@ The comment at the top of `PaymentsPlugin` states it: the base class is the supp
 calls `PaymentLedger` and never reads or writes `#__alfa_order_payments` itself. If the base class lacks something
 you need, that is a request to Alfa Commerce, not a reason to query the table.
 
-This manual applies the same rule to shipping plugins and `ShipmentLedger`. The code states the rule for payments
-only. A comment in `ShipmentsPlugin` still mentions calling `ShipmentLedger` directly for batch work. Such a call
-records no plugin on the row, the standard shipping plugin does not make it, and this manual does not document it.
+The same rule holds for shipping plugins and `ShipmentLedger`, as the comment above the parcel builders in
+`ShipmentsPlugin` states: a carrier writes its parcels through `shipment()`, `shipmentUpdate()`, `deleteShipment()`
+and `assignShipmentItems()`, which name it as the writer. A direct `ShipmentLedger` call names no writer and skips that
+check: it is core's own path, not a plugin's.
 :::
 
 ## When it is used
@@ -72,7 +73,8 @@ Extend the base class of your plugin type and call its methods. Nothing else.
 | Refund when my method has no provider | `refundPayment($paymentId, $amount, $options)` | [A refund with no provider](../plugins/payment-plugin-money.md#a-refund-with-no-provider) |
 | Refund through a provider | `reserveRefund()`, then `settleRefund()`, `holdRefund()` or `releaseRefund()` | [A refund through a provider](../plugins/payment-plugin-money.md#a-refund-through-a-provider) |
 | Tell Alfa about a refund made outside the shop | `unbookedProviderRefunds($paymentId)` | [Telling Alfa about refunds it does not hold](../plugins/payment-plugin-money.md#telling-alfa-about-refunds-it-does-not-hold) |
-| Record a chargeback, or a refund that did not stand | `recordChargeback()`, `recordReversal()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Tell Alfa a card dispute's state | `dispute($paymentId, $providerDisputeId)`, its state and facts, then `save()`; answer the provider with the verdict's `providerStatus()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Record a refund that did not stand | `recordReversal()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
 | Move the order when a payment changes | Nothing in code. The method's settings `status_on_<status>` do it. | [The order's status](../plugins/payment-plugin-money.md#the-orders-status) |
 | Move the order at a moment the settings cannot express | `orderTransition($orderId)->to($statusId)->save()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
 
@@ -113,7 +115,7 @@ order's lock, and again just before the provider is asked:
 | still owes money | "This order has nothing left to pay." |
 | is neither in the cancelled nor in the completed family of statuses | "This order can no longer be paid." |
 | holds no payment authorised at a provider | "A payment of this order is still being processed. Please check again later." |
-| has no refund that is not settled | "This order cannot be paid while a refund of it is in progress." |
+| has no refund that is not settled and no dispute the bank has not decided | "This order cannot be paid while a refund of it is in progress." (said for an undecided dispute too) |
 | has a published payment method whose gateway is available and declares that it opens a new payment for an existing order (`supportsPayAgain()`; core's Standard method does not) | "This order cannot be paid online. Please contact the shop." |
 
 The link leads to the order's gateway of record, whose process view opens a new attempt for what is owed (the contract
@@ -142,7 +144,8 @@ request without the form token sends nothing. What the operator reads:
 | Handed to the mail server with no answer | "The payment link was handed to the mail server for (address), which did not answer: it may have been delivered." |
 | Mail switched off for the site | "The payment link was not sent: sending mail is switched off for the site (Global Configuration, Send Mail: No)." |
 | The order names no customer address | "The payment link was not sent: the order has no customer e-mail address." |
-| The order may no longer be paid | "The payment link was not sent:" and the reason (the order owes nothing, its status is cancelled or completed, a payment is authorised, a refund is not settled, its payment method cannot be paid again online, it is in the trash) |
+| The mail could not be sent | "The payment link was not sent:" and the mailer's error |
+| The order may no longer be paid | "The payment link was not sent:" and the reason (the order owes nothing, its status is cancelled or completed, a payment is authorised, a refund is not settled (said for an undecided dispute too), its payment method cannot be paid again online, it is in the trash) |
 
 A sent link, and one handed over with no answer, is written to Joomla's User Actions Log under Alfa Commerce: who sent
 it, the order and the address.
