@@ -43,7 +43,7 @@ What else the contract covers:
 - A builder's setters and its `save()`, `saveVerdict()` and `saveWithVerdict()` are covered by the call that hands
   the builder out: `payment()`, `paymentUpdate()`, `shipment()` or `shipmentUpdate()`.
 - A value your plugin makes itself is inside the contract only when this page lists it: `Order::of()`,
-  `Shipment::of()`, `Money` and `Currency`, and `PluginPayload::of()`.
+  `Shipment::of()`, `Money` and `Currency`, `PluginPayload::of()`, and `PluginId::of()` and `PluginId::from()`.
 
 ## Core classes an extension calls by name
 
@@ -129,6 +129,7 @@ Most are static calls. The classes are in these namespaces:
 | `PlaceTree::countryOf(int $placeId): ?array` | **READ ONLY.** The country a place belongs to: the place at the top of its chain, as `id`, `code2` and `code3`, its ISO 3166-1 codes in capitals, published or not; `null` for 0 or an id that does not exist. `code2` and `code3` are empty when the top place carries none (a chain cut from its country by a parent that no longer exists, or a top place stored without codes), and you then have no country. The first call in a PHP process (one request on the web) reads the place table once and keeps it, so a place changed later in the same process may not be seen. A failed read of the place table throws the database's exception: `null` only ever means no such place. |
 | `MultilingualHelper::resolveLangMap($map, string $lang = ''): string` | **READ ONLY.** One text from a `{language: text}` map, in the language given (an empty language is this request's), else the default language, else the first entry that is not empty. |
 | `PluginPayload::of(?string $json, string $source = ''): self` | **READ ONLY.** A plugin payload read from a stored column: empty for `NULL`, `''` or `'null'`; a column that holds anything else throws. |
+| `PluginId::of(string $id): self`, `PluginId::from(string $group, string $element): self` | **ANSWERS.** A plugin's identity, from its string form `group.element` (for example `alfa-payments.standard`) or from its group and element; `of()` throws `InvalidArgumentException` for a string that is not `group.element`. `ExtensionJob::enqueue()` and `OutboundConsumers::ofPlugin()` take it. |
 
 ### Products, their stock and their prices
 
