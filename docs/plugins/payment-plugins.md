@@ -45,8 +45,8 @@ row. It never asks another plugin instead, whatever the method's settings say la
 **The base class is the whole payment API.** A gateway records, reads and refunds payments through methods of
 `PaymentsPlugin`. It never calls the ledger class `PaymentLedger` and never reads or writes the table
 `#__alfa_order_payments` itself. A need the base class does not cover is a request to the Alfa Commerce project, not a
-query of your own. Every call of the base class, and the few core classes a gateway calls by name, are listed with what
-each guarantees on [Calling core from an extension](./calling-core.md).
+query of your own. Every call of the base class that is part of the contract, and the few core classes a gateway calls
+by name, are listed with what each guarantees on [Calling core from an extension](./calling-core.md).
 
 **The country you send your provider.** When your provider asks for the buyer's delivery or billing country as an ISO
 code, ask `PlaceTree::countryOf($placeId)` (`Alfa\Component\Alfa\Site\Service\Place\PlaceTree`) with the place the
