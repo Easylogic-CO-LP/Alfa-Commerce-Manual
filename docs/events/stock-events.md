@@ -103,7 +103,7 @@ events, and the group `alfa-inventory` before `onCollectStockAllocationProviders
 | `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
-Put a plugin that listens to the first nine in the `alfa` group. The group
+Put a plugin that listens to the first eight in the `alfa` group. The group
 `alfa-inventory` is loaded only when Alfa
 asks for allocation providers, so a plugin of that group is not always loaded when the other stock events are
 announced.
