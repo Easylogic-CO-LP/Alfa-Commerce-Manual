@@ -39,7 +39,7 @@ popup that configures an item for an order, or for a line of the order builder, 
 | `getSelectedValueIds(): int[]` | The same, as one flat list of value ids |
 
 **What you are expected to do.** Pick the place of the page, name a layout, pass its data. The event has no layout of
-its own; what you draw is what you set on a place:
+its own; what you draw on the page is what you set on a place (the add to cart area has its own setters, below):
 
 ```php
 $event->buyForm()
