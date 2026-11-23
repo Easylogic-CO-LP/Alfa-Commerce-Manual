@@ -15,7 +15,7 @@ libraries.
 
 | | Needed |
 |---|---|
-| **Joomla** | 6.1 or a later Joomla 6 release. Joomla 6.0 is refused; update Joomla first. Joomla 7 is not supported and is refused. |
+| **Joomla** | 6.2 or a later Joomla 6 release. An older Joomla is refused; update Joomla first. Joomla 7 is not supported and is refused. |
 | **PHP** | 8.3 or newer (8.4 recommended), with the extensions `bcmath`, `intl`, `mbstring`, `gd` and `openssl` |
 | **Database** | MySQL 8.0.13 or newer, or MariaDB 10.6 or newer (utf8mb4) |
 
@@ -149,7 +149,7 @@ No search engine plugin is included. The catalogue search works without one.
 The installer checks before it changes any file or table. If it refuses, nothing was touched, and the message says
 why:
 
-1. Joomla is older than 6.1.
+1. Joomla is older than 6.2.
 2. Joomla is 7.0 or newer.
 3. PHP is older than 8.3.
 4. A required PHP extension is missing (each one is named).

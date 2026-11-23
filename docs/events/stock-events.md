@@ -100,7 +100,6 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 | `onInventoryCommitted` | After goods were taken from stock and the save is final | No | Logged, the others still run |
 | `onInventoryReleased` | After reservations were let go and the save is final | No | Logged, the others still run |
 | `onInventoryAdjusted` | After a manual adjustment and the save is final | No | Logged, the others still run |
-| `onInventoryTransferred` | Never: no command moves stock between locations | No | Logged, the others still run |
 | `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
@@ -365,19 +364,6 @@ combination, or an item's stock tracking was changed with opening quantities (`c
 | `movementType` | `adjust` or `receive` |
 | `sourceType`, `sourceId` | What made the change |
 | `result` | `operation_id`, and `delta` when the change came from a stock figure |
-
-### onInventoryTransferred
-
-**When it fires.** Never: no command of Alfa Commerce moves stock between locations, so core announces it from
-nowhere. The event class `InventoryTransferredEvent` and its name stay in the list of events. A move between two
-locations is two `adjust()` calls, each announced as `onInventoryAdjusted`.
-
-| Name for `argument()` | Meaning |
-|---|---|
-| `itemId`, `combinationId` | What moved |
-| `quantity` | How much |
-| `sourceLocationId`, `destinationLocationId` | From where, to where |
-| `result` | `transfer_id`, `operation_id` |
 
 ### onInventoryRestored
 

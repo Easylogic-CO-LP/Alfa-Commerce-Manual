@@ -332,7 +332,7 @@ Filters: `filter[search]`, `filter[movement_type]`, `filter[location_id]`, `filt
 `filter[date_end]` (the movement's date, in UTC) and `filter[item_id]` (the movements of one item).
 
 **A row holds:** `id`, `item_id`, `combination_id`, `location_id`, `qty_change`, `movement_type`, `source_type`,
-`source_id`, `source_line_id`, `transfer_id`, `operation_id`, `correlation_id`, `note`, `created`,
+`source_id`, `source_line_id`, `operation_id`, `correlation_id`, `note`, `created`,
 `location_title`, `item_sku`, `name`.
 
 See [Stock](../services/stock.md) for what the movements mean.

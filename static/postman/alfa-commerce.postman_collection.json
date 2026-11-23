@@ -14400,7 +14400,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, item_id, combination_id, location_id, qty_change, movement_type, source_type, source_id, source_line_id, transfer_id, operation_id, correlation_id, note, created, location_title, item_sku, name\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`.\n\nAn append-only ledger: corrections are opposite entries, never edits, so the resource is a list and nothing else."
+								"description": "**Returns per row:** id, item_id, combination_id, location_id, qty_change, movement_type, source_type, source_id, source_line_id, operation_id, correlation_id, note, created, location_title, item_sku, name\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`.\n\nAn append-only ledger: corrections are opposite entries, never edits, so the resource is a list and nothing else."
 							}
 						},
 						{

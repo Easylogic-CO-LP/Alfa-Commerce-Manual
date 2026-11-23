@@ -220,7 +220,6 @@ flowchart TB
 | `#__alfa_inventory_movements` | The stock ledger: one added row for every change of a quantity |
 | `#__alfa_inventory_operations` | One row per command the stock service ran, for audit |
 | `#__alfa_inventory_reservations` | Stock held for orders: quantity, how much was fulfilled and released, state |
-| `#__alfa_inventory_transfers` | Transfers between two locations. Each owns one movement out and one movement in |
 | `#__alfa_inventory_effect_outbox` | Stock changes that a saved order or document still owes, kept until the movement exists |
 | `#__alfa_inventory_line_resolutions` | Staff decisions about order lines whose item or combination no longer exists, or that staff classified. Rows are only added |
 | `#__alfa_inventory_line_provenance` | For each order line, whether its stock was tracked when it was placed. Removed with its order line (foreign key on `order_item_id`) |

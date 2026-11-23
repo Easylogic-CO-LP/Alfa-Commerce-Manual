@@ -281,7 +281,6 @@ them.
 | `StoreReferenceEvent` in `Payments/` | `onPaymentStoreReference` | Defined, not dispatched. An extension's billing engine raises it at a gateway whose `supportsRecurring()` answers `true`, which handles it with its public method of that name. See [Payment plugins](../plugins/payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
 | `ChargeReferenceEvent` in `Payments/` | `onPaymentChargeReference` | Defined, not dispatched. As above. |
 | `StoredCredentialIntentEvent` in `Payments/` | None in the code | Defined, not dispatched. No event name is given to it anywhere. |
-| `InventoryTransferredEvent` in `Inventory/` | `onInventoryTransferred` | Defined, not dispatched: no command of the inventory service moves stock between locations. See [Stock events](./stock-events.md#oninventorytransferred). |
 
 ## Building blocks, not events
 
