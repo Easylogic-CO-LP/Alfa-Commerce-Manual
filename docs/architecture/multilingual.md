@@ -6,7 +6,7 @@ description: How Alfa Commerce stores translated content, which language is show
 
 # Multilingual and Translations
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A shop can show its items, categories and other records in several languages. This page explains where the
 translated text is stored, which language a reader sees, and what your code must do to read and write it.
@@ -89,7 +89,8 @@ sequenceDiagram
 - **Empty stays empty.** Each language stores only what was entered for it. A field left empty is not filled with
   another language's text. The reader sees the default language meanwhile, and the edit form keeps showing
   translators what is still missing.
-- **On delete** `MultilingualHelper::deleteMultilingualData()` removes the record's rows from every language table.
+- **On delete** `MultilingualHelper::deleteMultilingualData()` removes the record's rows from the language table of
+  every published content language.
 
 All of this is in `administrator/src/Helper/MultilingualHelper.php`. It writes its log lines under the category
 `com_alfa.multilingual`.
@@ -123,7 +124,8 @@ The alias rule:
 
 - **An empty alias is generated.** Alfa builds it from the name in the same language and makes it unique in that
   language by adding `-2`, `-3` and so on.
-- **A typed alias is never renamed.** Alfa stores it as typed.
+- **A typed alias is never renamed.** Alfa only makes it fit for an address, as Joomla does (`OutputFilter`: lower
+  case, a hyphen for a space), and never adds a number to it.
 - **A save that would give two records one address is refused.** Before anything is written, the model asks
   `MultilingualHelper::aliasClashes()`. If the save would create a clash in any language, the save stops with a
   message that names the alias, the language and the other record. The administrator models of items, categories
@@ -164,7 +166,7 @@ A save can also be the first write in a language the routine has not reached. Fo
 `saveMultilingualData()` makes the tables and columns it is about to write, before it opens its transaction.
 
 Keep the `alfasync` plugin enabled. Without it a newly published language gets its tables only at the next update,
-when staff run **Language tables**, or one table at a time as records are saved.
+when staff run **Language tables** or **Backfill empty translations**, or one table at a time as records are saved.
 
 ### The two tools
 
@@ -197,7 +199,7 @@ language tables. This is the item's short description, from `administrator/forms
 
 | You want to | Use |
 |---|---|
-| Fill an edit form with every language's values | `MultilingualHelper::bindMultilingualToItem($item, $id, $primaryColumnName, $tableName)` |
+| Fill an edit form with every language's values | `MultilingualHelper::bindMultilingualToItem($item, $currentId, $primaryColumnName, $tableName)` |
 | Add translated columns to a list query, with the fallback to the default language | `MultilingualHelper::addMultilingualJoinToQuery()` |
 | Read one field of one record in one language | `MultilingualHelper::getTranslatedValue($id, $tableName, $primaryColumnName, $field, $langTag)` |
 | Know the reader's content language | `MultilingualHelper::getCurrentLanguageTag()` |
@@ -262,15 +264,19 @@ language's link uses its own alias.
 ### The API
 
 The REST API accepts a `lang` parameter in the address. It chooses the content language of the answer and leaves the
-language of the API's own messages alone.
+language of the API's own messages alone. Without `lang`, or with a language the shop does not publish, the answer is
+in the default content language, and the `Content-Language` header names the language of the answer. A read with
+`include=translations` also gives every language's texts in a `translations` object, and a write sends its texts in
+that same object: a body key with a language suffix (`name_el_gr`) is refused with 422. See
+[REST API](../api/overview.md#reading).
 
 ### Documents and e-mails
 
 An order remembers the language it was placed in. The e-mails of an order that has no language of its
 own, and the documents issued in the back office, are in the default content language. It is never the language of
-the staff member who sends or issues them. In an order e-mail each
-status text that is empty in the order's language is taken from the default content language. See
-[Order e-mails](order-emails.md) and [Documents](../services/documents.md).
+the staff member who sends or issues them. In an order e-mail each of the status's texts that is empty in the order's
+language is taken from the default content language: its name, its name for the customer, and each recipient's e-mail
+(its subject and content blocks together). See [Order e-mails](order-emails.md) and [Documents](../services/documents.md).
 
 ### Notifications in each reader's language
 
