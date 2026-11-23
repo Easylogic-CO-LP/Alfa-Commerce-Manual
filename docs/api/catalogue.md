@@ -6,7 +6,7 @@ description: "The REST API routes for items, categories, manufacturers and item 
 
 # Catalogue
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows: the token, pages, languages, how
 texts and money are sent, and the status codes.
@@ -90,8 +90,8 @@ and counts only when the body carries `stock` or `inventory_stock`. For a produc
 `stock`, one figure. For several locations send `inventory_stock`, an object of location id to figure, each figure
 the stock to hold there: `{"manage_stock": 1, "inventory_stock": {"1": "3", "2": "2"}}`. The ids are those of
 `v1/alfa/locations`. A product with combinations holds its stock on them. Another shape is refused with 422. A
-product that tracks stock reads `stock` 0 when it holds none; one that does not track stock reads null. See
-[Stock](../services/stock.md).
+product that tracks stock reads `stock` 0 when it holds none; one that does not track stock reads null, or the figure
+its stock records kept when it stopped tracking stock. See [Stock](../services/stock.md).
 
 **A list row holds:** `id`, `name`, `alias`, `sku`, `gtin`, `mpn`, `state`, `stock`, `available_quantity`,
 `manage_stock`, `stock_action`, `is_virtual`, `combination_count`, `id_category_default`, `category_ids`,
@@ -207,7 +207,7 @@ by its place in your request:
   {"pointer": "/media/0/url", "url": "https://images.example.com/drill-front.jpg", "outcome": "stored", "media_id": 812, "reason": null},
   {"pointer": "/media/1/url", "url": "https://images.example.com/drill-side.jpg", "outcome": "stored", "media_id": 813, "reason": null},
   {"pointer": "/media/2/url", "url": "https://images.example.com/drill-box.tif", "outcome": "refused", "media_id": null,
-   "reason": "its content is image/tiff, not an image of a type the shop takes (Options, Media)"}
+   "reason": "its content is image/tiff, not an image of a type the shop takes (Options, Images, Allowed Image Types)"}
 ]}
 ```
 
@@ -302,7 +302,8 @@ last changed, UTC) and `price` with `gross`, `net` and `currency`. The price is 
 currency, the one the product list filters and sorts by: a combination with prices of its own has its own, any other
 combination its product's. A row with no valid price (an unpublished product, or no price row that applies) has `price`
 null. A price of 0 is a price. `available_quantity` and `stock` of a unit that tracks stock and holds no stock
-record read 0; a unit that does not track stock reads null for both.
+record read 0; those of a product that does not track stock and holds no figure read null; any other figure reads as
+it is stored.
 
 Pages follow the rows' key, never an offset, so walking the list while products change reads each row once:
 `page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries. A
