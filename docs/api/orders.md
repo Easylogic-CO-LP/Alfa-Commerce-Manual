@@ -153,9 +153,9 @@ The answer, status 201, shortened:
 `external_source`, `external_reference`, `state`, `created`, `modified`.
 
 **One record holds also:** `id_user`, `conversion_rate`, `delivery_date`, `id_address_delivery`,
-`id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `shipments`,
-`contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's number is its
-`id`.
+`id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `disputes`,
+`shipments`, `contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's
+number is its `id`.
 
 `id_payment_method` and `payment_method_name` are the method of the order's latest payment that is not failed or
 cancelled (a payment from the customer's credit is left out); `id_shipment_method` and `shipment_method_name` the
@@ -178,9 +178,10 @@ with `"state": 1` takes it out, as the Orders list's Trash and Untrash do. Send 
 attributes, or with another value, it is refused with 422. It needs Orders: Edit and Orders: Change State. An order
 another user has open in the administrator keeps its state and the answer is 409. A trashed order whose status keeps
 stock reserved stays in the trash, also with 409, when the item of one of its lines stopped tracking stock meanwhile.
-Moving an order to the trash changes nothing else: its stock, payments, shipments and documents stay as they are. A
-trashed order is left out of the list unless `filter[show_trashed]` is 1, and the storefront does not show it: its
-confirmation page and its downloads answer as for an order that is not there.
+An order with a card dispute the bank has not decided stays out of the trash, also with 409. Moving an order to the
+trash changes nothing else: its stock, payments, shipments and documents stay as they are. A trashed order is left
+out of the list unless `filter[show_trashed]` is 1, and the storefront does not show it: its confirmation page and
+its downloads answer as for an order that is not there.
 
 ```json
 {"errors":[{"title":"state takes -2 (moves the order to the trash) or 1 (takes it out of the trash).","code":422}]}
@@ -263,11 +264,10 @@ Orders: View (403 without it), and an order that does not exist answers 404.
 
 ## Operations on an order
 
-An existing order is changed with these twelve routes, one change each. Each answers 200 with the whole order as
-it is after the change, so one answer shows the new totals. An order id that does not exist, or a line, payment or
-shipment of another order, answers 404; a line added to an order that does not exist answers 409, "Order not
-found". They do what the order screen does, with its rules, and ask the permission it asks: Orders: Edit, and for
-the status Orders: Change State with Orders: View.
+An existing order is changed with these eighteen routes, one change each. Each answers 200 with the whole order as
+it is after the change, so one answer shows the new totals. An order id that does not exist, or a line, payment,
+shipment or dispute of another order, answers 404. They do what the order screen does, with its rules, and ask the
+permission it asks: Orders: Edit, and for the status Orders: Change State with Orders: View.
 
 | Method and address | What it does |
 |---|---|
@@ -277,6 +277,12 @@ the status Orders: Change State with Orders: View.
 | `POST v1/alfa/orders/:id/payments` | Records a payment |
 | `POST v1/alfa/orders/:id/payments/:paymentId/settle` | Moves a payment to another state, for example to completed |
 | `POST v1/alfa/orders/:id/payments/:paymentId/refund` | Records a refund of a payment |
+| `POST v1/alfa/orders/:id/payments/:paymentId/disputes` | Records a card dispute by hand |
+| `PATCH v1/alfa/orders/:id/disputes/:disputeId` | Changes a dispute recorded by hand, or gives a lost one its amount in the order's currency |
+| `POST v1/alfa/orders/:id/disputes/:disputeId/evidence` | Marks a dispute's evidence sent |
+| `POST v1/alfa/orders/:id/disputes/:disputeId/close` | Closes a dispute with the outcome |
+| `POST v1/alfa/orders/:id/disputes/:disputeId/reopen` | Opens a won or lost dispute again |
+| `POST v1/alfa/orders/:id/disputes/:disputeId/reconcile` | Says whether a provider's dispute is the one recorded by hand |
 | `PATCH v1/alfa/orders/:id/payments/:paymentId` | Changes a payment's method, reference or note |
 | `DELETE v1/alfa/orders/:id/payments/:paymentId` | Removes a payment that moved no money |
 | `POST v1/alfa/orders/:id/shipments` | Adds a parcel |
@@ -348,7 +354,7 @@ The amount is limited to what the order still owes. A payment while a pending on
 {"errors":[{"title":"The payment of 439,70 € was not recorded: payment 12 of 439,70 € is pending for what order 1234 owes. Settle or cancel it first.","code":409}]}
 ```
 
-A refund cannot be recorded through this route (409).
+A refund, a reversal or a chargeback cannot be recorded through this route (409).
 
 **Settle.** Moves a payment to another state exactly once. `to_status` is needed. With `from_status` you say which
 state you believe the payment is in, and you are told when it is not:
@@ -403,8 +409,8 @@ the reason. The order's `history` records the removal.
 
 ### Shipments
 
-**Add a parcel.** Send `id_shipment_method`, the parcel's shipping method: the route does not refuse a parcel without
-one. Optional: `tracking_number`, `carrier` (the carrier company's name, read back as `carrier_name`), `status`,
+**Add a parcel.** `id_shipment_method`, the parcel's shipping method, is needed: a parcel without one is refused with
+400. Optional: `tracking_number`, `carrier` (the carrier company's name, read back as `carrier_name`), `status`,
 `weight`, the charge, and `items`, the order lines in the parcel with their quantities.
 
 ```json
