@@ -67,8 +67,9 @@ other places are `title()` (beside the item's title) and `nearAddToCart()`. Each
 **What happens next.** Alfa draws your layout in the place you asked for: under the method in the payment methods
 area, beside the title, or next to the add to cart button.
 
-**If you are missing or you fail.** Alfa still draws the method's image, title and description, nothing of yours is
-added, a thrown error is written to Joomla's log (category `com_alfa`), and the page is shown.
+**If you are missing or you fail.** Alfa still draws the method's image, title and description, and the page is
+shown. A missing plugin adds nothing. A thrown error is written to Joomla's log (category `com_alfa`); a place or a
+redirect you set before it still counts.
 
 ## onCartViewAssets
 
@@ -238,7 +239,8 @@ It does not move on to the completed page, because that would read as a payment 
 
 Event class: `OrderCompleteViewEvent`. You must write this method.
 
-**When it fires.** When the order completed page is shown.
+**When it fires.** When the order completed page is shown, and when the customer opens the order's page in their
+account.
 
 **Who receives it.** One plugin: the plugin recorded on the order.
 
