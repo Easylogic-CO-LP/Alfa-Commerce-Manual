@@ -129,6 +129,14 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Storefront modules',
+      items: [
+        'modules/filters',
+        'modules/cart',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Reference',
       items: [
         'reference/glossary',
