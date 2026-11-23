@@ -6,7 +6,7 @@ description: What Alfa Commerce needs, how to install and update it, and what th
 
 # Installation
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce is a Joomla component. One ZIP file installs the component together with its plugins, modules and
 libraries.
@@ -15,7 +15,7 @@ libraries.
 
 | | Needed |
 |---|---|
-| **Joomla** | 6.1 or a later Joomla 6 release. Joomla 6.0 is refused; update Joomla first. Joomla 7 is not supported yet and is refused. |
+| **Joomla** | 6.1 or a later Joomla 6 release. Joomla 6.0 is refused; update Joomla first. Joomla 7 is not supported and is refused. |
 | **PHP** | 8.3 or newer (8.4 recommended), with the extensions `bcmath`, `intl`, `mbstring`, `gd` and `openssl` |
 | **Database** | MySQL 8.0.13 or newer, or MariaDB 10.6 or newer (utf8mb4) |
 
@@ -126,9 +126,9 @@ header answers the plain `.min` file.
 
 ### What the installer does
 
-It installs, in this order, the libraries, the plugins and the modules that come in the ZIP, then enables every
-plugin it brought that the site did not have before. On an update each plugin keeps the state it had (see
-[Updating](#updating)).
+It installs, in this order, the libraries, the plugins and the modules that come in the ZIP, and enables each plugin
+it brought that the site did not have before as soon as that plugin is installed. On an update each plugin keeps the
+state it had (see [Updating](#updating)).
 
 | Kind | What is installed |
 |---|---|
@@ -169,9 +169,10 @@ its links would drop the filter.
 ### The download store check
 
 Files that shoppers buy as downloads are kept in the folder `alfa-downloads` inside the site, unless **Options**,
-**Downloads**, **Downloads storage path** names a folder outside the public web root. Alfa Commerce puts deny rules
-for Apache and IIS in that folder. At installation, at every update and when the path changes, it then tests the
-result: it places a test file in the folder and asks the site for it at its public address.
+**Downloads**, **Downloads storage path** names another folder, for example one outside the public web root. Alfa
+Commerce puts deny rules for Apache and IIS in that folder. At installation, at every update and when the path
+changes, it then tests the result: it places a test file in the folder and asks the site for it at its public
+address.
 
 - If the test file is refused, nothing is shown.
 - If the test file is served, or the site could not request its own address, a security warning stays on Alfa
@@ -202,7 +203,7 @@ Alfa Commerce updates in place from the 2.2.x line; an older installation update
 Joomla's own update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new
 ZIP over the installed version. Joomla runs each release's database changes itself.
 
-An update also removes the files the new version no longer ships, cleans Joomla's page cache and Alfa Commerce's
+An update also removes the files the new version does not ship, cleans Joomla's page cache and Alfa Commerce's
 own caches, and pauses the shop's background work while it runs (at most ten minutes).
 
 Before updating:
@@ -218,41 +219,40 @@ bundled items module (`mod_alfa_items`), and keeps each plugin of the package in
 
 What else an update does:
 
-- **The database.** When you update Alfa Commerce, the installation drops the columns it no longer uses, adds the
-  ones it needs, and, when a release changes how prices are worked out, rebuilds the item prices once in the
-  background (**Tools**, **Tasks**). The columns it drops are those nothing reads: the orders' coupon id, coupon
-  code, invoice date and invoice number, the invoice id of order lines, parcels and order cart rules, and the e-mail
-  subject and body columns of each language's order status table. A report or an extension of your own that reads
-  one of them by name stops working. On MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the
-  table's definition; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet
-  hour.
+- **The database.** When you update Alfa Commerce, the installation drops the columns no code reads, adds the ones it
+  needs, and, when a release changes how prices are worked out, rebuilds the item prices once in the background
+  (**Tools**, **Tasks**). The columns it drops are the orders' coupon id, coupon code, invoice date and invoice
+  number, the invoice id of order lines, parcels and order cart rules, and the e-mail subject and body columns of each
+  language's order status table. A report or an extension of your own that reads one of them by name stops working. On
+  MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the table's definition; an older MySQL 8.0
+  rebuilds each table, which takes longer on a large shop, so choose a quiet hour.
 - **The prices.** When an update changes the price index's tables, it builds the index again in the background.
   Until it is complete, the product list filters and sorts by the prices the shop had until the update, while the
   product page and the cart already show the new ones; then it switches by itself. Tools > Database Sync, Rebuild
   catalogue projections, says since when and how many items are still owed a rebuild. A product whose price cannot be
   calculated does not hold the switch: it is listed with no price until it can be priced. An installation that stops
   part way resumes the build when the package is installed again. A discount or a tax scoped to a place reaches the
-  places inside it; on a shop whose rules were saved before that, the update page names the published discounts and
-  taxes that now reach further. A shop whose places are all countries has none.
+  places inside it. An update that brings this reach names on its page the published discounts and taxes it widens; a
+  shop whose places are all countries has none.
 - **The PDF libraries.** The package installs dompdf and the four libraries it needs. A `lib_dompdf` that was
   installed on its own is updated to the package's copy. PDFs then work with no extra step.
 - **Item images that are not images.** The update lists the files among the item images that are not images, with
   the records that name them: one warning on the update page, and one line per file in the media log
   (`com_alfa_media.php` in Joomla's log folder). Nothing is deleted. Look at each file, delete by hand those that are
   not yours to publish, and choose a new thumbnail for the records named.
-- **The thumbnail size.** Thumbnail Max. Width and Thumbnail Max. Height (**Options**, **Media**) take whole pixels
+- **The thumbnail size.** Thumbnail Max. Width and Thumbnail Max. Height (**Options**, **Images**) take whole pixels
   from 100 to 5000. A thumbnail size stored below 500 pixels a side is raised to 500, and the update page says so: new
   images get thumbnails of the new size, and **Tools**, **Media**, **Create missing thumbnails** makes the smaller
   thumbnails already made again at it. Until that job runs, the thumbnails already made stay as they are.
 - **Plugins.** Each plugin of the package that staff disabled (for example Web Services - Alfa Commerce) stays
   disabled and is named on the update page and in the maintenance log.
 - **Countries.** On a shop whose countries do not yet follow ISO 3166-1, the update brings them to it. The countries
-  the shop never changed are corrected in place, each keeping its id, the missing ones are added unpublished, and
-  the update page names what it left: the countries the shop changed, the old rows that are not countries, the place
-  Larisa inside Greece, which older shops were installed with, and the countries whose default currency it left as
-  it was. The places inside Greece and Spain are not added by the update: in **Countries/States**, select Greece or
-  Spain and press **Add subdivisions** to add them, unpublished. The seeded country and region names are in English;
-  rename them in **Countries/States** if the shop prefers names in another language.
+  the shop never changed are corrected in place, each keeping its id, the missing ones are added unpublished, and the
+  update page names what it left: the countries the shop changed, the old rows that are not countries, the place
+  Larisa inside Greece, and the countries whose default currency it left as it was. The places inside Greece and Spain
+  are not added by the update: in **Countries/States**, select Greece or Spain and press **Add subdivisions** to add
+  them, unpublished. The seeded country and region names are in English; rename them in **Countries/States** if the
+  shop prefers names in another language.
 - **E-mail layouts.** Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
   [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
   finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the
@@ -264,8 +264,8 @@ Uninstalling removes the component, its plugins, modules, libraries, guided tour
 packs. It keeps every Alfa Commerce table and its data. Installing the same version again reconnects that data.
 
 A language pack whose package manifest is missing is not uninstalled: Joomla cannot uninstall it without the
-manifest either. The uninstall message names the pack, and the maintenance log (`com_alfa_maintenance.php` in
-Joomla's log folder) says why, with its files.
+manifest either. The uninstall page says that a language pack has no package manifest, and the maintenance log
+(`com_alfa_maintenance.php` in Joomla's log folder) names each such pack and why.
 
 Two things stay: plugins of other authors that were written for Alfa Commerce, and the storefront menu items.
 Remove them yourself if you do not install again.
