@@ -68,7 +68,7 @@ section when you need to understand what a service guarantees, so that your plug
 | `Search` | Catalogue search, and which search engine serves it (`CatalogSearchService`, `SearchEngineRegistry`) | Yes, as a search engine plugin | [Search engine plugins](../plugins/search-plugins.md) |
 | `Setup` | The component's own setup checks and the steps of an installation | Yes, through the event `onAlfaCollectSetupChecks`, and `AlfaInstallerGate` for an extension's installer | [Setup checks](../events/notification-and-setup-events.md#setup-checks), [The installer gate](../plugins/overview.md#the-installer-gate) |
 | `Stats` | The figures behind core's dashboard cards (`DashboardStatsService`) | No, core's own | |
-| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | Yes, for a plugin of an `alfa` group: it declares tasks and jobs of its own and asks for them through `BackgroundWork` (in `administrator/src/Background`) | [Background work](../architecture/background-work.md), [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
+| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | Yes, for a plugin of an `alfa` group: it declares tasks and jobs of its own and asks for them through `BackgroundWork` (in `administrator/src/Background`) | [Background work](../architecture/background-work.md), [Background work of a plugin](../plugins/background-work-plugins.md) |
 | `Tools` | The component's own tools on the Tools screen (`CoreToolProvider`) | Yes, through the events `onGetToolActions` and `onExecuteToolAction` | [Other things a plugin can add](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
 | `ValuePool` | The values a rule builder offers for one field | No, core's own | |
 
@@ -111,7 +111,7 @@ section when you need to understand what a service guarantees, so that your plug
 | Add a document type | A document type provider | [Document events](../events/document-events.md#the-provider-contract-adding-a-document-type) |
 | Tell staff about something that needs them | `NotificationHelper::push()` | [Notifications](./notifications.md) |
 | Keep my own copy of prices or of the catalogue | `onAlfaPricesChanged`, or a projection | [Item and catalogue events](../events/item-and-catalogue-events.md#keeping-your-own-copy-of-the-catalogue) |
-| Do work of my own in the background, or every so often | From a plugin of an `alfa` group: the tasks and jobs it declares in `onAlfaDeclareWork`, asked for through `BackgroundWork::of($this)` | [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
+| Do work of my own in the background, or every so often | From a plugin of an `alfa` group: the tasks and jobs it declares in `onAlfaDeclareWork`, asked for through `BackgroundWork::of($this)` | [Background work of a plugin](../plugins/background-work-plugins.md) |
 
 ## What you must provide
 
