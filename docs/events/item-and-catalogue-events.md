@@ -25,6 +25,8 @@ the event classes line by line.
 | `onItemAfterSave` | "This item was saved, all of it." | After |
 | `onItemDisplay` | "The item's page is being drawn in the shop. Add your part." | Nothing is saved. |
 | `onAlfaPricesChanged` | "The stored prices of these items changed." | After |
+| `onAlfaRelatedResolve` | "This item's page is about to show its related products. Add, remove or reorder them." | Nothing is saved. A page is being drawn. |
+| `onAlfaRelatedLinksChanged` | "The related products of these items changed." | After |
 | `onAlfaCatalogEntityChanged`, `onCatalogVisibilityChanged`, `onCollectCatalogProjections` | For a plugin that keeps its own copy of catalogue data | See "Keeping your own copy of the catalogue" |
 
 All of them are **announced to everyone** (broadcast events): list them in `getSubscribedEvents()`. A `system` plugin
@@ -376,6 +378,93 @@ and the next listener runs. The event is a notice: it is sent once and is not re
 it under Tools > Tasks. When no plugin listens and no outgoing notification takes price changes, Alfa does not even
 compare the rows, so the shop pays nothing for the event.
 
+## Related products
+
+An item's page shows the products staff related to it on its Related tab, in their order, each as a product, one of
+its combinations, or values chosen for it (a link, `RelatedLink`). Two events let a plugin take part.
+
+```php
+use Alfa\Component\Alfa\Administrator\Event\Catalog\RelatedLinksChangedEvent;
+use Alfa\Component\Alfa\Administrator\Event\Catalog\RelatedResolveEvent;
+use Alfa\Component\Alfa\Administrator\Service\Catalog\RelatedLink;
+
+public static function getSubscribedEvents(): array
+{
+    return [
+        'onAlfaRelatedResolve' => 'onAlfaRelatedResolve',
+        'onAlfaRelatedLinksChanged' => 'onAlfaRelatedLinksChanged',
+    ];
+}
+
+public function onAlfaRelatedResolve(RelatedResolveEvent $event): void
+{
+    // Product 42 never shows on item 120's page; White / 256 GB of product 57 shows first.
+    if ($event->itemId() === 120) {
+        $event->remove(42)->add(RelatedLink::to(57)->onCombination(305), 0);
+    }
+}
+
+public function onAlfaRelatedLinksChanged(RelatedLinksChangedEvent $event): void
+{
+    foreach ($event->itemIds() as $itemId) {
+        // Read the item's links again: RelatedItems::links($db, $itemId).
+    }
+}
+```
+
+A link is built as a sentence and every call gives a new link:
+
+| Call | The card opens on |
+|---|---|
+| `RelatedLink::to(42)` | The product's default, as a listing card |
+| `RelatedLink::to(42)->onCombination(304)` | Combination 304 of the product |
+| `RelatedLink::to(42)->withValue(5, 12)` | Value 12 of field 5 (a dimension: White, any storage) |
+| `RelatedLink::to(42)->onCombination(304)->withValue(7, 71)` | Combination 304 with option value 71 chosen |
+
+`RelatedItems::links($db, $itemId)` reads an item's links in their order; to save them, set `related` on the item's
+save ([Saving a product](../services/products.md)), as a list of links or of `{item_id, combination_id, values}`.
+
+### onAlfaRelatedResolve
+
+**When it fires.** When an item's page is drawn in the shop and shows related products, before any link is judged,
+with the item's stored links in staff order (48 at most). It fires for an item with no stored links too, so a plugin
+may propose some. It does not fire for the buy form's reload of the page.
+
+**Who receives it.** Every loaded plugin that lists it in `getSubscribedEvents()`; Alfa loads the `alfa` group first.
+Delivered isolated: a listener that throws is logged (category `com_alfa.plugins`), the next one still runs, and the
+page shows the links as the failing listener left them.
+
+**What you are given.** `RelatedResolveEvent` (`administrator/src/Event/Catalog/RelatedResolveEvent.php`).
+
+| Method | Meaning |
+|---|---|
+| `itemId()` | The item whose page shows the links. |
+| `limit()` | How many related products the page shows at most. |
+| `links()` | The links, in the order they will be judged. |
+| `add(RelatedLink $link, ?int $at = null)` | Add a link, at the end or at a place (0 for the first). Returns the event, so calls chain. |
+| `remove(int $itemId)` | Remove the links to a product. Returns the event. |
+| `setLinks(array $links)` | Put these links in place of the others, in this order. Returns the event. |
+
+Nothing a listener adds is trusted. Every link is judged as a stored one is: the product must be one the visitor may
+see in the lists, its combination a published one of the product, its values ones the product offers; a unit out of
+stock is skipped while the shop hides out-of-stock products; a product is shown once, the first link to it kept.
+
+### onAlfaRelatedLinksChanged
+
+**When it fires.** After the change of items' related links is final (after the commit); a change that was undone is
+never announced. Once for each change:
+
+| `cause()` | The constant | What happened | `itemIds()` |
+|---|---|---|---|
+| `save` | `CAUSE_SAVE` | The item's save changed its links (the Related tab, the REST API, a save from code). A save that leaves them as they were sends nothing. | The item |
+| `combination` | `CAUSE_COMBINATION` | The variants grid deleted or archived a combination that links named | The items whose links were removed |
+| `value` | `CAUSE_VALUE` | An option was removed from a product, or a value deleted from its field, that links named | The items whose links were removed |
+| `delete` | `CAUSE_DELETE` | Products that links named were deleted | The items that kept links to them |
+
+**Who receives it.** Every loaded plugin that lists it; Alfa loads the `alfa-search` and `alfa` groups first.
+Delivered isolated, as above. A notice: sent once, not repeated. The item save's own events carry `related` in the
+item's data besides.
+
 ## Keeping your own copy of the catalogue
 
 Three more events exist for a plugin that stores data derived from the catalogue. They are described card by card on
@@ -408,6 +497,7 @@ The events about an item's stock have a page of their own: [Stock events](./stoc
 | `onItemAfterSave` did not run and staff saw no error | Your listener threw an error. Look in the log, category `com_alfa.plugins`. |
 | `onAlfaPricesChanged` did not run after a save | No stored price changed, or the save was undone, or the stored prices were left to the background catalogue job and are announced when it runs. |
 | `onAlfaPricesChanged` runs without end | Your listener writes prices on every event. |
+| A link your `onAlfaRelatedResolve` added does not show | The visitor may not see that product, its combination is not published, a value is not offered, the unit is out of stock while the shop hides such products, or the product is already linked. |
 
 ## Not documented yet
 

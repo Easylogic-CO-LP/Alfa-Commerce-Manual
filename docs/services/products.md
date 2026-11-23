@@ -50,6 +50,31 @@ On a change, a field you do not give keeps its stored value. That covers the lis
 translated field in every language. A list you give replaces the stored one; give `[]` to empty it. The REST API's
 `PATCH` keeps what it is not sent by the same list.
 
+## Related products
+
+`related` is the list of products the item's page shows after it, in order, each a `RelatedLink`: the product, one of
+its combinations, or values chosen for some of its fields (its dimensions' values and the options it offers).
+
+```php
+use Alfa\Component\Alfa\Administrator\Service\Catalog\ItemWriteService;
+use Alfa\Component\Alfa\Administrator\Service\Catalog\RelatedLink;
+
+$result = ItemWriteService::change(120)
+    ->set('related', [
+        RelatedLink::to(42)->onCombination(304)->withValue(7, 71), // White / 256 GB with the two-year warranty
+        RelatedLink::to(57)->withValue(5, 12),                      // White, any storage
+        RelatedLink::to(63),                                        // on its default
+    ])
+    ->save();
+```
+
+A row of the record's shape, `['item_id' => 42, 'combination_id' => 304, 'values' => [7 => 71]]`, is taken the same
+way. The save judges every link before anything is written and refuses the whole save, each refusal in `refusals`,
+for a link the product cannot take: a product named twice, a combination that is not a current one of the product,
+a value of another field or one the product does not take, dimension values no combination carries together. Values
+that name every dimension are stored as their combination. Read an item's links with
+`RelatedItems::links($db, $itemId)`. The events are on [Item and catalogue events](../events/item-and-catalogue-events.md#related-products).
+
 ## What the save answers
 
 `save()` answers an `ItemWriteResult`:
