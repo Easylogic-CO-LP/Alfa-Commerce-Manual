@@ -8,7 +8,7 @@ description: How to write a shipping plugin for a carrier, the events it receive
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -73,7 +73,7 @@ sequenceDiagram
     Alfa->>Alfa: Moves the order, if the method's settings say so
 ```
 
-Each write your plugin makes to a parcel (steps 8 and 11) is a save of its own, final when the method returns.
+Each write your plugin makes to a parcel (steps 9 and 12) is a save of its own, final when the method returns.
 
 All twelve events of a shipping plugin, in the order a parcel meets them:
 
@@ -185,7 +185,7 @@ repairs every old order.
 | **A taxed charge names its rate** | If the gross is above the net and the rate is 0, the save is refused. The rate cannot be worked back from rounded amounts. |
 | **The net is never above the gross** | Refused. |
 | **Shipping is charged once per order** | The order's shipping total is the sum of its parcels. When another parcel of the order already carries a charge, the charge of a new parcel is set to 0, with a notice. |
-| **The order's taxes** | A parcel recorded in `onOrderAfterPlace` keeps the taxes the order's carriage was charged with, which `$this->shipment($order)` copies from the order. The rate you pass must be their combined rate, `$order->shipmentTaxRate()`. Another rate is refused, and so is `cost($taxIncl)` alone on a taxed carriage. |
+| **The order's taxes** | A parcel recorded in `onOrderAfterPlace` keeps the taxes the order's carriage was charged with, which `$this->shipment($order)` copies from the order. The rate you pass must be their combined rate, `$order->shipmentTaxRate()`. Another rate is refused, and so is `cost($taxIncl)` alone, or no `cost()` at all, on a taxed carriage: give a further parcel `cost(0, 0, $order->shipmentTaxRate())`. |
 | **The order's currency** | An amount in another currency is refused. For an order that names no currency, an error is thrown and nothing is written. |
 | **Parcels that do not count** | A cancelled or returned parcel does not count in the order's total. |
 | **When a write is refused** | `save()` returns `false` and the reason is written to the log (category `com_alfa.orders`). In the administrator and the API it is also shown as an error message. Check the return value. |
@@ -308,8 +308,9 @@ plugin's `params/params.xml`:
 </field>
 ```
 
-Declare one field for each status your plugin's parcels can reach: `status_on_shipped`, `status_on_delivered`,
-`status_on_returned`, `status_on_cancelled`.
+Declare one field for each status your plugin's parcels can reach, named after the status (`pending`, `shipped`,
+`delivered`, `cancelled`, `on_hold`, `returned`). The standard plugin declares `status_on_shipped`,
+`status_on_delivered`, `status_on_returned` and `status_on_cancelled`.
 
 | | |
 |---|---|
@@ -458,14 +459,14 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 
 | What you see | The usual cause |
 |---|---|
-| The method disappears from the cart with "did not return a price" | `onCalculateShippingCost()` returned without calling one of the three answers |
+| The method disappears from the cart with "did not return a shipping price" | `onCalculateShippingCost()` returned without calling one of the three answers |
 | The method disappears with "could not work out a price" | Your quote threw an error, the price was negative, or the amounts of `setShippingAmounts()` did not add up. With Joomla's Debug System on, the error is shown instead. |
 | The shopper sees a raw key such as `PLG_ALFA_SHIPMENTS_FLAT_NO_PRICE` | The key is missing from your language file |
 | Shipping is free although a price is configured | Your code answered `setShippingCost(0.0)`. Zero means free. Refuse with `setUnavailable()` instead. |
 | The shopper pays tax twice, or none | You added or removed tax in your price. Answer the price as configured and let the method's settings do the rest. |
 | The order has no shipping charge and no parcel | Alfa could not record the parcel, and your `onOrderAfterPlace()` was not called. Staff get a notice naming the carrier and the charge to add by hand on the order's page. Look in the log, category `com_alfa.orders`. |
 | Two parcels after placement, the second charged 0 | Your `onOrderAfterPlace()` recorded a parcel of its own with `$this->shipment($order)`. Complete the one you are handed, `$this->shipmentUpdate($event->getShipmentId())`. |
-| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, or the order's method is not a method of your plugin |
+| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, the order's method is not a method of your plugin, or, in `onOrderAfterPlace`, the rate is not `$order->shipmentTaxRate()` |
 | `save()` throws a `RuntimeException` on a new parcel | No status was set. Call `pending()` or another status before `save()`. |
 | `save()` returns `false` on a change | The parcel is not recorded as your plugin's. A plugin changes only its own parcels. |
 | A second parcel is saved with a charge of 0 | Shipping is charged once per order. The first parcel carries it. |
