@@ -16,7 +16,7 @@ The catalogue can be read in two ways, and the same item id answers differently 
 | | The back office routes | The storefront's view |
 |---|---|---|
 | Address | `v1/alfa/items` | `v1/alfa/catalog/items` |
-| What you see | Every item, whatever its state | Only items a shopper could see: published, inside their publication dates, allowed for the visitor |
+| What you see | The list: published and unpublished items (`filter[state]` for the others); one item by its id, whatever its state | Only items a shopper could see: published, inside their publication dates, allowed for the token's user; the list also leaves out an item hidden while it is out of stock |
 | An unpublished item | 200 | 404 |
 | What a record holds | The stored record, as the edit form has it | The item as the shop shows it: texts in one language, the calculated price, the fields and combinations, the pictures |
 | Writing | Create, change, delete | Read only |
@@ -134,16 +134,20 @@ curl -H "X-Joomla-Token: $TOKEN" "https://your-shop.example/api/index.php/v1/alf
 ```
 
 **A save applied with a remark.** When a create or an update is saved but part of it was not applied (a stock figure
-refused once the product was written, the variants' changes refused) or was applied with a remark (an address the
-product already shares with another), the answer is 200 or 201 with the product and `meta.warnings`, one sentence
-each. A save without such a part carries no `meta.warnings`.
+refused once the product was written) or was applied with a remark (an address the product already shares with
+another, the stock records a variant keeps when the write switches its stock tracking off), the answer is 200 or 201
+with the product and `meta.warnings`, each `{"code": "not_applied", "title": "..."}` with the sentence in `title`. A
+key that a part of the product's graph does not take is left out and named there too, with the code `not_a_field` and
+its `pointer`. A save without such a part carries no `meta.warnings`.
 
 **What changed since your last read.** `commerce_changed_at` is when the item's stock, its prices or the item itself
 last changed: a stock move (an order's line, a stock count, a delivery), a price written on the item or on one of its
 combinations, a price period stored ahead of time that has begun (of its own prices, or of a discount or a tax that
-reaches it), a change of its state, a save of the item. It is a UTC time to the microsecond,
-`2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that keeps stock and prices in step
-with another system reads the items changed since its last read instead of every item:
+reaches it; recorded when the shop's background work next runs after it begins), a save of the item (its state
+included), its publication, unpublication or trashing from the administrator's list. Archiving it or bringing it back
+from the archive outside a save, as a delete that archives it does, leaves it as it was. It is a UTC time to the
+microsecond, `2026-11-20 10:15:02.481920`. A stock move does not change `modified`, so a program that keeps stock and
+prices in step with another system reads the items changed since its last read instead of every item:
 
 ```bash
 curl -H "X-Joomla-Token: YOUR_TOKEN" \
@@ -151,7 +155,9 @@ curl -H "X-Joomla-Token: YOUR_TOKEN" \
 ```
 
 Ask from a minute before your last read: an item read twice is harmless, since a read gives the item as it is now.
-A time without a zone is UTC; `Z` or an offset is read in its zone; a value that is not a date and time answers 400.
+A time without a zone is UTC; `Z` or an offset is read in its zone; a date alone is the start of that day; any other
+value answers 400. The read lists published and unpublished items, as the list does: add `filter[state]=-2` or
+`filter[state]=2` to read the trashed or archived items changed since then.
 Saving a discount or a tax is not a change of the item and does not move `commerce_changed_at`; a period of one that
 begins later does, as above.
 
@@ -218,9 +224,11 @@ the next one takes its place.
 ### SKUs and variants
 
 A SKU names one product or one variant: a write that gives a product a SKU another product or variant holds answers
-409 naming the holder, nothing saved. A copy of a product made in the item screen is saved without its original's
-SKU. A product's variants, options, specifications and item field values, and stock set or corrected by SKU or by id,
-have routes of their own: see [Variants and stock](./variants.md).
+409 naming the holder, nothing saved. A copy made with Save as Copy in the item screen is saved with its SKU empty, and
+the screen says so, while the SKU it carries is held by another product or variant, as its original's is; the copy
+takes none of its original's variants, so none of their SKUs. A product's variants, options, specifications and item
+field values, and stock set or corrected by SKU or by id, have routes of their own: see
+[Variants and stock](./variants.md).
 
 ### Images given by their address
 
@@ -238,8 +246,9 @@ shown from its address, never fetched.
 
 What is fetched, and what is not:
 
-- Only an `http` or `https` address whose host resolves to public addresses; a loopback, private, link-local or
-  reserved address is refused, and so is a redirect to one. At most three redirects are followed.
+- Only an `http` or `https` address, with no user name or password, whose host resolves only to public addresses; a
+  loopback, private, link-local or reserved address is refused, and so is a redirect to one. At most three redirects
+  are followed, and an answer that is not a success is refused.
 - The file must arrive within the size and the time Options, Images, Images by URL sets (10 MB and 15 seconds by
   default), and its content, not its name or the type the server states, must be an image of a type the shop takes.
 - An address the record already holds an image from is not fetched again: sending the same list again changes
@@ -261,9 +270,9 @@ by its place in your request:
 
 `outcome` is `stored`, `kept` (the record already holds an image from that address) or `refused`, with the reason.
 
-**An image the request fetches and cannot store** is answered 422, one error for each such image with its pointer,
-and the record is saved with everything else the request sent; `meta.id` is the record's id, so a create that
-answers 422 still names the record it made:
+**An image the request fetches and refuses** (its address, its transfer or its content) is answered 422, one error for
+each such image with its pointer, and the record is saved with everything else the request sent; `meta.id` is the
+record's id, so a create that answers 422 still names the record it made:
 
 ```json
 {"meta": {"id": 1201},
@@ -271,7 +280,8 @@ answers 422 still names the record it made:
              "code": 422, "source": {"pointer": "/media/0/url"}}]}
 ```
 
-Each image the shop fetched carries `source_url`, the address it came from, in `medias`.
+An image fetched with the request that a media plugin turns down, or that the shop fails to store, is left out of the
+record without an error. Each image the shop fetched carries `source_url`, the address it came from, in `medias`.
 
 ## Many units in one request
 
@@ -299,7 +309,7 @@ Each unit takes:
 |---|---|
 | `item_id` | The product. Required. |
 | `combination_id` | The combination; 0 or left out for the product itself. |
-| `prices` | The unit's own price rows, all of them: the rows as a change of one item sends them. A row with the `id` of one of the unit's rows changes it, a row without an `id` is added, and the unit's rows not sent are removed. `[]` removes them all. A combination's row may be of the mode `price` (its own price) or `adjust` (a change of the product's price, with `operation` `+`, `-`, `%` or `-%`); a product's own rows are of the mode `price`. |
+| `prices` | The unit's own price rows, all of them: the rows as a change of one item sends them. A row with the `id` of one of the unit's rows changes it, a row without an `id` is added, and the unit's rows not sent are removed; a combination's row without a `value` is left out. `[]` removes them all. A combination's row may be of the mode `price` (its own price) or `adjust` (a change of the product's price, with `operation` `+`, `-`, `%` or `-%`); a product's own rows are of the mode `price`. |
 | `prices_state` | The state the unit's prices were read in (the item's `prices_state`, or the combination's in `combinations`). Sent only with `prices`. |
 | `stock` | The unit's stock as one figure of 0 or more, at the shop's default location, for a shop that keeps stock at one location. A shop with more locations takes `inventory_stock`. |
 | `inventory_stock` | The unit's stock by location, an object of location id to figure, `{"1": "3", "2": "2"}`. Not with `stock`. |
@@ -309,7 +319,7 @@ are written. A stock figure is the unit's whole stock there, not a change: the s
 correction would, by the difference from the stock as it stands when the unit is written, so the stock ends at your
 figure and a sale made meanwhile keeps its own movement.
 
-The answer is 200 when the request could be read, with one answer a unit in the order of the request:
+The answer is 200 when the request could be read, with one answer a unit in the order of the request, shortened:
 
 ```json
 {
@@ -324,10 +334,12 @@ The answer is 200 when the request could be read, with one answer a unit in the 
 }
 ```
 
-A written unit answers its new `prices_state` and its stock. A refused unit answers the status it would have had
-alone (404 for a product or a combination that does not exist, 409 for prices changed since or stock that orders hold,
-422 for a value that cannot be taken) and the reason, and its `pointer` names what was refused in the request, as a
-JSON pointer: `/units/1/prices_state`, `/units/3/stock`. A unit named twice in one request is refused the second
+A written unit answers its new `prices_state` and its stock. A refused unit answers the status it would have had alone
+(404 for a product or a combination that does not exist or is archived; 409 for prices changed since, or for stock the
+unit cannot take as it stands: stock that orders hold, a unit that does not track stock, a location that takes no stock,
+stock records busy with another change; 422 for a value that cannot be taken; 500 for a unit that could not be written
+for another reason, which the shop's log names) and the reason, and its `pointer` names what was refused in the request,
+as a JSON pointer: `/units/1/prices_state`, `/units/3/stock`. A unit named twice in one request is refused the second
 time.
 
 The whole request is refused with 422, and nothing is written, when the body is not `{"units": [...]}` with 1 to 100
@@ -347,11 +359,11 @@ Each row has the key `item_id:combination_id` as its id (the combination is 0 fo
 `item_id`, `combination_id`, `sku`, `gtin`, `state` (the row's own: 1 published, 0 unpublished), `item_state` (its
 product's), `manage_stock`, `available_quantity`, `stock`, `changed_at` (when the product's stock, prices or own fields
 last changed, UTC) and `price` with `gross`, `net` and `currency`. The price is what a guest pays in the shop's
-currency, the one the product list filters and sorts by: a combination with prices of its own has its own, any other
-combination its product's. A row with no valid price (an unpublished product, or no price row that applies) has `price`
-null. A price of 0 is a price. `available_quantity` and `stock` of a unit that tracks stock and holds no stock
-record read 0; those of a product that does not track stock and holds no figure read null; any other figure reads as
-it is stored.
+currency, the one the product list filters and sorts by: a published combination with prices of its own has its own; any
+other combination, an unpublished one among them, has its product's. A row with no valid price (an unpublished product,
+or no price row that applies) has `price` null. A price of 0 is a price. `available_quantity` and `stock` of a unit that
+tracks stock and holds no stock record read 0; those of a product that does not track stock and holds no figure read
+null; any other figure reads as it is stored.
 
 Pages follow the rows' key, never an offset, so walking the list while products change reads each row once:
 `page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries. A
@@ -438,13 +450,14 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 
 **One record holds also:** `description`, `categories`, `translations`.
 
-**Show on listing** (`show_on_listing`) decides what a product card draws: a field with it on is drawn on the cards
-of the lists, the items module and the related products, a field with it off on the product page only. For a field
-that is a variant dimension of a product, it decides whether that product's variants appear on its card: on, the card
-draws the field's selector and a shopper picks the variant there; off, the card shows the combination it opens on (the
-product's default, or the one its related link names) and, when the dimension has two values or more, its button
-reads Choose options and opens the product page on that combination. The card's price, image, SKU and stock are those
-of the combination it shows either way.
+**Show on listings** (`show_on_listing`) decides what a product card draws: a field with it on is drawn on the cards of
+the lists, the items module and the related products, unless its display rule depends on a field the card does not draw;
+a field with it off is drawn on the product page only. For a field that is a variant dimension of a product, it decides
+whether that product's variants appear on its card: on, the card draws the field's selector and a shopper picks the
+variant there (a field its plugin draws on the card as text only counts as off); off, the card shows the combination it
+opens on (the product's default, or the one its related link names) and, when the dimension has two values or more and
+the product can be bought from the card, its button reads Choose options and opens the product page on that combination.
+The card's price, image, SKU and stock are those of the combination it shows either way.
 
 **Related lists you can send:** `categories`. A field's values have routes of their own: see
 [Item field values](./variants.md#item-field-values). A create or change of the field that carries `values` or
@@ -465,8 +478,8 @@ Two routes, read only:
 
 The token is still needed, and its user needs the permission "Items: View".
 
-Add `lang=` for the language of the texts, and `currency=` and `place=` for the price. Without them the price is
-worked out with the shop's defaults, which is wrong for a shop that sells in several currencies.
+Add `lang=` for the language of the texts, and `currency=` and `place=` with their ids for the price. Without them the
+price is worked out with the shop's defaults, which is wrong for a shop that sells in several currencies.
 
 One item, shortened:
 
@@ -480,7 +493,7 @@ One item, shortened:
       "sku": "DRILL-18V",
       "name": "Cordless drill",
       "stockStatus": "in_stock",
-      "categories": {"1": {"name": "Tools", "media": [], "layouts": []}},
+      "categories": {"1": {"name": "Tools", "media": [], "layouts": [], "ancestors": [], "level": 1}},
       "cartState": {"salable": true, "showNotify": false},
       "price": {
         "base_total": {"amount": "19.90", "formatted": "19,90 €"},
@@ -509,14 +522,15 @@ One item, shortened:
 The price here is worked out when you ask, by the same pricing code as the item page. See
 [Pricing](../services/pricing.md).
 
-`price` is `null` for an item with no price for the shopper (no price row applies to the currency, place and
-customer group asked), and for an item priced only from a larger quantity than it opens with; the quantity it is
-priced from is not published. Such an item is in the list, and a sort by price or by saving lists it after the items
-with a price. While the shop shows its catalogue only (Options, Cart, Online sales), `price` is `null` and each
+`price` is `null` for an item with no price for the shopper (no price row applies to the currency and place asked and to
+the token's user and their groups), and for an item priced only from a larger quantity than it opens with; the quantity
+it is priced from is not published. Such an item is in the list, and a sort by price or by saving lists it after the
+items with a price. While the shop shows its catalogue only (Options, Cart, Online sales), `price` is `null` and each
 option's `amount` is `null`; the fields and their values are published as when the shop sells.
 
 Each entry of `categories` carries `ancestors` and `level`, as [Categories](#categories) describes them; an
-ancestor the shopper may not see is listed with its `id` and `state`, its `name` and `alias` null.
+ancestor restricted from the token's user is listed with its `id` and `state`, its `name` and `alias` null; an
+unpublished one keeps its name.
 
 ## Not documented yet
 
