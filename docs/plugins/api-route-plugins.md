@@ -6,7 +6,7 @@ description: How a plugin of the alfa group adds addresses of its own to the RES
 
 # Adding routes to the REST API
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 A plugin of the **`alfa`** group can add addresses of its own to the shop's REST API, under
 `v1/alfa/ext/<element>/`, where `<element>` is the plugin's element (`example` for `plg_alfa_example`). It declares
@@ -268,7 +268,7 @@ naming the plugin, the pattern and the rule); nothing is logged while a request 
 | Other keys | None. |
 | Unique | One route a method and pattern. |
 
-The names a plugin's element cannot take, Alfa Commerce's permission sections and screens: `cart`, `cartrule`, `cartrules`, `carts`, `categories`, `category`, `currencies`, `currency`, `data`, `discount`, `discounts`, `document`, `documents`, `documentseries`, `documenttype`, `documenttypes`, `formfield`, `formfieldgroup`, `formfieldgroups`, `formfields`, `inventorymovement`, `inventorymovements`, `item`, `itemdownload`, `itemdownloads`, `itemfield`, `itemfields`, `items`, `location`, `locations`, `manufacturer`, `manufacturers`, `notification`, `notifications`, `order`, `orders`, `orderstatus`, `orderstatuses`, `payment`, `payments`, `place`, `places`, `reservation`, `reservations`, `series`, `shipment`, `shipments`, `tax`, `taxes`, `tools`, `user`, `usergroup`, `usergroups`, `users`.
+The names a plugin's element cannot take, Alfa Commerce's permission sections and screens: `cart`, `cartrule`, `cartrules`, `carts`, `categories`, `category`, `currencies`, `currency`, `data`, `discount`, `discounts`, `document`, `documents`, `documentseries`, `documenttype`, `documenttypes`, `formfield`, `formfieldgroup`, `formfieldgroups`, `formfields`, `inventorymovement`, `inventorymovements`, `item`, `itemdownload`, `itemdownloads`, `itemfield`, `itemfields`, `items`, `location`, `locations`, `manufacturer`, `manufacturers`, `notification`, `notifications`, `order`, `orders`, `orderstatus`, `orderstatuses`, `payment`, `payments`, `place`, `places`, `reservation`, `reservations`, `series`, `shipment`, `shipments`, `tax`, `taxes`, `tools`, `user`, `usergroup`, `usergroups`, `users`, `webhook`, `webhooks`.
 
 `createCRUDRoutes()` makes five routes at once (`displayList`, `displayItem`, `add`, `edit`, `delete`), each with the
 permission given, so that permission must be declared like any other, and the plugin answers every one of the five
@@ -344,7 +344,7 @@ background work (below).
 | Case | Answer | Said by |
 |---|---|---|
 | The shop in maintenance (Clear everything) | 503 with the maintenance sentence; no plugin is loaded | Alfa Commerce |
-| No installed, enabled plugin of that element, or no route that matches | 404 | Joomla |
+| No installed, enabled plugin of that element, one whose Access is not Public, one whose element is a name of Alfa Commerce's own, or no route that matches | 404 | Joomla |
 | The plugin has no `onAlfaBeforeApiRoute()` method, so it adds no routes | 404 | Joomla |
 | The plugin has no `onAlfaApiRequest()` method | 404, and a warning naming the route in `com_alfa_api.php` | Alfa Commerce |
 | No `Accept` header | Answered in the route's one format. A core address still answers 406: send `Accept: application/vnd.api+json` or `*/*` | Alfa Commerce |
@@ -378,19 +378,67 @@ and is in the token groups, the accounts in them with an enabled token, and each
 
 ## Background work of a plugin
 
-A plugin that must tell another system of a change, or do work outside the request, owes a job to the task runner:
+A plugin of an `alfa` group that must tell another system of a change, or do work outside the request, declares that
+work and asks for it through `BackgroundWork`. Alfa Commerce's task runner runs it and lists it in Tools, Tasks under
+the plugin's own label. The work is of one of two kinds:
+
+- a **task**, short work done in one go. It is written with the save that asks for it and runs right after that save
+  is final, in the same request; with no transaction open it runs before `enqueue()` returns.
+- a **job**, long work done in steps, each step keeping a bookmark. It never runs in the request that asked for it:
+  the runner's next turn runs it.
+
+The plugin declares its work and runs it with public methods named as the events, addressed to it alone and never
+listed in `getSubscribedEvents()`:
 
 ```php
-use Alfa\Component\Alfa\Administrator\Plugin\PluginId;
-use Alfa\Component\Alfa\Administrator\Service\Task\Job\ExtensionJob;
+use Alfa\Component\Alfa\Administrator\Event\Background\DeclareWorkEvent;
+use Alfa\Component\Alfa\Administrator\Event\Background\RunJobEvent;
 
-ExtensionJob::enqueue(PluginId::of('alfa.example'), 'stock:600:0', ['item' => 600, 'combination' => 0]);
+public function onAlfaDeclareWork(DeclareWorkEvent $work): void
+{
+    $work->job('stock.tell')->label('PLG_ALFA_EXAMPLE_JOB_STOCK_TELL')->callsOtherSystems();
+}
+
+public function onAlfaRunJob(RunJobEvent $job): void
+{
+    // $job->getData() holds the item and the combination: read their stock now and send it.
+
+    $job->walked(1)->finished();
+}
 ```
 
-`PluginId::of()` takes the same `<group>.<element>` id as `action()`. There is one job a plugin and key: a request
-with the same key while the job waits joins it, and one made while it runs makes it run again, so the job reads the
-latest values when it runs. The runner hands the job back to the plugin with the targeted `onAlfaExtensionJob`
-(`ExtensionJobEvent`: `getJobId()`, `getKey()`, `getData()`), outside its own transaction, so the handler may call
-another system. The job runs as the shop, not as the visitor whose request ran the runner: the plugin is loaded for it
-whatever its Access, as long as it is installed and enabled. A handler that throws is retried on the runner's backoff; after the last retry the job waits for staff
-in Tools, Tasks, where every job is listed.
+Where the work is owed, for example in `onInventoryAdjusted`, the plugin hands itself and asks for it:
+
+```php
+use Alfa\Component\Alfa\Administrator\Background\BackgroundWork;
+
+$item = (int) $event->argument('itemId');
+$combination = (int) $event->argument('combinationId');
+
+BackgroundWork::of($this)->job('stock.tell')->scope($item . ':' . $combination)
+    ->with(['item' => $item, 'combination' => $combination])->enqueue();
+```
+
+- **`onAlfaDeclareWork`** names each task (`task()`) and job (`job()`): lower-case words of letters, digits and `_`
+  joined by dots, at most 64 characters, each with a `label()`, a key of the plugin's own language file. Alfa
+  Commerce reads the declarations when the plugin is installed, updated, saved or enabled, and keeps a copy. A
+  declaration without a label, or of a kind the plugin has no method to run (`onAlfaRunTask()` for a task,
+  `onAlfaRunJob()` for a job), is left out and logged. A job may also say `covers()`, `heavy()`,
+  `callsOtherSystems()` (its steps run outside the runner's transaction, so they may call another system) and
+  `every()` (the runner owes it by itself, every 5 minutes to 30 days); a task may say `repeatable()`; either may
+  say `urgent()`.
+- **`BackgroundWork::of($this)`** takes the plugin as Joomla booted it, installed and enabled, and reaches that
+  plugin's own work only. `task()` and `job()` refuse a name the plugin does not declare as that kind. `with()` takes
+  JSON-safe data of at most 16 KiB.
+- There is one waiting or running job a plugin, name and scope: a request while it waits joins it, its data
+  unchanged, and one made while it runs makes it run once more from the start, so the job reads the latest values
+  when it runs. A task's `once()` keeps one waiting or running task of its name and key.
+- The work runs as nobody (an empty user), not as the visitor whose request ran the runner: the plugin is loaded for
+  it whatever its Access, as long as it is installed and enabled. While the plugin is disabled, its work waits.
+- A job's step ends with `next()` (more to do, from this bookmark) or `finished()`, after `walked()`. A task is done
+  when its method returns. `WorkFailure::retry()` tries the work again later, `WorkFailure::failed()` fails it at
+  once; any other exception retries a job or a `repeatable()` task and holds any other task for staff. After the
+  last try the work waits for staff in Tools, Tasks. `find()` and `cancel()` read and cancel the plugin's own work,
+  and a public `onAlfaWorkSettled()` method is told when one of its tasks or jobs ends.
+
+The engine, its retries and what staff can do are on [Background work](../architecture/background-work.md).
