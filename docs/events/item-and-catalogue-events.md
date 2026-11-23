@@ -385,7 +385,7 @@ the search page, because a search engine is their first user, but any plugin may
 | Event | Listen when | The card |
 |---|---|---|
 | `onAlfaCatalogEntityChanged` | You keep a copy of categories or manufacturers. It tells you which rows changed or were deleted. | [Search engine plugins](../plugins/search-plugins.md#onalfacatalogentitychanged) |
-| `onCatalogVisibilityChanged` | You keep a copy of who may see an item. It tells you which items are affected when the allowed users or user groups of an item or a category change. | [Search engine plugins](../plugins/search-plugins.md#oncatalogvisibilitychanged) |
+| `onCatalogVisibilityChanged` | You keep a copy of who may see an item. It names the items whose visibility may have changed: on every save of an item or a category, on a batch that sets users, groups or categories, and when categories are moved. | [Search engine plugins](../plugins/search-plugins.md#oncatalogvisibilitychanged) |
 | `onCollectCatalogProjections` | You keep data for each item and want Alfa to tell you to rebuild it at the same moments, and with the same item ids, as its own stored data. You hand Alfa an object that implements `ProjectionInterface`. | [Search engine plugins](../plugins/search-plugins.md#oncollectcatalogprojections) |
 
 Which one to choose:
