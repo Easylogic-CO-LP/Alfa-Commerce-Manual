@@ -122,6 +122,11 @@ prices are written as sent. `prices_state` sent on a create, without `prices`, o
 `info_values`, `field_order`, `field_required`, `item_downloads`) are not keys of the API: a create or change that
 carries one answers 422 naming it, and nothing is saved; the item is not checked out.
 
+**Two writes at once.** A create or change that meets another write of the same records at that moment (a deadlock,
+or a lock wait that ran out) keeps nothing of itself and answers 409 with `Retry-After: 2` and the sentence "The item
+was not saved: another change was writing the same records at that moment, and nothing of it was kept. Save it again
+in a few seconds." Send the same request again.
+
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
 
