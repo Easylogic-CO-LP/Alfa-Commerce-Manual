@@ -75,7 +75,7 @@ What the picture means:
 - **The order is locked first (step 5).** Two documents for the same order are issued one after the other, never
   at the same moment.
 - **The number is drawn last (step 7), inside the save.** If the save fails, the number is not used.
-- **The save is final at `DocumentIssuer.php` line 531** (the commit). The document exists from there.
+- **The save is final at `DocumentIssuer.php` line 532** (the commit). The document exists from there.
 - **Steps 9 and 10 run only after the save is final.** When the document is issued inside a bigger save, they wait
   for that save. If that save is undone, they never run.
 - **The stock step (step 9) cannot undo the document.** If it fails, the document stays, the stock step stays owed
@@ -118,7 +118,7 @@ in the comment above `issue()`.
 | **One document at a time per order** | The order's row is locked for the whole issue |
 | **Numbers without gaps** | The number is drawn at the last moment, inside the save. A failed issue never uses one. |
 | **The draft is checked after the listeners** | A listener of `onDocumentBeforeIssue` may change the draft. The changed draft passes every check, as if staff had typed it. |
-| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. An order's discount follows the goods. Each sales document takes an order or item discount in proportion to the value of the goods it invoices, the document that takes the last goods taking what is left, and never from the shipping or the fees. The document screen has no tick for such a discount. An invoice that was issued without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
+| **The order is never over-documented** | The quantities and amounts of all issued sales documents together never exceed the order. Credits draw on issued sales documents. Delivery notes are counted on their own. An order's discount follows the goods. An order or item discount is kept as its share of each order line it took money off, and each sales document takes, for every line it invoices, that line's share for the quantity it invoices, at the line's own tax rate: the document that invoices a line's last units takes the rest of the line's share, the one that takes the order's last goods takes the rest of the discount, and none takes it from the shipping or the fees. The document screen has no tick for such a discount. An invoice that was issued without its share of a discount leaves that part unclaimable: the document screen says how much, the order's invoices exceed the order by it until a credit note gives it back, and an automatic issue says so in the order's notifications. Issued documents are never rewritten. |
 | **Kept as issued** | The stored document is never edited or deleted. See [Kept as issued](#kept-as-issued). |
 | **Totals from the lines** | The document's totals and its summary per tax rate are worked out from its own stored lines |
 | **A delivery note carries no money** | Its amounts are stored as zero whatever the draft says |
@@ -385,9 +385,12 @@ This is how Alfa's own order screen shows a refused issue (`administrator/src/Co
 ```php
 } catch (Throwable $e) {
     $refusal = DocumentRefusedException::in($e);
-    $app->enqueueMessage(htmlspecialchars($refusal?->operatorText() ?? $e->getMessage(), ENT_QUOTES, 'UTF-8'), 'error');
+    $app->enqueueMessage(htmlspecialchars($refusal?->operatorText() ?? ErrorText::of($e), ENT_QUOTES, 'UTF-8'), 'error');
 }
 ```
+
+`ErrorText::of()` (`Alfa\Component\Alfa\Administrator\Helper\ErrorText`) gives the exception's own text without
+the site's secrets in it (see [Payment plugins](../plugins/payment-plugins.md#logging)).
 
 A listener of `onDocumentBeforeIssue` that wants staff to read a translated sentence throws this exception. See
 [onDocumentBeforeIssue](../events/document-events.md#ondocumentbeforeissue).
