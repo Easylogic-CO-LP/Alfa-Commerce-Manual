@@ -91,7 +91,9 @@ sends the token itself, as the header `X-Joomla-Token`, on every request.
 Run the collection against a test or demo shop only, never a live one. It creates records and removes them, places
 an order, issues its invoice on the shop's default invoice series (the shop needs one) and voids it. What the shop's
 rules keep stays on record after a run: that order, cancelled, with its voided invoice, its item, archived, and, in the
-trash, the category and the payment and shipping methods the order used.
+trash, the category and the payment and shipping methods the order used. The two folders of an ERP's writes leave their
+products too, each with the stock it was given (a product holding stock is not deleted), the variant made on the
+product you name, and the value `g-<run>` of the field `erpVariantField` names.
 
 ### How the folders are organised
 
