@@ -368,8 +368,9 @@ combination, or an item's stock tracking was changed with opening quantities (`c
 
 ### onInventoryTransferred
 
-**When it fires.** After a quantity moved between two locations (`InventoryService::transfer()`) and the save is
-final. Event class `InventoryTransferredEvent`.
+**When it fires.** Never: no command of Alfa Commerce moves stock between locations, so core announces it from
+nowhere. The event class `InventoryTransferredEvent` and its name stay in the list of events. A move between two
+locations is two `adjust()` calls, each announced as `onInventoryAdjusted`.
 
 | Name for `argument()` | Meaning |
 |---|---|
@@ -581,11 +582,10 @@ final class MainStoreAllocation implements StockAllocationProviderInterface
 
 - Letting go the reservation of a single order line, writing stock off and resolving an order line announce no
   event. A plugin cannot hear them.
-- No screen of Alfa Commerce calls the transfer step, so `onInventoryTransferred` is announced only when other
-  code calls `InventoryService::transfer()`. The same is true of `receive()` and `adjust()`: every screen corrects a
-  stock figure with `adjustTo()`. It is also true of reservations that expire by time
-  (`expireDueReservations()`): core orders carry no expiry. An `onInventoryReleased` from that step has an empty
-  source, and its result holds `expired` and `released_quantity` only.
+- No screen of Alfa Commerce calls `adjust()`: every screen corrects a stock figure with `adjustTo()`. An extension
+  that moves stock (a return, an import, goods received) calls `adjust()`, which announces `onInventoryAdjusted`.
+- Reservations do not expire by time: core orders carry no expiry, and nothing lets a reservation go by its
+  deadline.
 - `ReservationPolicyInterface` (decide when an order sets stock aside) exists in the code, but Alfa always uses its
   own rule, "set aside when the order is placed". A plugin cannot supply another.
 - What staff see when a "before" listener refuses while an order's lines are edited or an order is deleted.

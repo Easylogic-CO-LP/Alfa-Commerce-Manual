@@ -410,9 +410,8 @@ Which events a command announces:
 | Stock is set aside for an order | `reserve()` | `onInventoryBeforeReserve` | `onInventoryReserved` |
 | Goods are taken from stock | `commitReservation()` | `onInventoryBeforeCommit` | `onInventoryCommitted` |
 | All reservations of an order are let go | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
-| Reservations that ran out of time are let go | `expireDueReservations()` | None | `onInventoryReleased` |
 | Staff correct a figure | `adjustTo()` | None | `onInventoryAdjusted` |
-| Goods move between locations | `transfer()` | None | `onInventoryTransferred` |
+| An extension moves stock by a signed amount | `adjust()` | None | `onInventoryAdjusted` |
 
 What the picture means:
 

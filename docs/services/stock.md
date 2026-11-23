@@ -106,8 +106,8 @@ Every command runs as one save: either all of it is stored, or none of it. A com
 outermost save is final.
 
 A command that changes stock, a reservation or the structure of an item's stock writes one row to
-`#__alfa_inventory_operations` and returns its `operation_id`. Two exceptions: `recordPlacement()` writes no
-operation, and `expireDueReservations()` writes one without returning its id. A command that found nothing to change
+`#__alfa_inventory_operations` and returns its `operation_id`. One exception: `recordPlacement()` writes no
+operation. A command that found nothing to change
 (`adjustTo()` with an equal figure) returns `operation_id` as `null`.
 
 "No caller" means that nothing in Alfa Commerce calls the method.
@@ -119,7 +119,6 @@ operation, and `expireDueReservations()` writes one without returning its id. A 
 | `reserve(array $lines, string $sourceType, int $sourceId, ?InventoryContext $context = null, ?string $expiresAt = null, bool $additive = false): array` | Sets quantities aside for the lines of a source (an order). Decides the location of each. | Moves no goods. Running it twice sets a line aside once. A line on an untracked unit is skipped. Returns `reserved`, `skipped`, `operation_id`. | A line the unit cannot cover when backorders are denied (`RuntimeException`). A line whose unit is gone or archived (`InventoryLineUnresolvedException`). A unit whose figures claim stock it has no records for (`InventoryIntegrityException`). Any of these refuses the whole call. |
 | `release(string $sourceType, int $sourceId, string $toState = self::STATE_RELEASED, ?InventoryContext $context = null): array` | Lets go what is still set aside for a source | Running it twice changes nothing more. Returns `released_quantity`, `reservations`, `operation_id`. | A `$toState` that is not released, cancelled or expired (`RuntimeException`) |
 | `releaseLine(string $sourceType, int $sourceId, int $lineId, ?float $quantity = null, string $toState = self::STATE_RELEASED, ?InventoryContext $context = null, ?int $onlyItemId = null, ?int $onlyCombinationId = null): array` | Lets go up to a quantity of one order line | The line gives up what it reserved last and keeps its first place in the queue. Announces no event. | A `$toState` that is not released, cancelled or expired (`RuntimeException`) |
-| `expireDueReservations(int $limit = 200, ?InventoryContext $context = null): array` | Lets go reservations whose time ran out | Each is settled on its own. Reservations of core's orders have no end time and are never touched. Returns `expired` and `released_quantity`. No caller. | |
 | `prioritiseReservations(string $sourceType, int $sourceId, ?int $lineId, string $reason, InventoryContext $context): array` | Puts one order's reservations first in the queue of their stock records | Moves no stock. A repeat changes nothing. | No signed-in member of staff, a reason that is not 1 to 255 characters, or nothing set aside for the source (`RuntimeException`) |
 | `recordPlacement(array $lineIds, InventoryContext $context): int` | Notes, for each new order line, whether its unit tracks stock at that moment | That note later decides whether the line takes goods from stock, whatever the unit's setting is by then | An order line that does not exist (`RuntimeException`) |
 
@@ -137,9 +136,7 @@ operation, and `expireDueReservations()` writes one without returning its id. A 
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
 | `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. Every stock editor of Alfa uses it. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not tracked. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
-| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a quantity by a signed amount | No caller | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
-| `receive(int $itemId, ?int $combinationId, float $quantity, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Adds received goods at a location | Without a location it uses the default one. No caller. | An untracked or missing unit, the item itself when it has combinations (`InventoryUnitException`). A quantity that is not above zero. A disabled location. |
-| `transfer(int $itemId, ?int $combinationId, float $quantity, int $sourceLocationId, int $destinationLocationId, ?InventoryContext $context = null): array` | Moves a quantity from one location to another | One "out" and one "in" movement, saved together. No caller. | An untracked unit. A quantity that is not above zero. The same location twice. A disabled destination. A source that would go below its reservations. |
+| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. The one way an extension (a return, an import, a receipt of goods) moves stock. | Without a location it uses the default one. No caller in core: every stock editor of Alfa sets a figure with `adjustTo()`. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
 | `writeOffStock(int $itemId, int $combinationId, string $reason, InventoryContext $context): array` | Sets to zero the stock left on a unit that can no longer be sold (an archived combination, an archived item, stock left on an item that now has combinations) | One adjustment for each record. The records stay, at zero. | A unit that is still for sale. No reason or no signed-in member of staff. Stock that is set aside or that open order lines still wait for. |
 
 ### The structure of an item's stock
@@ -324,9 +321,7 @@ a transfer, not a write-off. The refusal is an `InventoryReservedFloorException`
 | `reserve()` | `onInventoryBeforeReserve` | `onInventoryReserved` |
 | `commitReservation()` | `onInventoryBeforeCommit` | `onInventoryCommitted` |
 | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
-| `expireDueReservations()` | None | `onInventoryReleased`, once, when at least one reservation expired |
-| `adjustTo()`, `adjust()`, `receive()`, `changeTracking()` when it sets opening quantities | None | `onInventoryAdjusted` |
-| `transfer()` | None | `onInventoryTransferred` |
+| `adjustTo()`, `adjust()`, `changeTracking()` when it sets opening quantities | None | `onInventoryAdjusted` |
 
 No other command announces an event. A plugin reacts to stock through these events and nowhere else. See
 [Stock events](../events/stock-events.md).
