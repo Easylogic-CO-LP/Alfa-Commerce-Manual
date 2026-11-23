@@ -350,12 +350,15 @@ A database driver's text names the site's database user, host and schema, and a 
 credential. `ErrorText::of(Throwable|string $failure): string` applies one rule, the one Alfa's own ledgers and base
 classes use: the site's database user, host and schema (each where it stands as a word of its own) become `<user>`,
 `<host>` and `<schema>`; the database password, the site's secret and the mail password become `<secret>` wherever
-they occur; any `'name'@'host'` account becomes `'<user>'@'<host>'`; the user and password of an address
+they occur; the site's folder is taken out of a path (a file of the site reads from the site's root, the root itself
+reads `.`); any `'name'@'host'` account becomes `'<user>'@'<host>'`; the user and password of an address
 (`https://user:password@host`) become `<user>:<secret>`; a Bearer or Basic credential, and a value of four characters
 or more given to `password`, `passwd`, `pwd`, `secret`, `client_secret`, `api_key`, `apikey`, `access_token`,
 `refresh_token` or `token` (as `name=value` or `name: value`), become `<secret>`; line breaks and other control
 characters become spaces; the text is cut at 1,000 characters (`ErrorText::LIMIT`) and ends with `...` when cut.
-Everything else is kept as it is. It never throws.
+Everything else is kept as it is. It never throws. Alfa Commerce itself writes every exception's text it shows or logs
+through it: its own logs, its staff messages and notices, its REST API answers, its error log (the reference a visitor
+is shown and the line it names), its bundled plugins and its modules.
 
 **The log table**, for the merchant, shown by your own "Logs" action. Describe its columns in `params/logs.xml`,
 inside `<fields name="paymentslogs">` and one `<fieldset>` within it, as the Standard plugin does (Alfa reads the
