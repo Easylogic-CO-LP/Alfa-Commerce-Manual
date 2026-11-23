@@ -83,16 +83,13 @@ redelivery settles the row once.
 The buyer is never shown a ledger's own message: on the storefront they are written to the orders log only, and
 staff read them in the back office.
 
-A plugin that uses these methods needs an Alfa Commerce that has them. Its install script's `preflight()` asks
-`AlfaInstallerGate::refusal()` with that minimum first, then `AlfaInstallerGate::rangeRefusal()` (see
-[The installer gate](./overview.md#the-installer-gate)):
+A plugin that uses these methods needs an Alfa Commerce that has them. Its manifest declares the lines it is built
+for (`<alfacore min="2.3" max="2.3"/>`) and its install script's `preflight()` asks
+`AlfaInstallerGate::rangeRefusal()` (see [The installer gate](./overview.md#the-installer-gate)):
 
 ```php
-public const MIN_ALFA_VERSION = '2.3.0';
-
 // In preflight(), once the gate is loaded as the installer gate shows:
-$refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: self::MIN_ALFA_VERSION)
-    ?? $gate::rangeRefusal(name: 'My gateway', route: (string) $type, manifest: $parent->getManifest());
+$refusal = $gate::rangeRefusal(name: 'My gateway', route: (string) $type, manifest: $parent->getManifest());
 ```
 
 ### The verbs

@@ -253,6 +253,7 @@ What else an update does:
   are not added by the update: in **Countries/States**, select Greece or Spain and press **Add subdivisions** to add
   them, unpublished. The seeded country and region names are in English; rename them in **Countries/States** if the
   shop prefers names in another language.
+- **Notifications.** A notification that Alfa Commerce no longer raises or clears is deleted, read or not.
 - **E-mail layouts.** Alfa Commerce reads e-mail layout overrides from the default administrator template only (see
   [Order e-mails](../architecture/order-emails.md#overriding-from-a-template)). The update names every layout file it
   finds under a site template's `html/layouts/com_alfa/emails` in one warning and in the maintenance log, with the

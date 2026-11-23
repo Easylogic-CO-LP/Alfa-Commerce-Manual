@@ -246,58 +246,11 @@ In your extension's installer script, in `preflight()`, which Joomla calls befor
 
 ### What you must provide
 
-State the oldest Alfa Commerce version your extension works with, and ask the gate. This is the form the class
-itself prescribes. Replace `Example plugin` with your extension's name.
-
-```php
-public const MIN_ALFA_VERSION = '2.3.0';
-
-public function preflight($type, $parent): bool
-{
-    $gate = \Alfa\Component\Alfa\Administrator\Service\Setup\AlfaInstallerGate::class;
-    $file = JPATH_ROOT . '/administrator/components/com_alfa/src/Service/Setup/AlfaInstallerGate.php';
-
-    if (!class_exists($gate) && is_file($file)) {
-        require_once $file;
-    }
-
-    if ($type === 'uninstall') {
-        return true;
-    }
-
-    if (!class_exists($gate)) {
-        // No Alfa Commerce on this site.
-        \Joomla\CMS\Factory::getApplication()->enqueueMessage(sprintf(
-            'Example plugin requires Alfa Commerce %1$s or later, and this site has no Alfa Commerce %1$s or later'
-            . ' installed. Install or update Alfa Commerce first, then install Example plugin again. Nothing was changed.',
-            self::MIN_ALFA_VERSION,
-        ), 'error');
-
-        return false;
-    }
-
-    $refusal = $gate::refusal(name: 'Example plugin', route: (string) $type, minimum: self::MIN_ALFA_VERSION);
-
-    if ($refusal !== null) {
-        \Joomla\CMS\Factory::getApplication()->enqueueMessage($refusal, 'error');
-
-        return false;
-    }
-
-    return true;
-}
-```
-
-The messages are plain English on purpose: at this moment of an installation no language file of your extension is
+Declare the lines of Alfa Commerce your extension is built for in its manifest, and ask the gate's `rangeRefusal()`
+in `preflight()`: both are shown in
+[The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for). The
+messages are plain English on purpose: at this moment of an installation no language file of your extension is
 loaded yet.
-
-### What happens next
-
-| The site | What `refusal()` returns | What staff see |
-|---|---|---|
-| Has Alfa Commerce at or above your minimum | `null` | The installation goes on. |
-| Has an older Alfa Commerce | A sentence naming your extension, your minimum and the version found | The installation stops. Nothing was changed. |
-| Is uninstalling your extension | `null` | The uninstall goes on. |
 
 When an Alfa plugin or package is uninstalled, Alfa Commerce itself tells staff that its data stays and that
 complete cleanup is done before uninstalling, under Tools > Extensions > Clear Data. Your extension does not print
@@ -309,8 +262,8 @@ namespace starts with `Alfa\`, a module whose name starts with `mod_alfa`, and a
 
 | What you see | The cause |
 |---|---|
-| The plugin installs on a site with an Alfa Commerce that is too old, then fails | The installer script has no `preflight()` that asks the gate. |
-| The installation stops with "requires Alfa Commerce" | The site's Alfa Commerce is older than `MIN_ALFA_VERSION`. Update Alfa Commerce first. |
+| The plugin installs on a site with an Alfa Commerce of another line, then fails | The installer script has no `preflight()` that asks the gate's `rangeRefusal()`. |
+| The installation stops with "requires Alfa Commerce" | The site has no Alfa Commerce. Install Alfa Commerce first. |
 | The uninstall warning is not shown when the extension is uninstalled through Joomla | The System - Alfa Commerce Sync plugin is disabled. It is the one that says it. |
 
 ## The Alfa Commerce lines your extension is built for
@@ -349,8 +302,6 @@ update of Alfa Commerce, which reads the manifest file of each installed Alfa pl
    `Example plugin` with your extension's name.
 
 ```php
-public const MIN_ALFA_VERSION = '2.3.0';
-
 public function preflight($type, $parent): bool
 {
     $gate = \Alfa\Component\Alfa\Administrator\Service\Setup\AlfaInstallerGate::class;
@@ -366,11 +317,8 @@ public function preflight($type, $parent): bool
 
     if (!class_exists($gate)) {
         // No Alfa Commerce on this site.
-        \Joomla\CMS\Factory::getApplication()->enqueueMessage(sprintf(
-            'Example plugin requires Alfa Commerce %1$s or later, and this site has no Alfa Commerce %1$s or later'
-            . ' installed. Install or update Alfa Commerce first, then install Example plugin again. Nothing was changed.',
-            self::MIN_ALFA_VERSION,
-        ), 'error');
+        \Joomla\CMS\Factory::getApplication()->enqueueMessage('Example plugin requires Alfa Commerce, and this site has'
+            . ' no Alfa Commerce installed. Install Alfa Commerce first, then install Example plugin again. Nothing was changed.', 'error');
 
         return false;
     }
@@ -395,7 +343,7 @@ At your extension's installation:
 |---|---|---|
 | Has Alfa Commerce of a line inside your range | `null` | The installation goes on. |
 | Has Alfa Commerce of a line outside your range | A sentence that names your extension, your range and the installed Alfa Commerce, asks for the build of your extension made for the installed line, or for its developer to make one, and ends "Nothing was changed." | The installation stops. Nothing was changed. |
-| Has no Alfa Commerce | The sentence of `refusal()`, with your range's `min` as the minimum | The installation stops. |
+| Has no Alfa Commerce | A sentence naming your extension and your range's `min`: install Alfa Commerce first, nothing was changed | The installation stops. |
 | Reads an element it cannot use: `min` missing or not a line, `max` not a line, or `max` before `min` | "Example plugin cannot be installed:", what is wrong with the element, "Its developer must correct its manifest. Nothing was changed." | The installation stops. |
 | Reads no element at all | `null`. Nothing is refused and nothing is inferred. | The installation goes on. |
 | Is uninstalling your extension | `null` | The uninstall goes on. |
@@ -424,7 +372,7 @@ of its plugins and modules is. The extensions that ship inside the Alfa Commerce
 |---|---|
 | After an update of Alfa Commerce your extension is named "compatibility not stated" | Its manifest has no `alfacore` element, or one that cannot be read. Add a valid element to the manifest of each of its plugins and modules. |
 | After an update of Alfa Commerce your extension is named "needs a compatible build" | Its range excludes the installed line. Test it on that line and release it with a raised `max`. |
-| Your package installs on a site outside its range | The package's own manifest has no element, or its `preflight()` calls `refusal()` and not `rangeRefusal()`. |
+| Your package installs on a site outside its range | The package's own manifest has no element, or its `preflight()` does not ask `rangeRefusal()`. |
 | The installation of your extension stops with "cannot be installed" | The element in the manifest the installer was given cannot be read. The message names the values written. |
 
 ### The compatibility-range policy
