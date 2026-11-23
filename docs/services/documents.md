@@ -271,11 +271,11 @@ tax included and excluded, and the rule's row is the sum of its shares. Document
 |---|---|
 | An invoice | For each line it invoices, the line's share of the rule for the quantity it invoices: the share times the quantity invoiced so far over the line's quantity, rounded once, less what the invoices before took. The invoice that reaches a line's whole quantity takes the rest of the share. One line per rule and VAT rate, at the rates of the lines. The invoice that takes the order's last goods takes the rule's last cents of rounding. |
 | A credit note | For each line it credits, the line's share for the quantity it credits, in the same way, never more than the corrected invoice stated of the rule at that rate |
-| A credit note that grants a code added after the invoice | The code's shares of the lines that invoice carries, at their rates |
+| A credit note that grants a code added after the invoice | What the order gives of the code and no document gives yet, at the rates of the lines that invoice carries, in proportion to the code's shares of them (to their value when the code has no share of them) |
 
 A line's quantity changed on the order screen moves its shares in proportion (the gross rounded once, the net at the
-line's rate), and a line removed takes its shares. A rule stored as one figure for the whole order, as an order placed
-before shares were kept holds it, is shared over the goods by their value instead.
+line's rate), and a line removed takes its shares. An item or order rule stored as one figure for the whole order,
+without shares of its lines, is shared over the goods by their value instead.
 
 ## Numbering and series
 
