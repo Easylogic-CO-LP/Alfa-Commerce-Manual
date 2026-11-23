@@ -18,8 +18,8 @@ Read [Background work](./background-work.md) first: it explains tasks, their sta
 
 ### Which e-mails exist
 
-There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail goes
-to staff only.
+There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail
+goes to staff only.
 
 | E-mail | What triggers it | Kind of task |
 |---|---|---|
@@ -37,15 +37,16 @@ Who receives a confirmation or a status e-mail is set on the order status, not i
 A status change into a status that tells nobody creates no e-mail task at all. A new order always has its
 confirmation task, which sends nothing when the status tells nobody.
 
-The dispute e-mail goes to the shop's own address (Options, General, **Store contact email**) and says what the
-dispute's notice says, with the link to the order. With no such address there is no dispute e-mail task, and the
-notification bell still tells staff. The customer gets no e-mail about a dispute. See
+The dispute e-mail goes to the shop's own address (Options, General, **Store contact email**), the task's one
+recipient, named `store:shop@example.com`. It says what the dispute's notice says, in the shop's default administrator
+language, with the link to the order below it; it uses no layout, positions or tokens. With no such address there is no
+dispute e-mail task, and the notification bell still tells staff. The customer gets no e-mail about a dispute. See
 [Card disputes](../services/disputes.md#telling-staff).
 
-A third e-mail is not a task: the **payment link** that staff send from the order screen (Send payment link, on the
+One more e-mail is not a task: the **payment link** that staff send from the order screen (Send payment link, on the
 payments panel of an order its customer may pay again). It goes to the customer alone, at once, and the operator reads
-its outcome on the screen; nothing is tried again by itself. It is drawn with the same layout as the other two, with a
-subject and an opening of its own. See
+its outcome on the screen; nothing is tried again by itself. It is drawn with the same layout as the confirmation and
+status e-mails, with a subject and an opening of its own. See
 [Sending the payment link](../services/payments-and-shipments.md#sending-the-payment-link).
 
 The notification bell in the administrator is a separate thing. It is not e-mail.
