@@ -103,18 +103,21 @@ quantity it is priced. A product whose prices all end below its minimum quantity
 The setup checklist names both. Every page, card and the price index price a product at the quantity it opens with,
 its minimum quantity; the product page at a larger quantity when the shopper states one.
 
-A price of 0.00 is a price: the product is free. It shows 0,00 with its add to cart, is sold at 0 in the cart, the
-order builder and the REST API, and an order whose total is 0 is placed with nothing to collect: no payment is asked
-for.
+A price of 0.00 is a price: the product is free. It shows 0,00, or what **Zero price display** prints for a zero (see
+[A price of zero and a product with no price](#a-price-of-zero-and-a-product-with-no-price-pricedisplay)), with its
+add to cart, is sold at 0 in the cart, the order builder and the REST API, and an order whose total is 0 is placed
+with nothing to collect: no payment is asked for, and the order lands in the status the Options name for it, when
+they name one (see [The status an order is placed in](./cart-and-checkout.md#the-status-an-order-is-placed-in)).
 
-In the product list a product with no price for the shopper is listed with no price: its page and its card say
-**Call for price** where the price would be (the language string `COM_ALFA_PRICE_ON_REQUEST`, which a language
-override can word the shop's way, or empty to show nothing). The price filters, the "on sale"
-and "save at least" filters and the price slider's range leave it out, and the filters' counts beside such a listing
-count what it lists. A sort by price or by saving, low to high or high to low, lists it after the products with a
-price; every other sort lists it as any product. A product priced at 0.00 is listed at 0,00, kept by a price filter or
-range from 0, and first in a sort by price from low to high. The list reads each product at the price of the
-combination its card opens on (see [The stored price index](#the-stored-price-index)).
+In the product list a product with no price for the shopper is listed with no price; its page and its card show what
+**Products without a price show** says where the price would be: **Call for price**, the default (the language string
+`COM_ALFA_PRICE_ON_REQUEST`, which a language override can word the shop's way, or empty to show nothing), or nothing.
+The price filters, the "on sale" and "save at least" filters and the price slider's range leave it out, and the filters'
+counts beside such a listing count what it lists. A sort by price or by saving, low to high or high to low, lists it
+after the products with a price; every other sort lists it as any product. A product priced at 0.00 is listed at 0,00
+(printed as **Zero price display** says), kept by a price filter or range from 0, and first in a sort by price from low
+to high. The list reads each product at the price of the combination its card opens on (see [The stored price
+index](#the-stored-price-index)).
 
 ### Which discounts and taxes apply (the scope)
 
@@ -421,6 +424,7 @@ REST API carry the zero. See [A catalogue with requests for offer](../getting-st
 | `PriceDisplay::zero(): ?string` | What a zero prints instead of its figure: `null` for the figure, `''` for nothing, or the text |
 | `PriceDisplay::unpriced(): string` | What a product with no price shows: the text, or `''` |
 | `PriceDisplay::summary(array $rows): array` | Summary rows without a zero subtotal or total when the Options hide a zero |
+| `PriceDisplay::isPrice(SummaryRow $row): bool` | Whether a summary row states a price (the subtotal or the total), so it prints by this rule |
 
 The rule covers a product's price, a line's unit and total, the subtotal and the total, on the storefront, in the cart
 module, in the order e-mails and in the printed documents. Tax, shipping, fees and discounts print their amounts as
@@ -429,9 +433,11 @@ they are.
 The price layout (`item/price.php`) draws, for a price of zero the Options do not show, its element with
 `data-item-prices` and, inside it, `<div class="item-price-request">` with the text, or nothing, so a quantity or an
 option that prices the product swaps it. For a product with no price it draws `<div class="item-price-request">` with
-the text, or nothing: such a product is not bought. An override of the price layout, of the cart's lines, of the cart summary, of the cart module, of the e-mail
-partials or of the document partials prints a zero the shop's way when it prints the price through
-`PriceDisplay::price()` or `PriceDisplay::figure()`.
+the text, or nothing: such a product is not bought. An override of the cart's lines, of the cart summary, of the cart
+module, of the e-mail partials or of the document partials prints a zero the shop's way when it prints the price
+through `PriceDisplay::price()` or `PriceDisplay::figure()` (the cart summary asks `PriceDisplay::isPrice()` which
+rows those are); an override of the price layout, when it asks `PriceDisplay::zero()` and `PriceDisplay::unpriced()`
+as the shipped one does.
 
 ```php
 use Alfa\Component\Alfa\Site\Helper\PriceDisplay;
