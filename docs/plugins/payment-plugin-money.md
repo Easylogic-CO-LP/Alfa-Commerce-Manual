@@ -7,7 +7,7 @@ description: "How a payment plugin records and settles a payment, refunds it, an
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -39,7 +39,7 @@ $this->paymentUpdate($paymentId)->cancelled()->note('Customer request')->save();
 | `processedAt(string $datetime)` | When the money moved, in UTC |
 | `note(string $note)`, `gatewayResponse(string $json)` | A note for staff, the provider's raw answer |
 | `method(int $methodId)` | Another method of your plugin |
-| `pluginData(array $data)`, `removePluginData(array $keys)` | Your own data on the row, merged key by key. Read it through the `Payment` reader (`Alfa\Component\Alfa\Site\Service\Order\Payment`): `Payment::of($payment)->pluginData()->getString('key')`. The rows of `$order->payments()` are already such readers. |
+| `pluginData(array $data)`, `removePluginData(array $keys)` | Your own data on the row, merged key by key. Read it back with `PluginPayload::of($payment->plugin_data)->getString('key')` (`Alfa\Component\Alfa\Site\Service\Data\PluginPayload`). The rows of `$order->payments()` answer it themselves: `->pluginData()->getString('key')`. |
 | `expectStatus(string $status)` | Write only if the row still has this status (see `settleAttempt()`) |
 | `bookkeeping()` | Change the row without moving the order or telling the customer |
 | `save()` | Writes. Returns the row's id, or `false`. |
@@ -88,7 +88,7 @@ A plugin that uses these methods needs an Alfa Commerce that has them. Its insta
 [The installer gate](./overview.md#the-installer-gate)):
 
 ```php
-public const MIN_ALFA_VERSION = '2.2.2';
+public const MIN_ALFA_VERSION = '2.3.0';
 
 // In preflight(), once the gate is loaded as the installer gate shows:
 $refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: self::MIN_ALFA_VERSION)
@@ -99,11 +99,11 @@ $refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: se
 
 | Verb | What it does | When to use it | What it guarantees | What it refuses |
 |---|---|---|---|---|
-| `amountToCollect(object $order): float` | The amount your gateway should charge: the order's total less what is already collected | Before every charge | Never negative | Nothing. `0.0` means: charge nothing and write no row. |
+| `amountToCollect(object $order): float` | The amount your gateway should charge: the order's total less what the shop still holds (the money collected, less what went back) | Before every charge | Never negative | Nothing. `0.0` means: charge nothing and write no row. |
 | `payment(object $order)` | Starts a builder for a new row | `onOrderAfterPlace`, a new attempt | The row records your plugin as its writer | `save()` answers `false` when the method is not one of your plugin's |
 | `paymentUpdate(int $paymentId)` | Starts a builder for an existing row | Any change to a row | Only what you set is written | Throws `RuntimeException` when the row does not exist. Refuses a row that is not your plugin's. |
-| `settleAttempt(PaymentLedger $write, int $orderId, string $reference = ''): int` | Writes a builder that has `expectStatus()` set, and tells you which of three things happened | Every time a provider confirms a payment | Of two callers, exactly one changes the row. When the books refuse money that has moved, a CRITICAL line goes to your log. A write the books refuse queues no message for the shopper; its reason is in the orders log (`com_alfa.orders`), and staff read it in plain words on the order's page. | Returns `self::WRITE_OK`, `self::WRITE_RACED` (the other caller won, agree with it) or `self::WRITE_FAILED` (not in the books). `settleAttemptVerdict()` makes the same write and answers a `PaymentWriteVerdict`. |
-| `claimPendingAttempt(int $paymentId, string $reference): bool` | Writes a provider reference on a pending row that has none, once | When two visits or two deliveries could both take the same attempt | Exactly one caller gets `true`. No money and no status move. | A blank reference and an id under 1 throw `InvalidArgumentException`. `false` when the row is not, or no longer, your pending attempt without a reference. `claimPendingAttemptVerdict()` makes the same claim and answers a `PaymentWriteVerdict`: `VERDICT_LOCK_NOT_TAKEN` when the order could not be locked. |
+| `settleAttempt(PaymentLedger $write, int $orderId, string $reference = ''): int` | Writes a builder that has `expectStatus()` set, and tells you which of three things happened | Every time a provider confirms a payment | Of two callers, exactly one changes the row. When the books refuse money that has moved, a CRITICAL line goes to your log. A write the books refuse queues no message for the shopper; its reason is in the orders log (`com_alfa.orders`), and on an administrator or API request staff read it in plain words. | Returns `self::WRITE_OK`, `self::WRITE_RACED` (the other caller won, agree with it) or `self::WRITE_FAILED` (not in the books). `settleAttemptVerdict()` makes the same write and answers a `PaymentWriteVerdict`. |
+| `claimPendingAttempt(int $paymentId, string $reference): bool` | Writes a provider reference on a pending row that has none, once | When two visits or two deliveries could both take the same attempt | Exactly one caller gets `true`. No money and no status move. | A blank reference and an id under 1 throw `InvalidArgumentException`. `false` when the row is not, or no longer, your pending attempt without a reference. A `RuntimeException` when the order cannot be locked: nothing is written and the attempt stays claimable. `claimPendingAttemptVerdict()` makes the same claim and answers a `PaymentWriteVerdict`: `VERDICT_LOCK_NOT_TAKEN` when the order could not be locked. |
 | `supersedeAttempt(int $paymentId, string $reason = ''): int` | Closes a pending attempt nobody will pay | The shopper left, or started a new attempt | The order does not move and the customer is told nothing | Returns the same three `WRITE_` values. Another plugin's row is `WRITE_FAILED`. `supersedeAttemptVerdict()` makes the same close and answers a `PaymentWriteVerdict`: another plugin's row is refused with `REFUSAL_NOT_WRITER`. |
 | `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | Records money the customer's bank took back | A dispute your provider reports | Never moves the order. The order is then owed that money again, and a new payment for it is accepted. | Another plugin's payment |
 | `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | Records that a booked refund or a chargeback did not stand | A reversed refund, a dispute you won | The original row is never edited. A new row names it. | Another plugin's row |
@@ -126,9 +126,9 @@ owed again and may be paid again.
 |---|---|
 | `getOrder(int $orderId): ?Order` | The order, the same kind of object the events hand you |
 | `orderLanguage(Order\|int $order): string` | The language tag of the order's customer, for example `el-GR` |
-| `gatewayPayments(int $orderId, int\|array $methodId = 0): array` | Your plugin's payment rows on the order, newest first. Refund rows are left out. |
+| `gatewayPayments(int $orderId, int\|array $methodId = 0): array` | Your plugin's payment rows on the order, newest first. Only rows of the type `payment`: refund, authorization, reversal and chargeback rows are left out. |
 | `latestPendingPayment(int $orderId, int $methodId = 0): ?object` | Your newest pending attempt on the order, or `null` |
-| `gatewayPaymentByReference(array $references, int $orderId = 0, int\|array $methodId = 0): ?object` | Your row whose `transaction_id` is exactly one of these references, or `null` |
+| `gatewayPaymentByReference(array $references, int $orderId = 0, int\|array $methodId = 0): ?object` | Your row of the type `payment` whose `transaction_id` is exactly one of these references, or `null` |
 | `getPayment(int $id): ?object` | One payment row |
 | `getPaymentsByOrder(int $orderId): array` | Every row of the order, from every plugin. Right for totals, wrong for "which attempt is mine". |
 | `orderBalance(int $orderId): Money` | The order's total less what the shop still holds. Above zero: still owed. Zero: settled. Below zero: overpaid. Throws when the order does not exist. |
@@ -333,17 +333,15 @@ $order = $this->orderFromReturnLink();   // the order, or null when the link pro
 - The webhook address is always the plain form: the site root, `https`, and `index.php` with the query in the table
   above, with no language and no friendly path. `$this->webhookUrl()` builds it and the setup checkup prints the
   same address, in every language of the site, and also when it is built in the administrator. The return address is
-  unchanged.
+  routed like the site's other addresses.
 - A POST to the plain address reaches your plugin. A GET reaches it too, without a redirect, while "System - Alfa
   Commerce Sync" is enabled with its Access set to Public: that plugin marks the request before Joomla routes it. See
   [System, console and task plugins](./system-console-task-plugins.md#the-system-plugin-that-ships-alfa-commerce-sync).
-- An address a provider already holds in the friendly form keeps reaching the same plugin. Nothing needs to be
-  registered again. If your plugin compares the address registered at the provider with the one it builds, the two
-  differ in text for such a registration, although both reach your plugin.
+- An address in the friendly form reaches the same plugin. If your plugin compares the address registered at the
+  provider with the one it builds, the two differ in text for such a registration, although both reach your plugin.
 - `PaymentsPlugin::webhookUrlFor(element: 'offline', environment: 'live')` builds the same address for any payment
   plugin by its element, and `PaymentsPlugin::webhookTask()` answers `payment.webhook`. `ShipmentsPlugin` has the same
-  two for `shipment.webhook`. `PaymentCheckupEvent::siteUrl()` is removed: use `webhookUrlFor()`, or the event's
-  `webhookUrl()` and `returnUrl()`.
+  two for `shipment.webhook`.
 
 ### Authenticating a callback
 
