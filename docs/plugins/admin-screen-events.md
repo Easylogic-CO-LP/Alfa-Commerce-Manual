@@ -130,9 +130,9 @@ These slots exist:
 |---|---|---|
 | `before-grid` | Above the table, on 24 of the 25 list screens. The carts list has none. | `$event->isListScreen() && $event->at('before-grid')` |
 | `order-details` | Order edit screen, right column, under Order Details | `$event->targets('order') && $event->at('order-details')` |
-| `order-main` | Order edit screen, full width, under the totals | `$event->targets('order') && $event->at('order-main')` |
+| `order-main` | Order edit screen, full width, at the end of the Order tab | `$event->targets('order') && $event->at('order-main')` |
 | `cartrule-sidebar` | Cart rule edit screen, in the side column | `$event->targets('cartrule') && $event->at('cartrule-sidebar')` |
-| `cart-main` | The screen of one cart, under its tabs | `$event->targets('cart') && $event->at('cart-main')` |
+| `cart-main` | The screen of one cart, after its sections | `$event->targets('cart') && $event->at('cart-main')` |
 
 The screen of one cart is an edit screen. `isListScreen()` is false there, and no row or bulk action event is raised on it.
 
@@ -233,7 +233,10 @@ $event->getAdminContext()->form->load(
 ```
 
 - **What happens next.** A fieldset with a name of its own becomes a tab of its own, after the screen's tabs. Your
-  fields are posted with the form like any other field and arrive in `$context->data` in the save events.
+  fields are posted with the form like any other field and arrive in `$context->data` in the save events. The screen
+  of one cart (the order builder) is one page: there the fieldset becomes a section at the end of the page, headed by
+  its label, and its fields are shown but never posted, since that screen has no save of its own (each part of it
+  posts its own small form).
 - **If you are missing or you fail.** The fields are not shown. Your error is logged.
 
 Three things to know:
@@ -243,9 +246,10 @@ Three things to know:
   and write it to your own table, then put it back in `onAlfaAdminPrepareData` when the form opens.
 - **A name that is taken.** A fieldset that uses a name the screen already uses is not drawn as a tab. On the item
   screen those names are `general`, `identity`, `inventory`, `prices`, `Images`, `publish` and `meta`. On the order
-  screen they are `user_details` and `order_details`. Give your fieldset a name that is clearly yours.
-- **Two screens show no extra tabs.** Contributed tabs are drawn on 18 edit screens and on the screen of one cart.
-  The edit screens of **Document Types** and **Stock Locations** do not draw them. There your fields are still part
+  screen they are `user_details` and `order_details`; on the screen of one cart, `builder`. Give your fieldset a name
+  that is clearly yours.
+- **Two screens show no extra tabs.** Contributed tabs are drawn on 18 edit screens, and contributed sections on the
+  screen of one cart. The edit screens of **Document Types** and **Stock Locations** do not draw them. There your fields are still part
   of the form and still arrive in the save events, but staff cannot see them.
 
 ### onAlfaAdminPrepareData
