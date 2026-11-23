@@ -483,8 +483,9 @@ notification of the same loss is then a repeat. Answer with one of the two sette
 **What happens next.** Staff read your verdict or your sentence. Alfa writes nothing itself on Accept: the money moves
 only when the loss is recorded. See [Card disputes](./payment-plugin-disputes.md#two-optional-handlers).
 
-**If you are missing or you fail.** Missing: no button. A thrown error is logged and staff read that the provider could
-not be asked; nothing is written.
+**If you are missing or you fail.** Missing: no button. A thrown error is written to the payments log (category
+`com_alfa.payments`, a warning naming the dispute and the event), and staff read that the provider could not be asked
+and that the reason is in the payments log; nothing is written.
 
 ## onClearData
 

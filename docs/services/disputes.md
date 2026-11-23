@@ -75,6 +75,9 @@ badge on an order with an undecided case.
 - **The e-mail**: to the shop's address (Options, General, Store e-mail) when a dispute is recorded or first reported,
   and at its outcome, with the link to the order. With no store address the bell carries everything. A failed e-mail
   is retried and can be resent under Tools, Tasks.
+- **The reminder**: three days before a deadline, while the case is an inquiry or open and no evidence is marked sent,
+  a reminder e-mail goes to the store address (none without one; the bell notice already names the deadline). A moved
+  deadline moves the reminder; evidence marked sent or a decision means none is sent.
 - **The customer** gets no e-mail about a dispute: they started it with their bank.
 
 ## Refunds while a dispute is open

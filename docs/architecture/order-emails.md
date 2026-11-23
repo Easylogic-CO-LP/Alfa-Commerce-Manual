@@ -17,13 +17,14 @@ and sends it once the save is final (the commit). That piece of owed work is a *
 
 ### Which e-mails exist
 
-There are two kinds of e-mail task. Each can go to the customer, to staff, or to both.
+There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail goes
+to staff only.
 
 | E-mail | What triggers it | Kind of task |
 |---|---|---|
 | **Order confirmation e-mail** | An order is placed. It is the e-mail of the status the order is placed in. | `order.placement_email` |
 | **Status e-mail** | An order enters a status, by any route: staff, a payment, a shipment, the API | `order.status_email` |
-| **Dispute e-mail** (staff only) | A card dispute is recorded or first reported, and at its outcome | `order.dispute_email` |
+| **Dispute e-mail** (staff only) | A card dispute is recorded or first reported; at its outcome; and three days before its deadline while no evidence is marked sent (the reminder, written by the job `order.dispute.remind`) | `order.dispute_email` |
 
 Who receives it is set on the order status, not in code:
 

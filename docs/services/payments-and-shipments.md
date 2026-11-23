@@ -73,7 +73,7 @@ Extend the base class of your plugin type and call its methods. Nothing else.
 | Refund through a provider | `reserveRefund()`, then `settleRefund()`, `holdRefund()` or `releaseRefund()` | [A refund through a provider](../plugins/payment-plugin-money.md#a-refund-through-a-provider) |
 | Tell Alfa about a refund made outside the shop | `unbookedProviderRefunds($paymentId)` | [Telling Alfa about refunds it does not hold](../plugins/payment-plugin-money.md#telling-alfa-about-refunds-it-does-not-hold) |
 | Tell Alfa a card dispute's state | `dispute($paymentId, $providerDisputeId)->open()->amount(...)->save()`, answering the provider with `providerStatus()` | [Card disputes](../plugins/payment-plugin-disputes.md) |
-| Record a chargeback, or a refund that did not stand | `recordChargeback()`, `recordReversal()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
+| Record a refund that did not stand | `recordReversal()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
 | Move the order when a payment changes | Nothing in code. The method's settings `status_on_<status>` do it. | [The order's status](../plugins/payment-plugin-money.md#the-orders-status) |
 | Move the order at a moment the settings cannot express | `orderTransition($orderId)->to($statusId)->save()` | [The verbs](../plugins/payment-plugin-money.md#the-verbs) |
 

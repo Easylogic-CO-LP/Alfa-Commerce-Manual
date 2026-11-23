@@ -185,7 +185,8 @@ public function onAlfaDisputeAccept(DisputeAcceptEvent $event): void
 }
 ```
 
-Alfa writes nothing itself on Accept: the money moves only when the loss is recorded.
+Alfa writes nothing itself on Accept: the money moves only when the loss is recorded. A handler that throws is written to
+the payments log (category `com_alfa.payments`) and staff read that the provider could not be asked; nothing is written.
 
 ## Mapping your provider's words
 
