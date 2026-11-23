@@ -25,7 +25,7 @@ const TEMPLATES = [
   {
     type: 'shipping', label: 'Shipping plugin', group: 'alfa-shipments', element: 'flat', mode: 'names',
     page: 'shipment-plugin-example.md', guide: 'shipment-plugins',
-    demo: 'Charges the one price typed on the shipping method and records one pending parcel when an order is placed.',
+    demo: 'Charges the one price typed on the shipping method and, when an order is placed, names the carrier on the parcel Alfa records.',
     starter: 'It talks to no carrier: no label, no tracking number, no rates from outside.',
     todo: [
       ['Work out the price from your own rules or your carrier', 'shipment-plugin-events'],

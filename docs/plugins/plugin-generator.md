@@ -6,7 +6,7 @@ description: "Fill in a name and your details and download a correctly structure
 
 # Plugin generator
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Choose a plugin type, type a name and your details, and download a ZIP that Joomla's installer accepts. The form
 runs in your browser. Nothing you type is sent anywhere.
@@ -24,7 +24,7 @@ takes that example and changes only names and details:
 | The class name | `Offline` becomes `Mygateway` |
 | The vendor part of the namespace | `Acme\Plugin\AlfaPayments\Offline` becomes `YourVendor\Plugin\AlfaPayments\Mygateway` |
 | The language keys | `PLG_ALFA_PAYMENTS_OFFLINE_...` becomes `PLG_ALFA_PAYMENTS_MYGATEWAY_...` |
-| The manifest | Name, author, e-mail, URL, copyright, licence, version, description, date |
+| The manifest and the language files | Author, e-mail, URL, copyright, licence, version and date in the manifest; the name and description in the language files |
 
 Two things are added: a comment at the top of the plugin's class and a `README.md`. Both say what the example
 code does, what it is not, and what is yours to write, with the manual pages to read.
@@ -35,7 +35,7 @@ and it does what its example does.
 | Plugin type | The example it is made from | What it does when installed |
 |---|---|---|
 | Payment plugin | [A complete payment plugin](./payment-plugin-example.md) | Records a pending payment at checkout; staff press "Mark as paid" |
-| Shipping plugin | [A complete shipping plugin](./shipment-plugin-example.md) | Charges the price typed on the method and records a parcel |
+| Shipping plugin | [A complete shipping plugin](./shipment-plugin-example.md) | Charges the price typed on the method and names the carrier on the parcel Alfa records |
 | Item field plugin | [A complete item field plugin](./item-field-plugin-example.md) | Draws a field's values as radio buttons on the item page |
 | Form field plugin | [Form field plugins](./form-field-plugins.md#a-complete-minimal-plugin) | Adds a one line text field to registration and checkout |
 | Media plugin | [Media plugins](./media-plugins.md#a-complete-media-plugin) | Stores uploaded pictures as WebP and refuses very large ones |
@@ -68,18 +68,19 @@ Read the comment at the top of the plugin's class first. It lists what you still
 1. In the Joomla administrator go to **System**, **Install**, **Extensions** and upload the ZIP.
 2. Joomla installs a new plugin disabled. Enable it under **System**, **Plugins**.
 3. A payment, shipping, item field or form field plugin does nothing until a method or a field of its type
-   exists. Create one under Alfa Commerce's **Configuration** menu.
+   exists. Create a payment method, a shipment method or a form field under Alfa Commerce's **Configuration**
+   menu, and an item field under **Item Fields**.
 
 ## What can go wrong
 
 | What you see | Why |
 |---|---|
 | The form does not offer a download | A field is not acceptable. The reason is printed under the form. |
-| The element is refused | It must be lower case letters and digits, must not be a word of PHP such as `list` or `new`, and must not be the element of a plugin Alfa Commerce ships. |
+| The element is refused | It must be 2 to 40 lower case letters or digits starting with a letter, must not be a word of PHP such as `list` or `new`, and must not be the element of a plugin Alfa Commerce ships. |
 | Joomla says the extension is already installed and updates it | A plugin with the same group and element exists on the site. Choose another element. |
 | A name of the example is still in a text | Texts of the demonstration are not changed. Only names are. |
 
-## Not offered yet
+## Not offered
 
 - A search engine plugin. The manual's example for it is a skeleton that finds nothing.
 - Console and task plugins. Alfa Commerce has no extension point for either.
