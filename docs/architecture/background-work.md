@@ -78,6 +78,7 @@ Alfa creates tasks at these moments:
 | A shipment changes its status and the shipping method maps that status to an order status | The move of the order's status. The status change it makes then writes its own tasks. |
 | A refund of a payment is settled, or a settled refund's amount changes | Marking that payment refunded, when its settled refunds cover it |
 | A stock plugin refuses on purpose the stock movement of a document | One task for that document, which waits for staff |
+| A card dispute of a payment is saved | The plugins' reaction (`onAlfaDisputeChanged`), when a plugin listens. When the shop has a store e-mail address: the staff e-mail of the dispute when it is first recorded and when it is decided, and the job that reminds staff three days before its evidence is due. |
 | A notification is raised while something is being saved | The notification, written as soon as the save is final |
 | A task or job of a plugin ends, and the plugin has a public `onAlfaWorkSettled` | The task that tells it (`work.settled`), written in the same save that ends the work |
 
@@ -86,7 +87,8 @@ Alfa creates jobs for: preparing the list prices of a pricing context that is ne
 price index that a newer one replaced and the periods that ended (`price.index.tidy`, once a day and after each
 switch; it also switches live the prepared generations that wait for nothing), rebuilding catalogue entries of items, rebuilding the search index, applying stock movements that are still
 owed, recreating thumbnails, deleting finished tasks, fetching the images a REST API write gave by their address
-(`media.fetch`, one job a write; see [Catalogue](../api/catalogue.md#images-given-by-their-address)), and telling each
+(`media.fetch`, one job a write; see [Catalogue](../api/catalogue.md#images-given-by-their-address)), reminding staff
+three days before a card dispute's evidence is due (`order.dispute.remind`, one job a deadline), and telling each
 consumer of the shop's changes what it is owed (`outbound.deliver`, one job a consumer; see
 [Outgoing notifications](../api/notifications.md)). The changes a consumer is owed are written in the save of the
 change itself, as a task is. A plugin of an `alfa` group asks for the tasks and jobs it declares, under its own names
@@ -109,7 +111,7 @@ The column `state` holds one of these words. Tools > Tasks shows a failed task a
 | `failed` | The work failed and Alfa will not try it again by itself. It waits for staff. |
 | `held` | Nobody can know whether the work took effect. Alfa will not try it again by itself. It waits for staff. |
 | `resolved` | Staff closed it: by Resend, by Run again, or by Mark resolved |
-| `cancelled` | A plugin's task cancelled by the plugin while it waited |
+| `cancelled` | A plugin's task cancelled while it waited: by the plugin, or because the plugin was uninstalled |
 
 ```mermaid
 stateDiagram-v2
@@ -122,7 +124,7 @@ stateDiagram-v2
     running --> held: the outcome cannot be known
     failed --> resolved: staff Resend, Run again or Mark resolved
     held --> resolved: staff Resend, Run again or Mark resolved
-    pending --> cancelled: a plugin's task, cancelled by the plugin
+    pending --> cancelled: a plugin's task, cancelled by the plugin or at its uninstall
     done --> [*]: deleted after 7 or 30 days
     resolved --> [*]: deleted after 30 days
     cancelled --> [*]: deleted after 30 days
@@ -185,11 +187,13 @@ The name in the first column is what Tools > Tasks shows. The name in code style
 | Status e-mail (`order.status_email`) | Sends the e-mail of the status the order entered | Only for a recipient the mail server refused. Never for a recipient whose outcome is unknown, and never when Joomla's mail is switched off. | Held | **Resend**, Mark resolved | 30 days |
 | Order confirmation e-mail (`order.placement_email`) | Sends the e-mail of the status the order was placed in | The same as the status e-mail | Held | **Resend**, Mark resolved | 30 days |
 | Plugin reactions to a status change (`order.status_event`) | Calls each listener of `onOrderStatusChange`, one at a time | **Never** | Held | **Run again**, Mark resolved | 30 days |
+| Dispute e-mail (`order.dispute_email`) | Sends staff the e-mail of a card dispute, to the shop's store e-mail address | The same as the status e-mail | Held | **Resend**, Mark resolved | 30 days |
+| Plugin reactions to a dispute (`order.dispute_event`) | Calls each listener of `onAlfaDisputeChanged`, one at a time | **Never** | Held | **Run again**, Mark resolved | 30 days |
 | Order status after a payment (`payment.automation`) | Moves the order to the status the payment's state asks for | Yes | Run again | Mark resolved | 7 days |
 | Order status after a shipment (`shipment.automation`) | Moves the order to the status the shipment's state asks for | Yes | Run again | Mark resolved | 7 days |
 | Payment refunded once its refunds cover it (`payment.refund_flip`) | Marks a payment refunded when its settled refunds cover it | Yes | Run again | Mark resolved | 7 days |
 | Notification after a save (`notice`) | Writes a notification raised during a save | Yes. A failure is only written to the log. | Written later by the engine | Mark resolved. It raises no notice, so only Tools > Tasks shows it. | Deleted as soon as it is written |
-| Telling a plugin how its work ended (`work.settled`) | Calls the plugin's `onAlfaWorkSettled` with the task or job as it ended | Yes, with the waits above | Run again | **Run again**, Mark resolved | 30 days |
+| An extension told how its task or job ended (`work.settled`) | Calls the plugin's `onAlfaWorkSettled` with the task or job as it ended | Yes, with the waits above | Run again | **Run again**, Mark resolved | 30 days |
 | A plugin's own task (the name it declares, under its own label) | What the plugin's `onAlfaRunTask` does | When the plugin says so (`WorkFailure::retry()`), and for an unexpected error when it declares the task `repeatable()` | Run again when `repeatable()`, otherwise held | **Run again**, Mark resolved | 30 days |
 
 Why two kinds are never repeated by Alfa itself:
@@ -202,10 +206,12 @@ Why two kinds are never repeated by Alfa itself:
 
 ### Parts of a task
 
-Two kinds of task have parts, and each part is recorded on its own as soon as its outcome is known:
+Three kinds of task have parts, and each part is recorded on its own as soon as its outcome is known:
 
 - An e-mail task: one part for each recipient.
 - The plugins' reaction: one part for each listener.
+- A plugin's own task: the parts it names (see
+  [Running a task](../plugins/background-work-plugins.md#running-a-task)).
 
 A part recorded as done is never done again, not by an automatic try and not by Resend or Run again.
 
@@ -217,12 +223,13 @@ while an e-mail or a plugin reaction is among them, otherwise a warning.
 | Button | Offered for | What it does |
 |---|---|---|
 | **Resend** | A failed or held e-mail task | Writes a new task that sends only to the recipients not recorded as sent. The old task becomes `resolved`. |
-| **Run again** | A failed or held plugin reaction | Writes a new task that calls only the listeners not recorded as done. The old task becomes `resolved`. |
+| **Run again** | A failed or held plugin reaction, a document's refused stock movement, a plugin's own task, or the task that tells a plugin how its work ended | Writes a new task that does only the parts not recorded as done: for a plugin reaction, it calls only the listeners not recorded as done. The old task becomes `resolved`. |
 | **Mark resolved** | Every failed or held task | Closes the task with no action. A reason must be typed. |
 
 A plugin's task or job is listed with its label in the plugin's own words and the plugin's name beneath it, and a
-done one with its result. When the plugin cannot run it, the row says why: the extension is disabled, or no longer
-declares this work. A failed task of a plugin that declares it urgent makes the notice a danger notice.
+done job with its result. When the plugin cannot run a job, its row says why: the extension is disabled, or no longer
+declares this work. A failed or held task, or a failed job, of a plugin that declares it urgent makes the notice a
+danger notice.
 
 Each button needs the permission to use Tools (`alfa.tools`). Nothing failed or held is ever run again without one of
 these buttons.
@@ -242,6 +249,7 @@ staff pressed, with the time, what started it and the user. Tools > Tasks shows 
 | `interrupted` | The engine found a task whose request stopped in the middle of it |
 | `resent` or `run again`, with the id of the new task | Staff pressed Resend or Run again |
 | `resolved`, with the reason | Staff pressed Mark resolved |
+| `cancelled`, with the reason when one is given | A plugin's waiting task was cancelled: by the plugin, or because the plugin was uninstalled |
 
 **The order's History tab.** For a task about an order, Alfa also writes on the order's own History: an e-mail that
 was sent (naming each recipient), an e-mail or a plugin reaction that failed or is held, a Resend, a Run again and a
@@ -293,7 +301,7 @@ stateDiagram-v2
     running --> pending: a part failed, a wait follows
     running --> pending: finished, but asked again meanwhile, so it starts over
     running --> done: the last part says it is finished
-    running --> failed: 8 failures in a row
+    running --> failed: 8 failures in a row, 6 for a plugin's job that calls another system
     running --> failed: 3 runs in a row that finished no part
     failed --> pending: staff Retry
     failed --> resolved: staff Mark resolved
@@ -318,10 +326,11 @@ they finish, so that nothing the second request meant is missed.
 - Then it lets the job do one part (a **chunk**) after the other. The first part of a run has a size fixed for its kind.
   After that the engine measures how long a record takes and aims each part at about 100 milliseconds of work.
 - Each part ends with the place the job has reached (its **checkpoint**) and the count of records done, saved in
-  one transaction. The search index, the tidy of the price index and the deletion of tasks write their part in that
-  same transaction, so a part that fails is undone as a whole. The other kinds write through transactions of their
-  own first (the price lists, the catalogue entries, the stock movements, the thumbnails, the images fetched, the
-  deliveries and a plugin's work), because their services take locks of their own or call another system. Each of
+  one transaction. The search index, the deletion of tasks, the dispute reminder and a plugin's job that calls no
+  other system write their part in that same transaction, so a part that fails is undone as a whole. The other kinds
+  write through transactions of their own first (the price lists, the catalogue entries, the stock movements, the
+  thumbnails, the images fetched, the deliveries, the tidy of the price index and a plugin's job declared
+  `callsOtherSystems()`), because their services take locks of their own or call another system. Each of
   them is made so that doing a part a second time does no harm, and a plugin's own job must be made so too.
 - Progress is `done_units` out of `total_units`. The percentage shown is done divided by total, 100 when the job is
   done, and 0 when the total is 0.
@@ -329,8 +338,8 @@ they finish, so that nothing the second request meant is missed.
 - If the server stops in the middle of a part, the job stays `running` for at most 30 seconds. Then the engine takes
   it again. The lost part's checkpoint was never saved, so it still points at the last saved part, and that part is
   done again.
-- Jobs marked heavy (price lists, catalogue entries, the search index, thumbnails) run one at a time across the
-  whole shop.
+- Jobs marked heavy (price lists, catalogue entries, the search index, thumbnails, and a plugin's job declared
+  `heavy()`) run one at a time across the whole shop.
 
 ### If a part fails
 
@@ -338,7 +347,7 @@ they finish, so that nothing the second request meant is missed.
 |---|---|
 | A part fails | Undoes what the part wrote in the engine's transaction. Waits 30 seconds, then tries again. Each further failure in a row doubles the wait: 30 seconds, 1, 2, 4, 8, 16 and 32 minutes. |
 | The 8th failure in a row | The job is `failed` and waits for staff |
-| A part of a plugin's job that calls another system fails | Its bookmark does not move. It waits as a task does: 1 minute, 5, 30, 2 hours, 6, 24; after the 6th failure in a row the job is `failed`. |
+| A part of a plugin's job that calls another system fails | Its bookmark does not move. It waits 1 minute, then 5 and 30 minutes, 2 and 6 hours; the 6th failure in a row makes the job `failed`. |
 | A part succeeds | The count of failures starts again at zero |
 | The process dies inside a part three runs in a row (usually at PHP's memory or time limit), so that nothing could be recorded | The job is `failed` with the error "Stopped after 3 runs that each ended before finishing a step, usually at the server's PHP memory or time limit. Raise the limit, then Retry." The jobs behind it can then run. |
 
@@ -349,7 +358,7 @@ they finish, so that nothing the second request meant is missed.
 | **Process now** | A waiting job | Opens a progress page that works the job in steps of 2 seconds while the page is open, and shows how far it is |
 | **Retry** | A failed job | Puts it back in the queue with its failures reset. It continues from where it stopped. Refused when another job for the same thing is already waiting or running. |
 | **Mark resolved** | A failed job | Closes it, with a reason |
-| **Cancel** | A plugin's job that waits or runs | Closes it, with a reason. A waiting job is cancelled at once. A running one finishes no further part: the part in progress keeps nothing, then the job is `cancelled`. |
+| **Cancel** | A plugin's job that waits or runs | Closes it, with a reason. A waiting job is cancelled at once. A running one finishes no further part: the part in progress keeps nothing, then the job is `cancelled`, or, when it was asked for again meanwhile, starts again from the beginning. |
 
 Alfa's own jobs cannot be cancelled.
 
@@ -492,8 +501,8 @@ or those methods, behave when they are called from background work.
    process, and Joomla's `Factory::getDate()` keeps the time of its first call for the whole process. Where you
    measure a window (an expiry, an age, a start or an end), read the time again: `new Date('now', 'UTC')`, or
    `UTC_TIMESTAMP()` in SQL where the row is compared with the database's clock. Compare like with like: a row
-   stamped by PHP's clock with PHP's, one stamped by the database with the database's. Alfa's own windows do so (document issue dates, entitlement expiries, notifications, the price index and
-   the stock outbox).
+   stamped by PHP's clock with PHP's, one stamped by the database with the database's. Alfa's own windows do so
+   (document issue dates, entitlement expiries, notifications, the price index and the stock outbox).
 
 ## What happens next
 
@@ -506,7 +515,7 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 | What you see | The usual cause |
 |---|---|
 | An error "... declares no background work named ..." | The plugin asked for a name it does not declare in `onAlfaDeclareWork`, or its declaration was left out (the log `com_alfa.tasks` says why). |
-| An extension's job says "Waits: the extension is disabled." or "Waits: the extension no longer declares this work." | Enable the plugin, or update it; staff cancel a job that is no longer declared. |
+| An extension's job says "Waits: the extension is disabled. It runs once the extension is enabled." or "Waits: the extension no longer declares this work. Cancel it, or update the extension." | Enable the plugin, or update it; staff cancel a job that is no longer declared. |
 | A job of an extension fails with "The plugin ... has no public onAlfaRunJob() method." | The plugin declares the job but has no method to run it. Add it, then Retry. |
 | Your `onOrderStatusChange` listener ran twice for one change | Staff pressed Run again. Make the listener safe to repeat. |
 | Your listener sees a user with id 0 | The engine carried the work on some other request. Take the actor from the event. |
@@ -515,7 +524,7 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 | Tasks stay waiting for hours | Nothing gives the engine a turn: no visits, no staff, no cron. Set up the console command or the web cron. |
 | The console command ends with exit code 1 | The shop is in maintenance or an update has paused the engine |
 | A job is Failed with "Stopped after 3 runs ..." | PHP's memory or time limit ends the process inside a part. Raise the limit, then Retry. |
-| An e-mail or plugin task does not run from a plain PHP script | These two kinds need a Joomla application. The Joomla console command provides one; a bare script does not. |
+| An e-mail or plugin task does not run from a plain PHP script | These kinds need a Joomla application. The Joomla console command provides one; a bare script does not. |
 
 ## Where it lives in the code
 
