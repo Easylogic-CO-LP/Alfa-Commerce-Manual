@@ -6,7 +6,7 @@ description: How the Alfa Commerce repository is laid out, with its namespaces a
 
 # Project Structure
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 How the Alfa Commerce repository is organised. Read it before contributing or writing an extension.
 
@@ -26,7 +26,7 @@ Alfa-Commerce/
 │   │   ├── Helper/             # Smaller shared helpers
 │   │   ├── Event/              # Event classes, in one folder per area
 │   │   ├── Plugin/             # Base classes for plugins, and AlfaPluginHelper
-│   │   ├── Panel/  Card/  Setup/  Toolbar/  Menu/   # Screens plugins can add to
+│   │   ├── Panel/  Card/  Setup/  Toolbar/  Menu/   # What plugins add to: panels, cards, setup checks, toolbar, menu
 │   │   ├── Dispatcher/         # Request dispatcher
 │   │   └── Provider/           # Interfaces a plugin implements to provide document types or stock rules
 │   ├── forms/                  # XML form definitions
@@ -51,7 +51,7 @@ Alfa-Commerce/
 │   └── languages/en-GB/        # com_alfa.ini
 │
 ├── api/                        # The REST API
-│   └── src/                    # Controller/  Model/  View/  Dispatcher/
+│   └── src/                    # Controller/  Model/  View/  Helper/  Dispatcher/
 │
 ├── plugins/                    # Only what ships with core
 │   ├── alfa-payments/standard/      # The reference payment plugin
@@ -73,12 +73,14 @@ Alfa-Commerce/
 │                               # four it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser)
 │
 ├── media/                      # Installed as media/com_alfa
-│   ├── css/  js/               # Each with admin/, site/ and libraries/; every file as x.js, x.min.js, x.min.js.gz
+│   ├── css/  js/               # Each with admin/, site/ and libraries/; a file as x.js, x.min.js, x.min.js.gz,
+│   │                           # a library that ships minified as x.min.js, x.min.js.gz
 │   ├── images/
 │   └── joomla.asset.json       # Joomla's asset registry
 │
 ├── build/media-min/            # build.php makes each style's and script's .min and .min.gz; media-min.lock.json
 ├── scripts/                    # Tools for the automated checks
+├── tests/ci/                   # Tests of two GitHub workflows (security-scan.yml, claude-pr-review.yml)
 ├── alfa.xml                    # The component's manifest
 ├── script.php                  # Install, update and uninstall script
 ├── changelog.xml               # The public changelog
@@ -89,7 +91,9 @@ Alfa-Commerce/
 ```
 
 Every stylesheet and script of the component, the modules and the plugins is kept in three forms: the source, its
-`.min` twin and the `.min.gz`. Only the source is edited; `php build/media-min/build.php` makes the other two. See
+`.min` twin and the `.min.gz`. A library that ships already minified has no source: it is kept as its `.min` and the
+`.min.gz`. Only the source is edited; `php build/media-min/build.php` makes the `.min` and the `.min.gz` (for such a
+library, the `.min.gz` only). See
 [You changed a stylesheet or a script](./contributing#you-changed-a-stylesheet-or-a-script). The `build/` folder is
 not part of the installable package.
 
@@ -107,7 +111,7 @@ Alfa Commerce follows PSR-4 autoloading with Joomla's namespace conventions:
 |---|---|
 | Administrator | `Alfa\Component\Alfa\Administrator\{Controller,Model,Service,...}` |
 | Site | `Alfa\Component\Alfa\Site\{Controller,Model,Service,...}` |
-| API | `Alfa\Component\Alfa\Api\{Controller,Model,View,Dispatcher}` |
+| API | `Alfa\Component\Alfa\Api\{Controller,Model,View,Helper,Dispatcher}` |
 | Payment plugins | `Alfa\Plugin\AlfaPayments\{PluginName}\Extension` |
 | Shipping plugins | `Alfa\Plugin\AlfaShipments\{PluginName}\Extension` |
 | Form field plugins | `Alfa\Plugin\AlfaFormFields\{PluginName}\Extension` |
@@ -136,7 +140,7 @@ Alfa Commerce follows PSR-4 autoloading with Joomla's namespace conventions:
 | `administrator/src/Extension/AlfaComponent.php` | The component's bootstrap class |
 | `administrator/services/provider.php` | Registers the component with Joomla |
 | `administrator/src/Plugin/` | The plugin base classes (`PaymentsPlugin`, `ShipmentsPlugin`, `FormFieldsPlugin`, `ItemFieldsPlugin`, `SearchEnginePlugin`, `Plugin`) and `AlfaPluginHelper` |
-| `administrator/src/Event/` | Every event class, in 22 folders by area |
+| `administrator/src/Event/` | Every event class, in 25 folders by area |
 | `administrator/src/Service/Order/` | Orders: `OrderCreator`, `Transition`, `PaymentLedger`, `ShipmentLedger` |
 | `site/src/Service/Cart/` | The cart (`CartService`) |
 | `site/src/Service/Checkout/OrderPlacement.php` | Placing an order |
