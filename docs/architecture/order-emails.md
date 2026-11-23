@@ -6,11 +6,12 @@ description: Which e-mails Alfa Commerce sends for an order, what triggers each,
 
 # Order e-mails
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
-Alfa Commerce sends an e-mail when an order is placed and when an order enters a status that is set to tell
-somebody. The e-mail is never sent inside the save. Alfa writes down "this e-mail is owed" together with the change,
-and sends it once the save is final (the commit). That piece of owed work is a **task**. Read
+Alfa Commerce sends an e-mail when an order is placed, when an order enters a status that is set to tell somebody,
+and when staff send an order's payment link. The e-mail of a placement or a status change is never sent inside the
+save. Alfa writes down "this e-mail is owed" together with the change, and sends it once the save is final (the
+commit). That piece of owed work is a **task**. Read
 [Background work](./background-work.md) first: it explains tasks, their states and Tools > Tasks.
 
 ## What it does
@@ -21,7 +22,7 @@ There are two kinds of e-mail task. Each can go to the customer, to staff, or to
 
 | E-mail | What triggers it | Kind of task |
 |---|---|---|
-| **Order confirmation e-mail** | An order is placed. It is the e-mail of the status the order is placed in. | `order.placement_email` |
+| **Order confirmation e-mail** | An order is placed at checkout, or created with its lines through the REST API. It is the e-mail of the status the order is placed in. | `order.placement_email` |
 | **Status e-mail** | An order enters a status, by any route: staff, a payment, a shipment, the API | `order.status_email` |
 
 Who receives it is set on the order status, not in code:
@@ -31,9 +32,23 @@ Who receives it is set on the order status, not in code:
 | The customer | When the status has **notify the customer** switched on (`notify_customer`) | A registered customer's present account address while the account exists. Otherwise the address kept on the order. |
 | Staff recipients | When the status lists users to tell. Blocked users and users with no address are left out. | Each listed user's account address |
 
-A status that tells nobody creates no e-mail task at all.
+A status change into a status that tells nobody creates no e-mail task at all. A new order always has its
+confirmation task, which sends nothing when the status tells nobody.
 
 The notification bell in the administrator is a separate thing. It is not e-mail.
+
+### The payment link
+
+**Send payment link**, in the payments panel of the order screen (Orders: Edit), e-mails the customer the link to pay
+the order again (see [Paying an order again](../services/payments-and-shipments.md#paying-an-order-again)). It is
+sent only while the order may be paid again, and it is not a task: it is sent at once, and the order screen says
+whether it was sent, handed over with no answer, or not sent and why. A link sent, or handed over with no answer, is
+written to Joomla's User Actions Log, not to the order's History. Nothing sends it again by itself.
+
+It is drawn with the layout `emails.order.default` (or its override), whatever layout the status picks, in the
+order's language. Its subject and opening are its own (`COM_ALFA_ORDEREMAIL_PAYLINK_SUBJECT`,
+`COM_ALFA_ORDEREMAIL_PAYLINK_INTRO`); the other positions show the default texts of the language file, not the texts
+typed on the order status. It carries **Pay now** and no download links or attachments. Staff get no copy.
 
 ### The order of things
 
@@ -67,12 +82,14 @@ The e-mails of one order go out in the order their statuses were entered. The pl
 
 ## When it is used
 
-- At checkout, for the first status of the new order.
+- At checkout, and when an order is created with its lines through the REST API, for the status the new order opens
+  in.
 - At every status change, when the new status tells somebody.
 - Not when the code that makes the change asks for no e-mail. Code that calls `Transition::silent()` sends nothing,
   to the customer or to staff, and `Transition::silentCustomer()` leaves out the customer alone. The REST API's
   status change accepts `"silent": true`, which leaves out the customer's e-mail only: the staff the status tells
-  are still sent theirs. Everything else still happens.
+  are still sent theirs. An order created through the REST API takes the same `silent` for its confirmation.
+  Everything else still happens.
 
 ## What happens next
 
@@ -124,9 +141,10 @@ An e-mail is written in **the order's language**: the language the order was pla
 language, it is written in the **default content language**. It is never the language of the administrator who
 happens to change the status. The staff copy uses the same language as the customer's.
 
-Each text of the status (its names, the subject, each content block) is taken on its own from the default content
-language when the order's language has none. So an e-mail does not go out blank because only one language was
-filled in.
+Each of the status's texts is taken on its own from the default content language when the order's language has none
+stored: its name, its name for the customer, the customer's e-mail and the staff e-mail. An e-mail's subject and
+content blocks are stored together, so they come from one language. So an e-mail does not go out blank in a language
+whose texts were never saved for the status.
 
 ## Layouts, and how a template changes them
 
@@ -137,6 +155,7 @@ filled in.
 | The layout | A PHP file that draws the frame of the e-mail | `administrator/components/com_alfa/layouts/emails/order/default.php`. The layout's id is `emails.order.default`. |
 | Positions | Named places in the layout that staff fill with text, for each language: `header`, `intro`, `outro`, `legal` in the shipped layout | Typed on the order status form, one editor for each position and language, with a Subject above them |
 | Blocks | The order's items, totals, payments, shipments and download links | Five small layouts under `layouts/emails/partials/`: `order_items`, `order_totals`, `order_payments`, `order_shipments`, `order_downloads`. Staff can only show or hide each. |
+| Pay now | The link to pay the order again, while the order may be paid again | Drawn by the shipped layout from `$payUrl`, on the customer's e-mail only: empty on the staff copy, a preview and a test |
 | Tokens | Words in curly brackets that are replaced when the e-mail is made | See below |
 
 A status picks two layouts: one for the customer's e-mail (`email_layout_customer`) and one for the staff e-mail
@@ -147,14 +166,16 @@ A status picks two layouts: one for the customer's e-mail (`email_layout_custome
 | Group | Tokens |
 |---|---|
 | Order | `{order_id}`, `{order_number}`, `{order_date}`, `{status}`, `{status_customer}`, `{order_total}`, `{payment_method}`, `{shipment_method}` |
-| Customer | `{user_id}`, `{user_name}`, `{user_username}`, `{user_email}`, `{user_registered}`. Empty for a guest. |
+| Customer | `{user_id}`, `{user_name}`, `{user_username}`, `{user_email}`, `{user_registered}`. `{user_name}` and `{user_email}` are the customer's name and address as kept on the order; the other three are the account's, empty for a guest. |
 | Checkout fields | `{field_<name>}`, one for each active form field. The field's own plugin draws its value. |
 | Site | `{site_name}`, `{site_url}` |
 
 `{order_number}` is the order's id.
 
 Tokens are replaced once, over the whole finished e-mail, so they work in staff's text, in the blocks and in the
-layout's own text. In the body their values are made safe for HTML. The subject gets the plain values.
+layout's own text. In the body the customer's name, address and username are made safe for HTML, and a
+`{field_<name>}` token is the HTML its plugin drew; the other values go in as they are. The subject gets the plain
+values, a field token's HTML reduced to its text.
 
 ### Overriding from a template
 
@@ -174,13 +195,14 @@ not read for e-mails, and neither is an administrator template style that is not
 | You want to | Do this |
 |---|---|
 | Change the frame of the shipped e-mail | Copy `administrator/components/com_alfa/layouts/emails/order/default.php` to `html/layouts/com_alfa/emails/order/default.php` in the default administrator template, and edit the copy |
-| Add a second layout to choose from | Add a new file in the default administrator template's override folder, for example `emails/order/compact.php`. It appears in the layout picker of the order status as `emails.order.compact`. A file whose name starts with `_` is not listed. |
+| Add a second layout to choose from | Add a new file in the default administrator template's override folder, for example `emails/order/compact.php`. It appears in the layout picker of the order status as Compact (the text of `COM_ALFA_ORDEREMAIL_LAYOUT_COMPACT` when a language file has it) and is stored as `emails.order.compact`. A file whose name starts with `_` is not listed. |
 | Restyle the items, totals, payments, shipments or downloads | Override the matching file under `html/layouts/com_alfa/emails/partials/` in the default administrator template |
 
 An override kept in a site template's `html/layouts/com_alfa/emails` is not read: copy it into the default
-administrator template. When you update Alfa Commerce, the update names every PHP file it finds under a site template's `html/layouts/com_alfa/emails` in one warning, with the folder
-to copy each one into (the same subfolder, `order` or `partials`, under the default administrator template's
-`html/layouts/com_alfa/emails`), and writes one line per file to the maintenance log. It moves and deletes nothing.
+administrator template. When you update Alfa Commerce, the update names every PHP file it finds under a site
+template's `html/layouts/com_alfa/emails` in one warning, with the folder to copy each one into (the same subfolder,
+`order` or `partials`, under the default administrator template's `html/layouts/com_alfa/emails`), and writes one line
+per file to the maintenance log. It moves and deletes nothing.
 
 Inside a layout three helpers are available:
 
@@ -204,7 +226,7 @@ Never edit the files inside `administrator/components/com_alfa/`. An update repl
 | The two layouts | `#__alfa_orders_statuses.email_layout_customer`, `email_layout_admin` |
 | Attach the documents, yes or no | `#__alfa_orders_statuses.attach_document_pdf` |
 | The staff recipients | `#__alfa_orderstatus_recipients` (one row for each status and user) |
-| The subject and the positions, for each language | `#__alfa_orders_statuses_<langtag>` (for example `#__alfa_orders_statuses_en_gb`), columns `email_positions_customer` and `email_positions_admin`. Each holds one JSON object: `subject` plus one entry for each position. |
+| The subject and the positions, for each language | `#__alfa_orders_statuses_<langtag>` (for example `#__alfa_orders_statuses_en_gb`), columns `email_positions_customer` and `email_positions_admin`. Each holds one JSON object: `subject`, one entry for each position, and the show or hide setting of each block (`_show_<block>`), the same in every language. |
 
 If the subject is left empty, Alfa uses a general subject with the order's number (its id) and the status's name for
 the customer.
@@ -237,7 +259,7 @@ statuses.
 | Button | What it does |
 |---|---|
 | Preview | Draws the e-mail for the language tab you are editing. It uses the newest order that has items, or failing that the newest order. If the shop has no order yet, it uses a made-up sample order. Nothing is sent. |
-| Send test | Sends the e-mail for an order you pick to an address you type. The subject starts with `[TEST]`. It ignores the "tell the customer" switch, creates no task and writes nothing on the order's History. |
+| Send test | Sends the e-mail for an order you pick, among the 25 newest, to an address you type. The subject starts with `[TEST]`. It ignores the "tell the customer" switch, creates no task and writes nothing on the order's History. With Joomla's mail switched off it sends nothing and shows Joomla's message that the mail function has been disabled. |
 
 ## What you must provide
 
@@ -275,6 +297,5 @@ it itself. See [Order and cart events](../events/order-and-cart-events.md).
 - The data a layout receives besides the three helpers (the order, its items, totals, payments, shipments and
   downloads): the exact shape of each is not described here. Read the shipped layout and its five blocks.
 - A hook for plugins to add recipients, change content or stop an e-mail. None exists.
-- E-mails for anything other than an order's placement and status (for example a document on its own). The code has
-  only the folder `layouts/emails/order/`.
-- What the test send does when Joomla's mail is switched off.
+- E-mails about anything other than an order (for example a document on its own). The code has only the folder
+  `layouts/emails/order/`.
