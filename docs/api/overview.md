@@ -25,9 +25,8 @@ The shop can also tell another system of its changes as they happen, without bei
 
 ## The Postman collection
 
-Every route but one is in a Postman collection, with a test on each request: the route that writes the prices and
-stock of many units (`PATCH v1/alfa/items/units`) is not in it. Use it to try the API by hand, or to check a shop's
-API route by route.
+Every route is in a Postman collection, with a test on each request. Use it to try the API by hand, or to check a
+shop's API route by route.
 
 ### Two ways to get it
 
@@ -99,7 +98,7 @@ trash, the category and the payment and shipping methods the order used.
 | Folder | What it holds |
 |---|---|
 | Catalogue (storefront) | The read-only view the shop shows a shopper: published items only, with their computed prices. |
-| Catalogue (back office) | The editable catalogue: items, categories, manufacturers and item fields, every row visible, and the light list of stock and prices. |
+| Catalogue (back office) | The editable catalogue: items, categories, manufacturers and item fields, every row visible, the prices and stock of many units, and the light list of stock and prices. |
 | Customers | Customer records and the price settings of customer groups. |
 | Commerce configuration | Currencies, taxes, discounts, cart rules, places, and the payment and shipping methods. |
 | Checkout & registration forms | The form fields and their groups. |
@@ -157,7 +156,7 @@ the rules of a save are the same. See
 
 ## The routes at a glance
 
-Alfa Commerce registers 117 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`), and after them the routes its
+Alfa Commerce registers 119 routes (`plugins/webservices/alfa/src/Extension/Alfa.php`), and after them the routes its
 plugins add under `v1/alfa/ext/` (see [Adding routes to the REST API](../plugins/api-route-plugins.md)).
 
 Eighteen resources have the five standard routes: list, read one, create, change, delete.
@@ -193,11 +192,12 @@ The five standard routes of a resource, with `items` as the example:
 | `PATCH v1/alfa/items/:id` | Changes a record |
 | `DELETE v1/alfa/items/:id` | Deletes a record |
 
-Twenty-seven more routes are single purpose:
+Twenty-nine more routes are single purpose:
 
 | Group | Routes | Page |
 |---|---|---|
 | The storefront's view of an item | 2, read only | [Catalogue](./catalogue.md#the-storefronts-view) |
+| An order's payments and parcels | 2, read only | [Orders](./orders.md#reading-an-orders-payments-and-parcels) |
 | Operations on an order | 12 | [Orders](./orders.md#operations-on-an-order) |
 | The prices and stock of many units | 1 | [Catalogue](./catalogue.md#many-units-in-one-request) |
 | The light list of stock and prices | 1, read only | [Catalogue](./catalogue.md#the-light-list-of-stock-and-prices) |
@@ -242,7 +242,7 @@ The examples in these pages are shortened where marked.
 
 | You want | Send | Notes |
 |---|---|---|
-| Pages | `page[limit]` (20 when left out) and `page[offset]` | An offset past the end is answered 404 |
+| Pages | `page[limit]` (20 when left out) and `page[offset]` | An offset past the end is answered 404. `stockprices` pages by key, `page[after]`: see [The light list of stock and prices](./catalogue.md#the-light-list-of-stock-and-prices) |
 | An order of the rows | `list[ordering]` and `list[direction]` | A column the list does not allow is ignored without an error, and a direction that is not `asc` or `desc` counts as `asc` |
 | Some of the rows | `filter[...]` | Each list has its own filters: see [The filters of each list](#the-filters-of-each-list). |
 | Texts in one language | `lang=el-GR` | Without `lang`, or with a language the shop does not publish, the texts are in the shop's default content language. `Content-Language` says which language you got. |
@@ -263,14 +263,14 @@ first second to its last. A bound that states its zone is read in it: `2026-11-1
 
 ### The filters of each list
 
-Every list takes `filter[search]`, which searches the list's text columns. The other filters take one value each. A
-list sent where one value is expected (for example `filter[state][]=1`) is answered 400. The
-`filter[category]` and `filter[manufacturer]` of `items` take a list, and `filter[fields]` of `items` takes a map
-(below).
+Every list takes `filter[search]`, which searches the list's text columns, but those the table says take none. The
+other filters take one value each. A list sent where one value is expected (for example `filter[state][]=1`) is
+answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take a list, and `filter[fields]` of
+`items` takes a map (below).
 
 | List | Filters besides `filter[search]` |
 |---|---|
-| `items` | `filter[state]`, `filter[category]`, `filter[manufacturer]`, `filter[changed_since]` |
+| `items` | `filter[state]`, `filter[sku]`, `filter[category]`, `filter[manufacturer]`, `filter[changed_since]` |
 | `catalog/items` | `filter[category]`, `filter[manufacturer]` |
 | `categories`, `manufacturers`, `currencies`, `taxes`, `discounts`, `places`, `paymentmethods`, `shipmentmethods`, `orderstatuses`, `documenttypes`, `formfieldgroups` | `filter[state]` |
 | `itemfields` | `filter[state]`, `filter[type]`, `filter[informational]` |
@@ -283,8 +283,9 @@ list sent where one value is expected (for example `filter[state][]=1`) is answe
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, each left out when it is not one value, and no `filter[search]` |
 | `stockprices` | `filter[changed_since]`, and no `filter[search]` |
+| `orders/:id/payments`, `orders/:id/shipments` | None, and no `filter[search]` |
 
-Four lists also take the filters their administrator screens apply, with the same meaning as there.
+Five lists take more filters. Those their administrator screens apply mean what they mean there.
 
 | List | Filters added | What they keep |
 |---|---|---|
@@ -316,7 +317,7 @@ as on the screen.
 
 | In the list | Send | Finds |
 |---|---|---|
-| `items`, `categories`, `orders`, `documents` | `filter[search]=id:123` | The record with that id |
+| Every list that takes `filter[search]`, but `locations` and `inventorymovements` | `filter[search]=id:123` | The record with that id |
 | `inventorymovements` | `filter[search]=id:123` | The movements of the item with that id |
 | `inventorymovements` | `filter[search]=op:...` | The movements of one stock operation |
 
@@ -409,9 +410,9 @@ or applied it with a remark, answers with `meta.warnings`, one sentence each. Se
 | 403 | The token's user lacks the permission. |
 | 404 | No such record, no such route, or a page past the end. |
 | 409 | A rule of the shop refuses the request, or a delete names a record that must be in the trash first. The answer says which. |
-| 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, an order's `state` other than -2 or 1 or sent with other attributes, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |
+| 422 | The request is understood but cannot be carried out: a key the route does not write (an item's options, combinations, item field values, downloads or related products, an item field's values, a field an order's `PATCH` does not write, an order's `state` other than -2 or 1 or sent with other attributes, a payment or shipping method or the lists `payments`, `shipments` or `items` at the top level of an order's create, a parcel's `note`, a payment's field other than its method, reference and note), a payment method that is not one of the shop's, a text key with a language suffix, an order's `source` or the other system's id in a shape it does not take, or a change of that id once written, a part of an order's create in a shape the create does not take, prices or stock in a shape the item does not take, a `PATCH v1/alfa/items/units` that does not send 1 to 100 units, an unknown status, a refund of a payment that holds no money, a settle that would change what a payment's gateway recorded, an image given by its address that the shop could not store (the record is saved, and `meta.id` holds its id). The answer says which. |
 | 500 | A fault on the server. The server's log says what. |
-| 503 | The shop is being maintained (Clear everything), or a PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled. The answer says so in words. |
+| 503 | The shop is being maintained (Clear everything), a PDF is asked for and the dompdf library, which ships with Alfa Commerce, or a library it needs, is missing or disabled, or the plugin that answers an address under `v1/alfa/ext/` cannot be loaded now (with `Retry-After`). The answer says so in words. |
 
 A refusal carries its reason in words:
 
@@ -460,24 +461,12 @@ permission granted. A user without it gets 403, never an empty list (a task the 
 
 The permissions are named after the record and the action, for example "Orders: Edit" (`alfa.orders.edit`). The
 operations on an order need "Orders: Edit". The status change needs "Orders: Change State" and "Orders: View".
-Voiding a document needs the documents' Change State permission.
+Moving an order to the trash and back needs "Orders: Edit" and "Orders: Change State", and the lists of an order's
+payments and parcels need "Orders: View". Voiding a document needs the documents' Change State permission.
 
 Tools, Security lists every Alfa Commerce endpoint with the permission it asks, and in its API internals the groups
 that hold it and the accounts in them with an enabled token. See
 [The REST API's endpoints](../architecture/integrity-and-security.md#the-rest-apis-endpoints).
-
-## Renamed and removed routes
-
-| Old address | Now |
-|---|---|
-| `v1/alfa/payments` | `v1/alfa/paymentmethods`. The old address answers 404. |
-| `v1/alfa/shipments` | `v1/alfa/shipmentmethods`. The old address answers 404. |
-| `v1/alfa/itemsprices` | Removed. Prices are part of the item. |
-| `v1/alfa/customs` | Removed. Use `v1/alfa/itemfields`. |
-| `v1/alfa/coupons` | Removed. Use `v1/alfa/cartrules`. |
-| `v1/alfa/settings` | Removed. Use Joomla's `v1/config/com_alfa`. |
-
-The payments and shipments of one order are under that order: see [Orders](./orders.md).
 
 ## Known limitations
 
