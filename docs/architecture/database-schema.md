@@ -176,7 +176,6 @@ flowchart TB
 | `#__alfa_order_payments` | The money rows of an order: payment, refund, authorization, reversal, chargeback. The amount is always positive and the type gives the direction. A chargeback, and a reversal of one, names the dispute that booked it (`id_dispute`) |
 | `#__alfa_order_disputes` | Card disputes: one case per row, tied to the disputed payment and its order: state, the bank's last decision (`outcome`, kept by a reopen), round, the amount in the order's currency and as stated, reason, deadline, evidence sent, fee and fee returned, the provider's reference (unique per payment through `reference_hash`) and link, what staff must still decide (`waits_for`). It holds no money: the money rows name it |
 | `#__alfa_payment_references` | Stored payment credentials of a customer, for charges the merchant starts later |
-| `#__alfa_order_disputes` | Card disputes: one case a row, tied to the disputed payment, with its state, outcome and evidence deadline. Money moves only through the payment rows it books |
 | `#__alfa_refund_report_outcomes` | The outcome of each refund a payment provider reported as made outside Alfa: recorded, reconciled, or duplicate or invalid |
 | `#__alfa_order_shipments` | The parcels of an order: method, cost and tax, tracking number, status |
 | `#__alfa_order_shipment_items` | Which order lines are in which parcel, and how many of each |
