@@ -86,9 +86,10 @@ new module first asks to be saved).
 What happens next:
 
 - While the panel is open, every opener of the module carries `aria-expanded="true"`, and `false` once it closes.
-- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape (wherever the focus
-  is while the panel lies open) close it and give the focus back to the element that opened it. Escape pressed in a group's search box that holds text, or while a
-  dropdown is open, is left to the box or the dropdown and does not close the panel.
+- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape (wherever the focus is
+  while the panel lies open) close it and give the focus back to the element that opened it. Escape pressed in a
+  group's search box that holds text, or while a dropdown is open, is left to the box or the dropdown and does not
+  close the panel.
 - Where the panel is a column beside the products, an opener brings the panel into view and puts the focus in it.
 - An opener added to the page later (by a script, or a module loaded afterwards) works too: the module finds openers
   when they are pressed.
