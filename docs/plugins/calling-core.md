@@ -239,8 +239,8 @@ carrier never calls `ShipmentLedger`. The pages of each family show the calls at
 | `chargeAttempt(ChargeReferenceEvent $event): PaymentLedger` (final) | **ANSWERS.** The builder of a renewal attempt's pending payment: your plugin as the writer, the charge's amount, its reference `renewalReference()`; finish it with `saveWithVerdict()`. The same attempt sent again answers the same row. See [onPaymentChargeReference](./payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
 
 A `PaymentWriteVerdict` or a `DisputeVerdict` is a value: decide on its `kind`, then on its `code`; answer a provider
-with its `providerStatus()`. A code's value never changes and, within
-a major version, is never used for anything else. Codes may be added, kinds never: handle a code you do not know as its kind. See
+with its `providerStatus()`. A code's value never changes and, within a major version, is never used for anything
+else. Codes may be added, kinds never: handle a code you do not know as its kind. See
 [Why a write did not write](./payment-plugin-money.md#why-a-write-did-not-write).
 
 ### Readers
