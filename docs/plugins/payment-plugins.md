@@ -86,8 +86,8 @@ only to add something below them; with nothing to add, it sets none. `onCartView
 one.
 
 Every other event is optional. You take part in an event by writing a public method with the event's name. Nothing
-is listed in `getSubscribedEvents()`: all payment events are addressed to one plugin (targeted), and the base class
-reports your methods to Alfa.
+is listed in `getSubscribedEvents()`: all payment events are addressed to one plugin (targeted), and Alfa calls the
+public method of your class that has the event's name.
 
 The base class's `getSubscribedEvents()` returns an empty list. If your plugin needs a Joomla
 event of its own, override it and merge with `parent::getSubscribedEvents()`.
@@ -112,7 +112,7 @@ sequenceDiagram
     participant P as Your plugin
     participant Provider as The provider
     Shopper->>Alfa: Opens the cart
-    Alfa->>P: onCartViewAssets, then onCartView
+    Alfa->>P: onCartView, then onCartViewAssets
     Shopper->>Alfa: Places the order
     Alfa->>P: onOrderBeforePlace (you may refuse)
     Alfa->>Alfa: Saves the order
