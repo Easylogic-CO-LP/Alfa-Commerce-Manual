@@ -241,8 +241,8 @@ dismissed until something new or worse holds.
 
 A card dispute has one notice of its own, `payments.dispute.<id>` in the Payments group, said again at each step of
 the case (an inquiry, a chargeback to answer by its deadline, under review, won, lost, closed, the question staff must
-answer). It comes back unread while the case needs staff. A provider's dispute word that Alfa did not record is kept
-for staff as `payments.dispute.refused.<payment>.<key>`. See [Card disputes](./disputes.md#telling-staff).
+answer). At each step it comes back unread while the case needs staff. A provider's dispute word that Alfa did not
+record is kept for staff as `payments.dispute.refused.<payment>.<key>`. See [Card disputes](./disputes.md#telling-staff).
 
 ### The bell and the Notifications list
 
