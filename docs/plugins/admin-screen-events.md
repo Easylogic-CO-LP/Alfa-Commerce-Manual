@@ -7,7 +7,7 @@ description: "The list, edit, save and delete events a feature plugin hears on A
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -19,6 +19,9 @@ description: "The list, edit, save and delete events a feature plugin hears on A
 ## The list screen events
 
 All eight events below are announced to everyone. Each card says "you" for your handler.
+
+The events fire on all 26 list screens, but two lists draw less of what you add. The carts list draws no bulk action
+and has no `before-grid` slot. The webhooks list draws no contributed column, no row or bulk action and no slot.
 
 ### onAlfaAdminListQuery
 
@@ -62,8 +65,9 @@ All eight events below are announced to everyone. Each card says "you" for your 
   `rowData()` and `rowValues()`.
 - **What you are expected to do.** Declare your column (see "Declaring a column" below). Do not run a query for each
   row. Read what `onAlfaAdminListRowData` stored.
-- **What happens next.** The list gets one more header cell and one more cell on every row. Each of your cells carries your column's title as `data-alfa-label`, so that on a phone
-  the row folds and your value is shown under its name.
+- **What happens next.** The list gets one more header cell and one more cell on every row. Each of your cells
+  carries your column's title as `data-alfa-label`. The orders list folds its rows on a phone, and there your value
+  is shown under that name.
 - **If you are missing or you fail.** The column is not shown. Your error is logged.
 
 ### onAlfaAdminListRowActions
@@ -82,8 +86,8 @@ All eight events below are announced to everyone. Each card says "you" for your 
 - **Who receives it.** Every loaded plugin that listed the event.
 - **What you are given.** `bulkActions` (the same builder), `items`, `ids`, `state`, `token`.
 - **What you are expected to do.** Declare a button for the checked rows, the same way as a row action.
-- **What happens next.** Staff who hold the permission see a labelled button in a bar above the table. It refuses to
-  run when no row is checked.
+- **What happens next.** Staff who hold the permission see a labelled button in a bar above the table. A button
+  with a task refuses to run when no row is checked.
 - **If you are missing or you fail.** The button is not shown. Your error is logged.
 
 ### onAlfaAdminToolbar
@@ -130,7 +134,7 @@ These slots exist:
 |---|---|---|
 | `before-grid` | Above the table, on 24 of the 26 list screens. The carts and webhooks lists have none. | `$event->isListScreen() && $event->at('before-grid')` |
 | `order-details` | Order edit screen, right column, under Order Details | `$event->targets('order') && $event->at('order-details')` |
-| `order-main` | Order edit screen, full width, at the end of the Order tab | `$event->targets('order') && $event->at('order-main')` |
+| `order-main` | Order edit screen of a saved order, full width, at the end of the Order tab | `$event->targets('order') && $event->at('order-main')` |
 | `cartrule-sidebar` | Cart rule edit screen, in the side column | `$event->targets('cartrule') && $event->at('cartrule-sidebar')` |
 | `cart-main` | The screen of one cart, after its sections | `$event->targets('cart') && $event->at('cart-main')` |
 
@@ -248,9 +252,9 @@ Three things to know:
   screen those names are `general`, `identity`, `inventory`, `prices`, `Images`, `publish` and `meta`. On the order
   screen they are `user_details` and `order_details`; on the screen of one cart, `builder`. Give your fieldset a name
   that is clearly yours.
-- **Two screens show no extra tabs.** Contributed tabs are drawn on 18 edit screens, and contributed sections on the
-  screen of one cart. The edit screens of **Document Types** and **Stock Locations** do not draw them. There your fields are still part
-  of the form and still arrive in the save events, but staff cannot see them.
+- **Three screens show no extra tabs.** Contributed tabs are drawn on 18 edit screens, and contributed sections on the
+  screen of one cart. The edit screens of **Document Types**, **Stock Locations** and **Webhooks** do not draw them.
+  There your fields are still part of the form, but staff cannot see them and nothing posts a value for them.
 
 ### onAlfaAdminPrepareData
 
@@ -332,6 +336,8 @@ this point, so write your own rows in `onAlfaAdminAfterSave`.
 - **If you are missing or you fail.** The records stay deleted either way. Your error is logged.
 
 :::note Orders
-A new order made in the administrator is not saved through the edit form's save. The three save events fire when
-staff save an **existing** order.
+A new order is not written through the record's own save: Alfa's order creation writes it. When staff save a new
+order on the order screen, only `onAlfaAdminValidate` fires, with `isNew` true. `onAlfaAdminBeforeSave` and
+`onAlfaAdminAfterSave` fire when staff save an **existing** order. An order placed from the screen of one cart (the
+order builder) raises none of the three.
 :::
