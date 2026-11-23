@@ -7,7 +7,7 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -63,16 +63,16 @@ Change nothing on the item.
 
 **What happens next.** Alfa draws your layout in the payment methods area of the item page.
 
-**If you are missing or you fail.** Nothing is drawn for your method, the error is written to Joomla's log (category
-`com_alfa`), and the page is shown.
+**If you are missing or you fail.** Alfa still draws the method's image, title and description, nothing of yours is
+added, a thrown error is written to Joomla's log (category `com_alfa`), and the page is shown.
 
 ## onCartViewAssets
 
 Event class: `CartViewAssetsEvent`. Optional.
 
-**When it fires.** Once per plugin while the cart page, or the administrator's order builder, is built as HTML. It
-fires for every plugin that owns a published method, whether the cart offers that method now or not. It never fires
-inside a JSON answer.
+**When it fires.** Once per plugin while the cart page, or the administrator's order builder, is built as HTML for a
+cart that holds something. It fires for every plugin that owns a published method, whether the cart offers that method
+now or not. It never fires inside a JSON answer.
 
 **Who receives it.** One plugin at a time: each plugin that owns a published payment method.
 
@@ -91,7 +91,8 @@ registry file you add here, or Alfa's own.
 
 **What happens next.** Your assets are in the page's head before the shopper's first click.
 
-**If you are missing or you fail.** Nothing is declared, the failure is logged, and the page is shown.
+**If you are missing or you fail.** Nothing is declared, the failure is logged as a warning (category `com_alfa.cart`),
+and the page is shown. With Joomla's Debug System on, the error is thrown instead of logged.
 
 ## onCartView
 
@@ -183,8 +184,10 @@ Event class: `OrderProcessViewEvent`. You must write this method.
 
 **When it fires.** When the order process page is shown, right after placement, and again each time the shopper
 opens that page. The page opens only the order the shopper placed in this
-browser session, or one a payment plugin stated with `authenticatedReturnFor()` (see
-[onPaymentResponse](#onpaymentresponse)). Any other order is refused before it is read.
+browser session, one a payment plugin stated with `authenticatedReturnFor()` (see
+[onPaymentResponse](#onpaymentresponse)), or one whose Pay now address the buyer opened while it may still be paid
+(see [Payment plugins](./payment-plugins.md#what-happens-next-the-life-of-a-payment)). Any other order is refused
+before it is read.
 
 **Who receives it.** One plugin: the plugin recorded on the order.
 
@@ -260,10 +263,11 @@ What the session's order needs from you:
   before the return is authenticated. A valid signed return link (`orderFromReturnLink()`) grants the same right, so
   a return it authenticates may be stated too.
 - **Send a failed or cancelled return to the process page** (`getProcessPageUrl()` with a flag of your own), which
-  asks your plugin again and offers the retry. The completed page offers none.
+  asks your plugin again and offers the retry. The completed page draws no retry of yours: it shows Pay now while the
+  order may still be paid, which leads back to the process page.
 - **Do not write `com_alfa.order_id` yourself.** The process page and the completed page open only an order the
-  shopper placed in this session or one your plugin stated this way. An order id written without that mark is
-  refused.
+  shopper placed in this session, one your plugin stated this way, or one whose Pay now address the buyer opened. An
+  order id written without that mark is refused.
 - **If you set no redirect**, the shopper is sent to the cart with the message that the result of the payment could
   not be confirmed there. Set a redirect all the same: only you know where the shopper belongs.
 
@@ -415,7 +419,7 @@ Event class: `PaymentCheckupEvent`. Optional.
 | `offerCheck()` | Shows the "Check connection" button |
 | `addStep(string $title, string $status, string $help = '', string $detail = '')` | Adds a step. `$status` is `PaymentCheckupEvent::DONE`, `TODO`, `FAILED`, `MANUAL` or `UNAVAILABLE`. In `$help`, `{webhook}` and `{return}` are replaced by this site's addresses. `{webhook}` is the plain address, the one your plugin's `$this->webhookUrl()` builds for the card's set. |
 | `setLastChecked(string)` | One line shown beside the button |
-| `webhookUrl()`, `returnUrl()` | Your addresses in the form a provider can reach. `webhookUrl()` names the card's set (sandbox or live) when the card has one. `webhookUrl()` is the plain address of [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses), and `returnUrl()` is unchanged. |
+| `webhookUrl()`, `returnUrl()` | Your addresses in the form a provider can reach. `webhookUrl()` names the card's set (sandbox or live) when the card has one. `webhookUrl()` is the plain address of [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses), and `returnUrl()` is the return address in the form a buyer's browser reaches without a redirect. |
 
 **What you are expected to do.** Add your setup steps in order. A checkup only reads: it never moves money and never
 changes the method.
