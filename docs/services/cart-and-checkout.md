@@ -383,7 +383,10 @@ collected** (`zero_total_status`), when it names one: a request for offer in a c
 [A catalogue with requests for offer](../getting-started/requests-for-offer.md)). An order the customer's credit pays
 in full is not such an order: its total is not zero. The confirmation e-mail is that status's own, and the download
 access is that status's. `OrderCreator` checks the status: one that is not published lands the order in the initial
-status with a notice to staff, and one that requires payment refuses the placement.
+status with a notice to staff. A status that requires payment takes an order with nothing due: the placement states
+it in the draft (`nothing_due`, true when the cart's total is zero), the order is paid, and the status's unpaid
+exception plays no part. A new order with money due enters such a status only where the status allows the unpaid
+exception, recorded as one; otherwise the placement is refused.
 
 ### What happens to the cart
 
