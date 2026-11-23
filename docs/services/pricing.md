@@ -107,7 +107,9 @@ A price of 0.00 is a price: the product is free. It shows 0,00 with its add to c
 order builder and the REST API, and an order whose total is 0 is placed with nothing to collect: no payment is asked
 for.
 
-In the product list a product with no price for the shopper is listed with no price. The price filters, the "on sale"
+In the product list a product with no price for the shopper is listed with no price: its page and its card say
+**Call for price** where the price would be (the language string `COM_ALFA_PRICE_ON_REQUEST`, which a language
+override can word the shop's way, or empty to show nothing). The price filters, the "on sale"
 and "save at least" filters and the price slider's range leave it out, and the filters' counts beside such a listing
 count what it lists. A sort by price or by saving, low to high or high to low, lists it after the products with a
 price; every other sort lists it as any product. A product priced at 0.00 is listed at 0,00, kept by a price filter or

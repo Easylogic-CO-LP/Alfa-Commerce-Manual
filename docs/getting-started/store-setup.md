@@ -71,9 +71,10 @@ default or Clear everything, drops the pages Joomla's page cache stored, so visi
 does not reach another extension's page cache, a server's or a CDN's cache, or the pages browsers keep under Joomla's
 Use Browser Caching: each is purged by its own means.
 
-Where a product's price would be, its page and its cards say **Call for price**. To word it your own way (a phone
-number, "Ask us"), override the language string `COM_ALFA_PRICE_ON_REQUEST` in Joomla's **Language Overrides** for the
-site; an override with no text shows nothing there. While the shop sells, a product with no price shows nothing there.
+Where a product's price would be, its page and its cards say **Call for price**, as they do for a product that has no
+price while the shop sells. To word it your own way (a phone number, "Ask us"), override the language string
+`COM_ALFA_PRICE_ON_REQUEST` in Joomla's **Language Overrides** for the site; an override with no text shows nothing
+there.
 A product that cannot be bought now and whose stock rule offers **Notify me when available** keeps that button in the
 catalogue too: it is drawn beside the add to cart, not in its place.
 
