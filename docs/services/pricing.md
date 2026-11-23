@@ -511,6 +511,7 @@ echo $line->format(false);           // without it
 | `Currency::getDefault(): self` | The shop's default currency (Options, Currency, Default Currency), a published one. Throws `RuntimeException` when the stored default is not a published currency; the setup checklist's Default currency step reports it. |
 | `Currency::loadById(int $id): self` | By row id. Throws `RuntimeException` when there is none. |
 | `Currency::loadByCode(string $code): self`, `Currency::loadByNumber(int $number): self` | By ISO code (`EUR`) or ISO number (`978`) |
+| `Currency::published(): array` | Every currency the shop trades in: the published ones, in the order the shop gave them (the currencies list's Ordering, then the id), as `Currency` objects; an empty list when none is published. An unpublished, archived or trashed currency is never listed (an order's own currency is read with `loadById()`, whatever its state). Read on each call. For an extension that checks its settings against the shop's currencies, such as a gateway's checkup. |
 | `getId()`, `getName()`, `getCode()`, `getNumber()`, `getSymbol()`, `getDecimalPlaces()`, `getDecimalSeparator()`, `getThousandSeparator()`, `getFormatPattern()` | Read the currency |
 | `format(float $amount, bool $includeSymbol = true): string` | A number as the currency writes it |
 | `equals(Currency $other): bool`, `is(string $code): bool` | Comparisons |

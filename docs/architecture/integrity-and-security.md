@@ -323,7 +323,7 @@ Commerce adds, separated by `|`:
 | `agent` | The browser's user agent, at most 200 characters. |
 | `session` | The first 12 characters of a SHA-256 hash of the session id. The id itself is never written. |
 | `user` | The user id, 0 for a guest. |
-| `error`, then `cause` | The error and up to four of its causes: the class, the code, for a database error its error number (and SQLSTATE when the database gives one), the message, and the first place in Alfa Commerce's code it passed through. The database's user, host, name and password, and the site's folder, are taken out of the message (`<user>`, `<host>`, `<schema>`, `<password>`). A message is cut at 500 bytes. |
+| `error`, then `cause` | The error and up to four of its causes: the class, the code, for a database error its error number (and SQLSTATE when the database gives one), the message, and the first place in Alfa Commerce's code it passed through. The message is made safe by `ErrorText::of()`, the one rule of Alfa Commerce ([Payment plugins](../plugins/payment-plugins.md#logging)): the database's user, host, name and password, the site's secrets and folder, and any credential are taken out (`<user>`, `<host>`, `<schema>`, `<secret>`), on one line, cut at 1,000 characters. |
 | `memory`, `time` | The request's peak memory and how long it ran. |
 
 ### When it is used

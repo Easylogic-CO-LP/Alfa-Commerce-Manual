@@ -16,7 +16,7 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
 - [A complete payment plugin](./payment-plugin-example.md)
 
-All sixteen events on this page are addressed to one plugin, each to its public method of the event's name. Which plugin depends on the
+All seventeen events on this page are addressed to one plugin, each to its public method of the event's name. Which plugin depends on the
 event: the plugin of an offered method, the plugin recorded on the order, the plugin recorded on the payment row, or
 the plugin named in the address. If that plugin cannot be used, Alfa never asks another one:
 
@@ -431,30 +431,152 @@ changes the method.
 
 ## onPaymentStoreReference and onPaymentChargeReference
 
-Event classes: `StoreReferenceEvent` and `ChargeReferenceEvent`. Optional. They are for a gateway that can charge a
-saved card or mandate without the shopper present, and that says so by returning `true` from `supportsRecurring()`.
+Event classes: `StoreReferenceEvent` and `ChargeReferenceEvent` (`ChargeReferenceEvent::NAME` is
+`onPaymentChargeReference`). Optional. They are for a gateway that can charge a saved card or mandate without the
+shopper present, and that says so by returning `true` from `supportsRecurring()`.
 
-**When they fire.** The core repository defines both events and their contract, but contains no code that
-sends them. See [Not documented yet](./payment-plugins.md#not-documented-yet).
+**When they fire.** Alfa Commerce itself sends neither: an extension that bills again (a subscriptions extension)
+sends them to the gateway of the stored credential, through `AlfaPluginHelper::bootSingle()`, `declares()` and
+`dispatchTo()`.
 
-**Who receives them.** One plugin.
+**Who receives them.** One plugin: the gateway that stored the reference.
 
 **What you are given.**
 
 | Event | Getters | Setters |
 |---|---|---|
 | `StoreReferenceEvent` | `getOrder()`, `getPayment()` (the completed payment row) | `setReference(array $reference, string $label = '', ?string $expiresAt = null)` |
-| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()`, and `getAttempt()`, the attempt's number from 1, the same number for the same attempt sent again; build your idempotency key from it. | Exactly one of `setSuccess(string $transactionId)`, `setFailure(string $error)`, `setPending(string $reference, string $reason)` |
+| `ChargeReferenceEvent` | `getOrder()`, `getAmount()` (`Money`), `getCurrencyCode()`, `getReference()` (the array you stored), `getOperation()`, and `getAttempt()`, the attempt's number from 1: the same number for the same attempt sent again, a new number for a new attempt | Exactly one of `setSuccess(string $transactionId, int $paymentId)`, `setPending(string $reference, string $reason, int $paymentId)`, `setFailure(string $error, string $decline = ChargeReferenceEvent::DECLINE_NOW)`, `setNotSent(string $reason, string $why = ChargeReferenceEvent::NOT_SENT_RETRY)` |
 
 **What you are expected to do.** In the first, hand back whatever you need to charge again later. You do not store
-it. In the second, charge the amount against the stored reference and answer exactly once: success when the provider
-confirmed this charge, failure when you know no money moved, pending whenever the request may have reached the
-provider and you hold no definite answer. Never throw, and never return without answering.
+it.
 
-**What happens next.** The caller keeps the reference, and writes the payment row for a charge.
+In the second, the attempt's payment row is yours, written before the provider is called, as a checkout payment's is.
+The caller books nothing: it reads the row your answer names.
+
+1. **An earlier attempt unresolved.** When an earlier attempt of this order is still unresolved (your own pending row
+   of the order under another reference, which `latestPendingPayment()` answers, or one your provider still holds),
+   book nothing and send nothing: answer `setNotSent($why, ChargeReferenceEvent::NOT_SENT_EARLIER_UNRESOLVED)`.
+2. **Book the attempt.** `$verdict = $this->chargeAttempt($event)->saveWithVerdict();` writes a pending payment of
+   your gateway for `getAmount()`, its reference `renewalReference()` of the order, the credential and the attempt's
+   number. The same attempt sent again answers the same row and writes nothing new. Only `VERDICT_WRITTEN` goes on to
+   the provider:
+
+   | The verdict | Your answer |
+   |---|---|
+   | `VERDICT_LOCK_NOT_TAKEN`, `VERDICT_WRITE_FAILED` | `setNotSent($why)`: nothing was sent; the same attempt may be sent again |
+   | `VERDICT_REFUSED` with `REFUSAL_OPEN_ATTEMPT` | `setNotSent($why, ChargeReferenceEvent::NOT_SENT_EARLIER_UNRESOLVED)` |
+   | `VERDICT_REFUSED` with any other code (`REFUSAL_OVER_TOTAL`: the order is covered; `REFUSAL_REFERENCE_TAKEN`: this attempt's row is already closed, so its number is spent) | `setFailure($why, ChargeReferenceEvent::DECLINE_CONFIGURATION)` |
+
+3. **Call the provider** with the row's reference as the merchant reference and the idempotency key. A provider that
+   cannot take it as it is may be sent a form made from it alone; your webhook and Reconcile still find the row by the
+   row's own reference, or by the provider's id once you write it on the row.
+4. **Settle your row and answer**, naming it (`$verdict->rowId`):
+
+| Answer | When | Your row |
+|---|---|---|
+| `setSuccess($transactionId, $paymentId)` | The provider confirmed this charge as taken, for exactly the amount and currency asked | Settled completed with the provider's id (`settleAttemptVerdict()`); the method's `status_on_completed` moves the order |
+| `setPending($reference, $reason, $paymentId)` | The request may have reached the provider and you hold no definite answer: a timeout or dropped connection after sending, HTTP 0 or 5xx, an unreadable body, a status the provider calls pending, or a "success" whose amount, currency or identity does not match what was asked | Stays pending. `$reference` is what your webhook and Reconcile find it by: the provider's id when it gave one (write it on the row), else the row's reference. They settle it later with `settleAttempt()`, `->expectStatus(self::STATUS_PENDING)` and `->completed()` or `->failed()`. The caller never charges that attempt again. |
+| `setFailure($error, $decline)` | The provider definitely refused, or you refused to send. No money moved; the attempt is spent. | Closed failed first |
+| `setNotSent($reason, $why)` | Nothing reached the provider; no money moved | `NOT_SENT_RETRY` (the default): left pending as it is; the caller sends the same attempt again, with the same number, and finds it. `NOT_SENT_EARLIER_UNRESOLVED`: you booked nothing. |
+
+`setSuccess()` and `setPending()` without a row (an id under 1) throw `InvalidArgumentException`. A failure's kind
+says when the caller may try a new attempt:
+
+| Kind | Meaning |
+|---|---|
+| `DECLINE_NOW` (the default) | Declined for now: insufficient funds, a generic decline. A new attempt may follow later. |
+| `DECLINE_FINAL` | Declined for good: a stolen card, a closed account, a revoked mandate, an expired card. No new attempt until the customer gives a new credential. |
+| `DECLINE_AUTHENTICATE` | The customer must confirm the payment (the bank asks for authentication). |
+| `DECLINE_NEW_CREDENTIAL` | The customer must give a new credential. |
+| `DECLINE_CONFIGURATION` | The method's settings, the currency or its scale, a credential of the other credential set, or the order's books refuse it. No new attempt until staff act. |
+
+An unknown kind or reason throws `InvalidArgumentException`. The event keeps exactly one answer: a later answer
+replaces an earlier one whole, except that neither a failure nor a not-sent answer ever replaces a success or a pending
+answer. The caller reads `getOutcome()` (`OUTCOME_SUCCESS`, `OUTCOME_PENDING`, `OUTCOME_FAILURE`,
+`OUTCOME_NOT_SENT`), `getPaymentId()`, `getTransactionId()`, `getPendingReference()`, `getDecline()`,
+`getNotSentReason()` and `getError()` (the reason of a failure or of a not-sent answer).
+
+```php
+public function onPaymentChargeReference(ChargeReferenceEvent $event): void
+{
+    $verdict = $this->chargeAttempt($event)->saveWithVerdict();
+
+    if ($verdict->kind === self::VERDICT_REFUSED && $verdict->code === self::REFUSAL_OPEN_ATTEMPT) {
+        $event->setNotSent('An earlier attempt of this order is unresolved.', ChargeReferenceEvent::NOT_SENT_EARLIER_UNRESOLVED);
+
+        return;
+    }
+
+    if ($verdict->kind === self::VERDICT_REFUSED) {
+        $event->setFailure('The books refuse this charge (' . $verdict->code . ').', ChargeReferenceEvent::DECLINE_CONFIGURATION);
+
+        return;
+    }
+
+    if ($verdict->kind !== self::VERDICT_WRITTEN) {
+        $event->setNotSent('The attempt could not be recorded yet.');
+
+        return;
+    }
+
+    // ...call the provider with the row's reference, settle the row, then answer naming $verdict->rowId
+}
+```
+
+**What happens next.** The caller keeps the reference from the first event. For a charge it reads your answer and the
+row it names; the method's status settings move the order when the row completes.
 
 **If you are missing or you fail.** For a charge, a handler that throws or does not answer is treated as an unknown
-outcome: nothing is booked and nothing is charged again.
+outcome: the caller never charges again and asks an operator to review, or asks you first with `onPaymentChargeQuery`.
+A gateway without `supportsRecurring()` answering `true` is never asked: a renewal on its method is not charged, and
+its order stays owed, for the customer to pay and staff to collect.
+
+**Whether a method may renew.** `renewalsAllowed(int $methodId)` (final, public) answers `true` only when your gateway
+can renew (`supportsRecurring()`), the method is published, and its settings allow it (`methodAllowsRenewals()`). An
+unpublished, archived or trashed method, another gateway's method, or none, answers `false`. A caller that is not a
+payment plugin asks it through `AlfaPluginHelper::get()->invoke($plugin, 'renewalsAllowed', $methodId)`, and reads a
+method's state itself with `MethodState::of(MethodState::PAYMENT, $methodId)` (`PUBLISHED`, `UNPUBLISHED`,
+`ARCHIVED`, `TRASHED` or `MISSING`; `MethodState::SHIPMENT` for a shipping method).
+
+**Asking for a stored credential.** Right before it creates its checkout order, a gateway that can charge stored
+credentials asks whether the order needs one, for every plugin that listens:
+
+```php
+$intent = AlfaPluginHelper::get()->dispatch(new StoredCredentialIntentEvent(StoredCredentialIntentEvent::NAME, ['order' => $order]));
+
+if ($intent->isRequired()) {
+    // ask the provider to keep the card or mandate, with the customer's consent
+}
+```
+
+`StoredCredentialIntentEvent::NAME` is `onPaymentCredentialIntent`. A plugin that sells something recurring answers
+`setRequired()` when the order qualifies; with no listener the answer is `false`.
+
+## onPaymentChargeQuery
+
+Event class: `ChargeQueryEvent` (`ChargeQueryEvent::NAME` is `onPaymentChargeQuery`). Optional, for a gateway that
+answers `onPaymentChargeReference`.
+
+**When it fires.** When the caller of a charge does not know an attempt's outcome (your handler threw or answered
+nothing) and asks before it sends the attempt again.
+
+**Who receives it.** One plugin: the gateway of the stored credential, on its public method `onPaymentChargeQuery`. A
+gateway without the method cannot be asked; the caller leaves the attempt to staff.
+
+**What you are given.** `getOrder()`, `getReference()` (the stored credential), `getAttempt()` and `getAmount()`
+(`Money`): what the charge carried. Each is required; a question without one, or with one of the wrong kind, throws
+`InvalidArgumentException` when it is made.
+
+**What you are expected to do.** Find the attempt at your provider by what you keyed the request on (the order, the
+credential, the attempt and its amount; your Reconcile lookup) and answer exactly one of `setSuccess($transactionId)`
+(the provider holds it as charged), `setPending($reference, $reason)` (still unresolved), `setFailure($error,
+$decline)` (held as refused, with the kinds above), or `setNotSent($reason)` (the provider has no record of it: the
+same attempt may be sent again). Charge nothing and write nothing.
+
+**What happens next.** The caller acts on your answer: a charge your provider holds is not sent again.
+
+**If you are missing or you fail.** A thrown error leaves the attempt to staff.
 
 ## onClearData
 

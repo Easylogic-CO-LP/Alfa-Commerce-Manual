@@ -283,8 +283,9 @@ them.
 | Class | Event name | What the code says |
 |---|---|---|
 | `StoreReferenceEvent` in `Payments/` | `onPaymentStoreReference` | Defined, not dispatched. An extension's billing engine raises it at a gateway whose `supportsRecurring()` answers `true`, which handles it with its public method of that name. See [Payment plugins](../plugins/payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
-| `ChargeReferenceEvent` in `Payments/` | `onPaymentChargeReference` | Defined, not dispatched. As above. |
-| `StoredCredentialIntentEvent` in `Payments/` | None in the code | Defined, not dispatched. No event name is given to it anywhere. |
+| `ChargeReferenceEvent` in `Payments/` | `onPaymentChargeReference` (`NAME`) | Defined, not dispatched by Alfa Commerce: an extension that bills again (a subscriptions extension) sends it to the gateway of the stored credential. As above. |
+| `ChargeQueryEvent` in `Payments/` | `onPaymentChargeQuery` (`NAME`) | Defined, not dispatched by Alfa Commerce: the same extension asks the gateway with it about an attempt whose outcome it does not know. See [onPaymentChargeQuery](../plugins/payment-plugin-events.md#onpaymentchargequery). |
+| `StoredCredentialIntentEvent` in `Payments/` | `onPaymentCredentialIntent` (`NAME`) | Defined, not dispatched by Alfa Commerce: a gateway that can charge stored credentials sends it to every plugin that listens, before it creates its checkout order. See [Payment plugin events](../plugins/payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
 | `InventoryTransferredEvent` in `Inventory/` | `onInventoryTransferred` | Defined, not dispatched: no command of the inventory service moves stock between locations. See [Stock events](./stock-events.md#oninventorytransferred). |
 
 ## Building blocks, not events
@@ -293,7 +294,7 @@ These files are in the same folder, but a plugin never receives them as an event
 
 | Kind | Files |
 |---|---|
-| Abstract bases (14) | `AlfaAdminEvent` in `Admin/`. `FieldsEvent` in `Fields/`. `GeneralEvent`, `RedirectEvent` and `LayoutEvent` in `General/`. `InventoryAfterEvent` in `Inventory/`. `MediaEvent` in `Media/`. `PanelResultEvent` in `Panel/`. `PaymentsEvent`, `PaymentsRedirectEvent` and `PaymentsLayoutEvent` in `Payments/`. `ShipmentsEvent`, `ShipmentsRedirectEvent` and `ShipmentsLayoutEvent` in `Shipments/`. |
+| Abstract bases (15) | `AlfaAdminEvent` in `Admin/`. `FieldsEvent` in `Fields/`. `GeneralEvent`, `RedirectEvent` and `LayoutEvent` in `General/`. `InventoryAfterEvent` in `Inventory/`. `MediaEvent` in `Media/`. `PanelResultEvent` in `Panel/`. `ChargeAnswerEvent` (the answers `ChargeReferenceEvent` and `ChargeQueryEvent` share), `PaymentsEvent`, `PaymentsRedirectEvent` and `PaymentsLayoutEvent` in `Payments/`. `ShipmentsEvent`, `ShipmentsRedirectEvent` and `ShipmentsLayoutEvent` in `Shipments/`. |
 | Interface (1) | `ScopedFieldEvent` in `ItemFields/` |
 | Traits (7) | `AlfaAdminAware` in `Admin/`. `HasMethodArgumentTrait` in `General/Traits/`. `ContributedSurfaces`, `HasCartLayout`, `HasSelections` and `HasSurfaces` in `ItemFields/Concern/`. `HasColumns` in `Lists/`. |
 | Helper classes (10) | `ActionBuilder`, `AdminActions`, `AdminColumns` and `AlfaAdminContext` in `Admin/`. `PriceChange` in `Catalog/`. `SelectorDescriptor`, `SurfaceBuilder` and `Surfaces` in `ItemFields/`. `ColumnBuilder` in `Lists/`. `OutboundChange` in `Outbound/`. |
@@ -320,4 +321,3 @@ Follow the link in the last column of the event's row.
 
 - `onGetToolActions` and `onExecuteToolAction` have no card of their own. One line each on
   [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) gives the call.
-- `StoredCredentialIntentEvent` is not documented anywhere, because nothing in Alfa Commerce sends it.
