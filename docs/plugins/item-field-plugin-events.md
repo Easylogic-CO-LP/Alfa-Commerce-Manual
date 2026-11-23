@@ -61,8 +61,9 @@ The places of the item page, each returning a builder:
 On a listing card the image place is drawn once by the card's images
 part, over the first image or over the slider.
 
-In catalogue-only mode the buy slots hold no plugin surface, only core's read-only lists, and the add to cart slot is
-none; a plugin reads `$item->sellsOnline` to decide what it draws in the display slots.
+In catalogue-only mode the buy slots (`buyForm()` and `nearAddToCart()`) keep no field's surface, only core's read-only
+lists, and the add to cart slot is none; a plugin reads `$item->sellsOnline` to decide what it draws in the display
+slots.
 
 The builder's methods:
 
@@ -95,7 +96,7 @@ layout by Alfa.
 | The plugin is disabled, missing or cannot be loaded | The field is not drawn. The page shows without it. |
 | The selector kind does not match the field's use | On a site in debug mode, an error. Otherwise a warning in Joomla's log, category `alfa-item-fields`. |
 | The layout file does not exist | Your layout is not drawn. Alfa falls back to a default layout of its own or to nothing. In debug mode a warning names the missing file. |
-| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an item for an order or the order builder. Whatever your method set or changed before the error is undone, the add to cart area included; the other fields keep theirs. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
+| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an item for an order or the order builder. What your method set before the error is dropped: its places, and the add to cart area, which Alfa puts back as it was before your field; the other fields keep theirs. Any other change your method made to the item stays. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
 
 ## onItemListPrepare
 
