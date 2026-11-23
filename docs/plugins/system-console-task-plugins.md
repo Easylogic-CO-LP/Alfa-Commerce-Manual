@@ -8,7 +8,7 @@ description: What a plugin of a group that Joomla loads itself can do with Alfa 
 
 <CreatePluginButton type="system" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Joomla has plugin groups of its own: `system`, `console`, `task`, `user`, `content` and others. Joomla loads them,
 not Alfa Commerce. A plugin of such a group can still take part in the shop. This page says how, and what such a
@@ -87,7 +87,7 @@ loads those only when the method runs, and the method runs only when Alfa Commer
 | Refuse an order before it is placed (`onOrderPlaceValidate`) | The same. |
 | Add its own part to a cart line (`onCartItemDisplay`) | The same. |
 | Act as a payment, shipping, item-field, form-field or search plugin | Alfa calls those by their own group, and the plugin must extend that group's base class. |
-| Register work in Alfa's own background work | See [Task plugins](#task-plugins). |
+| Declare and ask for work in Alfa's own background work | Only a plugin of an `alfa` group does: `BackgroundWork::of()` takes no other. See [Task plugins](#task-plugins). |
 
 A plugin that needs any of the first three is a feature plugin of the `alfa` group.
 
@@ -282,7 +282,7 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 
 | When | What it does |
 |---|---|
-| A Joomla user is saved or deleted | Keeps Alfa's own user records in step, and has the price index follow a user who moved to other customer groups. |
+| A Joomla user is saved or deleted, or Users > Batch changes the groups of accounts | Keeps Alfa's own user records in step, and has the price index follow a user who moved to other customer groups. |
 | A Joomla user group is saved or deleted | Keeps Alfa's customer group records in step. |
 | A content language is added, saved or published | Makes that language's Alfa tables. |
 | An Alfa language pack is installed or updated | Has Alfa name its order statuses and system fields in the new language. |
@@ -291,12 +291,13 @@ Commerce. It listens only to Joomla's own events and does the work that has to h
 | A storefront page, or an administrator page of staff who manage the shop, is drawn | Lets that page start the shop's background work when work is waiting. |
 | An API request has been answered | Runs waiting background work for a moment. |
 | Joomla's page cache asks | Keeps the cart page, and every page of a visitor who has a cart, typed checkout details, or a currency or a place of their own in the session, out of the cache. The pages that show a visitor's own data also keep themselves out of the cache without this plugin; what only this plugin does is keep such a visitor from being given a page stored for another visitor. |
-| An administrator page starts | Loads the texts of Alfa's guided tours. |
-| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, or Alfa's Options are saved | Has the setup checklist checked again. Also when a payment or shipping plugin is enabled or disabled from the Plugins list. |
+| An administrator page starts | Loads the texts of Alfa's guided tours, and on Joomla's own screens the script an Alfa tour needs to step through them. |
+| A site menu item is saved or deleted, a payment or shipping plugin is saved from its form, Alfa's Options are saved, or a staff member completes, skips or puts off one of Alfa's guided tours | Has the setup checklist checked again. Also when a payment or shipping plugin is enabled or disabled from the Plugins list. |
 | Clear everything is running (maintenance) | Leaves the Alfa modules out of pages, refuses a save of Alfa's Options, and tells staff on other screens. |
-| An Alfa extension is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
-| An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Has the dashboard cards and the setup checklist worked out again, and brings a standing notification of extensions not built for this version up to date. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
+| An Alfa plugin or package is about to be uninstalled | Says that its data stays. See [the installer gate](./overview.md#the-installer-gate). |
+| An Alfa extension is installed, updated, uninstalled, enabled or disabled (the Plugins list, Extensions: Manage, its own form) | Has the dashboard cards and the setup checklist worked out again, brings a standing notification of extensions not built for this version up to date, and keeps an `alfa` plugin's declared background work and its consumer row of the shop's changes in step with the plugin. See [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for). |
 | The administrator menu is built | Hides the Tools entry from staff without the permission for it. |
+| A request ends in a server error | Writes one line to Alfa Commerce's error log (`com_alfa_errors.php` in Joomla's log folder) and shows the page a sentence with the error's reference instead of the error. |
 
 Its one setting is Debug Logging, which writes what it does to the file `alfa_sync.php` in Joomla's log folder.
 
@@ -353,9 +354,9 @@ whose outcome is unknown stay until staff act on them under Tools > Tasks.
 | The task | Deleted |
 |---|---|
 | Done, of one of six kinds whose result the order itself shows: `order.stock`, `order.entitlements`, `order.documents`, `payment.automation`, `shipment.automation`, `payment.refund_flip` | 7 days after it finished |
-| Done, of any other kind (the e-mails, the plugins' reaction to a status change, the jobs) | 30 days after it finished |
-| Resolved | 30 days after it was resolved |
-| The newest done run of each of the shop-wide jobs (`stock.effects.drain`, `catalogue.rebuild`, `search.rebuild`, `tasks.prune`, `media.thumbnails.recreate`) | Never. It is kept as the record of the last run. |
+| Done, of any other kind (the e-mails, the plugins' reaction to a status change, the jobs, every task and job of an extension) | 30 days after it finished |
+| Resolved or cancelled | 30 days after it was resolved or cancelled |
+| The newest done run of each of the shop-wide jobs (`stock.effects.drain`, `catalogue.rebuild`, `search.rebuild`, `tasks.prune`, `price.index.tidy`, `media.thumbnails.recreate`) | Never. It is kept as the record of the last run. |
 
 **Options.** None.
 
@@ -390,13 +391,17 @@ disabled.
 
 Alfa Commerce ships no task plugin.
 
-Alfa has background work of its own (tasks and jobs, under Tools > Tasks). Only Alfa Commerce itself
-creates them. The lists of what can run are fixed inside Alfa, and writing a task or a job with a name Alfa does not
-know is refused. An extension cannot register its own.
+Alfa has background work of its own: tasks and jobs, run by its task runner and listed under Tools > Tasks. A plugin
+of an `alfa` group declares tasks and jobs of its own in `onAlfaDeclareWork`, asks for them through
+`BackgroundWork::of($this)` and runs them in `onAlfaRunTask` and `onAlfaRunJob`; a job declared with `every()` is
+owed by the runner itself, every 5 minutes to 30 days. See
+[Background work of a plugin](./api-route-plugins.md#background-work-of-a-plugin). A plugin of a group that Joomla
+loads itself (`system`, `task` and the others) cannot: `BackgroundWork::of()` takes only a plugin of an `alfa` group.
 
-So a plugin's own timed work uses Joomla's Scheduled Tasks: a plugin of the `task` group, written and set up the
-way Joomla's documentation describes. That is Joomla's feature, not Alfa's. If such a plugin also handles a targeted
-Alfa event, it handles it with a public method of the event's name and no Alfa interface, as shown above.
+So the timed work of a plugin of another group, and work at a fixed time of day, which Alfa's runner does not offer
+because it runs on visits and on cron, use Joomla's Scheduled Tasks: a plugin of the `task` group, written and set up
+the way Joomla's documentation describes. That is Joomla's feature, not Alfa's. If such a plugin also handles a
+targeted Alfa event, it handles it with a public method of the event's name and no Alfa interface, as shown above.
 
 A plugin's code can still run inside work that Alfa queues, without queuing anything itself. The clearest case is a
 listener of `onOrderStatusChange`: Alfa records each listener's run as part of a task, and staff can run a failed
@@ -406,7 +411,5 @@ The background work engine is described on its own page, [Background work](../ar
 
 ## Not documented yet
 
-- The web-cron address that also runs the background work.
 - The `webservices` plugin that ships (`plugins/webservices/alfa`), which registers the REST API's routes. It
   belongs with the REST API pages.
-- The background work engine itself.
