@@ -294,7 +294,8 @@ product's), `manage_stock`, `available_quantity`, `stock`, `changed_at` (when th
 last changed, UTC) and `price` with `gross`, `net` and `currency`. The price is what a guest pays in the shop's
 currency, the one the product list filters and sorts by: a combination with prices of its own has its own, any other
 combination its product's. A row with no valid price (an unpublished product, or no price row that applies) has `price`
-null. A price of 0 is a price.
+null. A price of 0 is a price. `available_quantity` and `stock` of a unit that tracks stock and holds no stock
+record read 0; a unit that does not track stock reads null for both.
 
 Pages follow the rows' key, never an offset, so walking the list while products change reads each row once:
 `page[limit]` from 1 to 1,000 (100 when you send none), and `page[after]`, the key the answer's `links.next` carries. A
