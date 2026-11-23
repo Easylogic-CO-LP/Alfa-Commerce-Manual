@@ -18,8 +18,9 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 - [A complete payment plugin](./payment-plugin-example.md)
 
 The nineteen events under this page's headings are each addressed to one plugin, on its public method of the event's
-name. Which plugin depends on the event: the plugin of an offered method, the plugin recorded on the order, the plugin recorded on the payment row, or
-the plugin named in the address. If that plugin cannot be used, Alfa never asks another one:
+name. Which plugin depends on the event: the plugin of an offered method, the plugin recorded on the order, the plugin
+recorded on the payment row, or the plugin named in the address. If that plugin cannot be used, Alfa never asks
+another one:
 
 | What was asked | What Alfa does when your plugin is unavailable |
 |---|---|
