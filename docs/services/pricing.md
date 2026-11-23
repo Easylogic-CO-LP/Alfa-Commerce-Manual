@@ -564,7 +564,7 @@ valid price (no price row applies) has empty figures; an explicit price of 0 is 
 filter and the sort by saving compare the saving each shopper's card shows first (`PriceSettings::netSaving()`): the
 saving before tax (`base_price` less `base_price_with_discounts`) when the card's saving sits beside a figure before
 tax (the subtotal is shown, or the base price is shown without the price with tax and the final price), otherwise the
-saving with tax (`discount_amount`). The shop's price display settings decide, as they decide the card. A unit with no
+saving with tax (`discount_amount`). The shopper's price display settings decide, as they decide the card. A unit with no
 valid price is left out by the filter and placed last by the sort. The "on sale" filter reads `discount_amount` above
 zero, which holds on either basis.
 
