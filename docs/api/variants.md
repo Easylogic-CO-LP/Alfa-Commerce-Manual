@@ -71,6 +71,9 @@ curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json"
   }'
 ```
 
+`opening_stock` is the new variant's first stock when its product tracks stock (`stock`, sent too, is taken instead);
+for a variant that does not track stock it is not applied, and `meta.warnings` says so.
+
 The answer is 201 with `Location` and the variant as a read gives it, shortened:
 
 ```json

@@ -396,7 +396,7 @@ it under `meta.tasks`, each with its state and its own address. See
 [Tasks](./documents-and-tasks.md#tasks).
 
 **A save applied with a remark.** A product's save that was saved but did not apply a part of what it was sent,
-or applied it with a remark, answers with `meta.warnings`, one sentence each. See
+or applied it with a remark, answers with `meta.warnings`, each entry a `code` and its sentence in `title`. See
 [Items](./catalogue.md#items).
 
 ## Status codes
