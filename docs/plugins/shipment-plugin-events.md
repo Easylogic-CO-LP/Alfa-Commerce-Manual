@@ -7,7 +7,7 @@ description: "Every event a shipping plugin receives: when it fires, what it is 
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -41,7 +41,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | Once per plugin, while the cart page (and the order builder in the administrator) is built as HTML. It fires for every plugin that has a published method, offered for this cart or not. It never fires inside the cart's JSON answers. |
+| **When it fires** | Once per plugin, while the page of a cart that is not empty (the cart page, and the order builder in the administrator) is built as HTML. It fires for every plugin that has a published method, offered for this cart or not. It never fires inside the cart's JSON answers. |
 | **Who receives it** | Each such plugin, alone. |
 | **What you are given** | `CartViewAssetsEvent`: `getKind()` (the text `shipment`), `getMethods()` (your published methods, keyed by id), `getDocument()` (the page) and `getWebAssetManager()`. |
 | **What you are expected to do** | Declare the script and stylesheet your cart panel needs. As dependencies, name only assets you registered yourself and Alfa's own, such as `com_alfa.cart`. Leave the method out if you have no script. |
@@ -52,7 +52,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | Once for each offered method, every time the cart is worked out. That includes the JSON answers that replace the methods block after the shopper changes something. |
+| **When it fires** | Once for each offered method, every time the checkout reads its methods. That includes the JSON answers that replace the methods block after the shopper changes something. A reading without methods, such as the cart module's, does not ask. |
 | **Who receives it** | The plugin of that method. |
 | **What you are given** | `CartViewEvent`: `getMethod()` (a `Method` reader, see [Method settings](./shipment-plugins.md#method-settings)), `getCart()` (the cart, read only), `getRequest()` (both, as one object). |
 | **What you are expected to do** | Call `setLayout()` and `setLayoutData()`. The layout holds markup and `data-` attributes only. A script named here is lost the first time the block is replaced: declare scripts in `onCartViewAssets`. Pass only what the layout prints. |
@@ -63,7 +63,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | Before a method of your plugin is listed at checkout, and when the cart's totals are worked out with a method of your plugin chosen. Alfa asks for every method it would list, so the question comes many times on one page and again at placement; keep the answer quick and free of side effects. A method whose plugin does not answer a price is not listed. |
+| **When it fires** | Before a method of your plugin is listed at the storefront's checkout, and when the cart's totals are worked out with a method of your plugin chosen. On the storefront Alfa asks for every method it would list, so the question comes many times on one page and again at placement; keep the answer quick and free of side effects. A method whose plugin does not answer a price is not listed there. The order builder in the administrator lists the methods without asking, and asks only the chosen one. |
 | **Who receives it** | The plugin of the method being listed or chosen. `$event->getMethod()->isSelected()` says which: true only for the method the cart has chosen (or the one an order is being placed with). For any other method Alfa reads only whether you can carry the cart, so a plugin that prices through an outside service can answer a listing on its own, from what it knows, and call the service for the chosen method. |
 | **What you are given** | `CalculateShippingCostEvent`: the method, and the cart with its lines and its delivery address. See the tables below. |
 | **What you are expected to do** | Answer, always, with exactly one of three calls: `setShippingCost()`, `setUnavailable()` or `setShippingAmounts()`. |
@@ -103,7 +103,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 There is no shop setting behind them and nothing is inherited. Two methods of your plugin can differ.
 
-The quote of the standard plugin, as it ships:
+The quote of the standard plugin, as it ships, with its comments left out:
 
 ```php
 public function onCalculateShippingCost($event): void
@@ -194,7 +194,8 @@ public function onOrderAfterPlace(OrderAfterPlaceEvent $event): void
 
 `shipmentUpdate()` names your plugin as the writer, so it writes only a parcel of one of your methods. A carrier that
 splits the order keeps in the parcel what goes now, with `assignShipmentItems($event->getShipmentId(), $order->id(),
-$lines)`, and records the rest as further parcels with `$this->shipment($order)` (see
+$lines)`, and records the rest as further parcels with `$this->shipment($order)`, each with
+`cost(0, 0, $order->shipmentTaxRate())` (see
 [Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)).
 
 **The tax chain.** A shipping charge can be taxed by several rules, one after the other. The ordered list of their
