@@ -143,6 +143,8 @@ classes, the first goes to a payment plugin and the second to a shipping plugin.
 | `onOrderPlaceValidate` | `OrderPlaceValidateEvent` in `Orders/` | Each in turn | Yes. `reject()`, or an error, refuses the order, and so does `OrderPlaceRefusedException`, read in its own words. | Before the save | `site/src/Service/Checkout/OrderPlacement.php:1226` | [Order and cart events](./order-and-cart-events.md) |
 | `onAlfaOrderPlaced` | `OrderPlacedEvent` in `Orders/` | Announced | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:702` | [Order and cart events](./order-and-cart-events.md) |
 | `onOrderStatusChange` | `OrderStatusChangeEvent` in `Orders/` | Announced. Each listener is called on its own and its result is recorded. | No | After the save is final | `administrator/src/Service/Order/Task/OrderStatusEvent.php:148` | [Order and cart events](./order-and-cart-events.md) |
+| `onAlfaDisputeChanged` | `DisputeChangedEvent` in `Payments/` | Announced. Each listener is called on its own and its result is recorded. | No | After the save is final | `administrator/src/Service/Order/Task/OrderDisputeEvent.php` | [Order and cart events](./order-and-cart-events.md) |
+| `onAlfaDisputeRefresh`, `onAlfaDisputeAccept` | `DisputeRefreshEvent`, `DisputeAcceptEvent` in `Payments/` | Targeted to the plugin of the disputed payment, by method name. | No | When staff ask | `administrator/src/Helper/ActionRegistry.php` | [Payment plugin events](../plugins/payment-plugin-events.md) |
 
 ## Item fields and form fields
 

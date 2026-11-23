@@ -23,6 +23,7 @@ There are two kinds of e-mail task. Each can go to the customer, to staff, or to
 |---|---|---|
 | **Order confirmation e-mail** | An order is placed. It is the e-mail of the status the order is placed in. | `order.placement_email` |
 | **Status e-mail** | An order enters a status, by any route: staff, a payment, a shipment, the API | `order.status_email` |
+| **Dispute e-mail** (staff only) | A card dispute is recorded or first reported, and at its outcome | `order.dispute_email` |
 
 Who receives it is set on the order status, not in code:
 
@@ -31,7 +32,10 @@ Who receives it is set on the order status, not in code:
 | The customer | When the status has **notify the customer** switched on (`notify_customer`) | A registered customer's present account address while the account exists. Otherwise the address kept on the order. |
 | Staff recipients | When the status lists users to tell. Blocked users and users with no address are left out. | Each listed user's account address |
 
-A status that tells nobody creates no e-mail task at all.
+A status that tells nobody creates no e-mail task at all. The dispute e-mail goes to the shop's address (Options,
+General, Store e-mail) and says what the dispute's notice says, with the link to the order; with no store address
+there is no e-mail task and the bell carries it. The customer gets no e-mail about a dispute. See
+[Card disputes](../services/disputes.md#telling-staff).
 
 The notification bell in the administrator is a separate thing. It is not e-mail.
 

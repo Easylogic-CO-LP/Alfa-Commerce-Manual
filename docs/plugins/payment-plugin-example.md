@@ -14,6 +14,7 @@ description: "A complete minimal payment plugin for Alfa Commerce 2.3.0, file by
 - [Payment plugins](./payment-plugins.md): start here
 - [Payment plugin events](./payment-plugin-events.md)
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
+- [Card disputes](./payment-plugin-disputes.md)
 - **A complete payment plugin** (this page)
 
 This plugin takes an offline payment, such as a bank transfer. When an order is placed it records a pending payment.

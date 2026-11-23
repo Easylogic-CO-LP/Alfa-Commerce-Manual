@@ -239,6 +239,11 @@ dismissed until something new or worse holds.
 | Online sales | The shop shows its catalogue only (Options, Cart, Online sales). A note; it opens the Options. |
 | Products priced at the quantity they sell from | Published products sell from a minimum quantity no price covers for every shopper of a currency. It names how many and the first ten, which show no price at the quantity they sell from; raise their minimum or add a price from it. |
 
+A card dispute has one notice of its own, `payments.dispute.<id>` in the Payments group, said again at each step of
+the case (an inquiry, a chargeback to answer by its deadline, under review, won, lost, closed, the question staff must
+answer). It comes back unread while the case needs staff. A provider's dispute word that Alfa did not record is kept
+for staff as `payments.dispute.refused.<payment>.<key>`. See [Card disputes](./disputes.md#telling-staff).
+
 ### The bell and the Notifications list
 
 The dashboard and the list screens of Alfa Commerce show the bell in their toolbar. Its number is the count of unread notifications the

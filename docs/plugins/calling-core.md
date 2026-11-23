@@ -185,11 +185,12 @@ carrier never calls `ShipmentLedger`. The pages of each family show the calls at
 | `claimPendingAttemptVerdict(int $paymentId, string $reference)` | **ANSWERS.** A `PaymentWriteVerdict` for the claim. Another gateway's row is refused with `REFUSAL_NOT_WRITER`. |
 | `refundPayment()`, `reserveRefund()`, `settleRefund()`, `holdRefund()`, `releaseRefund()`, `failRefundAttempt()` | **ANSWERS.** An array whose `outcome` is one of the `OUTCOME_` constants of the base class, with the refund's or the reservation's id and a reason. See [Refunds](./payment-plugin-money.md#refunds). |
 | `refundReservation(int $reservationId): ?array` | **READ ONLY.** The reservation, or `null`. |
-| `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | **ANSWERS.** `['outcome', 'row_id', 'reason', 'amount', 'reopened']`. Never capped, never flips the payment, never moves the order. Another gateway's payment is refused. |
-| `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | **ANSWERS.** As `recordChargeback()`. A new `reversal` row names the refund or the chargeback, which is never edited; a won dispute is this call on the chargeback row. Never throws; your own rows only. Answer your provider 200 on `OUTCOME_RECORDED`, `OUTCOME_DUPLICATE` and `OUTCOME_NOTHING_LEFT`, 200 and a report to staff on `OUTCOME_REFUSED`, and 503 on `OUTCOME_FAILED`, so that the provider delivers again. |
+| `dispute(int $paymentId, string $reference): DisputeLedger` | **CONTRACT.** A card dispute of one of your payments under the provider's dispute id, its state and facts told with the chain and written with `save()`, which answers a `DisputeVerdict`; answer your provider with `$verdict->providerStatus()` (200, or 503 to have it sent again). The books move only at the bank's decision. See [Card disputes](./payment-plugin-disputes.md). |
+| `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | **ANSWERS.** `['outcome', 'row_id', 'reason', 'amount', 'reopened']`. A new `reversal` row names the refund, which is never edited; a chargeback row is refused (it follows its dispute). Never throws; your own rows only. Answer your provider 200 on `OUTCOME_RECORDED`, `OUTCOME_DUPLICATE` and `OUTCOME_NOTHING_LEFT`, 200 and a report to staff on `OUTCOME_REFUSED`, and 503 on `OUTCOME_FAILED`, so that the provider delivers again. |
 | `recordActionLog($languageKey, $facts, $itemId)` on both base classes | **ANSWERS.** As `ActionLogHelper::write()`, the row filed under `plg_<group>_<element>`. Never throws. |
 
-A `PaymentWriteVerdict` is a value: decide on its `kind`, then on its `code`. A code's value never changes and, within
+A `PaymentWriteVerdict` or a `DisputeVerdict` is a value: decide on its `kind`, then on its `code`; answer a provider
+with its `providerStatus()`. A code's value never changes and, within
 a major version, is never used for anything else. Codes may be added, kinds never: handle a code you do not know as its kind. See
 [Why a write did not write](./payment-plugin-money.md#why-a-write-did-not-write).
 
@@ -249,7 +250,7 @@ These come from the `Plugin` class, so every Alfa plugin has them.
 | `PaymentLedger::bookedRefundable()` | `PaymentsPlugin::bookedRefundable()` |
 | `PaymentLedger::amountToCollect()` | `ShipmentsPlugin::amountToCollect()` for a carrier, `PaymentsPlugin::amountToCollect()` for a gateway |
 | `PaymentLedger::claimReference()` | `claimPendingAttempt()` or `claimPendingAttemptVerdict()` |
-| `PaymentLedger::supersedeAttempt()`, `recordChargeback()`, `recordReversal()`, `findLinkedRow()`, `reportOutcome()`, `failRefundAttempt()` | The `PaymentsPlugin` methods of the same names |
+| `PaymentLedger::supersedeAttempt()`, `recordReversal()`, `findLinkedRow()`, `reportOutcome()`, `failRefundAttempt()` | The `PaymentsPlugin` methods of the same names |
 | `OrderModel::getItem()` for an order on a staff page | `getOrder()`, the `Order` reader the events hand over. A field the reader lacks is a request to the Alfa Commerce project, not a reason to read the model. |
 | `Order::row()` | Not for plugins. `EmailService::orderNumber()` takes the `Order` reader itself. |
 | `TaskAttention` | Nothing: it is Alfa's own summary of failed and held tasks, not a way to write one. |
