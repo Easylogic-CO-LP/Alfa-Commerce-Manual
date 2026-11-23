@@ -6,7 +6,7 @@ description: Every event Alfa Commerce sends to plugins, with its class, how it 
 
 # Event index
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 This page lists every event that Alfa Commerce sends to plugins. It was built from the code: every place where
 the component hands an event to a plugin was opened and read. Use it to find an event by name, then follow the link
@@ -40,21 +40,22 @@ One table per area. Every row is one event name.
 
 | What was counted | Count |
 |---|---|
-| Files under `administrator/src/Event/` | 137 |
-| Event classes that can be created (not abstract) | 101 |
-| Of those, sent to plugins | 98 |
-| Of those, defined and not sent | 3 |
+| Files under `administrator/src/Event/` | 143 |
+| Event classes that can be created (not abstract) | 106 |
+| Of those, sent to plugins | 102 |
+| Of those, defined and not sent | 4 |
 | Abstract bases, interfaces and traits | 22 |
-| Other helper classes and enums in the folder | 14 |
-| Different event names sent | 89 |
+| Other helper classes and enums in the folder | 15 |
+| Different event names sent | 93 |
 
 Eight names are sent with more than one class, because a payment plugin, a shipping plugin and an item field plugin
-each get their own class under the same name. That is why 89 names use 98 classes. Two of the helper classes are
+each get their own class under the same name. That is why 93 names use 102 classes. Two of the helper classes are
 `OrderPlaceRefusedException` in `Orders/`, an exception a listener of `onOrderPlaceValidate` may throw, and
 `SurfaceMap` in `ItemFields/`, the read-only surfaces of a page.
 
-No event is sent from `api/src`, from the modules or from the shipped plugins. All of them are sent from
-`administrator/src`, `site/src` and one layout, `site/layouts/list/filter_form.php`.
+No event is sent from the modules or from the shipped plugins. All of them are sent from `administrator/src`,
+`site/src`, one controller of the REST API, `api/src/Controller/ExtController.php`, and one layout,
+`site/layouts/list/filter_form.php`.
 
 ## Administrator screens
 
@@ -73,25 +74,25 @@ The column below gives the line that raises each one.
 | `onAlfaAdminListBulkActions` | `AdminListBulkActionsEvent` | Announced | No | While a page is drawn | `administrator/src/View/HasAdminEvents.php:300` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminlistbulkactions) |
 | `onAlfaAdminToolbar` | `AdminToolbarEvent` | Announced | No | While a page is drawn | `administrator/src/View/HasAdminEvents.php:201` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadmintoolbar) |
 | `onAlfaAdminRender` | `AdminRenderEvent` | Announced | No | While a page is drawn | `administrator/src/View/HasAdminEvents.php:154` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminrender) |
-| `onAlfaAdminForm` | `AdminFormEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:271` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminform) |
-| `onAlfaAdminPrepareData` | `AdminPrepareDataEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:306` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminpreparedata) |
-| `onAlfaAdminValidate` | `AdminValidateEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:378` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminvalidate) |
-| `onAlfaAdminBeforeSave` | `AdminBeforeSaveEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:684` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforesave) |
-| `onAlfaAdminAfterSave` | `AdminAfterSaveEvent` | Announced | No | After the save of the record's own row is final; for an item, a discount, a tax, a cart rule, a payment method and a shipping method, after the whole save is final | `administrator/src/Model/AlfaAdminModel.php:478` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminaftersave) |
-| `onAlfaAdminBeforeDelete` | `AdminBeforeDeleteEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:772` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforedelete) |
-| `onAlfaAdminAfterDelete` | `AdminAfterDeleteEvent` | Announced | No | After the save is final | `administrator/src/Model/AlfaAdminModel.php:565` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete) |
+| `onAlfaAdminForm` | `AdminFormEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:272` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminform) |
+| `onAlfaAdminPrepareData` | `AdminPrepareDataEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:307` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminpreparedata) |
+| `onAlfaAdminValidate` | `AdminValidateEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:379` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminvalidate) |
+| `onAlfaAdminBeforeSave` | `AdminBeforeSaveEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:685` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforesave) |
+| `onAlfaAdminAfterSave` | `AdminAfterSaveEvent` | Announced | No | After the save of the record's own row is final; for an item, a discount, a tax, a cart rule, a payment method and a shipping method, after the whole save is final | `administrator/src/Model/AlfaAdminModel.php:479` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminaftersave) |
+| `onAlfaAdminBeforeDelete` | `AdminBeforeDeleteEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:773` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforedelete) |
+| `onAlfaAdminAfterDelete` | `AdminAfterDeleteEvent` | Announced | No | After the save is final | `administrator/src/Model/AlfaAdminModel.php:566` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete) |
 
 ## Menu, permissions, dashboard, setup and tools
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
 | `onAlfaBuildMenu` | `BuildMenuEvent` in `Menu/` | Announced | No | While a page is drawn | `administrator/src/Menu/MenuBuilder.php:127` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfabuildmenu) |
-| `onAlfaGetAccessActions` | `GetAccessActionsEvent` in `Access/` | Announced | No | While a page is drawn | `administrator/src/Field/AlfarulesField.php:74` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfagetaccessactions) |
-| `onAlfaCollectCards` | `CollectCardsEvent` in `Card/` | Announced | No | While a page is drawn | `administrator/src/Card/CardRegistry.php:362` | [Notification and setup events](./notification-and-setup-events.md) |
-| `onAlfaCollectSetupChecks` | `CollectSetupChecksEvent` in `Setup/` | Announced | No | On request | `administrator/src/Helper/SetupHelper.php:466` | [Notification and setup events](./notification-and-setup-events.md) |
-| `onGetToolActions` | `GetToolActionsEvent` in `Tools/` | Announced. The plugin a tool is claimed for is then asked once more, alone. | No | While a page is drawn | `administrator/src/Helper/ToolRegistry.php:152` and `:588` | [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
-| `onExecuteToolAction` | `ExecuteToolActionEvent` in `Tools/` | One plugin | No veto | On request | `administrator/src/Helper/ToolRegistry.php:362` | [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
-| `onClearData` | `ClearDataEvent` in `Tools/` | One plugin | No | On request | `administrator/src/Service/ClearData/ClearDataExtensions.php:515` | [Payment plugins](../plugins/payment-plugin-events.md#oncleardata), [Shipping plugins](../plugins/shipment-plugin-events.md#oncleardata), [Item field plugins](../plugins/item-field-plugin-events.md#oncleardata), [Search engine plugins](../plugins/search-plugins.md#oncleardata) |
+| `onAlfaGetAccessActions` | `GetAccessActionsEvent` in `Access/` | Announced | No | While a page is drawn | `administrator/src/Field/AlfarulesField.php:74` and `administrator/src/Service/Api/ApiAddressListing.php:336` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfagetaccessactions) |
+| `onAlfaCollectCards` | `CollectCardsEvent` in `Card/` | Announced | No | While a page is drawn | `administrator/src/Card/CardRegistry.php:363` | [Notification and setup events](./notification-and-setup-events.md) |
+| `onAlfaCollectSetupChecks` | `CollectSetupChecksEvent` in `Setup/` | Announced | No | On request | `administrator/src/Helper/SetupHelper.php:649` | [Notification and setup events](./notification-and-setup-events.md) |
+| `onGetToolActions` | `GetToolActionsEvent` in `Tools/` | Announced. The plugin a tool is claimed for is then asked once more, alone. | No | While a page is drawn | `administrator/src/Helper/ToolRegistry.php:151` and `:587` | [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
+| `onExecuteToolAction` | `ExecuteToolActionEvent` in `Tools/` | One plugin | No veto | On request | `administrator/src/Helper/ToolRegistry.php:361` | [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
+| `onClearData` | `ClearDataEvent` in `Tools/` | One plugin | No | On request | `administrator/src/Service/ClearData/ClearDataExtensions.php:516` | [Payment plugins](../plugins/payment-plugin-events.md#oncleardata), [Shipping plugins](../plugins/shipment-plugin-events.md#oncleardata), [Item field plugins](../plugins/item-field-plugin-events.md#oncleardata), [Search engine plugins](../plugins/search-plugins.md#oncleardata) |
 
 The two menu and permission events are handed over in `administrator/src/Panel/PanelDispatcher.php:114`.
 
@@ -102,7 +103,7 @@ All six are addressed to the one plugin that owns the panel, through
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onAlfaPanelToolbar` | `PanelToolbarEvent` | One plugin | No | While a page is drawn | `administrator/src/View/Panel/HtmlView.php:275` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfapaneltoolbar) |
+| `onAlfaPanelToolbar` | `PanelToolbarEvent` | One plugin | No | While a page is drawn | `administrator/src/View/Panel/HtmlView.php:274` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfapaneltoolbar) |
 | `onAlfaPanelListQuery` | `PanelListQueryEvent` | One plugin | No | While a page is drawn | `administrator/src/Model/PanelModel.php:323` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfapanellistquery) |
 | `onAlfaPanelView` | `PanelViewEvent` | One plugin | No | While a page is drawn | `administrator/src/View/Panel/HtmlView.php:143` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfapanelview) |
 | `onAlfaPanelSave` | `PanelSaveEvent` | One plugin | No veto | On request. The plugin does the save. | `administrator/src/Controller/PanelController.php:128` | [Creating an Admin Panel](../plugins/admin-panels.md#onalfapanelsave) |
@@ -116,31 +117,31 @@ classes, the first goes to a payment plugin and the second to a shipping plugin.
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onItemView` | `ItemViewEvent` in `Payments/`, `ItemViewEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/View/Item/HtmlView.php:269` | [Payment plugins](../plugins/payment-plugin-events.md#onitemview), [Shipping plugins](../plugins/shipment-plugin-events.md#onitemview) |
-| `onCartViewAssets` | `CartViewAssetsEvent` in `Payments/`, `CartViewAssetsEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/Service/Cart/CartPluginDispatch.php:457` | [Payment plugins](../plugins/payment-plugin-events.md#oncartviewassets), [Shipping plugins](../plugins/shipment-plugin-events.md#oncartviewassets) |
-| `onCartView` | `CartViewEvent` in `Payments/`, `CartViewEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/Service/Cart/CartPluginDispatch.php:368` | [Payment plugins](../plugins/payment-plugin-events.md#oncartview), [Shipping plugins](../plugins/shipment-plugin-events.md#oncartview) |
-| `onCalculateShippingCost` | `CalculateShippingCostEvent` in `Shipments/` | One plugin | Yes. `setUnavailable()`, or an error, takes the method off the cart. | On request, each time the cart is totalled | `site/src/Service/Cart/CartPluginDispatch.php:152` | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
-| `onOrderBeforePlace` | `OrderBeforePlaceEvent` in `Payments/`, `OrderBeforePlaceEvent` in `Shipments/` | One plugin | Yes, by throwing an error | Before the save | `site/src/Service/Checkout/OrderPlacement.php:988` | [Payment plugins](../plugins/payment-plugin-events.md#onorderbeforeplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderbeforeplace) |
-| `onOrderAfterPlace` | `OrderAfterPlaceEvent` in `Payments/`, `OrderAfterPlaceEvent` in `Shipments/` | One plugin | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:988` | [Payment plugins](../plugins/payment-plugin-events.md#onorderafterplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderafterplace) |
-| `onOrderProcessView` | `OrderProcessViewEvent` in `Payments/` | One plugin | No | While a page is drawn | `site/src/View/Cart/HtmlView.php:365` | [Payment plugins](../plugins/payment-plugin-events.md#onorderprocessview) |
-| `onOrderCompleteView` | `OrderCompleteViewEvent` in `Payments/` | One plugin | No | While a page is drawn | `site/src/View/Cart/HtmlView.php:365` | [Payment plugins](../plugins/payment-plugin-events.md#onordercompleteview) |
+| `onItemView` | `ItemViewEvent` in `Payments/`, `ItemViewEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/View/Item/HtmlView.php:407` | [Payment plugins](../plugins/payment-plugin-events.md#onitemview), [Shipping plugins](../plugins/shipment-plugin-events.md#onitemview) |
+| `onCartViewAssets` | `CartViewAssetsEvent` in `Payments/`, `CartViewAssetsEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/Service/Cart/CartPluginDispatch.php:464` | [Payment plugins](../plugins/payment-plugin-events.md#oncartviewassets), [Shipping plugins](../plugins/shipment-plugin-events.md#oncartviewassets) |
+| `onCartView` | `CartViewEvent` in `Payments/`, `CartViewEvent` in `Shipments/` | One plugin | No | While a page is drawn | `site/src/Service/Cart/CartPluginDispatch.php:375` | [Payment plugins](../plugins/payment-plugin-events.md#oncartview), [Shipping plugins](../plugins/shipment-plugin-events.md#oncartview) |
+| `onCalculateShippingCost` | `CalculateShippingCostEvent` in `Shipments/` | One plugin | Yes. `setUnavailable()`, or an error, takes the method off the cart. | On request: for the chosen carrier each time the cart is totalled, and on the storefront for each carrier the checkout would list | `site/src/Service/Cart/CartPluginDispatch.php:159` | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
+| `onOrderBeforePlace` | `OrderBeforePlaceEvent` in `Payments/`, `OrderBeforePlaceEvent` in `Shipments/` | One plugin | Yes, by throwing an error | Before the save | `site/src/Service/Checkout/OrderPlacement.php:953` | [Payment plugins](../plugins/payment-plugin-events.md#onorderbeforeplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderbeforeplace) |
+| `onOrderAfterPlace` | `OrderAfterPlaceEvent` in `Payments/`, `OrderAfterPlaceEvent` in `Shipments/` | One plugin | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:953` | [Payment plugins](../plugins/payment-plugin-events.md#onorderafterplace), [Shipping plugins](../plugins/shipment-plugin-events.md#onorderafterplace) |
+| `onOrderProcessView` | `OrderProcessViewEvent` in `Payments/` | One plugin | No | While a page is drawn | `site/src/View/Cart/HtmlView.php:402` | [Payment plugins](../plugins/payment-plugin-events.md#onorderprocessview) |
+| `onOrderCompleteView` | `OrderCompleteViewEvent` in `Payments/` | One plugin | No | While a page is drawn | `site/src/View/Cart/HtmlView.php:402` | [Payment plugins](../plugins/payment-plugin-events.md#onordercompleteview) |
 | `onPaymentResponse` | `PaymentResponseEvent` in `Payments/` | One plugin | No veto | On request, when the shopper comes back | `site/src/Controller/PaymentController.php:89` | [Payment plugins](../plugins/payment-plugin-events.md#onpaymentresponse) |
 | `onPaymentWebhook` | `PaymentWebhookEvent` in `Payments/` | One plugin | No veto. An error is answered "500" so that the provider tries again. | On request, when the provider calls | `site/src/Controller/ProviderCallbacks.php:82` | [Payment plugins](../plugins/payment-plugin-events.md#onpaymentwebhook) |
 | `onShipmentResponse` | `ShipmentResponseEvent` in `Shipments/` | One plugin | No veto | On request, when the shopper comes back | `site/src/Controller/ShipmentController.php:100` | [Shipping plugins](../plugins/shipment-plugin-events.md#onshipmentresponse) |
 | `onShipmentWebhook` | `ShipmentWebhookEvent` in `Shipments/` | One plugin | No veto. An error is answered "500" so that the carrier tries again. | On request, when the carrier calls | `site/src/Controller/ProviderCallbacks.php:82` | [Shipping plugins](../plugins/shipment-plugin-events.md#onshipmentwebhook) |
-| `onGetActions` | `GetPaymentActionsEvent` in `Payments/`, `GetShipmentActionsEvent` in `Shipments/` | One plugin | No | While a page is drawn | `administrator/src/Helper/ActionRegistry.php:1843` | [Payment plugins](../plugins/payment-plugin-events.md#ongetactions), [Shipping plugins](../plugins/shipment-plugin-events.md#ongetactions) |
+| `onGetActions` | `GetPaymentActionsEvent` in `Payments/`, `GetShipmentActionsEvent` in `Shipments/` | One plugin | No | While a page is drawn | `administrator/src/Helper/ActionRegistry.php:1834` | [Payment plugins](../plugins/payment-plugin-events.md#ongetactions), [Shipping plugins](../plugins/shipment-plugin-events.md#ongetactions) |
 | `onExecuteAction` | `ExecutePaymentActionEvent` in `Payments/`, `ExecuteShipmentActionEvent` in `Shipments/` | One plugin | No veto | On request, when staff press a button | `administrator/src/Helper/ActionRegistry.php:643` and `:701` | [Payment plugins](../plugins/payment-plugin-events.md#onexecuteaction), [Shipping plugins](../plugins/shipment-plugin-events.md#onexecuteaction) |
-| `onAdminOrderDelete` | `AdminOrderDeleteEvent` in `Payments/`, `AdminOrderDeleteEvent` in `Shipments/` | One plugin | Yes. `setResult(false)` keeps the order. | Before the save | `administrator/src/Model/OrderModel.php:3486` | [Payment plugins](../plugins/payment-plugin-events.md#onadminorderdelete), [Shipping plugins](../plugins/shipment-plugin-events.md#onadminorderdelete) |
+| `onAdminOrderDelete` | `AdminOrderDeleteEvent` in `Payments/`, `AdminOrderDeleteEvent` in `Shipments/` | One plugin | Yes. `setResult(false)` keeps the order. | Before the save | `administrator/src/Model/OrderModel.php:3843` | [Payment plugins](../plugins/payment-plugin-events.md#onadminorderdelete), [Shipping plugins](../plugins/shipment-plugin-events.md#onadminorderdelete) |
 | `onPaymentCheckup` | `PaymentCheckupEvent` in `Payments/` | One plugin | No | On request, from the method's settings page | `administrator/src/Helper/PaymentCheckupHelper.php:102` | [Payment plugins](../plugins/payment-plugin-events.md#onpaymentcheckup) |
 
 ## Cart and orders
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onCartTotals` | `CartTotalsEvent` in `Cart/` | Each in turn | No | On request, each time the cart is totalled | `site/src/Service/Cart/CartPluginDispatch.php:284` | [Order and cart events](./order-and-cart-events.md) |
+| `onCartTotals` | `CartTotalsEvent` in `Cart/` | Each in turn | No | On request, each time the cart is totalled | `site/src/Service/Cart/CartPluginDispatch.php:294` | [Order and cart events](./order-and-cart-events.md) |
 | `onCartItemDisplay` | `CartItemDisplayEvent` in `Items/` | Each in turn | No | While a page is drawn | `site/src/Service/Cart/CartLinePresenter.php:153` | [Order and cart events](./order-and-cart-events.md) |
-| `onOrderPlaceValidate` | `OrderPlaceValidateEvent` in `Orders/` | Each in turn | Yes. `reject()`, or an error, refuses the order, and so does `OrderPlaceRefusedException`, read in its own words. | Before the save | `site/src/Service/Checkout/OrderPlacement.php:1236` | [Order and cart events](./order-and-cart-events.md) |
-| `onAlfaOrderPlaced` | `OrderPlacedEvent` in `Orders/` | Announced | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:713` | [Order and cart events](./order-and-cart-events.md) |
+| `onOrderPlaceValidate` | `OrderPlaceValidateEvent` in `Orders/` | Each in turn | Yes. `reject()`, or an error, refuses the order, and so does `OrderPlaceRefusedException`, read in its own words. | Before the save | `site/src/Service/Checkout/OrderPlacement.php:1226` | [Order and cart events](./order-and-cart-events.md) |
+| `onAlfaOrderPlaced` | `OrderPlacedEvent` in `Orders/` | Announced | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:702` | [Order and cart events](./order-and-cart-events.md) |
 | `onOrderStatusChange` | `OrderStatusChangeEvent` in `Orders/` | Announced. Each listener is called on its own and its result is recorded. | No | After the save is final | `administrator/src/Service/Order/Task/OrderStatusEvent.php:148` | [Order and cart events](./order-and-cart-events.md) |
 
 ## Item fields and form fields
@@ -150,17 +151,17 @@ The item field classes are in `ItemFields/`. Each event goes to the plugin of on
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onItemView` | `ItemViewEvent` in `ItemFields/` | One plugin | No veto | While a page is drawn | `site/src/Model/ItemModel.php:350` and `administrator/src/Model/OrderModel.php:2230` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemview) |
-| `onItemListPrepare` | `ItemListPrepareEvent` | One plugin | No | While a page is drawn | `site/src/Model/ItemsModel.php:2302` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemlistprepare) |
-| `onItemsListPrepare` | `ItemsListPrepareEvent` | Announced, after the plugins of `alfa-item-fields` are loaded | No | While a page is drawn | `site/src/Model/ItemsModel.php:2239` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemslistprepare) |
-| `onItemFieldValueFacetGroups` | `ValueFacetGroupsEvent` | One plugin | No | While a page is drawn | `site/src/Model/ItemsModel.php:3041` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemfieldvaluefacetgroups) |
+| `onItemView` | `ItemViewEvent` in `ItemFields/` | One plugin | No | While a page is drawn | `site/src/Model/ItemModel.php:382` and `administrator/src/Model/OrderModel.php:2579` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemview) |
+| `onItemListPrepare` | `ItemListPrepareEvent` | One plugin | No | While a page is drawn | `site/src/Model/ItemsModel.php:2472` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemlistprepare) |
+| `onItemsListPrepare` | `ItemsListPrepareEvent` | Announced, after the plugins of `alfa-item-fields` are loaded | No | While a page is drawn | `site/src/Model/ItemsModel.php:2399` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemslistprepare) |
+| `onItemFieldValueFacetGroups` | `ValueFacetGroupsEvent` | One plugin | No | While a page is drawn | `site/src/Model/ItemsModel.php:3257` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemfieldvaluefacetgroups) |
 | `onValidateCartAdd` | `ValidateCartAddEvent` | One plugin | Yes. `setError()`, or an error, refuses the selection. | Before the save, when an item is added to the cart | `administrator/src/Helper/ItemConfigurationHelper.php:161` | [Item field plugins](../plugins/item-field-plugin-events.md#onvalidatecartadd) |
 | `onPrepareForCart` | `PrepareForCartEvent` | One plugin | Yes. `setError()`, or an error, refuses the selection. | Before the save, when an item is added to the cart | `administrator/src/Helper/ItemConfigurationHelper.php:651` | [Item field plugins](../plugins/item-field-plugin-events.md#onprepareforcart) |
-| `onCalculateItemPrice` | `CalculateItemPriceEvent` | One plugin | No | On request, each time a price is worked out | `site/src/Helper/VariantHelper.php:504` | [Item field plugins](../plugins/item-field-plugin-events.md#oncalculateitemprice) |
-| `onCartItemView` | `CartItemViewEvent` | One plugin | No veto | While a page is drawn | `site/src/Service/Cart/CartLinePresenter.php:114` | [Item field plugins](../plugins/item-field-plugin-events.md#oncartitemview) |
-| `onGetFieldActions` | `GetFieldActionsEvent` | One plugin | No | While a page is drawn | `administrator/src/Helper/ActionRegistry.php:1752` | [Item field plugins](../plugins/item-field-plugin-events.md#ongetfieldactions) |
+| `onCalculateItemPrice` | `CalculateItemPriceEvent` | One plugin | No | On request, each time a price is worked out | `site/src/Helper/VariantHelper.php:550` | [Item field plugins](../plugins/item-field-plugin-events.md#oncalculateitemprice) |
+| `onCartItemView` | `CartItemViewEvent` | One plugin | No | While a page is drawn | `site/src/Service/Cart/CartLinePresenter.php:114` | [Item field plugins](../plugins/item-field-plugin-events.md#oncartitemview) |
+| `onGetFieldActions` | `GetFieldActionsEvent` | One plugin | No | While a page is drawn | `administrator/src/Helper/ActionRegistry.php:1743` | [Item field plugins](../plugins/item-field-plugin-events.md#ongetfieldactions) |
 | `onExecuteFieldAction` | `ExecuteFieldActionEvent` | One plugin | No veto | On request, when staff press a button | `administrator/src/Controller/ItemController.php:1211` and `administrator/src/Helper/ActionRegistry.php:517` | [Item field plugins](../plugins/item-field-plugin-events.md#onexecutefieldaction) |
-| `onAlfaFormFieldsPrepareDom` | `PrepareDomEvent` in `Fields/` | One plugin. It is not declared as a handler: Alfa calls the plugin's `prepareDom()` method and hands it this object. | No | While a form is built | `administrator/src/Helper/FieldsHelper.php:305` | [Form field plugins](../plugins/form-field-plugins.md#the-operation-preparedom) |
+| `onAlfaFormFieldsPrepareDom` | `PrepareDomEvent` in `Fields/` | One plugin. It is not declared as a handler: Alfa calls the plugin's `prepareDom()` method and hands it this object. | No | While a form is built | `administrator/src/Helper/FieldsHelper.php:310` | [Form field plugins](../plugins/form-field-plugins.md#the-operation-preparedom) |
 
 `onCalculateItemPrice` has one exception. When Joomla's debug mode is on, an error in the handler is thrown again,
 so that a developer sees it.
@@ -169,10 +170,10 @@ so that a developer sees it.
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onItemDisplay` | `ItemDisplayEvent` in `Items/` | Announced | No | While a page is drawn | `site/src/Model/ItemModel.php:403` | [Item and catalogue events](./item-and-catalogue-events.md) |
-| `onItemPrepareForm` | `ItemPrepareFormEvent` in `Items/` | Announced | No | While a page is drawn | `administrator/src/Model/ItemModel.php:410` | [Item and catalogue events](./item-and-catalogue-events.md) |
-| `onItemAfterSave` | `ItemAfterSaveEvent` in `Items/` | Announced | No | After the whole item's save is final, never for a save that was undone | `administrator/src/Model/ItemModel.php:1246` | [Item and catalogue events](./item-and-catalogue-events.md) |
-| `onAlfaPricesChanged` | `PricesChangedEvent` in `Catalog/` | Announced | No | After the save is final, and when a stored price period begins | `administrator/src/Service/PriceIndexSyncService.php:2745` | [Item and catalogue events](./item-and-catalogue-events.md) |
+| `onItemDisplay` | `ItemDisplayEvent` in `Items/` | Announced | No | While a page is drawn | `site/src/Model/ItemModel.php:443` | [Item and catalogue events](./item-and-catalogue-events.md) |
+| `onItemPrepareForm` | `ItemPrepareFormEvent` in `Items/` | Announced | No | While a page is drawn | `administrator/src/Model/ItemModel.php:427` | [Item and catalogue events](./item-and-catalogue-events.md) |
+| `onItemAfterSave` | `ItemAfterSaveEvent` in `Items/` | Announced | No | After the whole item's save is final, never for a save that was undone | `administrator/src/Model/ItemModel.php:1388` | [Item and catalogue events](./item-and-catalogue-events.md) |
+| `onAlfaPricesChanged` | `PricesChangedEvent` in `Catalog/` | Announced | No | After the save is final, and when a stored price period begins | `administrator/src/Service/PriceIndexSyncService.php:2741` | [Item and catalogue events](./item-and-catalogue-events.md) |
 | `onAlfaCatalogEntityChanged` | `CatalogEntityChangedEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | Right after the record is written. It does not wait for a bigger save around it. | `administrator/src/Service/Catalog/EntityChangeNotifier.php:73` | [Search engine plugins](../plugins/search-plugins.md#onalfacatalogentitychanged) |
 | `onCatalogVisibilityChanged` | `VisibilityChangedEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | Right after the record is written. It does not wait for a bigger save around it. | `administrator/src/Service/Catalog/VisibilityNotifier.php:113` | [Search engine plugins](../plugins/search-plugins.md#oncatalogvisibilitychanged) |
 | `onCollectCatalogProjections` | `CollectCatalogProjectionsEvent` in `Catalog/` | Announced, after `alfa-search` and `alfa` are loaded | No | On request | `administrator/src/Service/Projection/ProjectionManager.php:119` | [Search engine plugins](../plugins/search-plugins.md#oncollectcatalogprojections) |
@@ -185,40 +186,39 @@ The classes are in `Search/`.
 |---|---|---|---|---|---|---|
 | `onCollectSearchEngines` | `CollectSearchEnginesEvent` | Announced, after `alfa-search` is loaded | No | On request | `administrator/src/Service/Search/SearchEngineRegistry.php:225` | [Search engine plugins](../plugins/search-plugins.md#oncollectsearchengines) |
 | `onAlfaSearchInputLayout` | `SearchInputLayoutEvent` | One plugin | No | While a page is drawn | `site/layouts/list/filter_form.php:114` | [Search engine plugins](../plugins/search-plugins.md#onalfasearchinputlayout) |
-| `onAlfaResultSetRender` | `ResultSetRenderEvent` | Announced, after `alfa-search` is loaded | No | While a page is drawn | `site/src/View/Items/HtmlView.php:382` | [Search engine plugins](../plugins/search-plugins.md#onalfaresultsetrender) |
+| `onAlfaResultSetRender` | `ResultSetRenderEvent` | Announced, after `alfa-search` is loaded | No | While a page is drawn | `site/src/View/Items/HtmlView.php:424` | [Search engine plugins](../plugins/search-plugins.md#onalfaresultsetrender) |
 
 ## Media
 
 All five are announced after the plugins of `alfa-media` are loaded, in
-`administrator/src/Helper/MediaHelper.php:2285`. The classes are in `Media/`. The column gives the line that builds
+`administrator/src/Helper/MediaHelper.php:2716`. The classes are in `Media/`. The column gives the line that builds
 each one. They fire while a record is being saved. A media event does not tell you whether that save is final.
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onAlfaMediaValidate` | `ValidateEvent` | Announced | Yes. `setValid(false)` skips the file. An error does not. | Before the image is stored | `administrator/src/Helper/MediaHelper.php:2115` | [Media plugins](../plugins/media-plugins.md#onalfamediavalidate) |
-| `onAlfaMediaBeforeProcess` | `BeforeProcessEvent` | Announced | No | Before the image is stored | `administrator/src/Helper/MediaHelper.php:2188` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforeprocess) |
-| `onAlfaMediaThumbnail` | `ThumbnailEvent` | Announced | No | When a thumbnail is made | `administrator/src/Helper/MediaHelper.php:2188` | [Media plugins](../plugins/media-plugins.md#onalfamediathumbnail) |
-| `onAlfaMediaAfterProcess` | `AfterProcessEvent` | Announced | No | After the file is stored, before the image's row is written | `administrator/src/Helper/MediaHelper.php:2217` | [Media plugins](../plugins/media-plugins.md#onalfamediaafterprocess) |
-| `onAlfaMediaBeforeDelete` | `BeforeDeleteEvent` | Announced | No | Before the files and rows of an image are removed, on every delete path; inside a save, once the save is final, the rows already gone and the files not yet | `administrator/src/Helper/MediaHelper.php:2259` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforedelete) |
+| `onAlfaMediaValidate` | `ValidateEvent` | Announced | Yes. `setValid(false)` skips the file. An error does not. | Before the image is stored | `administrator/src/Helper/MediaHelper.php:2546` | [Media plugins](../plugins/media-plugins.md#onalfamediavalidate) |
+| `onAlfaMediaBeforeProcess` | `BeforeProcessEvent` | Announced | No | Before the image is stored | `administrator/src/Helper/MediaHelper.php:2621` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforeprocess) |
+| `onAlfaMediaThumbnail` | `ThumbnailEvent` | Announced | No | When a thumbnail is made | `administrator/src/Helper/MediaHelper.php:2620` | [Media plugins](../plugins/media-plugins.md#onalfamediathumbnail) |
+| `onAlfaMediaAfterProcess` | `AfterProcessEvent` | Announced | No | After the file is stored, before the image's row is written | `administrator/src/Helper/MediaHelper.php:2648` | [Media plugins](../plugins/media-plugins.md#onalfamediaafterprocess) |
+| `onAlfaMediaBeforeDelete` | `BeforeDeleteEvent` | Announced | No | Before the files and rows of an image are removed, on every delete path; inside a save, once the save is final, the rows already gone and the files not yet | `administrator/src/Helper/MediaHelper.php:2690` | [Media plugins](../plugins/media-plugins.md#onalfamediabeforedelete) |
 
 ## Stock
 
 All nine are sent from `administrator/src/Service/Inventory/InventoryService.php`. The classes are in `Inventory/`.
-The first eight are announced after the plugins of `alfa` are loaded: the "before" events at line 5632, the "after"
-events at line 5647. The column gives the line of each command.
+The first eight are announced after the plugins of `alfa` are loaded: the "before" events at line 5386, the "after"
+events at line 5401. The column gives the line of each command.
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onInventoryBeforeReserve` | `InventoryBeforeReserveEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the stock is set aside | `InventoryService.php:443` | [Stock events](./stock-events.md) |
-| `onInventoryBeforeCommit` | `InventoryBeforeCommitEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before goods are taken from stock | `InventoryService.php:2057` | [Stock events](./stock-events.md) |
-| `onInventoryBeforeRelease` | `InventoryBeforeReleaseEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the reservations of an order are let go | `InventoryService.php:730` | [Stock events](./stock-events.md) |
-| `onInventoryReserved` | `InventoryReservedEvent` | Announced | No | After the save is final | `InventoryService.php:620` | [Stock events](./stock-events.md) |
-| `onInventoryCommitted` | `InventoryCommittedEvent` | Announced | No | After the save is final | `InventoryService.php:2458` | [Stock events](./stock-events.md) |
-| `onInventoryReleased` | `InventoryReleasedEvent` | Announced | No | After the save is final | `InventoryService.php:793` and `:909` | [Stock events](./stock-events.md) |
-| `onInventoryAdjusted` | `InventoryAdjustedEvent` | Announced | No | After the save is final | `InventoryService.php:3742`, `:4057` and `:7807` | [Stock events](./stock-events.md) |
-| `onInventoryTransferred` | `InventoryTransferredEvent` | Announced | No | After the save is final | `InventoryService.php:3913` | [Stock events](./stock-events.md) |
-| `onInventoryRestored` | `InventoryRestoredEvent` | Announced | No | After stock was put back, or taken off again when a credit note is voided, and the save is final | `InventoryService.php:3226` | [Stock events](./stock-events.md#oninventoryrestored) |
-| `onCollectStockAllocationProviders` | `CollectStockAllocationProvidersEvent` | Announced, after `alfa-inventory` is loaded | No | On request, once per request | `InventoryService.php:5681` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeReserve` | `InventoryBeforeReserveEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the stock is set aside | `InventoryService.php:466` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeCommit` | `InventoryBeforeCommitEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before goods are taken from stock | `InventoryService.php:1938` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeRelease` | `InventoryBeforeReleaseEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the reservations of an order are let go | `InventoryService.php:753` | [Stock events](./stock-events.md) |
+| `onInventoryReserved` | `InventoryReservedEvent` | Announced | No | After the save is final | `InventoryService.php:643` | [Stock events](./stock-events.md) |
+| `onInventoryCommitted` | `InventoryCommittedEvent` | Announced | No | After the save is final | `InventoryService.php:2339` | [Stock events](./stock-events.md) |
+| `onInventoryReleased` | `InventoryReleasedEvent` | Announced | No | After the save is final | `InventoryService.php:816` | [Stock events](./stock-events.md) |
+| `onInventoryAdjusted` | `InventoryAdjustedEvent` | Announced | No | After the save is final | `InventoryService.php:3576`, `:3726` and `:7518` | [Stock events](./stock-events.md) |
+| `onInventoryRestored` | `InventoryRestoredEvent` | Announced | No | After stock was put back, or taken off again when a credit note is voided, and the save is final | `InventoryService.php:3107` | [Stock events](./stock-events.md#oninventoryrestored) |
+| `onCollectStockAllocationProviders` | `CollectStockAllocationProvidersEvent` | Announced, after `alfa-inventory` is loaded | No | On request, once per request | `InventoryService.php:5346` | [Stock events](./stock-events.md) |
 
 ## Documents
 
@@ -228,34 +228,44 @@ The classes are in `Documents/`.
 |---|---|---|---|---|---|---|
 | `onCollectDocumentTypeProviders` | `CollectDocumentTypeProvidersEvent` | Announced | No | On request, when the Document Types screen is shown and when staff press its sync button | `administrator/src/Service/DocumentTypes/DocumentTypeRegistry.php:555` | [Document events](./document-events.md) |
 | `onDocumentBeforeIssue` | `DocumentBeforeIssueEvent` | Announced | Yes, by throwing an error | Before the save, with no save open | `administrator/src/Service/Document/DocumentIssuer.php:3064` | [Document events](./document-events.md) |
-| `onDocumentIssued` | `DocumentIssuedEvent` | Announced | No | After the save is final | `administrator/src/Service/Document/DocumentIssuer.php:622`, handed over at `:3875` | [Document events](./document-events.md) |
-| `onDocumentVoided` | `DocumentVoidedEvent` | Announced | No | After the save is final | `administrator/src/Service/Document/DocumentIssuer.php:1071`, handed over at `:3875` | [Document events](./document-events.md) |
+| `onDocumentIssued` | `DocumentIssuedEvent` | Announced | No | After the save is final | `administrator/src/Service/Document/DocumentIssuer.php:624`, handed over at `:3883` | [Document events](./document-events.md) |
+| `onDocumentVoided` | `DocumentVoidedEvent` | Announced | No | After the save is final | `administrator/src/Service/Document/DocumentIssuer.php:1072`, handed over at `:3883` | [Document events](./document-events.md) |
 
 ## Notifications
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onAlfaNotificationPushed` | `NotificationPushedEvent` in `Notifications/` | Announced | No | After the save is final | `administrator/src/Helper/NotificationHelper.php:477` | [Notification and setup events](./notification-and-setup-events.md) |
+| `onAlfaNotificationPushed` | `NotificationPushedEvent` in `Notifications/` | Announced | No | After the save is final | `administrator/src/Helper/NotificationHelper.php:480` | [Notification and setup events](./notification-and-setup-events.md) |
 
 ## Outgoing notifications
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onAlfaOutboundTopics` | `OutboundTopicsEvent` in `Outbound/` | One plugin | No veto | On request: when the plugin is saved or enabled | `administrator/src/Service/Outbound/OutboundConsumers.php:544` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
-| `onAlfaOutboundDeliver` | `OutboundDeliverEvent` in `Outbound/` | One plugin | No veto: each change is answered delivered, retry or refused | After the save is final, in the background | `administrator/src/Service/Outbound/OutboundDelivery.php:294` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+| `onAlfaOutboundTopics` | `OutboundTopicsEvent` in `Outbound/` | One plugin | No | On request: when the plugin is saved or enabled | `administrator/src/Service/Outbound/OutboundConsumers.php:544` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+| `onAlfaOutboundDeliver` | `OutboundDeliverEvent` in `Outbound/` | One plugin | No veto: each change is answered delivered, retry or refused | After the save is final, in the background | `administrator/src/Service/Outbound/OutboundDelivery.php:298` | [Outgoing notifications](../api/notifications.md#telling-through-a-plugin) |
+
+## The REST API and background work
+
+| Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
+|---|---|---|---|---|---|---|
+| `onAlfaBeforeApiRoute` | `ApiRoutesEvent` in `Api/` | One plugin | No veto. An error makes the plugin's addresses answer 503. | On request: a REST request under the plugin's address `v1/alfa/ext/<element>/`, and Tools, Security | `administrator/src/Service/Api/ApiRouteRegistrar.php:209` and `:267` | [Adding routes to the REST API](../plugins/api-route-plugins.md#what-it-does) |
+| `onAlfaApiRequest` | `ApiRequestEvent` in `Api/` | One plugin | No veto. An error is answered 500. | On request: a REST request on one of the plugin's routes | `api/src/Controller/ExtController.php:188` | [Adding routes to the REST API](../plugins/api-route-plugins.md#answering-a-request) |
+| `onAlfaExtensionJob` | `ExtensionJobEvent` in `Task/` | One plugin | No veto. An error is tried again on the task runner's backoff. | On request: when the task runner runs one of the plugin's jobs, in the background | `administrator/src/Service/Task/Job/ExtensionJob.php:132` | [Adding routes to the REST API](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
 
 ## Joomla events Alfa raises or relies on
 
-Joomla's own events are not Alfa events and are not listed above. These are the ones Alfa's code touches.
+Joomla's own events are not Alfa events and are not listed above. These are the ones the component's code raises or
+listens to, with the page cache answers of the shipped plugin and module.
 
 | Joomla event | What Alfa does with it | Where |
 |---|---|---|
-| `onContentAfterSave`, `onContentAfterDelete` | Joomla announces them when a record is saved or deleted. When Alfa's save runs inside a bigger save or under one of Alfa's locks, Alfa holds them back and announces them itself once the save is final, never for a change that was undone. | `administrator/src/Model/AlfaAdminModel.php:730` |
-| The model's before-delete event (`onContentBeforeDelete` unless a model names another) | A model that deletes inside a save or a lock of its own asks this event itself, before it opens them. A listener that answers `false`, or throws, refuses the delete. | `administrator/src/Model/AlfaAdminModel.php:616` |
+| `onContentAfterSave`, `onContentAfterDelete` | Joomla announces them when a record is saved or deleted. When Alfa's save runs inside a bigger save or under one of Alfa's locks, Alfa holds them back and announces them itself once the save is final, never for a change that was undone. | `administrator/src/Model/AlfaAdminModel.php:731` |
+| The model's before-delete event (`onContentBeforeDelete` unless a model names another) | A model that deletes inside a save or a lock of its own asks this event itself, before it opens them. A listener that answers `false`, or throws, refuses the delete. | `administrator/src/Model/AlfaAdminModel.php:617` |
 | `onContentBeforeSave` and Joomla's other save events | Announced by Joomla itself, inside the record's write. Alfa does not send them. An item's save is one unit, so what a listener writes to the shop's database there is undone with a save that fails. | Joomla's `AdminModel` |
 | `onTableBeforeStore` | Alfa listens to it, last of all listeners, while an item's row is stored. It sends nothing. | `administrator/src/Table/ItemTable.php:155` |
-| `onPageCacheIsExcluded` | Alfa listens to it and answers "yes", so that the cart and filtered listings are not served from Joomla's page cache. "System - Alfa Commerce Sync" answers for the cart and a visitor with a cart, typed checkout details, or a currency or place of their own; the pages that keep themselves out (the cart page in every form, the item page opened to change a line of the cart, a page whose cart module shows items, the registration page showing a refusal, a listing marked `responseSpecific`, the items module's recently viewed list, a page priced in a currency or place of the visitor's own) answer through one helper that needs no Alfa plugin. The easy articles module answers with a listener of its own while it shows a visitor's recently read list. | `plugins/system/alfasync/src/Extension/Alfasync.php:401`, `site/src/Helper/PageCache.php:58`, `modules/mod_easy_articles/src/Helper/EasyArticlesHelper.php:433` |
+| `onPageCacheIsExcluded` | Alfa listens to it and answers "yes", so that the cart and filtered listings are not served from Joomla's page cache. "System - Alfa Commerce Sync" answers for the cart and a visitor with a cart, typed checkout details, or a currency or place of their own; the pages that keep themselves out (the cart page in every form, the item page opened to change a line of the cart, a page whose cart module shows items, the registration page showing a refusal, a listing marked `responseSpecific`, the items module's recently viewed list, a page priced in a currency or place of the visitor's own) answer through one helper that needs no Alfa plugin. The easy articles module answers with a listener of its own while it shows a visitor's recently read list. | `plugins/system/alfasync/src/Extension/Alfasync.php:410`, `site/src/Helper/PageCache.php:61`, `modules/mod_easy_articles/src/Helper/EasyArticlesHelper.php:433` |
 | `onAfterDispatch` | Alfa listens to it to place its menu in the administrator's sidebar. | `administrator/src/Extension/AlfaComponent.php:118` |
+| `onBeforeApiRoute` | Joomla's API application announces it to the `webservices` and `system` plugins. Alfa's webservices plugin listens to it to add the core routes and, after them, the routes of the `alfa` plugins (`onAlfaBeforeApiRoute`). Tools, Security raises it itself, asking that plugin alone, to list the core routes. | `plugins/webservices/alfa/src/Extension/Alfa.php:67`, `administrator/src/Service/Api/ApiRouteRegistrar.php:316` |
 
 Two more names appear in the code and are not events for plugins: `onAlfaContentAfterTheCommit` and
 `onAlfaContentDeleteAskedBeforeTheLock`. Alfa gives Joomla's model these private names for the length of one call, so
@@ -268,9 +278,10 @@ them.
 
 | Class | Event name | What the code says |
 |---|---|---|
-| `StoreReferenceEvent` in `Payments/` | `onPaymentStoreReference` | Defined, not dispatched. The name is in the payment plugins' list of targeted events. See [Payment plugins](../plugins/payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
+| `StoreReferenceEvent` in `Payments/` | `onPaymentStoreReference` | Defined, not dispatched. An extension's billing engine raises it at a gateway whose `supportsRecurring()` answers `true`, which handles it with its public method of that name. See [Payment plugins](../plugins/payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference). |
 | `ChargeReferenceEvent` in `Payments/` | `onPaymentChargeReference` | Defined, not dispatched. As above. |
 | `StoredCredentialIntentEvent` in `Payments/` | None in the code | Defined, not dispatched. No event name is given to it anywhere. |
+| `InventoryTransferredEvent` in `Inventory/` | `onInventoryTransferred` | Defined, not dispatched: no command of the inventory service moves stock between locations. See [Stock events](./stock-events.md#oninventorytransferred). |
 
 ## Building blocks, not events
 
@@ -281,7 +292,7 @@ These files are in the same folder, but a plugin never receives them as an event
 | Abstract bases (14) | `AlfaAdminEvent` in `Admin/`. `FieldsEvent` in `Fields/`. `GeneralEvent`, `RedirectEvent` and `LayoutEvent` in `General/`. `InventoryAfterEvent` in `Inventory/`. `MediaEvent` in `Media/`. `PanelResultEvent` in `Panel/`. `PaymentsEvent`, `PaymentsRedirectEvent` and `PaymentsLayoutEvent` in `Payments/`. `ShipmentsEvent`, `ShipmentsRedirectEvent` and `ShipmentsLayoutEvent` in `Shipments/`. |
 | Interface (1) | `ScopedFieldEvent` in `ItemFields/` |
 | Traits (7) | `AlfaAdminAware` in `Admin/`. `HasMethodArgumentTrait` in `General/Traits/`. `ContributedSurfaces`, `HasCartLayout`, `HasSelections` and `HasSurfaces` in `ItemFields/Concern/`. `HasColumns` in `Lists/`. |
-| Helper classes (9) | `ActionBuilder`, `AdminActions`, `AdminColumns` and `AlfaAdminContext` in `Admin/`. `PriceChange` in `Catalog/`. `SelectorDescriptor`, `SurfaceBuilder` and `Surfaces` in `ItemFields/`. `ColumnBuilder` in `Lists/`. |
+| Helper classes (10) | `ActionBuilder`, `AdminActions`, `AdminColumns` and `AlfaAdminContext` in `Admin/`. `PriceChange` in `Catalog/`. `SelectorDescriptor`, `SurfaceBuilder` and `Surfaces` in `ItemFields/`. `ColumnBuilder` in `Lists/`. `OutboundChange` in `Outbound/`. |
 | Enums (3) | `CartSurface`, `ItemListSurface` and `ItemSurface` in `ItemFields/` |
 
 ## What you must provide
@@ -305,4 +316,4 @@ Follow the link in the last column of the event's row.
 
 - `onGetToolActions` and `onExecuteToolAction` have no card of their own. One line each on
   [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) gives the call.
-- `StoredCredentialIntentEvent` is not documented anywhere, because nothing sends it.
+- `StoredCredentialIntentEvent` is not documented anywhere, because nothing in Alfa Commerce sends it.
