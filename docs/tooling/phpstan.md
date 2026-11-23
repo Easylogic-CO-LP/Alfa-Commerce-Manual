@@ -6,7 +6,7 @@ description: What PHPStan analyses in Alfa Commerce, what it is told to ignore, 
 
 # PHPStan
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 ## What it does
 
@@ -16,8 +16,8 @@ for Alfa Commerce are in `phpstan.neon` at the root of the repository.
 
 :::caution Any finding fails the check
 Any finding PHPStan reports fails the job. It runs on PHP 8.3 with an exact PHPStan release (2.3.5) and an exact
-Joomla release (6.2.0), so the findings do not change by themselves. PHPStan is a required check: a pull request is merged only
-when it is green (see [Branch rules](./workflows#branch-rules)).
+Joomla release (6.2.0), so the findings do not change by themselves. PHPStan is a required check: a pull request is
+merged only when it is green (see [Branch rules](./workflows#branch-rules)).
 :::
 
 Two messages PHPStan gives on the code, both recorded in the baseline:
@@ -65,7 +65,8 @@ Language files are not PHP, so PHPStan never reads them.
 |---|---|---|
 | "Access to an undefined property", everywhere | 1 | Joomla's models and views hand out values through magic access, which PHPStan cannot follow. This pattern is broad: it also hides a mistyped property name. |
 | "Call to an undefined method" on nine Joomla types | 9 | The method exists on the class that really runs, for example the site application or the database driver, and not on the interface or base class the code names as the type. |
-| "unknown class" for the phone number library | 2 | The library is bundled with the telephone field plugin and is not inside the Joomla folder PHPStan scans. |
+| "unknown class" or "class not found" for the phone number library | 3 | The library ships as a Joomla library of its own (`libraries/lib_libphonenumber`), installed with Alfa Commerce, so it is not inside the Joomla folder PHPStan scans. |
+| "unknown class" or "class not found" for dompdf and the four libraries it needs | 2 | The same: they ship as Joomla libraries of their own (`libraries/lib_dompdf` and the four beside it). |
 
 The nine Joomla types are `BaseDatabaseModel`, `CMSApplicationInterface`, `DatabaseInterface`, `Document`,
 `ComponentInterface`, `PluginInterface`, `Language`, `FormField` and `SessionInterface`.
@@ -92,11 +93,11 @@ which `phpstan.neon` includes.
 
 | What is counted | Count |
 |---|---|
-| Entries (one message in one file) | 424 |
-| Findings they cover (an entry counts how often its message occurs in the file) | 641 |
-| Files with at least one entry | 183 |
+| Entries (one message in one file) | 384 |
+| Findings they cover (an entry counts how often its message occurs in the file) | 529 |
+| Files with at least one entry | 175 |
 
-The most frequent kinds are a wrong argument type (81 entries), an unnecessary nullsafe access (38), a class that is
+The most frequent kinds are a wrong argument type (41 entries), an unnecessary nullsafe access (38), a class that is
 not found (30), a wrong number of arguments (29) and a method called on something that may not be an object (26).
 
 The intention stated in the configuration is to shrink the list over time: fix findings, then make the list again.
@@ -141,8 +142,6 @@ What this means for you:
   **Run PHPStan**.
 - PHPStan fixes nothing by itself. A finding in code you changed is yours to fix and push.
 - The AI review is told not to flag findings of this kind.
-
-
 
 ## What can go wrong
 
