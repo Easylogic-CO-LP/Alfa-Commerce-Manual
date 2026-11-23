@@ -99,16 +99,13 @@ counts each timeout as a failed delivery.
 The buyer is never shown a ledger's own message: on the storefront they are written to the orders log only, and
 staff read them in the back office.
 
-A plugin that uses these methods needs an Alfa Commerce that has them. Its install script's `preflight()` asks
-`AlfaInstallerGate::refusal()` with that minimum first, then `AlfaInstallerGate::rangeRefusal()` (see
-[The installer gate](./overview.md#the-installer-gate)):
+A plugin that uses these methods is built for the Alfa Commerce line that has them: its manifest declares
+`<alfacore min="2.3" max="2.3"/>`, and its install script's `preflight()` asks `AlfaInstallerGate::rangeRefusal()`
+(see [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for)):
 
 ```php
-public const MIN_ALFA_VERSION = '2.3.0';
-
-// In preflight(), once the gate is loaded as the installer gate shows:
-$refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: self::MIN_ALFA_VERSION)
-    ?? $gate::rangeRefusal(name: 'My gateway', route: (string) $type, manifest: $parent->getManifest());
+// In preflight(), once the gate is loaded as that section shows:
+$refusal = $gate::rangeRefusal(name: 'My gateway', route: (string) $type, manifest: $parent->getManifest());
 ```
 
 ### The verbs
@@ -121,8 +118,8 @@ $refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: se
 | `settleAttempt(PaymentLedger $write, int $orderId, string $reference = ''): int` | Writes a builder that has `expectStatus()` set, and tells you which of three things happened | Every time a provider confirms a payment | Of two callers, exactly one changes the row. When the books refuse money that has moved, a CRITICAL line goes to your log. A write the books refuse queues no message for the shopper; its reason is in the orders log (`com_alfa.orders`), and on an administrator or API request staff read it in plain words. | Returns `self::WRITE_OK`, `self::WRITE_RACED` (the other caller won, agree with it) or `self::WRITE_FAILED` (not in the books). `settleAttemptVerdict()` makes the same write and answers a `PaymentWriteVerdict`. |
 | `claimPendingAttempt(int $paymentId, string $reference): bool` | Writes a provider reference on a pending row that has none, once | When two visits or two deliveries could both take the same attempt | Exactly one caller gets `true`. No money and no status move. | A blank reference and an id under 1 throw `InvalidArgumentException`. `false` when the row is not, or no longer, your pending attempt without a reference. A `RuntimeException` when the order cannot be locked: nothing is written and the attempt stays claimable. `claimPendingAttemptVerdict()` makes the same claim and answers a `PaymentWriteVerdict`: `VERDICT_LOCK_NOT_TAKEN` when the order could not be locked. |
 | `supersedeAttempt(int $paymentId, string $reason = ''): int` | Closes a pending attempt nobody will pay | The shopper left, or started a new attempt | The order does not move and the customer is told nothing | Returns the same three `WRITE_` values. Another plugin's row is `WRITE_FAILED`. `supersedeAttemptVerdict()` makes the same close and answers a `PaymentWriteVerdict`: another plugin's row is refused with `REFUSAL_NOT_WRITER`. |
-| `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | Records money the customer's bank took back | A dispute your provider reports | Never moves the order. The order is then owed that money again, and a new payment for it is accepted. | Another plugin's payment |
-| `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | Records that a booked refund or a chargeback did not stand | A reversed refund, a dispute you won | The original row is never edited. A new row names it. | Another plugin's row |
+| `dispute(int $paymentId, string $reference): DisputeLedger` | Tells Alfa a card dispute's state under the provider's dispute id; its `save()` answers a `DisputeVerdict` | Every dispute word your provider sends | One case per payment and dispute id. Alfa books the money at the bank's decision, never at a hold: a loss books the disputed amount as a chargeback, a win after a loss books its return. Answer your provider with the verdict's `providerStatus()`. | Another plugin's payment; a payment that collected nothing; a payment from the wallet |
+| `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | Records that a booked refund did not stand | A refund that failed or came back at the provider | The original row is never edited. A new row names it. | Another plugin's row; a chargeback row (a chargeback follows its dispute) |
 | `failCapture(int $paymentId, string $reason): PaymentWriteVerdict` | Records that a capture your provider accepted did not stand: the money did not arrive after all (a card scheme rejected the capture later). Your completed payment moves to failed; its note starts with "Capture did not stand" and your reason. | Your provider reports it, after the payment was booked completed | The order is owed the amount again (its balance and `amountToCollect()` count it). Staff are told on the order by a notice. Bookkeeping: the order's status, its e-mails and its download access do not move; nothing is refunded; staff decide what follows. Of two calls, one writes: the other is `VERDICT_RACED`. | `REFUSAL_NOT_WRITER`: another plugin's row, or a row that is not a payment. `REFUSAL_HISTORY_LOCKED`: a refund that is not failed or cancelled, or a chargeback, names the payment; keep your own staff record, the order is settled by hand. `VERDICT_RACED`: no longer completed (the same report again). |
 | `deletePayment(int $id, int $orderId): bool` | Deletes a payment row | Rarely | Only your own rows | Another plugin's row, or one that records no plugin |
 | `orderTransition(int $orderId)` | Moves the order to a status, in your plugin's name: `->to($statusId)->save()` | Only for a moment the method's status settings cannot express | The same steps as any status change | |
@@ -436,30 +433,11 @@ public function onPaymentWebhook($event): void
 
     $verdict = $this->settleAttemptVerdict($write, (int) $payment->id_order, $notice['transactionId']);
 
-    switch ($verdict->kind) {
-        case self::VERDICT_WRITTEN:
-        case self::VERDICT_RACED:
-            $event->setResponseCode(200);   // written, or the other delivery won
-            $event->setResponseBody('OK');
-
-            return;
-
-        case self::VERDICT_LOCK_NOT_TAKEN:
-            $event->setResponseCode(503);   // nothing written: the provider's next delivery settles it
-            $event->setResponseBody('Busy');
-
-            return;
-
-        case self::VERDICT_REFUSED:
-            $event->setResponseCode(200);   // the same write is refused again: staff reconcile it
-            $event->setResponseBody('Ledger refused');
-
-            return;
-
-        default:
-            $event->setResponseCode(500);   // not in the books: let the provider try again
-            $event->setResponseBody('Ledger rejected');
-    }
+    // 200 when the payment is in the books (written, or the other delivery won); 503 otherwise, so the provider
+    // delivers again.
+    $status = $verdict->providerStatus();
+    $event->setResponseCode($status);
+    $event->setResponseBody($status === 200 ? 'OK' : 'Not accepted');
 }
 
 /**
@@ -473,8 +451,10 @@ private function verifiedNotice(string $raw): ?array
 ```
 
 `settleAttemptVerdict()` writes a CRITICAL line to your log for `VERDICT_REFUSED` and `VERDICT_WRITE_FAILED` (the
-money moved and the books did not: reconcile), and a WARNING for `VERDICT_LOCK_NOT_TAKEN`. What you answer your
-provider stays your decision.
+money moved and the books did not: reconcile), and a WARNING for `VERDICT_LOCK_NOT_TAKEN`. Answer your provider with
+the verdict's `providerStatus()`: 200 for `VERDICT_WRITTEN` and `VERDICT_RACED`, 503 for every other kind, so the
+provider delivers again. For a refused write it also writes a CRITICAL line to the payments log (`com_alfa.payments`)
+with the row and the reason, for a person to reconcile while the provider retries.
 
 ### Callbacks arrive twice
 
@@ -484,6 +464,6 @@ handler so that running it twice does no harm:
 - open an attempt with its row first, written with a reference you minted, and call the provider only on
   `VERDICT_WRITTEN`;
 - settle with `expectStatus()` and `settleAttempt()` or `settleAttemptVerdict()`, never with a plain `save()`;
-- answer 2xx for what a retry cannot fix (an unknown reference, a type you do not handle), and 5xx only when a
-  retry can help;
+- answer a write with its verdict's `providerStatus()`, and 2xx for anything else a retry cannot fix (an unknown
+  reference, a type you do not handle);
 - for refunds, pass the provider's refund id: the same id is booked once.
