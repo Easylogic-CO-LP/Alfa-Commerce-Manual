@@ -77,7 +77,7 @@ All are in `Alfa\Component\Alfa\Administrator\Service\Inventory` (`administrator
 | A document that moves stock is issued or voided | The document code (`StockBridge`, `DocumentIssuer`) | `commitReservation()`, `restore()`, `reverseRestores()` |
 | Staff change a stock figure, a tracking setting or a combination on the item screen, or a stock figure in the items list | The item model, the items list's Stock cell and the combinations editor, each stock figure through `InventoryCommands` | `adjustTo()`, `changeTracking()`, `changeCombinationState()`, `archiveUnits()`, `retireUnits()` and others |
 | An API client sets or corrects stock (`POST v1/alfa/inventory/adjustments`) | The REST API, through `InventoryCommands` | `adjustTo()` for a figure, `adjust()` for a signed change |
-| An API client writes the stock of units (`PATCH v1/alfa/items/units`) | The REST API (`UnitBatch`) | `adjustTo()` |
+| An API client writes the stock of units (`PATCH v1/alfa/items/units`) | The REST API (`UnitBatch`), through `InventoryCommands` | `adjustTo()` |
 | Staff enable or disable a location | The location model | `changeLocationState()` |
 | Staff repair a fault on the Inventory audit page | The audit controller | `reconcile()`, `resolveLine()`, `writeOffStock()`, `prioritiseReservations()` |
 | The storefront decides how many can go in the cart | The cart | `purchasableCeiling()` |
@@ -141,14 +141,15 @@ found nothing to change (`adjustTo()` with an equal figure) returns `operation_i
 
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
-| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. `InventoryCommands` runs it for a set line, the way every stock editor of Alfa sets a figure; `PATCH v1/alfa/items/units` calls it directly. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not a tracked, current unit. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
+| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. `InventoryCommands` runs it for a set line, the way every stock editor of Alfa and `PATCH v1/alfa/items/units` set a figure; nothing else calls it. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not a tracked, current unit. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
 | `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. | Without a location it uses the default one. Its one caller is `InventoryCommands`, for a delta line (the REST API's adjustments, an extension's); no stock editor of Alfa makes one, every one sets a figure. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
 | `writeOffStock(int $itemId, int $combinationId, string $reason, InventoryContext $context): array` | Sets to zero the stock left on a unit that can no longer be sold (an archived combination, an archived item, stock left on an item that now has combinations) | One adjustment for each record. The records stay, at zero. | A unit that is still for sale. No reason or no signed-in member of staff. Stock that is set aside or that open order lines still wait for. |
 
 ### Setting or correcting stock: InventoryCommands
 
 Every stock editor of Alfa (the item's stock figure, the items list's Stock cell, the variants' grid, the variant
-window) and the REST API's adjustments set or correct stock one way: an adjustment built with `InventoryCommands`.
+window) and the REST API (its adjustments, the units batch, a product written with its variants' stock) set or
+correct stock one way: an adjustment built with `InventoryCommands`.
 It is the one way an extension (a return, an import, a receipt of goods) moves stock, and its code builds the same:
 
 ```php
@@ -174,7 +175,7 @@ if (!$result->applied) {
 | `set(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: the figure a unit's record at a location takes |
 | `delta(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: a signed change, positive for goods received |
 | `lines(array $lines, string $pointer = '/lines')` | Lines as the REST API takes them, 1 to 500: by `sku`, or `item_id` and `combination_id`; `location_id` (the default location when left out); `set` or `delta`, a decimal of at most 8 places. A line that cannot be read is refused, pointing at it. |
-| `source(string $type, int $id = 0)` | What the movements record as their source (`catalog_edit` for the editors, `api` for the REST API, `manual` when not given) |
+| `source(string $type, int $id = 0)` | What the movements record as their source (`catalog_edit` for the editors and the units batch, `api` for the REST API's adjustments, `manual` when not given) |
 | `by(InventoryContext $context)` | Who adjusts and why: the movements' user, correlation and note (`InventoryContext::ambient()` when not given) |
 | `once(int $userId, string $key, array $request)` | Applied once under a client's key: the same request again answers its lines and applies nothing |
 | `apply(): InventoryAdjustment` | Judges every line as the editors do (a set line's figure, a delta line's unit), then applies every line in one transaction, or none |
@@ -190,15 +191,19 @@ announces `onInventoryAdjusted` once the outermost save is final.
 
 ### One SKU, one unit: SkuIndex
 
-Every SKU in use is kept once (table `#__alfa_skus`), a product's own and each variant's, archived ones included,
-compared without regard to letter case. `SkuIndex` is in `Alfa\Component\Alfa\Administrator\Service\Catalog`.
-`SkuIndex::unit('SMX-WHT-256')` gives the unit it names (`SkuUnit`: `itemId`, `combinationId`, 0 for the product
-itself) or a `Refusal` saying why none: malformed, unknown, held by more than one unit, archived, or a product whose
-stock its variants hold. `unit()` and `holder()` are for reading. Every writer of a SKU in core keeps the registry in
-its own transaction: it reads the product's SKUs before its write (`SkuIndex::skusOf()`) and calls
-`SkuIndex::keep(itemId: $itemId, before: $before)` after it; a SKU another unit holds throws `SkuInUseException`, and
-the write rolls back. A unit that keeps a SKU it already shared before the registry is saved and stays out of it,
-named by the setup checklist until each has its own.
+A SKU names one product or variant. Every SKU in use is kept once (table `#__alfa_skus`), a product's own and each
+variant's, archived ones included, compared without regard to letter case. `SkuIndex` is in
+`Alfa\Component\Alfa\Administrator\Service\Catalog`. `SkuIndex::unit('SMX-WHT-256')` gives the unit it names
+(`SkuUnit`: `itemId`, `combinationId`, 0 for the product itself) or a `Refusal` saying why none: malformed, unknown,
+held by more than one unit, archived, or a product whose stock its variants hold. `unit()` and `holder()` are for
+reading. Every writer of a SKU in core keeps the registry in its own transaction: it reads the product's SKUs before
+its write (`SkuIndex::skusOf()`) and calls `SkuIndex::keep(itemId: $itemId, before: $before)` after it.
+
+A write that gives a product or a variant a SKU another unit holds is refused: `keep()` throws `SkuInUseException`,
+the write rolls back and nothing of it is saved. Its sentence (`COM_ALFA_SKU_IN_USE`) names the product or variant
+that holds the SKU; the REST API answers it with a 409. A copy made with Save as Copy on the item screen is saved with
+its SKU empty, and a message names the product or variant that holds the original's SKU. A unit that keeps a SKU it
+already shared before the registry is saved and stays out of it, named by the setup checklist until each has its own.
 
 ### The structure of an item's stock
 
