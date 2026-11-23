@@ -133,8 +133,8 @@ classes, the first goes to a payment plugin and the second to a shipping plugin.
 | `onExecuteAction` | `ExecutePaymentActionEvent` in `Payments/`, `ExecuteShipmentActionEvent` in `Shipments/` | One plugin | No veto | On request, when staff press a button | `administrator/src/Helper/ActionRegistry.php:668` and `:726` | [Payment plugins](../plugins/payment-plugin-events.md#onexecuteaction), [Shipping plugins](../plugins/shipment-plugin-events.md#onexecuteaction) |
 | `onAdminOrderDelete` | `AdminOrderDeleteEvent` in `Payments/`, `AdminOrderDeleteEvent` in `Shipments/` | One plugin | Yes. `setResult(false)` keeps the order. | Before the save | `administrator/src/Model/OrderModel.php:3852` | [Payment plugins](../plugins/payment-plugin-events.md#onadminorderdelete), [Shipping plugins](../plugins/shipment-plugin-events.md#onadminorderdelete) |
 | `onPaymentCheckup` | `PaymentCheckupEvent` in `Payments/` | One plugin | No | On request, from the method's settings page | `administrator/src/Helper/PaymentCheckupHelper.php:102` | [Payment plugins](../plugins/payment-plugin-events.md#onpaymentcheckup) |
-| `onAlfaDisputeRefresh` | `DisputeRefreshEvent` in `Payments/` | One plugin | No veto. An error tells staff the provider could not be asked, and nothing is saved. | On request, when staff press "Ask the provider again" on a dispute | `administrator/src/Helper/ActionRegistry.php:1775` | Not documented yet |
-| `onAlfaDisputeAccept` | `DisputeAcceptEvent` in `Payments/` | One plugin | No veto. An error tells staff the provider could not be asked, and nothing is saved. | On request, when staff press "Accept at the provider" on an inquiry or an open dispute | `administrator/src/Helper/ActionRegistry.php:1775` | Not documented yet |
+| `onAlfaDisputeRefresh` | `DisputeRefreshEvent` in `Payments/` | One plugin | No veto. An error tells staff the provider could not be asked, and nothing is saved. | On request, when staff press "Ask the provider again" on a dispute | `administrator/src/Helper/ActionRegistry.php:1775` | [Payment plugins](../plugins/payment-plugin-events.md#onalfadisputerefresh-and-onalfadisputeaccept) |
+| `onAlfaDisputeAccept` | `DisputeAcceptEvent` in `Payments/` | One plugin | No veto. An error tells staff the provider could not be asked, and nothing is saved. | On request, when staff press "Accept at the provider" on an inquiry or an open dispute | `administrator/src/Helper/ActionRegistry.php:1775` | [Payment plugins](../plugins/payment-plugin-events.md#onalfadisputerefresh-and-onalfadisputeaccept) |
 
 ## Cart and orders
 
@@ -145,7 +145,7 @@ classes, the first goes to a payment plugin and the second to a shipping plugin.
 | `onOrderPlaceValidate` | `OrderPlaceValidateEvent` in `Orders/` | Each in turn | Yes. `reject()`, or an error, refuses the order, and so does `OrderPlaceRefusedException`, read in its own words. | Before the save | `site/src/Service/Checkout/OrderPlacement.php:1231` | [Order and cart events](./order-and-cart-events.md) |
 | `onAlfaOrderPlaced` | `OrderPlacedEvent` in `Orders/` | Announced | No | After the save is final | `site/src/Service/Checkout/OrderPlacement.php:707` | [Order and cart events](./order-and-cart-events.md) |
 | `onOrderStatusChange` | `OrderStatusChangeEvent` in `Orders/` | Announced. Each listener is called on its own and its result is recorded. | No | After the save is final | `administrator/src/Service/Order/Task/OrderStatusEvent.php:149` | [Order and cart events](./order-and-cart-events.md) |
-| `onAlfaDisputeChanged` | `DisputeChangedEvent` in `Payments/` | Announced, after `alfa` is loaded. Each listener is called on its own and its result is recorded. | No | After the save is final: a dispute moved or its facts changed | `administrator/src/Service/Order/Task/OrderDisputeEvent.php:103` | Not documented yet |
+| `onAlfaDisputeChanged` | `DisputeChangedEvent` in `Payments/` | Announced, after `alfa` is loaded. Each listener is called on its own and its result is recorded. | No | After the save is final: a dispute moved or its facts changed | `administrator/src/Service/Order/Task/OrderDisputeEvent.php:103` | [Order and cart events](./order-and-cart-events.md) |
 
 ## Item fields and form fields
 
@@ -325,6 +325,3 @@ Follow the link in the last column of the event's row.
 
 - `onGetToolActions` and `onExecuteToolAction` have no card of their own. One line each on
   [Extending Admin Screens](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) gives the call.
-- The dispute events (`onAlfaDisputeRefresh`, `onAlfaDisputeAccept`, `onAlfaDisputeChanged`) and the related products
-  events (`onAlfaRelatedResolve`, `onAlfaRelatedLinksChanged`) have no page yet. The docblocks of their classes, in
-  `administrator/src/Event/Payments/` and `administrator/src/Event/Catalog/`, give the contract.

@@ -485,6 +485,30 @@ when the request stopped. This is why rule 1 matters.
 The events about stock and about documents (invoices, credit notes) that follow an order have pages of their own:
 [Stock events](./stock-events.md) and [Document events](./document-events.md).
 
+## A card dispute
+
+### onAlfaDisputeChanged
+
+**When it fires.** After a card dispute was recorded, moved or changed and that save is final: a dispute recorded by
+staff or reported by a payment plugin, evidence sent, won, lost, closed, opened again, a corrected amount, the
+reconcile answer. The books it moved (a chargeback at a loss, its reversal at a win after a loss) are already written.
+
+**Who receives it.** Announced to everyone: every loaded plugin that lists it in `getSubscribedEvents()`. Alfa loads
+the `alfa` group first. The task that calls it is written only when the event has a listener; each listener is called
+on its own, as one recorded step of the task (`administrator/src/Service/Order/Task/OrderDisputeEvent.php`), and a
+failed one is called again by Run again under Tools, Tasks.
+
+**What you are given.** `DisputeChangedEvent` (`administrator/src/Event/Payments/DisputeChangedEvent.php`).
+
+| Method | Meaning |
+|---|---|
+| `getDispute()` | The record as committed, or `null` when it no longer exists |
+| `getDisputeId()`, `getOrderId()`, `getPaymentId()` | The dispute, its order, the disputed payment |
+| `getStateBefore()`, `getStateAfter()` | The state before (empty for a new record) and after: `inquiry`, `open`, `under_review`, `won`, `lost`, `closed` |
+| `getBooked()` | What the change booked, decimal text in the order's currency: positive a chargeback, negative its reversal, `0` when the books did not move |
+
+The event has no setters. An ERP learns here that an order is owed again after a loss.
+
 ## What can go wrong
 
 | What you see | The usual cause |

@@ -19,6 +19,7 @@ The shop tells of four kinds of change, called **topics**:
 | `price` | The selling price of a unit moves: a price written, a sale price or a discount saved, a price period that begins |
 | `order.created` | An order is placed: in the shop, in the administrator, or over the API |
 | `order.status` | An order's status changes |
+| `order.dispute` | A card dispute of the order is recorded, moves or changes ([Card disputes](../services/disputes.md)) |
 
 A **unit** is what has its own stock and price: a product without combinations, or one combination of a product.
 
@@ -98,6 +99,7 @@ change sent again is read again and carries the newest figure, so the receiver a
 | `price` | `item_id`, `combination_id`, `sku`, `price`: `net` (without tax), `gross` (with tax) and `currency` (its ISO code), at the currency's decimal places, or null when no price applies to the unit; and `prices_state`, the state of the unit's own price rows (see [Two systems that both write prices](#two-systems-that-both-write-prices)) |
 | `order.created` | `order_id`, `status_id`: the status the order is in when the change is sent |
 | `order.status` | `order_id`, `from_status_id`, `to_status_id` |
+| `order.dispute` | `order_id`, `dispute`: `id`, `state` (the state the change moved it to), and as they stand when the request leaves `outcome` (the bank's last decision: `won`, `lost` or null), `amount` (in the order's currency, decimal text, null while unknown), `currency`, `decided_at`. An ERP learns here that an order is owed again after a loss. |
 
 The values are read **when the request leaves**, not when the change was made. A unit whose stock moves three times
 before the next request is told once, with the quantity it has then: the receiver is always told the newest figure,

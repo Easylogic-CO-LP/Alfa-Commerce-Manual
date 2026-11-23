@@ -425,6 +425,14 @@ the code:
 | `getItemsTotal()`, `getShippingTotal()`, `getDiscountTotal()`, `getDiscountTotalExcl()` | One part each, as `Money` in the order's currency. `getShippingTotal()` is the shipping the order charges, after the shipping rules (the breakdown's `shipping_tax_incl`, the figure the order's total and its documents use). The charge before the rules stays in `getBreakdown()` as `shipping_gross_tax_incl`. |
 | `activeShipments(array $shipments): array`, `activeShipmentsWhere($db, string $prefix = ''): string` | The parcels that count: all but cancelled and returned ones |
 
+## What a card dispute does to an order's money
+
+The order's money changes at a dispute's **decision**, never while the bank decides: an inquiry, an open chargeback
+and a case under review leave the order paid as it was. A loss books a chargeback of the disputed amount and the order
+reads owed again by it (its balance is positive, its payment status partial); a win books nothing, and a win after a
+loss reverses that chargeback. A case opened again keeps its last decision until the bank decides again. No order
+status moves at any step. See [Card disputes](./disputes.md).
+
 ## OrderStatusHelper
 
 Order statuses are made by the merchant. No status has a fixed id. Code that needs "the first status" or "is this

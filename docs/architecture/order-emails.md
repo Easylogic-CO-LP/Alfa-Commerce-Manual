@@ -18,14 +18,14 @@ Read [Background work](./background-work.md) first: it explains tasks, their sta
 
 ### Which e-mails exist
 
-There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail
-goes to the shop alone.
+There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail goes
+to staff only.
 
 | E-mail | What triggers it | Kind of task |
 |---|---|---|
 | **Order confirmation e-mail** | An order is placed, at checkout or from the order builder in the administrator, or is created with its lines through the REST API. It is the e-mail of the status the order is placed in. | `order.placement_email` |
 | **Status e-mail** | An order enters a status, by any route: staff, a payment, a shipment, the API | `order.status_email` |
-| **Dispute e-mail** | A card dispute on a payment of the order is recorded or first reported, is decided, and three days before its evidence is due while none is marked sent | `order.dispute_email` |
+| **Dispute e-mail** (staff only) | A card dispute is recorded or first reported; at its outcome; and three days before its deadline while no evidence is marked sent (the reminder, written by the job `order.dispute.remind`) | `order.dispute_email` |
 
 Who receives a confirmation or a status e-mail is set on the order status, not in code:
 
@@ -38,8 +38,9 @@ A status change into a status that tells nobody creates no e-mail task at all. A
 confirmation task, which sends nothing when the status tells nobody.
 
 The dispute e-mail goes to the shop's own address (Options, General, **Store contact email**) and says what the
-dispute's notification says, with the link to the order. With no such address there is no dispute e-mail task, and the
-notification bell still tells staff. The customer gets no e-mail about a dispute.
+dispute's notice says, with the link to the order. With no such address there is no dispute e-mail task, and the
+notification bell still tells staff. The customer gets no e-mail about a dispute. See
+[Card disputes](../services/disputes.md#telling-staff).
 
 A third e-mail is not a task: the **payment link** that staff send from the order screen (Send payment link, on the
 payments panel of an order its customer may pay again). It goes to the customer alone, at once, and the operator reads

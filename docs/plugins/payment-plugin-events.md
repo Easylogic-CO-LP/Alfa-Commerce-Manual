@@ -14,6 +14,7 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 - [Payment plugins](./payment-plugins.md): start here
 - **Payment plugin events** (this page)
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
+- [Card disputes](./payment-plugin-disputes.md)
 - [A complete payment plugin](./payment-plugin-example.md)
 
 The nineteen events under this page's headings are each addressed to one plugin, on its public method of the event's
@@ -606,12 +607,14 @@ writes nothing new. Answer with one of the two setters.
 
 **What happens next.** Staff read that the dispute was saved, or why your verdict was refused, or your sentence. Alfa
 records in the User Actions Log that staff asked. It writes nothing of the dispute itself on Accept: the money moves
-only when the loss is recorded.
+only when the loss is recorded. See
+[Card disputes](./payment-plugin-disputes.md#two-optional-handlers).
 
 **If you are missing or you fail.** Without the method, or while your plugin is unavailable, the card offers no
-button for it. A thrown error tells staff that the provider could not be asked and nothing was saved, with the error's
-text beside it; a handler that answers neither shows "The payment provider gave no answer; nothing was saved." Nothing
-of the dispute is written in either case.
+button for it. A thrown error is written to the payments log (category `com_alfa.payments`, a warning naming the
+dispute and the event), and staff read that the provider could not be asked, nothing was saved, and the reason is in
+the payments log. A handler that answers neither shows "The payment provider gave no answer; nothing was saved."
+Nothing of the dispute is written in either case.
 
 ## onClearData
 

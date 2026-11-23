@@ -173,7 +173,8 @@ flowchart TB
 | `#__alfa_orders_statuses_en_gb` | The English names and e-mail texts of the statuses the installation creates. The other language table the install file makes itself |
 | `#__alfa_orderstatus_recipients` | Which users receive the staff e-mail when an order enters a status (pair key) |
 | `#__alfa_order_activity_log` | The order's history: one row per event, with who did it, the status at that moment and a summary |
-| `#__alfa_order_payments` | The money rows of an order: payment, refund, authorization, reversal, chargeback. The amount is always positive and the type gives the direction |
+| `#__alfa_order_payments` | The money rows of an order: payment, refund, authorization, reversal, chargeback. The amount is always positive and the type gives the direction. A chargeback, and a reversal of one, names the dispute that booked it (`id_dispute`) |
+| `#__alfa_order_disputes` | Card disputes: one case per row, tied to the disputed payment and its order: state, the bank's last decision (`outcome`, kept by a reopen), round, the amount in the order's currency and as stated, reason, deadline, evidence sent, fee and fee returned, the provider's reference (unique per payment through `reference_hash`) and link, what staff must still decide (`waits_for`). It holds no money: the money rows name it |
 | `#__alfa_payment_references` | Stored payment credentials of a customer, for charges the merchant starts later |
 | `#__alfa_order_disputes` | Card disputes: one case a row, tied to the disputed payment, with its state, outcome and evidence deadline. Money moves only through the payment rows it books |
 | `#__alfa_refund_report_outcomes` | The outcome of each refund a payment provider reported as made outside Alfa: recorded, reconciled, or duplicate or invalid |

@@ -154,9 +154,9 @@ The answer, status 201, shortened:
 `external_source`, `external_reference`, `state`, `created`, `modified`.
 
 **One record holds also:** `id_user`, `conversion_rate`, `delivery_date`, `id_address_delivery`,
-`id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `disputes`,
-`shipments`, `contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's
-number is its `id`.
+`id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `disputes`
+([Card disputes](#card-disputes)), `shipments`, `contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's number is its
+`id`.
 
 `id_payment_method` and `payment_method_name` are the method of the order's latest payment that is not failed or
 cancelled (a payment from the customer's credit is left out); `id_shipment_method` and `shipment_method_name` the
@@ -267,7 +267,8 @@ Orders: View (403 without it), and an order that does not exist answers 404.
 
 An existing order is changed with these eighteen routes, one change each. Each answers 200 with the whole order as
 it is after the change, so one answer shows the new totals. An order id that does not exist, or a line, payment,
-shipment or dispute of another order, answers 404. They do what the order screen does, with its rules, and ask the
+shipment or dispute of another order, answers 404; a line added to an order that does not exist answers 409, "Order not
+found". They do what the order screen does, with its rules, and ask the
 permission it asks: Orders: Edit, and for the status Orders: Change State with Orders: View.
 
 | Method and address | What it does |
@@ -278,7 +279,7 @@ permission it asks: Orders: Edit, and for the status Orders: Change State with O
 | `POST v1/alfa/orders/:id/payments` | Records a payment |
 | `POST v1/alfa/orders/:id/payments/:paymentId/settle` | Moves a payment to another state, for example to completed |
 | `POST v1/alfa/orders/:id/payments/:paymentId/refund` | Records a refund of a payment |
-| `POST v1/alfa/orders/:id/payments/:paymentId/disputes` | Records a card dispute by hand |
+| `POST v1/alfa/orders/:id/payments/:paymentId/disputes` | Records a card dispute by hand ([Card disputes](#card-disputes)) |
 | `PATCH v1/alfa/orders/:id/disputes/:disputeId` | Changes a dispute recorded by hand, or gives a lost one its amount in the order's currency |
 | `POST v1/alfa/orders/:id/disputes/:disputeId/evidence` | Marks a dispute's evidence sent |
 | `POST v1/alfa/orders/:id/disputes/:disputeId/close` | Closes a dispute with the outcome |
@@ -478,6 +479,61 @@ What a single order carries:
   each `{"rate": "24", "name": "VAT"}`, the rate as exact decimal text; a chain stored as its rates alone gives each
   an empty name).
 
+
+### Card disputes
+
+What a dispute is and what Alfa books at each step: [Card disputes](../services/disputes.md). The routes do what the
+dispute card on the order screen does, with its rules, and ask Orders: Edit; the order's `disputes` list needs Orders:
+View. Each answers 200 with the whole order. Amounts are decimal text; dates are UTC `Y-m-d H:i:s`, in and out.
+
+| Answer | When |
+|---|---|
+| 200 | Written, or already as asked: the same close again books nothing |
+| 404 | The order does not exist, or the dispute or payment is another order's |
+| 409 | A rule refused it: `errors[0].title` says why and `meta.code` is the stable code (`dispute_transition`, `dispute_closed`, `dispute_amount`, `dispute_follows_provider`, `dispute_not_collected`, `dispute_wallet` and the others of [Card disputes for payment plugins](../plugins/payment-plugin-disputes.md#the-answer-and-the-status-to-give-the-provider)). Branch on the code, never on the sentence. |
+| 422 | A field: the title is led by the field's name and `errors[0].source.pointer` points at it. A key the route does not take is refused, a language-suffixed one included. An `amount` in the order's currency is read exactly, with a point: finer than the order's money or larger than an amount holds is refused in the money reader's words. |
+| 503 | Another operation held the order, or the write failed: nothing was written; send it again after `Retry-After` |
+
+**Record.** `state` (`inquiry` or `open`, a chargeback) and `amount` are required; `currency` (the order's when left
+out: a figure in another currency waits, at a loss, for its amount in the order's currency), `reason` (`fraud`,
+`not_received`, `not_as_described`, `duplicate`, `credit_not_processed`, `cancelled`, `unrecognised`, `other`),
+`reason_text`, `reference` (the provider's dispute id, so its notifications join this record), `evidence_due_by`,
+`fee`, `fee_currency`, `note`.
+
+```json
+{"state": "open", "amount": "49.90", "currency": "EUR", "reason": "not_received", "reason_text": "Bank letter 77812",
+ "reference": "77812", "evidence_due_by": "2026-12-04 21:59:59", "note": "Customer says the parcel never came"}
+```
+
+**Change** (a dispute recorded by hand): any of the record's fields but `state`; a field left out keeps its value. A
+dispute that follows its provider answers 409 `dispute_follows_provider`. On a lost dispute stated in another currency,
+`{"amount_in_order_currency": "45.12"}` alone books the loss.
+
+**Evidence.** `{"sent_at": "2026-11-23 10:00:00", "note": "Tracking sent"}`, both optional (`sent_at` now when left out).
+
+**Close.** `outcome`: `won`, `lost`, `inquiry_ended` (an inquiry) or `in_error` (a dispute recorded by hand); `amount`
+only with `lost` on a dispute recorded by hand (a provider's dispute books the provider's amount: 409
+`dispute_follows_provider`); `fee_returned`, `note`.
+
+```json
+{"outcome": "lost", "amount": "49.90", "note": "The bank decided for the customer"}
+```
+
+**Reopen.** `{"evidence_due_by": "2027-01-10 21:59:59", "note": "Second round"}` on a won or lost dispute; on an
+undecided one 409 `dispute_transition`.
+
+**Reconcile.** `{"same_as": 7}` (the dispute recorded by hand it is) or `{"different": true}`, on a provider's dispute
+that waits for the answer.
+
+**The order's `disputes`.** Each: `id`, `id_payment`, `state`, `outcome` (the bank's last decision, kept by a reopen),
+`stage` (the round), `source` (`staff`, `provider`, `migrated`), `amount` and `currency` (the order's; `null` while only
+another currency's figure is known), `stated_amount`, `stated_currency`, `reason`, `reason_text`, `reference`,
+`provider_link`, `evidence_due_by`, `evidence_sent_at`, `fee`, `fee_currency`, `fee_returned`, `waits_for`
+(`same_payment`, `amount_unknown` or `null`), `booked` (what its rows book, net), `created`, `modified`, `decided_at`.
+
+**The list's filters.** `filter[dispute]`: `undecided` (an inquiry, open or under review), `inquiry`, `open`,
+`under_review`, `won`, `lost` or `closed`. `filter[dispute_due_before]`: the orders with an inquiry or open chargeback
+to answer before a UTC time (`Y-m-d` or `Y-m-d H:i:s`) and no evidence sent.
 
 ### The status
 
