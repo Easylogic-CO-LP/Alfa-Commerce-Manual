@@ -341,7 +341,7 @@ drawn one by one.
 | 7 | The plugin charges and the cart rules used are stored with the order. If one of them cannot be written, the placement fails: an order is never saved with money rows that disagree with its total. |
 | 7 | Two steps are recorded as [background work](../reference/glossary.md#background-work): download access and the confirmation e-mail. |
 | 7 | The cart is deleted **inside** the save. Cart and order never exist together. |
-| The line | The save is final (the commit, `OrderPlacement.php` line 549). The order exists, and nothing after this line can make that untrue. |
+| The line | The save is final (the commit, `OrderPlacement.php` line 554). The order exists, and nothing after this line can make that untrue. |
 | 9 | The payment plugin writes its row. Alfa records the order's parcel, with the shipping charge and every item, and the shipping plugin completes it. Each is a save of its own. |
 | 10 | The two recorded steps run after both plugins are done, so the confirmation e-mail shows the order with its payment and its parcel. |
 | 11 | `onAlfaOrderPlaced` is announced last, so a listener sees the order as the shopper completed it. |
