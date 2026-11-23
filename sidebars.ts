@@ -138,6 +138,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'api/overview',
+        'api/integrating',
         'api/catalogue',
         'api/customers-and-configuration',
         'api/orders',
