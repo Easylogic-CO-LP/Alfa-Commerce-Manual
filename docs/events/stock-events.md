@@ -6,7 +6,7 @@ description: What happens to stock when an order is placed or changes status, th
 
 # Stock events
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce tells plugins when stock is about to move and when it has moved. This page explains, in plain words
 first, what can happen to stock, then each event, then how a plugin can decide which location an order's stock comes
@@ -17,7 +17,7 @@ Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. The word
 
 ## What it does
 
-### The five things that can happen to stock
+### The four things that can happen to stock
 
 Stock of an item sits at a **location** (a warehouse, a shop). For an order, three things can happen to it:
 
@@ -27,12 +27,11 @@ Stock of an item sits at a **location** (a warehouse, a shop). For an order, thr
 | **Taken from stock** | A deduction (`commitReservation`) | The goods leave the shelf for this order. The reservation becomes a stock movement. |
 | **Given back** | A release (`release`) or a restore (`restore`) | A reservation is let go, or goods that were taken are put back on the shelf |
 
-Two more things happen without an order:
+One more thing happens without an order:
 
 | In plain words | The name in the code | What it means |
 |---|---|---|
-| **A manual adjustment** | `adjustTo`, `adjust`, `receive` | Staff correct the quantity of an item at a location |
-| **A transfer** | `transfer` | A quantity moves from one location to another |
+| **A manual adjustment** | `adjustTo`, `adjust` | Staff set the quantity of an item at a location (`adjustTo`), or an extension changes it by a signed amount, for goods received or gone (`adjust`) |
 
 ```mermaid
 sequenceDiagram
@@ -73,7 +72,7 @@ A document type can also move stock when a document of that type is issued. See
 | A shopper or staff place an order | Sets the lines aside. If the order's first status removes goods from stock, takes them at once. | Yes. If the stock step fails, the order is not placed. |
 | Staff or a payment plugin change an order's status to one with another claim | Moves the stock to match the new claim | No. The status is saved first. The stock moves right afterwards, as background work. |
 | Staff issue a document whose type moves stock | Takes from stock or puts back, as the type says | No. The document is saved first. The stock moves right afterwards. |
-| Staff change the stock figure of an item | Writes one adjustment | It is its own save |
+| Staff change the stock figure of an item or a combination | Writes one adjustment for each location whose figure changed | Yes. In the item form it is part of the item's save. |
 
 The second and third rows matter for a plugin. When a status change or a document owes a stock movement, Alfa records
 what is owed together with the change, then applies it. If applying it fails, the status or the document stays as
@@ -89,7 +88,8 @@ Tools > Database Sync tries every failed movement at once.
 
 ## The events at a glance
 
-All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin group before it announces them.
+All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin group before it announces the stock
+events, and the group `alfa-inventory` before `onCollectStockAllocationProviders`.
 
 | Event | Fires | Can it refuse? | If your listener throws |
 |---|---|---|---|
@@ -170,11 +170,11 @@ sequenceDiagram
 
 If your plugin refuses at step 4 with an ordinary exception, the status stays changed. The stock movement stays
 owed, staff see a notice, and the background job asks your plugin again when it tries the movement again, within the
-seven tries. A refusal with `InventoryRefusedException` is final for the movement: it is recorded as refused, not tried again, and its notice
-carries your sentence (without markup, on one line, at most 300 characters). For an order, staff decide on the order:
-a new status that changes the order's stock claim tries it again. For a document, a task "Stock movement of a
-document that a stock plugin refused" stands in Tools > Tasks and the bell, and only its Run again tries it, once your
-plugin allows it.
+seven tries. A refusal with `InventoryRefusedException` is final for the movement: it is recorded as refused, not
+tried again, and its notice carries your sentence (without markup, on one line, at most 300 characters). For an
+order, staff decide on the order: a new status that changes the order's stock claim tries it again. For a document,
+a task "Stock movement of a document that a stock plugin refused" stands in Tools > Tasks and the bell, and only its
+Run again tries it, once your plugin allows it.
 
 ## The events that can refuse
 
@@ -283,7 +283,8 @@ when an order enters a cancelled status and when an order is deleted.
 **What happens next.** Alfa lets the reservations go. The stock is free to sell again.
 
 **If you are missing or you fail.** With no listener the reservations are let go. A listener that throws stops the
-step, and the reservations stay. An owed movement refused with `InventoryRefusedException` is not tried again; any other exception is tried again with the waits above.
+step, and the reservations stay. An owed movement refused with `InventoryRefusedException` is not tried again; any
+other exception is tried again with the waits above.
 
 ## The events that only report
 
@@ -296,14 +297,15 @@ These six are "after" events. They all share one base class,
 | `argument(string $key, mixed $default = null): mixed` | One named value of the event (the tables below list the names) |
 
 **Who receives them.** Each is announced to everyone. The cards below give, for each event, when it fires and what
-it carries. Everything else is the same for all five and is said here once.
+it carries. Everything else is the same for all six and is said here once.
 
 **When they fire, exactly.** Alfa does not announce them when the step finishes. It waits until the whole save the
 step belongs to is final (`PostCommit::defer()`). So:
 
 - if the step ran alone, the event follows at once, or as soon as a lock Alfa holds is released;
 - if the step was part of a larger save (an order being placed), the event waits for that save and follows it. At
-  a placement it also waits until the order's payment and shipping plugins have handled `onOrderAfterPlace`;
+  a placement from the storefront it also waits until the order's payment and shipping plugins have handled
+  `onOrderAfterPlace`;
 - if that save is undone, the event is never announced.
 
 **If your listener throws.** Alfa announces these with `AlfaPluginHelper::dispatchIsolated()`. The error is written
@@ -353,8 +355,8 @@ movement from here, and you must not write to stock tables.
 ### onInventoryAdjusted
 
 **When it fires.** After a manual adjustment and the save is final: staff changed the stock figure of an item or of a
-combination, or an item's stock tracking was changed with opening quantities (`changeTracking()`). Event class
-`InventoryAdjustedEvent`.
+combination, an item's stock tracking was changed with opening quantities (`changeTracking()`), or an extension moved
+stock with `adjust()`. Event class `InventoryAdjustedEvent`.
 
 | Name for `argument()` | Meaning |
 |---|---|
@@ -362,7 +364,7 @@ combination, or an item's stock tracking was changed with opening quantities (`c
 | `combinationId` | The combination, or 0 for the item itself |
 | `locationId` | The location |
 | `quantityDelta` | The change: positive adds stock, negative removes it |
-| `movementType` | `adjust` or `receive` |
+| `movementType` | Always `adjust` |
 | `sourceType`, `sourceId` | What made the change |
 | `result` | `operation_id`, and `delta` when the change came from a stock figure |
 
@@ -370,21 +372,16 @@ combination, or an item's stock tracking was changed with opening quantities (`c
 
 **When it fires.** Never: no command of Alfa Commerce moves stock between locations, so core announces it from
 nowhere. The event class `InventoryTransferredEvent` and its name stay in the list of events. A move between two
-locations is two `adjust()` calls, each announced as `onInventoryAdjusted`.
-
-| Name for `argument()` | Meaning |
-|---|---|
-| `itemId`, `combinationId` | What moved |
-| `quantity` | How much |
-| `sourceLocationId`, `destinationLocationId` | From where, to where |
-| `result` | `transfer_id`, `operation_id` |
+locations is two `adjust()` calls, each announced as `onInventoryAdjusted`. Nothing builds its arguments: the class adds
+no method to `InventoryAfterEvent`.
 
 ### onInventoryRestored
 
-**When it fires.** After stock was put back on the shelf and the save is final: an order cancelled or a line cut, or
-the return of a credit note (`InventoryService::restore()`). Also when a credit note is voided and what it put back is
-taken off again (`InventoryService::reverseRestores()`). Event class `InventoryRestoredEvent`. Side effects only, like
-the other "after" events.
+**When it fires.** After stock was put back on the shelf and the save is final: an order cancelled, deleted or moved to
+a status that keeps the goods in stock, a line cut, or the return of a credit note (`InventoryService::restore()`).
+Also when a credit note is voided and what it put back is taken off again (`InventoryService::reverseRestores()`).
+Nothing is announced when nothing moved. Event class `InventoryRestoredEvent`. Side effects only, like the other
+"after" events.
 
 | Name for `argument()` | Meaning |
 |---|---|
@@ -589,4 +586,4 @@ final class MainStoreAllocation implements StockAllocationProviderInterface
 - `ReservationPolicyInterface` (decide when an order sets stock aside) exists in the code, but Alfa always uses its
   own rule, "set aside when the order is placed". A plugin cannot supply another.
 - What staff see when a "before" listener refuses while an order's lines are edited or an order is deleted.
-- Calling `InventoryService` from a plugin to move stock.
+- Calling a command of `InventoryService` other than `adjust()` from a plugin.
