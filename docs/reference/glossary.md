@@ -91,9 +91,12 @@ example, rebuilding the search entry of every item.
 **Held.** A task whose outcome cannot be known (an e-mail that may or may not have left). Alfa does not try it again
 by itself; it waits for staff to decide.
 
-The kinds of task and job are Alfa Commerce's own: a plugin cannot add one. The background work of a plugin of an
-Alfa group is an extension job (`ExtensionJob::enqueue()`), which the task runner hands back to the plugin with
-`onAlfaExtensionJob`.
+**Cancelled.** An extension's task or job stopped before it finished: by its plugin, by staff, or because the plugin
+was uninstalled. Alfa's own tasks and jobs are never cancelled.
+
+Alfa Commerce's own kinds of task and job are fixed. A plugin of an Alfa group declares tasks and jobs of its own
+(`onAlfaDeclareWork`), asks for them through `BackgroundWork::of($this)`, runs them in `onAlfaRunTask` and
+`onAlfaRunJob`, and is told how each ended in `onAlfaWorkSettled`.
 See [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin).
 
 ## Catalogue and prices
