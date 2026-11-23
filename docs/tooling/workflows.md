@@ -6,7 +6,7 @@ description: The three GitHub workflows of Alfa Commerce, when each runs, what e
 
 # Automated checks
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 The code repository holds three **workflows**. A workflow is a file under `.github/workflows/` that tells GitHub to
 run one or more **jobs** when something happens, for example when a pull request is opened. Each job shows on the
@@ -23,7 +23,7 @@ pull request as one check, green or red.
 | Security Scan, **CodeQL** (job `security-scan`) | Pull requests into `main` or `developer`, and pushes to them | Yes: a required check (see [Branch rules](#branch-rules)). |
 | Security Scan, **PHP security scan** (job `php-security`) | Same | No: not a required check (see [Branch rules](#branch-rules)). Any finding turns it red. |
 | Security Scan, **secret scan** (job `secret-scanning`) | Same | Yes: a required check (see [Branch rules](#branch-rules)). A secret confirmed as live turns it red. |
-| Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on such a pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
+| Claude PR Review, **AI review** (job `claude-review`) | A pull request from a branch of this repository, opened by its owner, a member, a collaborator or a contributor, when it is opened, updated or reopened; and a comment that contains `@claude` on any pull request, written by one of them. The job then goes on only for a person with write access. | No. It posts comments. |
 
 Whether a red check stops a merge is decided by the repository's branch rules on GitHub, not by the workflow files.
 
@@ -41,6 +41,8 @@ without a change in the code.
 | Linear history | Not asked | Required |
 | Required checks | Copy-clean, `security-scan` (CodeQL), `secret-scanning` and PHPStan | The same four |
 | The branch must be up to date before the merge | Yes | Yes |
+| Who may update the branch, a merge included | Anyone the rules above let through | Only those who may bypass the rules |
+| Creating or deleting the branch | Not restricted by the ruleset | Only those who may bypass the rules |
 
 So these four checks must be green before a pull request is merged. PHP CS Fixer and the PHP security scan
 (`php-security`) are not required: they inform the people who review and merge, as the AI review does.
@@ -76,7 +78,8 @@ You do not start anything. GitHub starts the workflows by itself:
 - **Code Quality** and **Security Scan** start for a pull request whose target is `main` or `developer`, and again
   when `main` or `developer` receives commits. A pull request into any other branch does not start them.
 - **Claude PR Review** has no branch filter, but it starts only for the repository's own people: see
-  [The AI review](#the-ai-review). A pull request from a fork gets no AI review.
+  [The AI review](#the-ai-review). A pull request from a fork gets no AI review when it is opened or updated; a
+  comment with `@claude` by one of the repository's people starts the job on it too.
 
 ## What you must provide
 
@@ -101,7 +104,8 @@ File: `.github/workflows/code-quality.yml`. Three jobs.
 | What makes it fail | Only a step that breaks: the tool cannot run, or the commit cannot be made. Badly formatted code does not fail it, it gets fixed. |
 
 On a pull request from a fork the job cannot push to the fork's branch: when the fixer changes a file there, the
-commit step fails and the job turns red. Running the fixer on your computer before you push is required. Details and the local command: [PHP CS Fixer](./php-cs-fixer).
+commit step fails and the job turns red. Running the fixer on your computer before you push is required. Details and
+the local command: [PHP CS Fixer](./php-cs-fixer).
 
 ### Copy-clean
 
@@ -110,7 +114,7 @@ commit step fails and the job turns red. Running the fixer on your computer befo
 | Runs | On pull requests and on pushes. |
 | PHP | 8.3 |
 | What it does | Runs `scripts/copy-clean/copy-clean-gate.php` over the checked-out code. The script reads every file the package ships (never tests, never the bundled libraries) and judges the comments and the texts a person reads. Code itself is never judged. It only reads files. |
-| What makes it fail | Any comment or text that breaks a rule and is not in the allow list. An allow list entry that no longer matches anything. The run prints each finding with its file, line and rule. |
+| What makes it fail | Any comment or text that breaks a rule and is not in the allow list. An allow list entry that matches nothing. The run prints each finding with its file, line and rule. |
 
 The rules, R1, R2, R3, R5 and R6, and the allow list are explained on
 [Contributing](../getting-started/contributing#code-conventions). There is no rule R4: the rules keep the numbers
@@ -160,7 +164,7 @@ more check counts: each entry matches exactly the findings its count gives.
 |---|---|
 | Runs | On pull requests and on pushes, as a step of the Copy-clean job. |
 | PHP | 8.3 |
-| What it does | Runs `scripts/media-forms/media-forms-suite.php` over the checked-out code. It reads the media folder of every manifest and checks that every source style and script has its `.min` file; that every `.min` file, made by the build or shipped minified by a library, has a `.gz` that decompresses byte for byte to it; that there is no `.gz` of a source, no `.gz` without its `.min` and no `._` file; that every registration names a `.min` file the package carries (the `joomla.asset.json` files, the registrations in PHP code, a media path written in a script); and that each `.min` file is the one `php build/media-min/build.php` made from its source as the source is now (the build's record, `build/media-min/media-min.lock.json`). It only reads files. |
+| What it does | Runs `scripts/media-forms/media-forms-suite.php` over the checked-out code. It reads the media folder of every manifest and checks that every source style and script has its `.min` file; that every `.min` file, made by the build or shipped minified by a library, has a `.gz` that decompresses byte for byte to it; that there is no `.gz` of a source, no `.gz` without its `.min` and no `._` file; that every registration names a `.min` file (the `joomla.asset.json` files, the registrations in PHP code, a media path written in a script); that every `.min` file a `joomla.asset.json` names is in the package with its `.gz`; and that each `.min` file is the one `php build/media-min/build.php` made from its source as the source is now (the build's record, `build/media-min/media-min.lock.json`). It only reads files. |
 | What makes it fail | A source changed without the build, a missing or stray file, a `.gz` that is not its `.min`, or a registration of a source. The run prints each finding with its file. |
 
 Its first arm checks the suite itself: it plants each fault in a throwaway package and proves that the arm meant to
@@ -201,10 +205,10 @@ to them.
 |---|---|---|
 | `security-scan` | CodeQL, GitHub's code scanner. It is set up for one language group, `javascript-typescript`, with the query set `security-extended`. It does not analyse the PHP code. | A step that breaks. What happens with the alerts it reports depends on the repository's settings, which are not part of the code. |
 | `php-security` | Semgrep 1.185.0 (its image fixed by digest, run with no network and no metrics) with the PHP security rules of `semgrep/semgrep-rules` at a fixed commit, over the PHP Alfa Commerce ships (`administrator`, `site`, `api`, `plugins`, `modules` and `script.php`; not the bundled libraries). Three rules that flag every call of `md5()` and `sha1()`, `unlink()` and `unserialize()` are left out. | Any finding, or a step that breaks. |
-| `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords. It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
+| `secret-scanning` | Fetches the full history and runs TruffleHog, a scanner for secrets such as keys and passwords, over the commits of the pull request (on a push, over the commits pushed). It is told to report only secrets it could confirm as live (the option `--only-verified`). | A confirmed live secret. |
 
-The actions of Code Quality and Security Scan run from a fixed commit. TruffleHog's action is fixed at v3.99.9; the
-scanner it starts is still its `latest` image.
+The actions of Code Quality and Security Scan run from a fixed commit. TruffleHog's action is fixed at v3.99.9, and
+the scanner it starts is its image of the same version (`version: 3.99.9`), named by its tag.
 
 If the secret scan turns red, removing the secret from the file is not enough: it stays in the history. Replace the
 secret at the service that issued it.
@@ -235,8 +239,8 @@ holds, in this order:
 - The rule groups: Release and migrations, Database, Joomla gotchas, Multilingual, Security, Conventions, i18n.
 - What not to flag: style, PHPStan findings, and file differences on a development site.
 
-One heading of the rulebook still reads "Namespaces (PSR-4, Joomla 6/7)": Joomla 7 is refused by the installer.
-Trust this manual and the code where the rulebook differs.
+One heading of the rulebook reads "Namespaces (PSR-4, Joomla 6/7)", while the installer refuses Joomla 7. Trust this
+manual and the code where the rulebook differs.
 
 ## What happens next
 
@@ -260,14 +264,14 @@ On the pull request page:
 | PHP CS Fixer added a commit | Pull, then continue. |
 | The AI review commented | Read it, apply what is right. Its comments do not fail a check. |
 | A comment with `@claude` started a new review | That is how the workflow is written: a comment containing `@claude` on a pull request, by a person with write access, starts the job again. |
-| A comment with `@claude` started nothing | It was on an issue, on a pull request from a fork, or by a person without write access. |
+| A comment with `@claude` started nothing | It was on an issue, or its author is not the owner, a member, a collaborator or a contributor. A run started by a person without write access stops at its first step. |
 
 ## Versions the checks run on
 
 - PHP 8.3 for PHP CS Fixer, PHPStan and Copy-clean. The PHP security scan sets up no PHP. The component itself
   needs PHP 8.3 or newer.
-- Fixed versions: PHPStan 2.3.5, Joomla 6.2.0, Semgrep 1.185.0 and the rules' commit, TruffleHog's action at
-  v3.99.9. PHP CS Fixer and TruffleHog's scanner image are not fixed, so their results can change by themselves.
+- Fixed versions: PHPStan 2.3.5, Joomla 6.2.0, Semgrep 1.185.0 and the rules' commit, TruffleHog's action and its
+  scanner at 3.99.9. PHP CS Fixer is not fixed, so its results can change by themselves.
 
 ## Not documented yet
 
