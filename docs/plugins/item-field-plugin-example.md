@@ -1,13 +1,13 @@
 ---
 title: A complete item field plugin
-description: "A complete minimal item field plugin for Alfa Commerce 2.2, file by file."
+description: "A complete minimal item field plugin for Alfa Commerce 2.3.0, file by file."
 ---
 
 # A complete item field plugin
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -16,7 +16,8 @@ description: "A complete minimal item field plugin for Alfa Commerce 2.2, file b
 - **A complete item field plugin** (this page)
 
 This plugin adds a type named `picker`. It draws a field as radio buttons on the item page, for a variant field
-and for an option, and nothing else. It is the shipped `choice` plugin reduced to one layout: every call in it
+and for an option, and nothing else. The same radios appear in the administrator's popup that configures an item
+for an order, which asks the same event. It is the shipped `choice` plugin reduced to one layout: every call in it
 is one that `choice` makes. Every file is printed in full.
 
 `plugins/alfa-item-fields/picker/picker.xml`
@@ -91,7 +92,7 @@ use Alfa\Component\Alfa\Administrator\Plugin\ItemFieldsPlugin;
 
 final class Picker extends ItemFieldsPlugin
 {
-    // Declared by having the method: the base class reports it to Alfa.
+    // Alfa calls this public method on the plugin of the field's type, once for each such field of the item.
     public function onItemView($event): void
     {
         if (!$event instanceof ItemViewEvent) {
