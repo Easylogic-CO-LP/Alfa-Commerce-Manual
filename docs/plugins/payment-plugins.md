@@ -337,6 +337,26 @@ Log::add('Order #' . $order->id() . ': the provider refused the charge.', Log::W
 Always pass `$this->logCategory()`. A category typed by hand, or shared with another plugin, sends your lines to the
 wrong file or to none. `settleAttempt()` writes its CRITICAL "the money moved and the books did not" line here.
 
+An exception's text goes into a line, a staff message or a log row only through `ErrorText::of()`
+(`Alfa\Component\Alfa\Administrator\Helper\ErrorText`), never as `$e->getMessage()`:
+
+```php
+} catch (\Throwable $e) {
+    Log::add('Order #' . $orderId . ': the refund could not be sent: ' . ErrorText::of($e), Log::ERROR, $this->logCategory());
+}
+```
+
+A database driver's text names the site's database user, host and schema, and a transport's text can carry a
+credential. `ErrorText::of(Throwable|string $failure): string` applies one rule, the one Alfa's own ledgers and base
+classes use: the site's database user, host and schema (each where it stands as a word of its own) become `<user>`,
+`<host>` and `<schema>`; the database password, the site's secret and the mail password become `<secret>` wherever
+they occur; any `'name'@'host'` account becomes `'<user>'@'<host>'`; the user and password of an address
+(`https://user:password@host`) become `<user>:<secret>`; a Bearer or Basic credential, and a value of four characters
+or more given to `password`, `passwd`, `pwd`, `secret`, `client_secret`, `api_key`, `apikey`, `access_token`,
+`refresh_token` or `token` (as `name=value` or `name: value`), become `<secret>`; line breaks and other control
+characters become spaces; the text is cut at 1,000 characters (`ErrorText::LIMIT`) and ends with `...` when cut.
+Everything else is kept as it is. It never throws.
+
 **The log table**, for the merchant, shown by your own "Logs" action. Describe its columns in `params/logs.xml`,
 inside `<fields name="paymentslogs">` and one `<fieldset>` within it, as the Standard plugin does (Alfa reads the
 fields of the first fieldset). Give each field a `mysql_type`; without one the column is `VARCHAR(255)`. Alfa creates
@@ -371,7 +391,28 @@ PLG_ALFA_PAYMENTS_MYGATEWAY_LOG_REFUND_STARTED="User <a href=\"{accountlink}\">{
 plugin (`plg_alfa-payments_mygateway`), so the User Actions Log screen reads the sentence from your language file.
 The facts are plain values by name. `userid`, `username` and `accountlink` are always those of the user who acted
 (user 0 when nobody did, as for a provider's notification), whatever your facts say. It answers `true` when the row
-is written and `false` otherwise; a failure is logged, never thrown. Rows are never deleted.
+is written and `false` otherwise; a failure is logged, never thrown. A row written this way is never deleted.
+
+**An act that may still fail after its row is written** (a staff close that the books may refuse) writes its row
+first with `recordActionLogPending()`, then takes it back with `withdrawActionLog()` when the act did not stand. A
+staff close never stands without its trail, and a trail never stays for a close that was not made:
+
+```php
+$rowId = $this->recordActionLogPending('PLG_ALFA_PAYMENTS_MYGATEWAY_LOG_CAPTURE_CLOSED', ['title' => '#' . $orderId], $orderId);
+$verdict = $this->settleAttemptVerdict($write, $orderId, $providerId);
+
+if ($verdict->kind !== self::VERDICT_WRITTEN && $rowId !== null && !$this->withdrawActionLog($rowId)) {
+    // tell staff: the close was not made, and its audit line could not be withdrawn: entry #$rowId stands
+}
+```
+
+| Call | What it does |
+|---|---|
+| `recordActionLogPending(string $languageKey, array $facts = [], int $itemId = 0): ?int` | Writes the row as `recordActionLog()` writes it, and answers its id; `null` when it is not written (the reason logged, never thrown) |
+| `withdrawActionLog(int $rowId): bool` | Deletes that row: `true` when it is gone. Only a row your plugin wrote with `recordActionLogPending()` in the same request; any other row (another plugin's, one written by `recordActionLog()`, one of an earlier request, one already withdrawn) answers `false` and nothing is deleted. `false` also when the delete failed (logged): the row then stands, and you tell staff so. |
+
+A pending row not withdrawn by the end of the request stays, as every other row. Nothing else in Alfa Commerce
+deletes a row of the User Actions Log.
 
 ## Language
 
@@ -410,10 +451,11 @@ Your plugin carries its own texts and loads them.
 
 ## Not documented yet
 
-- **Charging a saved card or mandate.** `onPaymentStoreReference`, `onPaymentChargeReference`,
-  `supportsRecurring()`, `renewalsAllowed()` and the related `StoredCredentialIntentEvent` exist, but the
-  core repository contains no code that sends these events, so when they fire and what the shopper sees cannot be
-  documented from it.
+- **Charging a saved card or mandate: what the shopper sees.** The gateway's side (`onPaymentStoreReference`,
+  `onPaymentChargeReference`, `onPaymentChargeQuery`, `supportsRecurring()`, `renewalsAllowed()` and
+  `StoredCredentialIntentEvent`) is on [Payment plugin events](./payment-plugin-events.md#onpaymentstorereference-and-onpaymentchargereference).
+  Alfa Commerce sends none of these events itself; when they fire, and what the shopper sees, is the extension's
+  that sends them (a subscriptions extension).
 - **The action page.** How a layout set in `onExecuteAction` is shown, and the script helper a form uses to submit
   its `_do` step. Every button opens the action page, its title is the button's label, and the layout drawn is the one
   `onExecuteAction` sets with `setLayout()`.

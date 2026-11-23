@@ -76,9 +76,25 @@ reference is looked up under the order's lock, and inside a transaction that has
 transaction's older snapshot.
 
 A write waits for the order's lock as long as the database server allows (its `innodb_lock_wait_timeout`, 50
-seconds unless the shop changed it) before answering `VERDICT_LOCK_NOT_TAKEN`. A provider's notification often
-times out sooner: that is safe, because nothing of the write exists until it commits, and the provider's
-redelivery settles the row once.
+seconds unless the shop changed it) before answering `VERDICT_LOCK_NOT_TAKEN`. A provider's notification must answer
+within the provider's own window, often 10 seconds or less, so a notification handler bounds the wait with
+`withLockWait()`: inside the work you hand it, every write of the books waits at most the seconds you give (1 to 30)
+for an order another operation holds, then answers as for any lock it could not take (`VERDICT_LOCK_NOT_TAKEN`,
+nothing written). Answer your provider "not accepted" (a 503) then, and its redelivery writes once the order is free:
+
+```php
+$verdict = $this->withLockWait(seconds: 8, work: fn () => $this->settleAttemptVerdict($write, $orderId, $providerId));
+
+if ($verdict->kind === self::VERDICT_LOCK_NOT_TAKEN) {
+    // 503: the provider delivers again
+}
+```
+
+A bound inside a bound keeps the shorter. A bound outside 1 to 30 throws `InvalidArgumentException` and the work does
+not run. Nothing else in the work, and nothing after it, waits differently: the bound applies to the order's lock alone.
+Without `withLockWait()` a notification may time out at the provider before the write answers; that is safe, because
+nothing of the write exists until it commits, and the provider's redelivery settles the row once, but the provider
+counts each timeout as a failed delivery.
 
 The buyer is never shown a ledger's own message: on the storefront they are written to the orders log only, and
 staff read them in the back office.
@@ -107,6 +123,7 @@ $refusal = $gate::refusal(name: 'My gateway', route: (string) $type, minimum: se
 | `supersedeAttempt(int $paymentId, string $reason = ''): int` | Closes a pending attempt nobody will pay | The shopper left, or started a new attempt | The order does not move and the customer is told nothing | Returns the same three `WRITE_` values. Another plugin's row is `WRITE_FAILED`. `supersedeAttemptVerdict()` makes the same close and answers a `PaymentWriteVerdict`: another plugin's row is refused with `REFUSAL_NOT_WRITER`. |
 | `recordChargeback(int $paymentId, Money $amount, array $options = []): array` | Records money the customer's bank took back | A dispute your provider reports | Never moves the order. The order is then owed that money again, and a new payment for it is accepted. | Another plugin's payment |
 | `recordReversal(int $rowId, ?Money $amount = null, array $options = []): array` | Records that a booked refund or a chargeback did not stand | A reversed refund, a dispute you won | The original row is never edited. A new row names it. | Another plugin's row |
+| `failCapture(int $paymentId, string $reason): PaymentWriteVerdict` | Records that a capture your provider accepted did not stand: the money did not arrive after all (a card scheme rejected the capture later). Your completed payment moves to failed; its note starts with "Capture did not stand" and your reason. | Your provider reports it, after the payment was booked completed | The order is owed the amount again (its balance and `amountToCollect()` count it). Staff are told on the order by a notice. Bookkeeping: the order's status, its e-mails and its download access do not move; nothing is refunded; staff decide what follows. Of two calls, one writes: the other is `VERDICT_RACED`. | `REFUSAL_NOT_WRITER`: another plugin's row, or a row that is not a payment. `REFUSAL_HISTORY_LOCKED`: a refund that is not failed or cancelled, or a chargeback, names the payment; keep your own staff record, the order is settled by hand. `VERDICT_RACED`: no longer completed (the same report again). |
 | `deletePayment(int $id, int $orderId): bool` | Deletes a payment row | Rarely | Only your own rows | Another plugin's row, or one that records no plugin |
 | `orderTransition(int $orderId)` | Moves the order to a status, in your plugin's name: `->to($statusId)->save()` | Only for a moment the method's status settings cannot express | The same steps as any status change | |
 
@@ -132,10 +149,26 @@ owed again and may be paid again.
 | `getPayment(int $id): ?object` | One payment row |
 | `getPaymentsByOrder(int $orderId): array` | Every row of the order, from every plugin. Right for totals, wrong for "which attempt is mine". |
 | `orderBalance(int $orderId): Money` | The order's total less what the shop still holds. Above zero: still owed. Zero: settled. Below zero: overpaid. Throws when the order does not exist. |
+| `collectableNow(int $paymentId): Money` | What one of your open payments (pending or authorized) may still collect when it is settled: the order's total less what the order holds against it with this row left out (every gateway's pending, authorized and completed payments, less chargebacks and settled refunds), never below zero, in the order's currency. Zero for another gateway's row, a row that is not a payment, and a payment no longer pending or authorized. Throws `OrderCurrencyException` when the row's order does not exist or names no currency. |
 | `countReferenceHolders(string $reference, array $types): int` | How many of your rows of those types hold exactly this reference. Anything but 1 proves nothing. |
 | `findOwnRowByReference(string $reference, array $types): ?int` | The id of the one row of yours that holds the reference, or `null` when none or several do |
 | `findLinkedRow(int $paymentId, string $type, string $reference): ?object` | The refund or chargeback row of a payment with this exact provider reference |
 | `firstMethodRow(int $methodId, string $kind): ?array` | For the checkup only: a method's first settled payment (`self::FIRST_PAID`) or first refund (`self::FIRST_REFUND`), as `id`, `order`, `moment` |
+
+**Before a capture or a charge of an open row, ask `collectableNow()`, never `orderBalance()`.** The settle of the
+row checks the same rule under the order's lock, and refuses what does not fit (`REFUSAL_OPEN_ATTEMPT` while another
+payment of the order is open, `REFUSAL_OVER_TOTAL` otherwise), after your provider has already taken the money.
+`orderBalance()` counts completed payments only, so a capture it allows can still be refused at the settle. Capture no
+more than `collectableNow()` answers, or offer no capture. It is read without the lock, so it is never a guarantee:
+the settle decides.
+
+```php
+$room = $this->collectableNow(paymentId: (int) $payment->id);
+
+if ($capture->greaterThan($room)) {
+    // capture no more than $room, or tell staff why the capture is not offered
+}
+```
 
 Amounts on the rows you read are `Money` objects in the order's currency. The one exception is the row
 `findLinkedRow()` returns: it holds only `id`, `amount`, `transaction_status` and `transaction_id`, and its `amount`

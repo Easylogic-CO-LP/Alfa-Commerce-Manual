@@ -330,6 +330,7 @@ also load one with `$this->getOrder($orderId)`.
 | `items()` | `array` | The order's lines |
 | `payments()` | `Payment[]` | Every payment, refund and authorization row of the order, in the order written |
 | `shipments()` | `Shipment[]` | The order's parcels, oldest first |
+| `discounts()` | `OrderDiscount[]` | The discounts the order froze when it was placed, in the order they applied. A discount staff took out of the order is not listed. Throws `OrderCurrencyException` when the order names no currency. |
 | `row()` | | For Alfa. Do not call it. |
 
 `Order::of(object $row): self` makes a reader from an order row. Core uses it. An order handed to you is already a
@@ -340,8 +341,39 @@ The number the customer knows the order by: `EmailService::orderNumber(order: $o
 
 A `Payment` reader has `id()`, `orderId()`, `methodId()`, `methodType()`, `type()`, `status()`, `transactionId()`,
 `amount()` and `pluginData()`. A `Shipment` reader has `id()`, `orderId()`, `methodId()`, `methodType()`,
-`status()`, `trackingNumber()`, `weight()`, `cost()`, `costExcl()` and `pluginData()`. Both also have `row()` and
-`of()`, which are for Alfa as on the order reader.
+`status()`, `trackingNumber()`, `weight()`, `cost()`, `costExcl()`, `taxRate()` and `pluginData()`. Both also have
+`row()` and `of()`, which are for Alfa as on the order reader.
+
+`Shipment::taxRate(): string` is the rate the parcel's carriage was taxed at, frozen with its amounts, in percent as
+exact decimal text: `'24.000'` for 24 percent, `'13.000'` for a reduced 13 percent, `'0.000'` untaxed. When several
+taxes applied it is their combined rate. Read it instead of working a rate out from the rounded amounts, which gives
+a wrong rate for a reduced one.
+
+An `OrderDiscount` (`Alfa\Component\Alfa\Site\Service\Order\OrderDiscount`) is one frozen discount. Its money is the
+rule's own, frozen at placement, never re-derived from the items' rates, in the order's currency:
+
+| Method | Returns | Meaning |
+|---|---|---|
+| `amount()` | `Money` | What came off, tax included: the figure the order's totals subtract. A row frozen with no figure tax included answers its figure tax excluded, as the totals read it. |
+| `amountExcl()` | `Money` | What came off, tax excluded |
+| `tax()` | `Money` | The discount's own tax: `amount()` less `amountExcl()` |
+| `kind()` | `string` | `OrderDiscount::KIND_PRODUCT`, `KIND_ORDER` or `KIND_SHIPPING`. A shipping discount reduces the carriage in the order's totals; the others reduce the goods. |
+| `name()`, `code()` | `string`, `?string` | The rule's name as it applied; the code the customer entered, `null` for an automatic rule |
+| `freeShipping()` | `bool` | Whether the rule granted free shipping |
+| `id()`, `cartRuleId()` | `int` | The frozen discount's id; the cart rule it was frozen from (which may have changed or gone since) |
+
+The figures are positive: what came off. A gateway that sends its provider order lines with their tax sends one line
+per discount from them, so the tax it tells the provider is the order's:
+
+```php
+foreach ($order->discounts() as $discount) {
+    if ($discount->kind() === OrderDiscount::KIND_SHIPPING) {
+        continue; // already inside the parcels' cost
+    }
+
+    $lines[] = ['name' => $discount->name(), 'total' => $discount->amount()->negate(), 'tax' => $discount->tax()->negate()];
+}
+```
 
 ### What can go wrong
 

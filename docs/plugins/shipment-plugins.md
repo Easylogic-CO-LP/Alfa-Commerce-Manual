@@ -430,7 +430,13 @@ PLG_ALFA_SHIPMENTS_FLAT_LOG_BOOKED="User <a href=\"{accountlink}\">{username}</a
 The row is filed under `plg_alfa-shipments_<element>`, so the User Actions Log screen reads the sentence from your
 plugin's language file. The facts are plain values by name. `userid`, `username` and `accountlink` are always those
 of the user who acted (user 0 when nobody did, as for a carrier's callback), whatever your facts say. The call answers
-`true` when the row is written and `false` otherwise; a failure is logged, never thrown. Rows are never deleted.
+`true` when the row is written and `false` otherwise; a failure is logged, never thrown. A row written this way is
+never deleted. For an act that may still fail after its row is written, write the row with
+`recordActionLogPending()` and take it back with `withdrawActionLog()` when the act did not stand, as
+[Payment plugins](./payment-plugins.md#logging) shows; both are on your base class too.
+
+An exception's text goes into a log line only through `ErrorText::of($e)`, as
+[Payment plugins](./payment-plugins.md#logging) describes.
 
 ## Language
 
