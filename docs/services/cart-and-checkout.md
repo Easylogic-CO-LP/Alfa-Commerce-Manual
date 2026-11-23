@@ -289,7 +289,9 @@ What an extension author needs to know:
 | Within a class the rule that gives the shopper most wins. Others join only when both rules allow combining. | You cannot predict the discount from one rule alone |
 | Amounts are tax included | |
 | The rules used are stored with the order when it is placed (table `#__alfa_order_cart_rule`) | An order keeps its discounts whatever happens to the rule later |
-| How often a rule was used is counted from those stored rows | There is no counter to update |
+| An item or order rule is stored with its share of each line it lowered (table `#__alfa_order_item_cart_rule`), as the engine shared it out, tax included and excluded; the rule's row is the sum of its shares | The order's documents state each line's share, and a change to a line's quantity moves its shares with it ([Documents](documents.md#discounts-line-by-line)) |
+| How often a rule was used is counted from those stored rows; a code removed from an order is not counted | There is no counter to update |
+| Staff can add a code to a placed order, put one in place of another, or remove one | The engine decides as it does for a cart, on what the order's lines have left after its discounts ([Orders](orders.md#coupons-on-a-placed-order)) |
 
 A plugin cannot add a cart rule or lower a total through an event. A charge added in `onCartTotals` only adds.
 
@@ -411,7 +413,10 @@ order an order is worked:
    tax, discount and total, and an Edit button that opens the line in a popup (quantity, configuration, a custom price,
    Remove). The Add item button is in the section's heading. Under the lines, the goods before and after rules, each
    rule that applied (a coupon code with its remove button), tax, shipping, every plugin's charge and the total; under
-   the table, the coupon box.
+   the table, the coupon box. A code that is not taken comes back with the reason, worded for staff: no rule has it,
+   its rule is unpublished, not started or ended, its uses are spent, this customer may not use it, a better discount
+   already applies and the two do not combine, or the cart does not meet its conditions yet (the code is then kept). A
+   code that applied says nothing: its rule's row in the table shows it.
 3. **Shipment and payment.** The methods the engine offers this cart. They differ from the storefront's in two ways:
    only the payment methods whose plugin allows staff to place orders are listed, and the shipping methods are listed
    without asking their plugins for a price (only the chosen one is priced).

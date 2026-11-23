@@ -262,6 +262,21 @@ A credit note is issued with `issue()`: a draft whose `doc_type` is a credit typ
 On the order screen, Alfa sizes a credit with `CreditCalculator` while the order is locked, so that two credits
 drafted at the same moment cannot both take the same amount. That workflow is core's own.
 
+## Discounts, line by line
+
+An item or order rule of an order is stored with its share of each line it lowered (`#__alfa_order_item_cart_rule`),
+tax included and excluded, and the rule's row is the sum of its shares. Documents read the shares:
+
+| Document | What it states of a rule |
+|---|---|
+| An invoice | For each line it invoices, the line's share of the rule for the quantity it invoices: the share times the quantity invoiced so far over the line's quantity, rounded once, less what the invoices before took. The invoice that reaches a line's whole quantity takes the rest of the share. One line per rule and VAT rate, at the rates of the lines. The invoice that takes the order's last goods takes the rule's last cents of rounding. |
+| A credit note | For each line it credits, the line's share for the quantity it credits, in the same way, never more than the corrected invoice stated of the rule at that rate |
+| A credit note that grants a code added after the invoice | The code's shares of the lines that invoice carries, at their rates |
+
+A line's quantity changed on the order screen moves its shares in proportion (the gross rounded once, the net at the
+line's rate), and a line removed takes its shares. A rule stored as one figure for the whole order, as an order placed
+before shares were kept holds it, is shared over the goods by their value instead.
+
 ## Numbering and series
 
 | Rule | Meaning |

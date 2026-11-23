@@ -404,7 +404,7 @@ total = lines + shipping + plugin charges - cart rules
 | Lines | The line totals of the order (`#__alfa_order_items`) |
 | Shipping | The charges of the order's parcels (`#__alfa_order_shipments`). A cancelled or returned parcel does not count. A cart rule of the shipping class lowers this part, never below 0. |
 | Plugin charges | The charges plugins added in `onCartTotals`, stored with the order (`#__alfa_order_contributions`) |
-| Cart rules | The item and order rules stored with the order (`#__alfa_order_cart_rule`), each with its own tax-included figure |
+| Cart rules | The item and order rules stored with the order (`#__alfa_order_cart_rule`, not removed), each with its own tax-included figure: for a rule held per line, the sum of its shares of the lines |
 
 Plugin charges are part of the total. Each stored cart rule carries its own tax-included amount; it is never
 worked out from the items' average tax.
@@ -432,6 +432,76 @@ and a case under review leave the order paid as it was. A loss books a chargebac
 reads owed again by it (its balance is positive; with no refund its payment status reads partial, never refunded); a
 win books nothing, and a win after a loss reverses that chargeback. A case opened again keeps its last decision until
 the bank decides again. No order status moves at any step. See [Card disputes](./disputes.md).
+
+## Coupons on a placed order
+
+### What it does
+
+`OrderCoupons` (`administrator/src/Service/Order`) adds a coupon code to a placed order, puts a code in place of one
+the order holds, or removes one. Staff use it on the order screen: the Coupons card beside the totals lists the codes
+on the order, each with what it takes off and a Remove button, and has a code field with the choice of the code it
+replaces.
+
+A code added is asked of the rules engine as the storefront asks it: for the order's customer and customer groups,
+with the rule's dates, targeting and usage limits, and its conditions read on the order's lines as they stand. Only
+the code's own rule is asked; the automatic rules were stored when the order was placed. The rule takes off what each
+line has left after the discounts already on the order, a line an item rule of the order already lowers is not
+lowered by another item rule, and the rule is stored with its share of each line as a rule of the checkout is. It
+joins the rules of its class already on the order only when it and every one of them combine with that class.
+
+A code removed keeps its row, marked removed, and its shares: the documents that stated it read them, and the rule's
+usage no longer counts it. A code put in place of another is the removal and the addition in one step; when the
+addition is refused, the code on the order stays.
+
+### When it is used
+
+The order screen's Coupons card calls it (the tasks `order.addCoupon` and `order.removeCoupon`, Orders edit). An
+extension may call it for an order it works on.
+
+### What you must provide
+
+| Method | Returns |
+|---|---|
+| `add(int $orderId, string $code, int $replaces = 0): object` | `outcome`: `CouponOutcome::APPLIED` when the code was added, or the reason it was not; `rule`: the `AppliedCartRule`; `ruleId`: its row in `#__alfa_order_cart_rule`; `replaced`: the code it replaced. `$replaces` names the row of the code it replaces, 0 to add it. |
+| `remove(int $orderId, int $orderRuleId): string` | `OrderCoupons::REMOVED`, or the reason it was not removed |
+| `onOrder(int $orderId): object` | `coupons`: the codes on the order (`id_order_cart_rule`, `code`, `name`, `value_tax_incl`, `discount_class`, `free_shipping`); `changeable`: whether they may change |
+
+```php
+use Alfa\Component\Alfa\Administrator\Service\Order\OrderCoupons;
+use Alfa\Component\Alfa\Site\Service\CartRules\CouponOutcome;
+
+$result = OrderCoupons::add(orderId: $orderId, code: 'WELCOME10');
+
+if ($result->outcome !== CouponOutcome::APPLIED) {
+    // $result->outcome says why: a CouponOutcome constant, or one of OrderCoupons' own.
+}
+```
+
+### What happens next
+
+The change is made under the order's row lock (and the rule's, for a code added, so that two uses of a rule's last
+use queue), written with an entry in the order's History (`coupon.added`, `coupon.edited`, `coupon.deleted`), and
+commits whole or not at all. The order's total follows at once: it is added up from the stored rules.
+
+Documents already issued keep what they state. The next invoice states each line's share of the order's rules for the
+quantity it invoices. What an invoice issued before the change stated against the order now is the correction's: a
+credit note grants a code added, another sales document reverses one removed ([Documents](documents.md#discounts-line-by-line)).
+
+### What can go wrong
+
+| Outcome | Meaning |
+|---|---|
+| `CouponOutcome::NOT_FOUND`, `UNPUBLISHED`, `NOT_YET_ACTIVE`, `EXPIRED` | No rule has the code, or its rule is not live |
+| `CouponOutcome::USAGE_LIMIT_REACHED`, `CUSTOMER_LIMIT_REACHED` | The rule's uses are spent, in all or for this customer |
+| `CouponOutcome::REQUIRES_LOGIN`, `NOT_ELIGIBLE` | The rule is limited per customer and the order is a guest's, or the rule is for other customers or groups |
+| `CouponOutcome::CONDITIONS_NOT_MET` | The order's lines do not meet the rule's conditions. Nothing is kept for later. |
+| `OrderCoupons::ON_ORDER` | The code is already on the order |
+| `OrderCoupons::NOT_COMBINABLE` | A rule of the code's class is on the order and the two do not both combine with that class |
+| `OrderCoupons::NOTHING_OFF` | The rule takes nothing off the order: the lines it covers are left out of it or have nothing left |
+| `OrderCoupons::SHARES_NOT_KEPT` | The order holds an item or order discount stored as one figure for the whole order, without shares of its lines; its codes stay as they are |
+| `OrderCoupons::GONE` | The code named is not on the order |
+
+An exception means the change was not written; nothing on the order moved.
 
 ## OrderStatusHelper
 

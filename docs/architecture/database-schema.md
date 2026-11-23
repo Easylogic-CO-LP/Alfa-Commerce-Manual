@@ -166,8 +166,8 @@ flowchart TB
 | `#__alfa_orders` | The order header: reference, customer and a copy of the name and e-mail, currency and its scale, the chosen methods with a copy of their names, status, language, notes |
 | `#__alfa_order_items` | The order lines, with the name, SKU, prices, discount and tax frozen on the line, and the quantities refunded and returned |
 | `#__alfa_order_item_fields` | The field choices of an order line, copied at purchase so that they survive later changes to fields and values |
-| `#__alfa_order_cart_rule` | The cart rules applied to an order, frozen with their amounts |
-| `#__alfa_order_item_cart_rule` | Each cart rule's share of each order line, frozen at placement (one row per line and rule). Removed with its order line (foreign key on `id_order_item`) |
+| `#__alfa_order_cart_rule` | The cart rules applied to an order, frozen with their amounts. `line_shares` = 1: the row is the sum of its shares of the lines; `deleted` = 1: a code staff removed from the order, kept with its shares |
+| `#__alfa_order_item_cart_rule` | Each item or order rule's share of each order line it lowered, tax included and excluded (one row per line and rule); removed with its line |
 | `#__alfa_order_contributions` | The amounts that plugins added to the order's totals, frozen |
 | `#__alfa_orders_statuses` | The order statuses: colours, what the status does to stock, flags (initial, cancelled, completed), whether customers may cancel in it (`customer_can_cancel`), e-mail layouts, document and payment rules |
 | `#__alfa_orders_statuses_en_gb` | The English names and e-mail texts of the statuses the installation creates. The other language table the install file makes itself |
