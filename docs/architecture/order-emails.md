@@ -35,6 +35,12 @@ Who receives it is set on the order status, not in code:
 A status change into a status that tells nobody creates no e-mail task at all. A new order always has its
 confirmation task, which sends nothing when the status tells nobody.
 
+A third e-mail is not a task: the **payment link** that staff send from the order screen (Send payment link, on the
+payments panel of an order its customer may pay again). It goes to the customer alone, at once, and the operator reads
+its outcome on the screen; nothing is tried again by itself. It is drawn with the same layout as the other two, with a
+subject and an opening of its own. See
+[Sending the payment link](../services/payments-and-shipments.md#sending-the-payment-link).
+
 The notification bell in the administrator is a separate thing. It is not e-mail.
 
 ### The payment link
@@ -155,7 +161,7 @@ whose texts were never saved for the status.
 | The layout | A PHP file that draws the frame of the e-mail | `administrator/components/com_alfa/layouts/emails/order/default.php`. The layout's id is `emails.order.default`. |
 | Positions | Named places in the layout that staff fill with text, for each language: `header`, `intro`, `outro`, `legal` in the shipped layout | Typed on the order status form, one editor for each position and language, with a Subject above them |
 | Blocks | The order's items, totals, payments, shipments and download links | Five small layouts under `layouts/emails/partials/`: `order_items`, `order_totals`, `order_payments`, `order_shipments`, `order_downloads`. Staff can only show or hide each. |
-| Pay now | The link to pay the order again, while the order may be paid again | Drawn by the shipped layout from `$payUrl`, on the customer's e-mail only: empty on the staff copy, a preview and a test |
+| Pay now | The link to pay the order again, on the customer's e-mail while the order may be paid again | Drawn by the shipped layout from `$payUrl`, which is empty when the order may not be paid again, and on the staff copy, a preview and a test |
 | Tokens | Words in curly brackets that are replaced when the e-mail is made | See below |
 
 A status picks two layouts: one for the customer's e-mail (`email_layout_customer`) and one for the staff e-mail

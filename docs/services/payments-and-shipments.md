@@ -98,7 +98,8 @@ move's own follow-up work runs: stock, documents, the status e-mail, `onOrderSta
 ### Paying an order again
 
 A payment that failed, that the buyer cancelled at the provider, or that the shop released leaves the order owing
-money. While it does, the order's confirmation page and the customer's order e-mail show **Pay now**. The link carries
+money. While it does, the order's confirmation page and the customer's order e-mail show **Pay now**, and staff can
+e-mail the same link from the order screen (below). The link carries
 the order's id and its payment token (`PaymentToken`, an HMAC of the order id keyed with the order's secret; the secret
 itself never travels) and opens the existing payment step of the same order: nothing is placed again, so there is no
 second order, stock movement or order e-mail. For an order of a customer account, the customer logs in first.
@@ -113,10 +114,38 @@ order's lock, and again just before the provider is asked:
 | is neither in the cancelled nor in the completed family of statuses | "This order can no longer be paid." |
 | holds no payment authorised at a provider | "A payment of this order is still being processed. Please check again later." |
 | has no refund that is not settled | "This order cannot be paid while a refund of it is in progress." |
-| has a published payment method whose plugin is enabled, other than core's Standard method | "This order cannot be paid online. Please contact the shop." |
+| has a published payment method whose gateway is available and declares that it opens a new payment for an existing order (`supportsPayAgain()`; core's Standard method does not) | "This order cannot be paid online. Please contact the shop." |
 
-The gateway decides what the attempt is: it opens a new one or carries the earlier one on (see
-[Payment plugins](../plugins/payment-plugins.md)).
+The link leads to the order's gateway of record, whose process view opens a new attempt for what is owed (the contract
+is on [Payment plugins](../plugins/payment-plugins.md#paying-an-order-again)).
+
+### Sending the payment link
+
+On the order screen of an order that may be paid again (the conditions above), the payments panel shows **Payment
+link** with the customer's address and a **Send payment link** button. It needs the Orders permission Edit. The button
+e-mails the customer Pay now, the same link as the confirmation page's; staff never pay for the customer, and nothing
+on the order changes.
+
+The message is the order e-mail's layout (the one every order e-mail reads, and the administrator template's override
+of it) with the Pay now block, the order's lines, totals and payments. Its subject and its opening are its own, in the
+order's language: `COM_ALFA_ORDEREMAIL_PAYLINK_SUBJECT` ("Pay for your order {order_number}") and
+`COM_ALFA_ORDEREMAIL_PAYLINK_INTRO`; a shop changes them with Joomla's language overrides (Administrator). The other
+positions of the layout keep their default texts. It goes to the customer alone, at once, not as a task; it carries no
+download link.
+
+The press is checked again on the server: an order that may no longer be paid, an operator without Orders: Edit, or a
+request without the form token sends nothing. What the operator reads:
+
+| Outcome | The message |
+|---|---|
+| Sent | "The payment link was sent to (address)." |
+| Handed to the mail server with no answer | "The payment link was handed to the mail server for (address), which did not answer: it may have been delivered." |
+| Mail switched off for the site | "The payment link was not sent: sending mail is switched off for the site (Global Configuration, Send Mail: No)." |
+| The order names no customer address | "The payment link was not sent: the order has no customer e-mail address." |
+| The order may no longer be paid | "The payment link was not sent:" and the reason (the order owes nothing, its status is cancelled or completed, a payment is authorised, a refund is not settled, its payment method cannot be paid again online, it is in the trash) |
+
+A sent link, and one handed over with no answer, is written to Joomla's User Actions Log under Alfa Commerce: who sent
+it, the order and the address.
 
 ## What can go wrong
 
