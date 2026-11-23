@@ -32,7 +32,8 @@ and who made the record. The record holds no money.
 The order's money follows the bank's last decision, never the state:
 
 - While the bank decides (an inquiry, an open chargeback, a case under review) the payment stays paid and the order
-  reads as before. A hold at the provider is not a refund. The order's card shows "Disputed 49.90, undecided".
+  reads as before. A hold at the provider is not a refund. The dispute's card says "Undecided: the order stays as it
+  is until the bank decides."
 - **Lost**: Alfa books a chargeback of the disputed amount, linked to the payment and the dispute. The order reads
   owed again by that amount. The invoice is not changed: a credit note is a separate step, as always.
 - **Won**: nothing is booked. Won after a loss: the chargeback is reversed and the order reads paid again.
@@ -46,9 +47,10 @@ provider's fee is shown on the card and in the REST API and never booked: it is 
 ## The order screen
 
 An order with a dispute shows a **Disputes** section after its payments, one card per case: the state and the round,
-"Answer by 4 December 2026 (in 6 days)" or "Overdue since ...", the payment and the disputed amount, the reason, when
-evidence was sent, the fee, the provider's reference (linked to the case at the provider), who made the record, what
-the books hold for it, and the question to answer when the record waits for staff.
+"Answer by 04 December 2026 (in 6 days)" (whole days: "today" when less than one is left) or, once the deadline has
+passed, "Overdue since ...", the payment and the disputed amount, the reason, when evidence was sent, the fee, the
+provider's reference (linked to the case at the provider), who made the record, what the books hold for it, and the
+question to answer when the record waits for staff.
 
 | Action | Offered on | What it does |
 |---|---|---|
@@ -59,23 +61,24 @@ the books hold for it, and the question to answer when the record waits for staf
 | Change | A record made by hand | Its amount, reason, reference, deadline and fee |
 | Same dispute as #7 / A different dispute | A provider's record that waits for that answer | Joins the provider's record to the one made by hand, or books it as a case of its own |
 | Type the amount in the order's currency | A lost case stated in another currency | The figure that left the shop's account; saving it books the loss |
-| Ask the provider again, Accept at the provider | When the payment's plugin offers them | Asks the provider; the plugin applies its answer |
+| Ask the provider again, Accept at the provider | A case with the provider's reference, when the payment's plugin offers them; Accept on an inquiry or an open chargeback, after typing that reference | Asks the provider; the plugin applies its answer |
 
 Each action opens the action page of the disputed payment (right: Orders: Edit). A refused submission comes back with
 what was typed and the reason. An amount is read as every money field is: exactly, in the order's money, a comma taken
-as the decimal point; "5,000" on a two-place order is refused as a thousands separator, never read as 5,00. Every staff act is in Joomla's User Actions Log; every step, staff's and the provider's,
-is on the order's History.
+as the decimal point; "5,000" on a two-place order is refused as a thousands separator, never read as 5,00. Every
+staff act is in Joomla's User Actions Log; every step, staff's and the provider's, is on the order's History.
 
 The orders list has a **Dispute** filter (undecided, a state, an answer due within seven days) and a **Disputed**
 badge on an order with an undecided case.
 
 ## Telling staff
 
-- **The bell**: one notice per dispute, re-said at each step: "Dispute on order 1234: answer by 4 December", "Dispute
-  on order 1234 lost". It comes back while the case needs staff (no evidence sent yet, or a question to answer).
-- **The e-mail**: to the shop's address (Options, General, Store e-mail) when a dispute is recorded or first reported,
-  and at its outcome, with the link to the order. With no store address the bell carries everything. A failed e-mail
-  is retried and can be resent under Tools, Tasks.
+- **The bell**: one notice per dispute, re-said at each step: "Dispute on order #1234: answer by 2026-12-04 23:59",
+  "Dispute on order #1234 lost". At each step it comes back unread while the case needs staff (no evidence sent yet,
+  or a question to answer).
+- **The e-mail**: to the shop's address (Options, General, Store contact email) when a dispute is recorded or first
+  reported, and at its outcome, with the link to the order. With no store address the bell carries everything. A
+  failed e-mail is retried and can be resent under Tools, Tasks.
 - **The reminder**: three days before a deadline, while the case is an inquiry or open and no evidence is marked sent,
   a reminder e-mail goes to the store address (none without one; the bell notice already names the deadline). A moved
   deadline moves the reminder; evidence marked sent or a decision means none is sent.
@@ -92,20 +95,22 @@ refund (a refund is a usual answer to one). Money a provider already moved is st
 
 Staff may record a dispute before the provider's notification arrives. Copy the dispute's id from the provider's page
 into the record's reference, and the provider's notifications join that record. Without it, the provider's
-notification makes a record of its own that waits: it books nothing, and the bell and both cards ask "Is this the same
-dispute as #7?". **Same dispute** keeps one case (the record made by hand takes the provider's reference and follows
-the provider); **A different dispute** books the provider's record by its state. Nothing is joined by guesswork.
+notification makes a record of its own that waits: it books nothing, and the bell and that record's card ask whether
+it is the dispute recorded by hand, with the buttons **Same dispute as #7** and **A different dispute**. Same dispute
+keeps one case (the record made by hand takes the provider's reference and follows the provider); A different dispute
+books the provider's record by its state. Nothing is joined by guesswork.
 
 ## Deleting
 
 A disputed payment cannot be deleted, and keeps its amount, type and order. An order with an undecided dispute cannot
 be deleted or put in the trash; once the dispute is decided it can, and its dispute records go with its delete.
 
-## Disputes recorded before this release
+## A record made from a chargeback row
 
-On an update, every chargeback recorded before disputes were kept becomes a dispute record of what stands after its
-reversals: lost while any of it stands, won when it was reversed in full, marked "From a chargeback recorded before
-disputes were kept". A partly reversed one is noted on the order's History. Staff may reopen one that was still running.
+A card that reads "From a chargeback recorded before disputes were kept" is the record of a chargeback row that had no
+case of its own. It holds what stands after the row's reversals: lost while any of it stands, won when it was reversed
+in full. A partly reversed one is noted on the order's History. Staff handle it as a record made by hand, and may
+reopen one whose case is still running.
 
 ## For developers
 
