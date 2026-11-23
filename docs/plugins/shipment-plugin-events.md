@@ -21,7 +21,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 
 | | |
 |---|---|
-| **When it fires** | When the storefront draws an item page, once for each shipping method of your plugin that has "Show on item page" switched on. |
+| **When it fires** | When the storefront draws an item page, once for each shipping method of your plugin offered for the item that has "Show on item page" switched on. |
 | **Who receives it** | The plugin of that method. |
 | **What you are given** | `ItemViewEvent`. See the table below. |
 | **What you are expected to do** | Ask the event for a place, then name a layout file of your `tmpl` folder and hand it its data: `$event->shipmentMethods()->setLayout('default_item_view')->setData([...])`. Never print HTML yourself. Alfa draws the method itself first: its image, its title and its description. Your layout adds only what is yours below them (a "ships in two days" note, for example), never a logo, the title or the description. With nothing to add, draw nothing. |
@@ -55,7 +55,7 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | **What you are given** | `CartViewEvent`: `getMethod()` (a `Method` reader, see [Method settings](./shipment-plugins.md#method-settings)), `getCart()` (the cart, read only), `getRequest()` (both, as one object). |
 | **What you are expected to do** | Draw your panel through the event's place: `$event->shipmentMethods()->setLayout('default_cart_view')->setData([...])`. The layout holds markup and `data-` attributes only. A script named here is lost the first time the block is replaced: declare scripts in `onCartViewAssets`. Pass only what the layout prints. With nothing to add, draw nothing. Every offered method is asked and every panel drawn is shown under its own method; a panel that belongs to the chosen method only, such as a locker picker, checks `$event->getMethod()->isSelected()` first and draws nothing for the others. |
 | **What happens next** | Alfa draws your layout under the method in the cart, after the method's radio, image, title and description. |
-| **If you are missing or you fail** | The method stays offered and is drawn without your part. A warning is written to the log (category `com_alfa.cart`). |
+| **If you are missing or you fail** | A method whose plugin is disabled or not installed is not offered. When you throw, the method stays offered and is drawn without your part, a panel you set before the error included, and a warning is written to the log (category `com_alfa.cart`); with Joomla's Debug System on, the error is thrown instead. |
 
 ## onCalculateShippingCost
 
