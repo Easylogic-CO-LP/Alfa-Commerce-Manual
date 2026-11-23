@@ -26,8 +26,21 @@ When the **results** change depends on the module's setting **Dynamic Filtering*
 
 | Dynamic Filtering | Where | The results |
 |---|---|---|
-| Enabled | On the shop's listing | Change at once with every tick. The listing is swapped in place, the address bar follows, and the new results are brought into view. |
+| Enabled | On the shop's listing | Change at once with every tick. The listing is swapped in place, the address bar follows, and the new results are brought into view. The keyboard stays on the option the shopper ticked, in the column as over the page, and a screen reader hears the new count (see below). |
 | Disabled (the default), or any page that is not the listing | Anywhere | Change when the shopper presses the panel's results button (the form is sent and the listing opens: on a listing page, that listing with its category; anywhere else, the shop's listing). |
+
+With Dynamic Filtering enabled, the panel carries a status line that screen readers announce and the screen does not
+show. After every swap it says the results' count, in the same words that name the results on the listing, so a
+shopper who ticks options with the keyboard hears what each tick left without leaving the option.
+
+## The panel over the page
+
+Over the page the panel opens in the browser's top layer, above everything on the page. It lies on the screen however
+the page around the module is built: a module placed in a header that slides away or hides itself as the page scrolls
+still opens a panel the shopper sees. While it is open the page behind it takes neither the keyboard nor the mouse
+and does not scroll; the keyboard starts on the panel's close button. The panel slides or zooms in as **Display
+animation** says, and closes with the same movement. In the column the panel is part of the page, as any other
+module.
 
 ## The option groups
 
@@ -86,10 +99,10 @@ new module first asks to be saved).
 What happens next:
 
 - While the panel is open, every opener of the module carries `aria-expanded="true"`, and `false` once it closes.
-- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape (wherever the focus is
-  while the panel lies open) close it and give the focus back to the element that opened it. Escape pressed in a
-  group's search box that holds text, or while a dropdown is open, is left to the box or the dropdown and does not
-  close the panel.
+- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape (wherever the focus
+  is while the panel lies open) close it, and once it has closed the focus goes back to the element that opened it.
+  Escape pressed in a group's search box that holds text, or while a dropdown is open, is left to the box or the
+  dropdown and does not close the panel.
 - Where the panel is a column beside the products, an opener brings the panel into view and puts the focus in it.
 - An opener added to the page later (by a script, or a module loaded afterwards) works too: the module finds openers
   when they are pressed.
@@ -108,11 +121,11 @@ gets one of each.
 ## For a template override
 
 The markup comes from the module's layouts in `tmpl/`: `default.php` (the module's button, the panel, its header, the
-column's Clear all bar and the loading image), `default_form_content.php` (the sections in their order, the price,
-availability, ordering, number of items, sale and discount sections, and the foot), `default_filters.php` (the option
-groups, with the categories' and the manufacturers' options), `default_field.php` (an item field's options:
-checkboxes, buttons, swatches or a dropdown), `default_group_icon.php` (a group's opener icon) and `default_arrow.php`
-(the arrow of the subcategory toggles and of the apply buttons).
+column's Clear all bar, the status line and the loading image), `default_form_content.php` (the sections in their
+order, the price, availability, ordering, number of items, sale and discount sections, and the foot),
+`default_filters.php` (the option groups, with the categories' and the manufacturers' options), `default_field.php`
+(an item field's options: checkboxes, buttons, swatches or a dropdown), `default_group_icon.php` (a group's opener
+icon) and `default_arrow.php` (the arrow of the subcategory toggles and of the apply buttons).
 
 A template override (`html/mod_alfa_filters/` in the template) replaces `default.php`, `default_filters.php`,
 `default_group_icon.php` and `default_arrow.php`. It replaces `default_form_content.php` only as the page loads: every
@@ -120,8 +133,12 @@ refresh of the panel draws the module's own file. `default_field.php` is always 
 module's folder.
 
 The script and the stylesheet work through the module's class names and these attributes; an override that keeps them
-keeps the behaviour. A group's search reads an option's name from `.af-item > .af-option > .af-label`, or from
-`.af-item > .af-chip > .af-chip-name` for a chip.
+keeps the behaviour. An override of `default.php` prints the panel as a `<dialog>` with the classes
+`alfa-filters-offcanvas-wrapper alfa-filters-offcanvas` and the animation's class, named by the module's button
+(`aria-labelledby` the button's `id`), with the attribute `open` where the module can be a column (no Fixed
+Positioning), so the column holds its place from the first paint; the script closes it where the screen is narrower.
+The status line and the loading image stay inside the dialog, after the panel. A group's search reads an option's name
+from `.af-item > .af-option > .af-label`, or from `.af-item > .af-chip > .af-chip-name` for a chip.
 
 | Attribute | On | Meaning |
 |---|---|---|
@@ -138,6 +155,7 @@ keeps the behaviour. A group's search reads an option's name from `.af-item > .a
 | `data-af-open` | a category | Written by the script: its subcategories are shown. |
 | `data-af-show-results` | the foot's button | Present when the results already apply: the button closes the panel. |
 | `data-af-applies="live"` or `"submit"` | the foot | How the results apply. |
+| `data-af-results-status` with `role="status"` | the status line (printed with Dynamic Filtering enabled) | Written by the script after each swap: the results' count, for screen readers. |
 
 An item field's ShowOn state name (`data-showon-name`) sits on the group's options (`.af-group-options`), not on the
 group: the ShowOn engine reads every input inside it as the field's value, and the search box is not one.
