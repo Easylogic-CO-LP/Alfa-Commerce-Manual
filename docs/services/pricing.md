@@ -391,6 +391,16 @@ piece and 25,338 € beside seven. A price below the currency's smallest unit sh
 agreed price shows as agreed. Under Currency decimals every unit shows the currency's decimals. The stored price never
 changes: the price index, the API's `amount` and the price editor keep it exactly.
 
+An order line keeps the stored price it was priced at beside its units (`stated_unit_tax_excl`,
+`stated_unit_tax_incl`), so the order prints its unit as the storefront did: 25,338 € beside seven, where the line's
+total per piece would print 25,339 €. The order screens, the e-mails, the customer's order pages, the REST API's
+formatted units and the documents read it; a line whose quantity, custom price or discount staff change afterwards
+prints its unit from its total. An invoice or receipt keeps it when it carries the whole line, a credit note when it
+credits the whole corrected line; a part of a line prints its unit from its own total. A line that holds no stored
+price prints its unit from its total, and an issued document is never given one afterwards. To print such a line's
+unit yourself, use `Currency::formatLineUnit()` (see [Money and Currency](#money-and-currency)), or for a document
+`DocumentMoney::unitFormatter()` with the stored price as its fifth argument.
+
 Keep the attribute `data-item-prices` on the element that wraps the prices. Alfa's scripts use it to refresh the
 price when the quantity or an option changes.
 
@@ -519,6 +529,7 @@ echo $line->format(false);           // without it
 | `equals(Currency $other): bool`, `is(string $code): bool` | Comparisons |
 | `toArray(): array` | The currency as data, as in `toArray()` above |
 | `formatUnit(float\|int\|string $unit, float\|int\|string $lineTotal, float\|int\|string $quantity, float\|int\|string\|null $rate = null, bool $includeSymbol = true, ?bool $auto = null, bool $stated = false): string` | A unit price as the currency writes it beside its quantity and its line's total, with the decimals the shop's unit display precision gives (see [In a template](#in-a-template)). `$rate` is the line's agreed rate, beside a price with tax only; `$auto` true writes the Auto form whatever the setting. `stated: true` for a unit that is a stored price (a price row's own value, a sale's own price) |
+| `formatLineUnit(float\|int\|string $unit, float\|int\|string\|null $stored, float\|int\|string $lineTotal, float\|int\|string $quantity, float\|int\|string\|null $rate = null, bool $includeSymbol = true, ?bool $auto = null): string` | An order line's or a document line's unit: the stored price the line carries (`$stored`, its `stated_unit_tax_*` column) by the stored-price rule, else the unit by the line rule from its total and quantity |
 
 ## The stored price index
 
