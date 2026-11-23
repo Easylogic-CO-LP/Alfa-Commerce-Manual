@@ -229,10 +229,11 @@ keep its Access on Public, or providers and carriers cannot call it.
 ### What it does
 
 `AlfaInstallerGate` (`administrator/src/Service/Setup/AlfaInstallerGate.php`) is one small class that every Alfa
-extension uses when it is installed. It does three things:
+extension uses when it is installed. It does two things:
 
 - It refuses to install or update an extension on a site whose Alfa Commerce is missing, or of a line outside the
-  lines your extension's manifest says it is built for, with one wording for every extension. See
+  lines your extension's manifest says it is built for, and an extension whose manifest states those lines in a way
+  it cannot read, with one wording for every extension. See
   [The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for).
 - It provides the warning shown when an Alfa extension is uninstalled: the extension's data stays.
 
@@ -316,9 +317,9 @@ public function preflight($type, $parent): bool
     }
 
     if (!class_exists($gate)) {
-        // No Alfa Commerce on this site.
-        \Joomla\CMS\Factory::getApplication()->enqueueMessage('Example plugin requires Alfa Commerce, and this site has'
-            . ' no Alfa Commerce installed. Install Alfa Commerce first, then install Example plugin again. Nothing was changed.', 'error');
+        // No Alfa Commerce installed.
+        \Joomla\CMS\Factory::getApplication()->enqueueMessage('Example plugin requires Alfa Commerce. Install Alfa Commerce'
+            . ' first, then install Example plugin again. Nothing was changed.', 'error');
 
         return false;
     }
