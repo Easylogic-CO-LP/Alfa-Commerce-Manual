@@ -114,7 +114,7 @@ order's lock, and again just before the provider is asked:
 | is neither in the cancelled nor in the completed family of statuses | "This order can no longer be paid." |
 | holds no payment authorised at a provider | "A payment of this order is still being processed. Please check again later." |
 | has no refund that is not settled | "This order cannot be paid while a refund of it is in progress." |
-| has a published payment method whose plugin is enabled, other than core's Standard method | "This order cannot be paid online. Please contact the shop." |
+| has a published payment method whose gateway is available and declares that it opens a new payment for an existing order (`supportsPayAgain()`; core's Standard method does not) | "This order cannot be paid online. Please contact the shop." |
 
 The link leads to the order's gateway of record, whose process view opens a new attempt for what is owed (the contract
 is on [Payment plugins](../plugins/payment-plugins.md#paying-an-order-again)).
@@ -142,7 +142,7 @@ request without the form token sends nothing. What the operator reads:
 | Handed to the mail server with no answer | "The payment link was handed to the mail server for (address), which did not answer: it may have been delivered." |
 | Mail switched off for the site | "The payment link was not sent: sending mail is switched off for the site (Global Configuration, Send Mail: No)." |
 | The order names no customer address | "The payment link was not sent: the order has no customer e-mail address." |
-| The order may no longer be paid | "The payment link was not sent:" and the reason (the order owes nothing, its status is cancelled or completed, a payment is authorised, a refund is not settled, its payment method cannot take a payment online, it is in the trash) |
+| The order may no longer be paid | "The payment link was not sent:" and the reason (the order owes nothing, its status is cancelled or completed, a payment is authorised, a refund is not settled, its payment method cannot be paid again online, it is in the trash) |
 
 A sent link, and one handed over with no answer, is written to Joomla's User Actions Log under Alfa Commerce: who sent
 it, the order and the address.

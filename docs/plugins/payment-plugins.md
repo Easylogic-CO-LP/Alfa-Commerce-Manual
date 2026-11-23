@@ -153,15 +153,27 @@ placement (in `onOrderAfterPlace`) does not meet it: once that page has expired,
 cancelled, the buyer has nothing to pay on. Create the provider's page in `onOrderProcessView`, for each visit, and
 let `onOrderAfterPlace` write the pending row only.
 
+**Declare it with `supportsPayAgain()`.** Core cannot look inside your process view, so it asks your plugin: override
+`public function supportsPayAgain(): bool` and return `true` only when your `onOrderProcessView` meets the contract
+above. The base class answers `false`, and a gateway that answers `false`, or fails while answering, gets no Pay now on
+its orders' confirmation page and e-mail and no Send payment link on the order screen. An offline method, which takes
+no payment on the process page, keeps the default; so does core's Standard method.
+
+```php
+public function supportsPayAgain(): bool
+{
+    return true;
+}
+```
+
 Core offers Pay now, and lets staff send the payment link, only while the order is there and not in the trash, still
 owes money (`amountToCollect()`), is neither in the cancelled nor in the completed family of statuses, holds no payment
-authorised at a provider and no refund that is not settled, and its payment method is published with its plugin
-enabled and is not core's Standard method (an offline method takes no payment on the process page). This is checked
-again on every use of the link and just before your process view is asked.
+authorised at a provider and no refund that is not settled, its payment method is published, and its gateway is
+available and answers `supportsPayAgain()` with `true`. This is checked again on every use of the link and just
+before your process view is asked.
 
 Before you close an earlier attempt, make sure your provider can no longer take money on it: expire or cancel its page
-there, or ask the provider first and settle the attempt when it was paid. Core cannot look inside your process view:
-meeting the contract above is your plugin's part.
+there, or ask the provider first and settle the attempt when it was paid.
 
 ### The life of a refund through a provider
 
