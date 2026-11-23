@@ -6,7 +6,7 @@ description: How Alfa Commerce keeps stock, which stock classes an extension may
 
 # Stock
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce keeps stock through one service, `InventoryService`. Nothing else writes a stock quantity. This page
 explains how stock is recorded, what an extension may read, what each command of the service does, guarantees and
@@ -54,9 +54,9 @@ All are in `Alfa\Component\Alfa\Administrator\Service\Inventory` (`administrator
 
 | Class | What it is | Who it is for |
 |---|---|---|
-| `InventoryService` | Every command that changes stock | Core's own. Described here so that you understand what happens. See [What you must provide](#what-you-must-provide). |
+| `InventoryService` | Every command that changes stock | Core's own, except `adjust()`, the one way an extension moves stock. Described here so that you understand what happens. See [What you must provide](#what-you-must-provide). |
 | `InventoryAvailabilityService` | Every question about stock | Templates compare with its status constants, as the shipped layout does. For its methods the code names only core callers. See [Reading stock](#reading-stock). |
-| `InventoryContext` | Who is acting, with a note | Passed to the commands. Plugins receive it in the stock events. |
+| `InventoryContext` | Who is acting, with a note | Passed to the commands. Plugins receive it in `onInventoryBeforeReserve` and in a stock allocation provider's `allocate()`. |
 | `CommitmentRequest` | What is to be taken from stock | Plugins receive it in `onInventoryBeforeCommit` and may replace it |
 | `BackorderPolicy` | What happens when a unit cannot cover a line | Core's own. Readable. |
 | `LocationPolicy` | What an enabled location is | Core's own. Readable. |
@@ -72,7 +72,8 @@ All are in `Alfa\Component\Alfa\Administrator\Service\Inventory` (`administrator
 | An order is placed | The order code (`InventoryBridge`) | `recordPlacement()`, `reserve()`, and `commitReservation()` when the first status takes goods |
 | An order's status changes, a line is edited, an order is cancelled or deleted | The order code (`InventoryBridge`) | `commitReservation()`, `restore()`, `release()`, `releaseLine()`, `reserve()` |
 | A document that moves stock is issued or voided | The document code (`StockBridge`, `DocumentIssuer`) | `commitReservation()`, `restore()`, `reverseRestores()` |
-| Staff change a stock figure, a tracking setting or a combination on the item screen | The item model and the combinations editor | `adjustTo()`, `changeTracking()`, `changeCombinationState()`, `archiveUnits()`, `retireUnits()` and others |
+| Staff change a stock figure, a tracking setting or a combination on the item screen, or a stock figure in the items list | The item model, the items list's Stock cell and the combinations editor | `adjustTo()`, `changeTracking()`, `changeCombinationState()`, `archiveUnits()`, `retireUnits()` and others |
+| An API client writes the stock of units (`PATCH v1/alfa/items/units`) | The REST API (`UnitBatch`) | `adjustTo()` |
 | Staff enable or disable a location | The location model | `changeLocationState()` |
 | Staff repair a fault on the Inventory audit page | The audit controller | `reconcile()`, `resolveLine()`, `writeOffStock()`, `prioritiseReservations()` |
 | The storefront decides how many can go in the cart | The cart | `purchasableCeiling()` |
@@ -86,11 +87,11 @@ What an extension does depends on what it wants.
 | React when stock moves, or stop a movement | Listen to the stock events. See [Stock events](../events/stock-events.md). |
 | Decide which location an order's stock comes from | Offer a stock allocation provider. See [Stock events](../events/stock-events.md#the-provider-contract-where-the-stock-comes-from). |
 | Show stock in a template | Use what [Reading stock](#reading-stock) lists |
-| Change a quantity | Never write to the stock tables or to the item's stock figure |
+| Change a quantity | Call `InventoryService::adjust()` with a signed amount at a location: positive for goods received, negative for goods gone. Never write to the stock tables or to the item's stock figure. |
 
-The commands of `InventoryService` are core's own. The code names none of them as an interface for extensions, and
-no shipped plugin calls one. They are described below because a plugin author must understand them to read the
-stock events correctly. Calling them from a plugin is listed under "Not documented yet".
+Apart from `adjust()`, the commands of `InventoryService` are core's own. The code addresses none of the others to
+extensions, and no shipped plugin calls one. They are described below because a plugin author must understand them
+to read the stock events correctly. Calling them from a plugin is listed under "Not documented yet".
 
 Two small objects travel with the commands and reach your plugin through the events:
 
@@ -106,9 +107,10 @@ Every command runs as one save: either all of it is stored, or none of it. A com
 outermost save is final.
 
 A command that changes stock, a reservation or the structure of an item's stock writes one row to
-`#__alfa_inventory_operations` and returns its `operation_id`. One exception: `recordPlacement()` writes no
-operation. A command that found nothing to change
-(`adjustTo()` with an equal figure) returns `operation_id` as `null`.
+`#__alfa_inventory_operations` and returns its `operation_id`. Three exceptions: `recordPlacement()` writes no
+operation, `changeLocationState()` writes one for each location whose state changed and returns what the caller's
+save returned, and `changeItemArchive()` writes one for each item and returns them as `operation_ids`. A command that
+found nothing to change (`adjustTo()` with an equal figure) returns `operation_id` as `null`.
 
 "No caller" means that nothing in Alfa Commerce calls the method.
 
@@ -135,8 +137,8 @@ operation. A command that found nothing to change
 
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
-| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. Every stock editor of Alfa uses it. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not tracked. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
-| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. The one way an extension (a return, an import, a receipt of goods) moves stock. | Without a location it uses the default one. No caller in core: every stock editor of Alfa sets a figure with `adjustTo()`. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
+| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. Every stock editor of Alfa uses it. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not a tracked, current unit. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
+| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. The one way an extension (a return, an import, a receipt of goods) moves stock. | Without a location it uses the default one. No stock editor of Alfa calls it: every one sets a figure with `adjustTo()`. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
 | `writeOffStock(int $itemId, int $combinationId, string $reason, InventoryContext $context): array` | Sets to zero the stock left on a unit that can no longer be sold (an archived combination, an archived item, stock left on an item that now has combinations) | One adjustment for each record. The records stay, at zero. | A unit that is still for sale. No reason or no signed-in member of staff. Stock that is set aside or that open order lines still wait for. |
 
 ### The structure of an item's stock
@@ -173,8 +175,8 @@ These change nothing.
 | `validateTargets(int $itemId, ?int $combinationId, array $targets, bool $assumeTracked): array` | What would stop stock figures typed in an editor, with codes such as `not_tracked`, `location_disabled`, `reserved_floor`, `negative_floor` |
 | `lineIdentities(array $lines, bool $current): array`, `lineRole(int $lineId, int $itemId, int $combinationId, bool $current, bool $lockIdentity): string` | Which unit an order line acts on, and whether that unit is current, kept for history only, or gone (`ROLE_CURRENT`, `ROLE_HISTORICAL`, `ROLE_UNRESOLVED`) |
 | `sourceLineState(string $sourceType, int $sourceId, ReconciliationIntent $intent, array $lineIds = [], bool $current = false): array`, `lineUnitNets(string $sourceType, int $sourceId, array $lineIds = [], bool $current = false): array`, `foreignUnitNets(string $sourceType, int $sourceId, array $lineIds = [], bool $current = false): array` | For each line of a source: what is still set aside and what is out of stock |
-| `retirementBlockers(int $itemId, ?array $combinationIds): array`, `assertUnitsClear(int $itemId, array $combinationIds): void` | Which units still hold stock and so cannot be deleted or archived |
-| `countActiveReservations(int $itemId, array $combinationIds, bool $lock): int`, `relyingOpenLines(int $itemId, array $combinationIds, bool $lock): array` | How much is set aside on units, and which open order lines still wait for them |
+| `retirementBlockers(int $itemId, ?array $combinationIds): array`, `assertUnitsClear(int $itemId, array $combinationIds): void` | Which units still hold stock or claims and so cannot be deleted or archived |
+| `countActiveReservations(int $itemId, array $combinationIds, bool $lock): int`, `relyingOpenLines(int $itemId, array $combinationIds, bool $lock): array` | How many open reservations name the units, and how many open order lines (`lines`), of how many orders (`orders`), still wait for them |
 | `projectionCorrections(int $itemId, bool $lock): array`, `assertProjectionsAgree(int $itemId): void` | Where an item's stock figures disagree with its stock records |
 | `lockItemStock(int $itemId): array`, `lockedUnitTracking(array $units): array` | Take database locks for a caller's own save. Only meaningful inside a save. |
 | `effectiveResolutionSql(DatabaseInterface $db, string $alias): string`, `resolutionConsumedSql(DatabaseInterface $db, string $resolutionAlias): string` (static) | SQL fragments for core's own queries |
@@ -211,8 +213,8 @@ What the code establishes about who uses this class:
 - A shipped layout compares with its status constants (`site/layouts/item/stock_info.php`), as the sample above
   does. A template may do the same.
 - The shipped console plugin calls `formatQuantity()`.
-- Every caller of its other methods is core: the item screens, the stock editors and the item models. The class
-  comment does not address extensions.
+- Every caller of its other methods is core: the item screens and stock editors, the storefront's item and cart code,
+  the order code, the stock audit and the REST API. The class comment does not address extensions.
 
 So the code does not settle whether a plugin may call the methods below, and this page does not recommend it. They
 are described so that you understand the figures. This is how core reads the figures of one unit:
@@ -234,7 +236,7 @@ $figures = (new InventoryAvailabilityService())->availability(itemId: 12, combin
 | `combinationAggregate(int $itemId): array` (static) | The totals of an item over its current combinations |
 | `statusFrom(float $salable, bool $managed, bool $ledgerPresent, bool $projectionNonZero, bool $integrityHold, ?string $backorder, float $minQty, ?int $saleMinimum): string` (static) | The status of a unit from its facts: one of `STATUS_IN_STOCK`, `STATUS_BACKORDER`, `STATUS_OUT_OF_STOCK`, `STATUS_LEDGER_MISSING` |
 | `sellableStatus(string $status): bool` (static) | Whether a status lets a shopper buy: in stock or on backorder |
-| `isSellable(...)`, `ceilingFrom(...)` (static) | The same rule as yes or no, and as the most that can be sold. They take the facts `statusFrom()` takes. |
+| `isSellable(...)`, `ceilingFrom(...)` (static) | The same rule as yes or no, and as the most that can be sold. `isSellable()` takes the facts `statusFrom()` takes, `ceilingFrom()` all of them but `$saleMinimum`. |
 | `formatQuantity(float $value): string` (static) | A quantity as the administrator prints it, without rounding noise |
 | `quantitiesAgree(float $a, float $b): bool` (static) | Whether two stock quantities are the same within the tolerance (`QUANTITY_TOLERANCE`) |
 | `lowStockThreshold(?float $combination, ?float $item): float`, `safetyStockBinds(?string $itemBackorder, float $minQty): bool` (static) | The low stock level that applies to a unit, and whether safety stock holds anything back |
@@ -310,7 +312,7 @@ Its public methods are static: `orderSql()`, `compare()`, `sorted()` and `backin
 ### The floor under a record
 
 The quantity set aside on a stock record is a floor. No command lowers the record below it: not an adjustment, not
-a transfer, not a write-off. The refusal is an `InventoryReservedFloorException`.
+a write-off, not a reversal. The refusal is an `InventoryReservedFloorException`.
 
 ## What happens next
 
@@ -322,6 +324,7 @@ a transfer, not a write-off. The refusal is an `InventoryReservedFloorException`
 | `commitReservation()` | `onInventoryBeforeCommit` | `onInventoryCommitted` |
 | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
 | `adjustTo()`, `adjust()`, `changeTracking()` when it sets opening quantities | None | `onInventoryAdjusted` |
+| `restore()`, `reverseRestores()`, when they moved something | None | `onInventoryRestored` |
 
 No other command announces an event. A plugin reacts to stock through these events and nowhere else. See
 [Stock events](../events/stock-events.md).
@@ -359,7 +362,7 @@ A row is in one of five states:
 | State | Meaning |
 |---|---|
 | `pending` | Written, not tried yet |
-| `claimed` | One worker is making the movement now. A claim older than 300 seconds counts as abandoned and can be taken again. Such a claim is settled as a failed try ("The process that was applying it stopped before it finished") and follows the waits and the limit of `failed`. |
+| `claimed` | One worker is making the movement now. A claim older than 300 seconds counts as abandoned and can be taken again. Such a claim is settled as a failed try ("The process that was applying it stopped before it finished, for example because it ran out of time or memory.") and follows the waits and the limit of `failed`. |
 | `applied` | The movement exists. Final. |
 | `failed` | The try failed. It is tried again after 1 minute, 5 minutes, 30 minutes, 2 hours, 6 hours and 24 hours, seven tries in all, then waits for staff with a notice. A new status of the order, and "Apply outstanding stock movements", try it again at once. |
 | `refused` | An order line names a unit that no longer exists, so trying again cannot help. The row waits until staff say which unit the line acts on, on the Inventory audit page. Also a movement that a stock plugin refused on purpose (`InventoryRefusedException`); its notice carries the plugin's sentence. See [Stock events](../events/stock-events.md). |
@@ -371,8 +374,8 @@ deleted or archived.
 
 The background job `stock.effects.drain` (`StockEffectsDrainJob`) makes the movements that are still owed. It is
 asked for whenever a movement is found owed. Staff can also apply them with Tools > Database Sync. A failed or
-refused movement raises a notice in the notification bell for the order or the document. A document's movement that a stock plugin refused waits as a task in Tools > Tasks, and only its Run
-again tries it.
+refused movement raises a notice in the notification bell for the order or the document. A document's movement that
+a stock plugin refused waits as a task in Tools > Tasks, and only its Run again tries it.
 
 For a plugin this means that a stock event can arrive in a later request than the one in which a person acted, with
 nobody signed in.
@@ -408,7 +411,8 @@ the report as JSON.
 | 2 | The audit could not run |
 
 The command has no option that repairs. It suits a scheduled check. In the administrator the same audit is the
-Inventory audit page, where staff who hold the administration permission of Alfa Commerce (`core.admin` on `com_alfa`) take the repairs.
+Inventory audit page, where staff who hold the administration permission of Alfa Commerce (`core.admin` on
+`com_alfa`) take the repairs.
 
 ### A unit that is locked
 
@@ -442,8 +446,8 @@ Each refusal of the service is its own exception class, in the same namespace.
 
 ## Not documented yet
 
-- Calling a command of `InventoryService`, or a method of `InventoryAvailabilityService`, from a plugin. The code
-  does not say whether that is supported.
+- Calling a command of `InventoryService` other than `adjust()`, or a method of `InventoryAvailabilityService`, from
+  a plugin. The code does not say whether that is supported.
 - The lock order of the commands, which matters only to code that runs several commands in one save.
 - The classes `OpenLineClaims`, `QuantityDecimal`, `CombinationState`, `ReconciliationIntent`,
   `InventoryIntegrityNotice` and the public methods of `InventoryEffectOutbox`.
