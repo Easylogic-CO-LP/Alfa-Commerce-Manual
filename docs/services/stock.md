@@ -6,7 +6,7 @@ description: How Alfa Commerce keeps stock, which stock classes an extension may
 
 # Stock
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce keeps stock through one service, `InventoryService`. Nothing else writes a stock quantity. This page
 explains how stock is recorded, what an extension may read, what each command of the service does, guarantees and
@@ -54,7 +54,10 @@ All are in `Alfa\Component\Alfa\Administrator\Service\Inventory` (`administrator
 
 | Class | What it is | Who it is for |
 |---|---|---|
-| `InventoryService` | Every command that changes stock | Core's own, except `adjust()`, the one way an extension moves stock. Described here so that you understand what happens. See [What you must provide](#what-you-must-provide). |
+| `InventoryService` | Every command that changes stock | Core's own. Described here so that you understand what happens. See [What you must provide](#what-you-must-provide). |
+| `InventoryCommands` | Stock set or corrected: figures and signed changes, in one transaction | The one way an extension moves stock. See [Setting or correcting stock](#setting-or-correcting-stock-inventorycommands). |
+| `InventoryAdjustment` | What an adjustment of `InventoryCommands` came to | Returned by `InventoryCommands::apply()`. Readable. |
+| `StockRecords` | The stock records, a page at a time | Readable: `StockRecords::page()`. The REST API's `GET v1/alfa/inventory/stock` reads it. |
 | `InventoryAvailabilityService` | Every question about stock | Templates compare with its status constants, as the shipped layout does. For its methods the code names only core callers. See [Reading stock](#reading-stock). |
 | `InventoryContext` | Who is acting, with a note | Passed to the commands. Plugins receive it in `onInventoryBeforeReserve` and in a stock allocation provider's `allocate()`. |
 | `CommitmentRequest` | What is to be taken from stock | Plugins receive it in `onInventoryBeforeCommit` and may replace it |
@@ -72,7 +75,8 @@ All are in `Alfa\Component\Alfa\Administrator\Service\Inventory` (`administrator
 | An order is placed | The order code (`InventoryBridge`) | `recordPlacement()`, `reserve()`, and `commitReservation()` when the first status takes goods |
 | An order's status changes, a line is edited, an order is cancelled or deleted | The order code (`InventoryBridge`) | `commitReservation()`, `restore()`, `release()`, `releaseLine()`, `reserve()` |
 | A document that moves stock is issued or voided | The document code (`StockBridge`, `DocumentIssuer`) | `commitReservation()`, `restore()`, `reverseRestores()` |
-| Staff change a stock figure, a tracking setting or a combination on the item screen, or a stock figure in the items list | The item model, the items list's Stock cell and the combinations editor | `adjustTo()`, `changeTracking()`, `changeCombinationState()`, `archiveUnits()`, `retireUnits()` and others |
+| Staff change a stock figure, a tracking setting or a combination on the item screen, or a stock figure in the items list | The item model, the items list's Stock cell and the combinations editor, each stock figure through `InventoryCommands` | `adjustTo()`, `changeTracking()`, `changeCombinationState()`, `archiveUnits()`, `retireUnits()` and others |
+| An API client sets or corrects stock (`POST v1/alfa/inventory/adjustments`) | The REST API, through `InventoryCommands` | `adjustTo()` for a figure, `adjust()` for a signed change |
 | An API client writes the stock of units (`PATCH v1/alfa/items/units`) | The REST API (`UnitBatch`) | `adjustTo()` |
 | Staff enable or disable a location | The location model | `changeLocationState()` |
 | Staff repair a fault on the Inventory audit page | The audit controller | `reconcile()`, `resolveLine()`, `writeOffStock()`, `prioritiseReservations()` |
@@ -87,11 +91,11 @@ What an extension does depends on what it wants.
 | React when stock moves, or stop a movement | Listen to the stock events. See [Stock events](../events/stock-events.md). |
 | Decide which location an order's stock comes from | Offer a stock allocation provider. See [Stock events](../events/stock-events.md#the-provider-contract-where-the-stock-comes-from). |
 | Show stock in a template | Use what [Reading stock](#reading-stock) lists |
-| Change a quantity | Call `InventoryService::adjust()` with a signed amount at a location: positive for goods received, negative for goods gone. Never write to the stock tables or to the item's stock figure. |
+| Change a quantity | Build an adjustment with `InventoryCommands`: `set()` for the figure a unit's record at a location takes, `delta()` for a signed change, positive for goods received, negative for goods gone. See [Setting or correcting stock](#setting-or-correcting-stock-inventorycommands). Never write to the stock tables or to the item's stock figure. |
 
-Apart from `adjust()`, the commands of `InventoryService` are core's own. The code addresses none of the others to
-extensions, and no shipped plugin calls one. They are described below because a plugin author must understand them
-to read the stock events correctly. Calling them from a plugin is listed under "Not documented yet".
+The commands of `InventoryService` are core's own. `InventoryCommands` runs `adjustTo()` and `adjust()` for an
+extension; the code addresses none of the commands to extensions, and no shipped plugin calls one. They are described
+below because a plugin author must understand them to read the stock events correctly.
 
 Two small objects travel with the commands and reach your plugin through the events:
 
@@ -137,15 +141,15 @@ found nothing to change (`adjustTo()` with an equal figure) returns `operation_i
 
 | Method | What it does | What it guarantees | What it refuses |
 |---|---|---|---|
-| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. Every stock editor of Alfa uses it. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not a tracked, current unit. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
-| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. The one way an extension (a return, an import, a receipt of goods) moves stock. | Without a location it uses the default one. No stock editor of Alfa calls it: every one sets a figure with `adjustTo()`. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
+| `adjustTo(int $itemId, ?int $combinationId, int $locationId, float $target, string $sourceType, int $sourceId, InventoryContext $context): ?array` | Sets the quantity of one unit at one location to a figure. `InventoryCommands` runs it for a set line, the way every stock editor of Alfa sets a figure; `PATCH v1/alfa/items/units` calls it directly. | The figure is compared with the record as it is now, so only the difference moves. An equal figure writes nothing. Returns `null` when the unit is not a tracked, current unit. | Adding stock at a disabled location. A figure below what is set aside there (`InventoryReservedFloorException`). A figure below zero while that is not allowed. |
+| `adjust(int $itemId, ?int $combinationId, float $quantityDelta, ?int $locationId = null, string $sourceType = 'manual', int $sourceId = 0, ?InventoryContext $context = null): array` | Changes a unit's stock at one location by a signed amount: a positive one for goods received, a negative one for goods gone. | Without a location it uses the default one. Its one caller is `InventoryCommands`, for a delta line (the REST API's adjustments, an extension's); no stock editor of Alfa makes one, every one sets a figure. Returns `operation_id`. | An untracked or missing unit (`InventoryUnitException`). A change of zero. The same limits as `adjustTo()`. |
 | `writeOffStock(int $itemId, int $combinationId, string $reason, InventoryContext $context): array` | Sets to zero the stock left on a unit that can no longer be sold (an archived combination, an archived item, stock left on an item that now has combinations) | One adjustment for each record. The records stay, at zero. | A unit that is still for sale. No reason or no signed-in member of staff. Stock that is set aside or that open order lines still wait for. |
 
 ### Setting or correcting stock: InventoryCommands
 
 Every stock editor of Alfa (the item's stock figure, the items list's Stock cell, the variants' grid, the variant
 window) and the REST API's adjustments set or correct stock one way: an adjustment built with `InventoryCommands`.
-An extension's code builds the same:
+It is the one way an extension (a return, an import, a receipt of goods) moves stock, and its code builds the same:
 
 ```php
 use Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryCommands;
@@ -169,27 +173,32 @@ if (!$result->applied) {
 | `InventoryCommands::adjust()` | A new adjustment |
 | `set(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: the figure a unit's record at a location takes |
 | `delta(int $itemId, ?int $combinationId, int $locationId, float $quantity)` | A line: a signed change, positive for goods received |
-| `lines(array $lines)` | Lines as the REST API takes them: by `sku`, or `item_id` and `combination_id`; `location_id`; `set` or `delta` |
-| `source(string $type, int $id = 0)` | What the movements record as their source (`catalog_edit` for the editors, `api` for the REST API) |
-| `by(InventoryContext $context)` | Who adjusts and why: the movements' user, correlation and note |
+| `lines(array $lines, string $pointer = '/lines')` | Lines as the REST API takes them, 1 to 500: by `sku`, or `item_id` and `combination_id`; `location_id` (the default location when left out); `set` or `delta`, a decimal of at most 8 places. A line that cannot be read is refused, pointing at it. |
+| `source(string $type, int $id = 0)` | What the movements record as their source (`catalog_edit` for the editors, `api` for the REST API, `manual` when not given) |
+| `by(InventoryContext $context)` | Who adjusts and why: the movements' user, correlation and note (`InventoryContext::ambient()` when not given) |
 | `once(int $userId, string $key, array $request)` | Applied once under a client's key: the same request again answers its lines and applies nothing |
-| `apply(): InventoryAdjustment` | Judges every set line as the editors do, then applies every line in one transaction, or none |
+| `apply(): InventoryAdjustment` | Judges every line as the editors do (a set line's figure, a delta line's unit), then applies every line in one transaction, or none |
 
 `apply()` answers an `InventoryAdjustment`: `applied`; `lines`, each with its figure `before` and `after`, the
-`delta` and the `operation_id` that recorded it; or `refusals` (each a `Refusal`: code, sentence, the line's JSON
-pointer, the HTTP status the REST API answers it with), `problems` (the dry run's findings as `validateTargets()` states
-them) and `failure` (the exception that ended the transaction). The lines are applied in product, combination and
-location order, the products' stock records locked first; the movements and their events follow the commit.
+`delta` and the `operation_id` that recorded it (`null` when the figure was already true); `replayed` when `once()`
+found the same request applied before; or `refusals` (each a `Refusal`: code, sentence, the line's JSON pointer, the
+HTTP status the REST API answers it with), `problems` (the dry run's findings as `validateTargets()` states them) and
+`failure` (the exception that ended the transaction). `warnings` names the keys of a line it does not take. The lines
+are applied in product, combination and location order, the products' stock records locked first. A delta line's
+location and floors are judged when it is applied, and a refusal there undoes every line. Each line that moved stock
+announces `onInventoryAdjusted` once the outermost save is final.
 
 ### One SKU, one unit: SkuIndex
 
-Every SKU in use is kept once, a product's own and each variant's, archived ones included, compared without regard to
-letter case. `SkuIndex::unit('SMX-WHT-256')` gives the unit it names (`SkuUnit`: `itemId`, `combinationId`) or a
-`Refusal` saying why none: unknown, held by more than one unit, archived, or a product whose stock its variants hold.
-Every writer of a SKU keeps the registry in its own transaction: it reads the product's SKUs before its write
-(`SkuIndex::skusOf()`) and calls `SkuIndex::keep(itemId:, before:)` after it; a SKU another unit holds throws
-`SkuInUseException`, and the write rolls back. A unit that keeps a SKU it already shared before the registry is saved
-and stays out of it, named by the setup checklist until each has its own.
+Every SKU in use is kept once (table `#__alfa_skus`), a product's own and each variant's, archived ones included,
+compared without regard to letter case. `SkuIndex` is in `Alfa\Component\Alfa\Administrator\Service\Catalog`.
+`SkuIndex::unit('SMX-WHT-256')` gives the unit it names (`SkuUnit`: `itemId`, `combinationId`, 0 for the product
+itself) or a `Refusal` saying why none: malformed, unknown, held by more than one unit, archived, or a product whose
+stock its variants hold. `unit()` and `holder()` are for reading. Every writer of a SKU in core keeps the registry in
+its own transaction: it reads the product's SKUs before its write (`SkuIndex::skusOf()`) and calls
+`SkuIndex::keep(itemId: $itemId, before: $before)` after it; a SKU another unit holds throws `SkuInUseException`, and
+the write rolls back. A unit that keeps a SKU it already shared before the registry is saved and stays out of it,
+named by the setup checklist until each has its own.
 
 ### The structure of an item's stock
 
@@ -373,7 +382,7 @@ a write-off, not a reversal. The refusal is an `InventoryReservedFloorException`
 | `reserve()` | `onInventoryBeforeReserve` | `onInventoryReserved` |
 | `commitReservation()` | `onInventoryBeforeCommit` | `onInventoryCommitted` |
 | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
-| `adjustTo()`, `adjust()`, `changeTracking()` when it sets opening quantities | None | `onInventoryAdjusted` |
+| `adjustTo()`, `adjust()` (so each line of an `InventoryCommands` adjustment that moved stock), `changeTracking()` when it sets opening quantities | None | `onInventoryAdjusted` |
 | `restore()`, `reverseRestores()`, when they moved something | None | `onInventoryRestored` |
 
 No other command announces an event. A plugin reacts to stock through these events and nowhere else. See
@@ -496,11 +505,10 @@ Each refusal of the service is its own exception class, in the same namespace.
 
 ## Not documented yet
 
-- Calling a command of `InventoryService` other than `adjust()`, or a method of `InventoryAvailabilityService`, from
-  a plugin. The code does not say whether that is supported.
+- Calling a method of `InventoryAvailabilityService` from a plugin. The code does not say whether that is supported.
+  The commands of `InventoryService` are core's own: an extension moves stock through `InventoryCommands`.
 - The lock order of the commands, which matters only to code that runs several commands in one save.
 - The classes `OpenLineClaims`, `QuantityDecimal`, `CombinationState`, `ReconciliationIntent`,
   `InventoryIntegrityNotice` and the public methods of `InventoryEffectOutbox`.
 - The categories of the audit one by one, and the repairs of the Inventory audit page.
 - `ReservationPolicyInterface`: it exists, and Alfa always uses its own rule, "set aside when the order is placed".
-- The REST API's list of stock movements (`v1/alfa/inventorymovements`).
