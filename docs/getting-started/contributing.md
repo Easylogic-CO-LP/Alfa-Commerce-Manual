@@ -98,14 +98,18 @@ Make the change in two places:
 Joomla records the schema version when the component is installed. On an update it runs every update file newer than
 that version, in version order.
 
+A table you remove leaves the install SQL, is dropped in the update file with `DROP TABLE IF EXISTS`, and is named in
+`REMOVED_TABLES`, a constant of the installer class in `script.php` that lists the tables the release's update file
+drops.
+
 Rules for an update file:
 
 - Write the table prefix as `#__`, never the prefix of your own site. Joomla puts in each site's real prefix.
 - Change one column in each `ALTER` statement. Joomla's database check reads only the first column of a statement.
 - Write statements that are safe to run twice, with `IF EXISTS` and `IF NOT EXISTS` where the statement allows it.
-- An index change that a second run would stop on ends with Joomla's marker `/** CAN FAIL **/` right before the
-  semicolon. Never put the marker on a statement that fills in data: Joomla records the file as applied even when
-  such a statement failed, so it never runs again.
+- A change that a second run would stop on (an index, or a column added or dropped) ends with Joomla's marker
+  `/** CAN FAIL **/` right before the semicolon. Never put the marker on a statement that fills in data: Joomla
+  records the file as applied even when such a statement failed, so it never runs again.
 - Do not add an uninstall SQL file. Uninstalling keeps every Alfa table and its data, on purpose.
 
 Two statements from a shipped update file, as a model:
