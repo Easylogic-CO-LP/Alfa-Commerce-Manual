@@ -157,8 +157,8 @@ The answer, status 201, shortened:
 
 **One record holds also:** `id_user`, `conversion_rate`, `delivery_date`, `id_address_delivery`,
 `id_address_invoice`, `contributions_total`, `customer_note`, and the lists `lines`, `payments`, `disputes`
-([Card disputes](#card-disputes)), `shipments`, `contributions` and `history`, and the objects `delivery_address` and `invoice_address`. The order's number is its
-`id`.
+([Card disputes](#card-disputes)), `shipments`, `contributions` and `history`, and the objects `delivery_address` and
+`invoice_address`. The order's number is its `id`.
 
 `id_payment_method` and `payment_method_name` are the method of the order's latest payment that is not failed or
 cancelled (a payment from the customer's credit is left out); `id_shipment_method` and `shipment_method_name` the
@@ -501,9 +501,10 @@ What a single order carries:
 
 ### Card disputes
 
-What a dispute is and what Alfa books at each step: [Card disputes](../services/disputes.md). The routes do what the
-dispute card on the order screen does, with its rules, and ask Orders: Edit; the order's `disputes` list needs Orders:
-View. Each answers 200 with the whole order. Amounts are decimal text; dates are UTC `Y-m-d H:i:s`, in and out.
+What a dispute is and what Alfa books at each step: [Card disputes](../services/disputes.md). The routes run the acts
+of the dispute card on the order screen, through the same model and the disputes ledger's rules, and ask Orders: Edit;
+the order's `disputes` list needs Orders: View. Each answers 200 with the whole order. Amounts are decimal text; dates
+are UTC `Y-m-d H:i:s`, in and out.
 
 | Answer | When |
 |---|---|
@@ -529,6 +530,7 @@ dispute that follows its provider answers 409 `dispute_follows_provider`. On a l
 `{"amount_in_order_currency": "45.12"}` alone books the loss.
 
 **Evidence.** `{"sent_at": "2026-11-23 10:00:00", "note": "Tracking sent"}`, both optional (`sent_at` now when left out).
+On a won or lost dispute it starts a new round, under review.
 
 **Close.** `outcome`: `won`, `lost`, `inquiry_ended` (an inquiry) or `in_error` (a dispute recorded by hand); `amount`
 only with `lost` on a dispute recorded by hand (a provider's dispute books the provider's amount: 409
@@ -545,13 +547,15 @@ undecided one 409 `dispute_transition`.
 that waits for the answer.
 
 **The order's `disputes`.** Each: `id`, `id_payment`, `state`, `outcome` (the bank's last decision, kept by a reopen),
-`stage` (the round), `source` (`staff`, `provider`, `migrated`), `amount` and `currency` (the order's; `null` while only
-another currency's figure is known), `stated_amount`, `stated_currency`, `reason`, `reason_text`, `reference`,
-`provider_link`, `evidence_due_by`, `evidence_sent_at`, `fee`, `fee_currency`, `fee_returned`, `waits_for`
-(`same_payment`, `amount_unknown` or `null`), `booked` (what its rows book, net), `created`, `modified`, `decided_at`.
+`stage` (the round), `source` (`staff`, `provider`, `migrated`), `amount` (in the order's currency; `null` while only
+another currency's figure is known), `currency` (the order's), `stated_amount`, `stated_currency`, `reason`,
+`reason_text`, `reference`, `provider_link`, `evidence_due_by`, `evidence_sent_at`, `fee`, `fee_currency`,
+`fee_returned`, `waits_for` (`same_payment`, `amount_unknown` or `null`), `booked` (what its rows book, net),
+`created`, `modified`, `decided_at`.
 
 **The list's filters.** `filter[dispute]`: `undecided` (an inquiry, open or under review), `inquiry`, `open`,
-`under_review`, `won`, `lost` or `closed`. `filter[dispute_due_before]`: the orders with an inquiry or open chargeback
+`under_review`, `won`, `lost`, `closed` or `due` (an inquiry or open chargeback with no evidence sent and a deadline
+within seven days, a passed one included). `filter[dispute_due_before]`: the orders with an inquiry or open chargeback
 to answer before a UTC time (`Y-m-d` or `Y-m-d H:i:s`) and no evidence sent.
 
 ### The status
