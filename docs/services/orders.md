@@ -455,8 +455,9 @@ addition is refused, the code on the order stays.
 
 ### When it is used
 
-The order screen's Coupons card calls it (the tasks `order.addCoupon` and `order.removeCoupon`, Orders edit). An
-extension may call it for an order it works on.
+The order screen's Coupons card calls it (the tasks `order.addCoupon` and `order.removeCoupon`, which ask the
+permission Orders: Edit). `OrderCoupons` itself checks no user right. It carries no `@api` line, so it is core's own:
+a call from an extension is outside [the contract](../plugins/calling-core.md#the-contract).
 
 ### What you must provide
 
@@ -464,7 +465,7 @@ extension may call it for an order it works on.
 |---|---|
 | `add(int $orderId, string $code, int $replaces = 0): object` | `outcome`: `CouponOutcome::APPLIED` when the code was added, or the reason it was not; `rule`: the `AppliedCartRule`; `ruleId`: its row in `#__alfa_order_cart_rule`; `replaced`: the code it replaced. `$replaces` names the row of the code it replaces, 0 to add it. |
 | `remove(int $orderId, int $orderRuleId): string` | `OrderCoupons::REMOVED`, or the reason it was not removed |
-| `onOrder(int $orderId): object` | `coupons`: the codes on the order (`id_order_cart_rule`, `code`, `name`, `value_tax_incl`, `discount_class`, `free_shipping`); `changeable`: whether they may change |
+| `onOrder(int $orderId): object` | `coupons`: the codes on the order (`id_order_cart_rule`, `id_cart_rule`, `name`, `code`, `value_tax_incl`, `value_tax_excl`, `discount_class`, `free_shipping`, `line_shares`); `changeable`: whether they may change |
 
 ```php
 use Alfa\Component\Alfa\Administrator\Service\Order\OrderCoupons;
