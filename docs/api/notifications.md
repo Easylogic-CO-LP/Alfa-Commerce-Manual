@@ -6,6 +6,8 @@ description: "How the shop tells another system of its changes: webhooks, the si
 
 # Outgoing notifications
 
+<AlfaVersion verified="2.3.0" />
+
 The REST API answers a program that asks. Outgoing notifications go the other way: the shop tells another system
 of its changes as they happen, so that system does not have to read the whole catalogue again and again.
 
@@ -53,15 +55,15 @@ new secret), Change State and Delete. Deleting a webhook deletes every change st
 ## The request
 
 Changes are sent in the background by the shop's task runner (see
-[Background work](../architecture/background-work.md)), never in the request that made the change, so a slow or
-absent receiver never slows the shop. Up to 100 changes go in one request, oldest first.
+[Background work](../architecture/background-work.md)), never by the save that made the change, so a slow or absent
+receiver never holds that save up. Up to 100 changes go in one request, oldest first.
 
 ```http
 POST /their/hook HTTP/1.1
 Content-Type: application/json
 User-Agent: AlfaCommerce-Webhook
 X-Alfa-Delivery: 8812-8814
-X-Alfa-Signature: t=1795615331,v1=5f2b...e9
+X-Alfa-Signature: t=1795096931,v1=5f2b...e9
 
 {
   "shop": "https://your-shop.example/",
@@ -79,13 +81,16 @@ X-Alfa-Signature: t=1795615331,v1=5f2b...e9
 }
 ```
 
-`X-Alfa-Delivery` names the first and the last change of the request. `X-Alfa-Signature` is described in
+`X-Alfa-Delivery` names the first and the last change of the request; a test sent from the Webhooks screen carries
+`test` there, and one change of topic `ping` with the id 0. `X-Alfa-Signature` is described in
 [Check the signature](#check-the-signature).
 
 ### What each change holds
 
-Every change has `id`, `topic` and `occurred_at` (when the change was made, UTC). `id` is unique: a receiver that is
-sent a change twice (it answered, but the answer was lost) recognises it by its id.
+Every change has `id`, `topic` and `occurred_at` (when the change was made, UTC; for a stock or price change, the
+first of the unit's changes it stands for). `id` is unique, and a change sent twice (the receiver answered, but the
+answer was lost) carries the same id. A receiver drops an order change whose id it has already seen; a stock or price
+change sent again is read again and carries the newest figure, so the receiver applies it each time.
 
 | Topic | Fields |
 |---|---|
@@ -157,8 +162,8 @@ sent again.
 ## Retries and changes given up
 
 A change that was not taken is sent again after 1 minute, then 5 minutes, 30 minutes, 2 hours, 6 hours and 24 hours.
-A `Retry-After` header longer than the next wait is honoured. When the sixth retry fails too, the change is **given
-up**: it is not sent again by itself, and staff are told.
+A `Retry-After` header in seconds that is longer than the next wait is honoured, up to 24 hours. When the sixth retry
+fails too, the change is **given up**: it is not sent again by itself, and staff are told.
 
 Staff see each consumer in **Tools**, **Tasks**, on the card **Outgoing notifications**: what waits for it, what was
 given up, and the last delivery with its answer. A notice also says which consumer was not told of how many changes.
@@ -170,10 +175,10 @@ On the card:
 - **Pause** and **Resume** stop and restart a consumer, as the webhook's state does.
 
 A stock or price change that is given up does not block its unit: the unit's next change is told with the newest
-figure. Changes that were taken, or that no consumer took, are kept for 7 days, changes given up or discarded for 30
-days, then removed.
+figure. Changes that were taken, or that no consumer took, are kept 7 days, and changes given up or discarded 30 days;
+after that, the next delivery to the same consumer that finds nothing waiting removes them.
 
-The card needs the permission **Tools** of Alfa Commerce.
+The card needs the Alfa Commerce permission **Use Maintenance Tools**.
 
 ## The integrator's recipe
 
@@ -183,11 +188,13 @@ A system that keeps its own copy of the shop's catalogue and orders:
    and prices (`v1/alfa/items`, page by page, and one record per item for its prices, its `prices_state` and each
    combination's `prices_state`), and the orders it follows. See [Catalogue](./catalogue.md) and
    [Orders](./orders.md).
-2. **Then it is told.** A webhook (or the integration's plugin) tells it each change from then on. It stores each
-   change's `id` and drops a change it has already seen.
+2. **Then it is told.** A webhook (or the integration's plugin) tells it each change from then on. It drops an order
+   change whose `id` it has already seen, and applies a stock or price change each time it comes (see
+   [What each change holds](#what-each-change-holds)).
 3. **One reconciliation read a day**, outside busy hours, through the same reads as the first sync. It heals what a
-   change given up and discarded, or a restore of the shop from a backup, left behind. It replaces the periodic full
-   read: the system no longer needs to read everything every few minutes.
+   change given up and discarded, a change whose notification could not be written (the log `com_alfa.outbound`
+   names it), or a restore of the shop from a backup left behind. It replaces the periodic full read: the system no
+   longer needs to read everything every few minutes.
 
 ### Two systems that both write prices
 
@@ -251,7 +258,8 @@ public function onAlfaOutboundDeliver(OutboundDeliverEvent $event): void
 
 A change the plugin does not answer is sent again later, on the same waits as a webhook's. A handler that throws has
 every change of the batch sent again, and the failure is written to the log `com_alfa.outbound`. A plugin that
-cannot be loaded leaves the batch waiting. A reason must never contain a credential: staff read it on the card.
+cannot be loaded leaves the batch waiting. A reason must never contain a credential: it is stored with the change in
+the database.
 
 A plugin that names topics but has no `onAlfaOutboundDeliver` method takes no change. Its changes are settled as taken
 by **no consumer**: they are not sent again, not given up and not counted, no notice is shown, and the card shows its
@@ -259,5 +267,6 @@ last delivery as taken, the reason naming no consumer. This is not an error: the
 
 A plugin that writes prices on its system's behalf asks first whether a price change of that unit still waits for it:
 `OutboundFeed::waiting($consumerId, 'price', $itemId, $combinationId)`, where `$consumerId` is
-`OutboundConsumers::ofPlugin(PluginId::from('alfa', 'yourplugin'))` (or `$event->getConsumerId()` inside a delivery).
-While one waits, it refuses its system's write for that product, so its system first learns the shop's price.
+`OutboundConsumers::ofPlugin(PluginId::from('alfa', 'yourplugin'))`, null while the plugin has no consumer row (or
+`$event->getConsumerId()` inside a delivery). While one waits, it refuses its system's write for that product, so its
+system first learns the shop's price.
