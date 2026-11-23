@@ -399,7 +399,7 @@ status's own, and the download access is that status's. `OrderCreator` checks th
 is not published lands the order in the initial status with a notice to staff. A status that requires payment takes
 an order placed with a total of zero, which is paid since nothing is due on it (the placement tells `OrderCreator` so
 with `nothing_due`); any other new order it refuses unless it allows the unpaid exception (**Allow unpaid
-exception**).
+exception**), and an order that enters it so is recorded as an exception.
 
 ### What happens to the cart
 
