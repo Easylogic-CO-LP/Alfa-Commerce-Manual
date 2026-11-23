@@ -170,8 +170,9 @@ combination of the product (another product's, deleted or archived), a value tha
 value the product does not take (a field that is neither a dimension of its combinations nor the field of an option it
 offers, a dimension value none of its current combinations carries, an option value it does not offer), and dimension
 values that no current combination carries together. An unpublished product or combination may be linked: it shows
-once published. A combination deleted or archived by the variants grid, an option removed from the product and a value
-deleted from its field take the links that name them with them.
+once published. A combination removed (the variants grid, `DELETE v1/alfa/items/:id/combinations/:combinationId`,
+deleted or archived for its order history), an option removed from the product and a value deleted from its field take
+the links that name them with them, in the same write.
 
 The storefront judges every link again when it draws the item's page: a combination that is not published, a value
 the product no longer offers, or a unit out of stock while the shop hides out-of-stock products skips the link, and

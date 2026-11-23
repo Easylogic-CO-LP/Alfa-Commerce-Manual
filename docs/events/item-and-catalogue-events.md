@@ -457,8 +457,8 @@ never announced. Once for each change:
 | `cause()` | The constant | What happened | `itemIds()` |
 |---|---|---|---|
 | `save` | `CAUSE_SAVE` | The item's save changed its links (the Related tab, the REST API, a save from code). A save that leaves them as they were sends nothing. | The item |
-| `combination` | `CAUSE_COMBINATION` | The variants grid deleted or archived a combination that links named | The items whose links were removed |
-| `value` | `CAUSE_VALUE` | An option was removed from a product, or a value deleted from its field, that links named | The items whose links were removed |
+| `combination` | `CAUSE_COMBINATION` | A combination that links named was removed, deleted or archived (the variants grid, the REST API, `CombinationService::remove()`); `onAlfaCombinationsChanged` names the combination | The items whose links were removed |
+| `value` | `CAUSE_VALUE` | An option was removed from a product (`ItemOptionService`), or a value deleted from its field (`ItemFieldValueService`), that links named | The items whose links were removed |
 | `delete` | `CAUSE_DELETE` | Products that links named were deleted | The items that kept links to them |
 
 **Who receives it.** Every loaded plugin that lists it; Alfa loads the `alfa-search` and `alfa` groups first.
