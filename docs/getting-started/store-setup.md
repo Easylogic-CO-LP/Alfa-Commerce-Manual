@@ -44,13 +44,18 @@ While a required row is not done, the notification centre keeps a notice, which 
 required steps remain.
 
 Three rows have a **Create for me** button. On "Storefront menu items" it creates the Shop and Cart pages. On
-"Customer pages" it creates the account page and the sign-up page. In both you choose the menu they go in: a new
+"Customer pages" it creates the account page, My orders and the sign-up page. In both you choose the menu they go in: a new
 menu named Alfa Commerce, made for you, or an existing one. On "Storefront pages linked across languages", a row of a
 site in several languages, it links each storefront page's copies in the different languages to one another.
 
 Each page is titled in its own language; on a site in one language, in the site's default language. The sign-up page
 is made only while Users: Options allows sign-ups (Allow User Registration, which Joomla sets to No when it is
 installed). While it does not, the Customer pages row says so, and once sign-ups are on, it offers to make the page.
+
+The optional row **Customer cancel** is done once customers may cancel their own orders: Options, Cart, Customer
+account, Customer cancel status names the status a cancelled order moves to, and at least one published status has
+Customers may cancel. A new installation has both (Pending, into Cancelled); a shop that was updated has neither until it
+sets them. See [The customer's account](../services/customer-account.md#cancelling).
 
 A recommended or optional step you do not need can be ignored, such as Item fields on a shop whose products have no
 options, or Joomla mail on a test copy that must not send e-mail. **Ignore** on its row moves it under **Ignored**, at

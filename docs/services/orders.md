@@ -398,6 +398,7 @@ order cancelled" asks this helper. It only reads, and it remembers its answers f
 | `getCancelledIds(): array`, `isCancelled(?int $statusId): bool` | The cancelled statuses. There can be several: "Cancelled", "Returned", "Refunded". |
 | `getCompletedIds(): array`, `isCompleted(?int $statusId): bool` | The completed statuses. There can be several. |
 | `getById(?int $statusId): ?object` | One status row, or `null` |
+| `customerName(int $statusId, string $langTag = ''): string` | The name customers read: the customer-facing name in that language, else the internal name in that language, then the default language the same way. See [The customer's account](./customer-account.md#the-name-of-a-status). |
 | `getAll(?string $orderBy = null): array` | Every status row, keyed by id |
 | `clearCache(): void` | Forgets the remembered answers. For code that has just changed a status row. |
 

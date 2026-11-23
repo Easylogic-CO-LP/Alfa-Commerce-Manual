@@ -500,8 +500,10 @@ A cancelled order is not brought back by accident:
 
 ## Order statuses
 
-`v1/alfa/orderstatuses`, the five standard routes. Both `name` (for staff) and `name_customer` (for the shopper)
-are needed in the default language.
+`v1/alfa/orderstatuses`, the five standard routes. `name` (for staff) is needed in the default language.
+`name_customer` (for the shopper) is optional: where it is empty in a language, customers read `name` of that language.
+`customer_can_cancel` (0 or 1) lets customers cancel their orders in the status from their account (see [The
+customer's account](../services/customer-account.md#cancelling)).
 
 ```json
 {
@@ -515,7 +517,7 @@ are needed in the default language.
 **A list row holds:** `id`, `name`, `color`, `bg_color`, `stock_operation`, `is_initial`, `is_cancelled`,
 `is_completed`, `notify_customer`, `notifies_staff`, `ordering`, `state`.
 
-**One record holds also:** `name_customer`, `admin_recipient_ids`, and with `include=translations` its
+**One record holds also:** `name_customer`, `customer_can_cancel`, `admin_recipient_ids`, and with `include=translations` its
 `translations`.
 
 `notify_customer` 1 mails the customer when an order enters the status; `notifies_staff` 1 means one of its
