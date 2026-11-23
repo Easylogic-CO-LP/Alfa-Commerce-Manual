@@ -197,9 +197,9 @@ it from cron with the console command `alfa:tasks:run`.
 
 ## Updating
 
-The supported upgrade path is from the 2.2.x line to 2.3.0. Alfa Commerce updates in place through Joomla's own
-update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new ZIP over the
-installed version. Joomla runs each release's database changes itself.
+Alfa Commerce updates in place from any 2.x release; this page describes the update from the 2.2.x line to 2.3.0. It
+updates through Joomla's own update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by
+installing the new ZIP over the installed version. Joomla runs each release's database changes itself.
 
 An update also removes the files the new version no longer ships, cleans Joomla's page cache and Alfa Commerce's
 own caches, and pauses the shop's background work while it runs (at most ten minutes).
