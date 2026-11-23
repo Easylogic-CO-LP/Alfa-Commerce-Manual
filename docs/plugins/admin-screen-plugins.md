@@ -8,7 +8,7 @@ description: How a plugin adds columns, filters, buttons, row actions, form tabs
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -80,7 +80,7 @@ These events go in that list:
 | The fifteen `onAlfaAdmin...` events of this page |
 | `onAlfaBuildMenu`, `onAlfaGetAccessActions` (menu entries and permissions, below) |
 | `onAlfaCollectCards`, `onAlfaCollectSetupChecks`, `onGetToolActions`, `onCollectDocumentTypeProviders` |
-| Joomla's own `onAjax...` event, when you use it (see "Calling your own PHP from the browser") |
+| Joomla's own `onAjax...` event, when you use it (see [Calling your plugin from the browser](./admin-screen-ajax.md)) |
 
 A few events are addressed to one plugin (they are targeted events). They never go in `getSubscribedEvents()`. A
 plugin handles them with public methods of their names, which Alfa calls on the plugin it addresses; nothing lists
@@ -155,12 +155,12 @@ public function onAlfaAdminListColumns(AdminListColumnsEvent $event): void
 name by mistake (`list`, `edit`, `save` or `delete`) it throws an error that names the method to use instead.
 
 :::warning A wrong entity name fails silently
-`targets('orders')` (plural) never matches and never complains. Your handler simply does nothing. These are the 25
+`targets('orders')` (plural) never matches and never complains. Your handler simply does nothing. These are the 26
 entity names, exactly as written:
 
 `cart`, `cartrule`, `category`, `currency`, `discount`, `document`, `documenttype`, `formfield`, `formfieldgroup`,
 `inventorymovement`, `item`, `itemfield`, `location`, `manufacturer`, `notification`, `order`, `orderstatus`,
-`payment`, `place`, `reservation`, `series`, `shipment`, `tax`, `user`, `usergroup`
+`payment`, `place`, `reservation`, `series`, `shipment`, `tax`, `user`, `usergroup`, `webhook`
 
 They are singular and lower case. Each is the value of `protected string $alfaEntity` on a model in
 `administrator/src/Model/`. While developing, `$event->getContext()` shows the one you are on.
@@ -270,7 +270,7 @@ sequenceDiagram
     Alfa->>Alfa: Checks that this person may delete
     Alfa->>P: onAlfaAdminBeforeDelete (you may refuse)
     Alfa->>Alfa: Deletes the records
-    Note over Alfa: The save is final here
+    Note over Alfa: The delete is final here
     Alfa->>P: onAlfaAdminAfterDelete (you clean up your own rows)
     Alfa->>Staff: Shows the result
 ```
@@ -310,7 +310,9 @@ simple lookup and keep logic out of the layout.
 ### What is already checked
 
 By the time your handler runs, the person has passed two checks: Joomla's permission to enter the component
-(`core.manage`) and Alfa's own permission to open that screen (for example `alfa.orders.view`).
+(`core.manage`) and Alfa's own permission for what they are doing: opening that screen (for example
+`alfa.orders.view`), or, on a save or a delete, `alfa.orders.edit` (`alfa.orders.create` for a new record) or
+`alfa.orders.delete`.
 
 Alfa Commerce uses only two of Joomla's permissions, `core.admin` and `core.manage`. Everything else is one of
 Alfa's own, named `alfa.<section>.<action>`, such as `alfa.orders.edit` or `alfa.items.delete`. Joomla's `core.edit`
@@ -347,7 +349,7 @@ one of Alfa's instead, for example `alfa.orders.edit`.
 
 | What | Who checks |
 |---|---|
-| A row action or a bulk action | Alfa, from `access()` or from where the action goes (see "Declaring a row or bulk action") |
+| A row action or a bulk action | Alfa, from `access()` or from where the action goes (see [Declaring a row or bulk action](./admin-screen-events.md#declaring-a-row-or-bulk-action)) |
 | A menu entry and the panel behind it | Alfa, from `access()` on the menu entry ([Creating an Admin Panel](./admin-panels.md)) |
 | A column, a filter, a toolbar button, a tab, a slot | You, in your handler |
 
@@ -390,8 +392,10 @@ flowchart TB
         end
         S1["Order screen only: slot order-details, right column, under Order Details"]
         S2["Order screen only: slot order-main, full width, at the end of the Order tab"]
+        S3["Cart rule screen only: slot cartrule-sidebar, in the side column of its first tab"]
         M ==> TB2 ==> TABS
         TABS ==> S1 ==> S2
+        TABS ==> S3
     end
 ```
 
