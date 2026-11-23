@@ -16,8 +16,8 @@ until staff act on what failed. How the engine itself works (the states, the tur
 
 ## Everything you write
 
-Four pieces, each in one place. This is the example plugin's job (`plg_alfa_example`, printed whole on
-[Adding routes to the REST API](./api-route-plugins.md#a-complete-plugin-plg_alfa_example)):
+Four pieces, each in one place. The first three are the example plugin's job (`plg_alfa_example`, printed whole
+on [Adding routes to the REST API](./api-route-plugins.md#a-complete-plugin-plg_alfa_example)):
 
 ```php
 // 1. Declare the work, in the plugin class: a public method named as the event.
@@ -108,9 +108,10 @@ There is no priority, retry count or step size to set: a plugin's jobs run below
 retries are the engine's, and the engine sizes each step from the time the steps take.
 
 A declaration is left out, with one ERROR line in the log `com_alfa.tasks` naming the plugin, the name and the reason,
-when its name has the wrong shape, a name is declared as both kinds, it has no label, `every()` is given other than one
-span in range, or the plugin has no public `onAlfaRunTask()` for a task or `onAlfaRunJob()` for a job. The plugin's
-other declarations still count. When `onAlfaDeclareWork` throws, the plugin's previous copy is kept as it was.
+when its name has the wrong shape, a name is declared twice (a name has one kind), it has no label, `every()` is given
+other than one span in range, or the plugin has no public `onAlfaRunTask()` for a task or `onAlfaRunJob()` for a job.
+The plugin's other declarations still count. When `onAlfaDeclareWork` throws, the plugin's previous copy is kept as it
+was.
 
 ## Asking for it
 
@@ -132,7 +133,7 @@ $asked = BackgroundWork::of($this)
 
 | On a task request | Meaning |
 |---|---|
-| `about(string $type, int $id)` | What the task concerns, shown in Tools > Tasks ("Order 15"): a lower-case word of at most 32 characters and an id above zero |
+| `about(string $type, int $id)` | What the task concerns, shown in Tools > Tasks ("Order #15"): a lower-case word of at most 32 characters and an id above zero |
 | `with(array $data)` | What the task needs: JSON-safe, at most 16 KiB encoded. Read current values when it runs, never what they were when it was asked. |
 | `once(string $key)` | At most one waiting or running task of this name and key. A second request with the same data joins it; one with other data writes nothing and is answered refused. |
 
@@ -140,7 +141,7 @@ $asked = BackgroundWork::of($this)
 |---|---|
 | `scope(string $scope)` | What the job covers (`'42'` for category 42): one waiting or running job a name and scope. Without it, one job for the name. 1 to 100 of `a` to `z`, `0` to `9`, `_`, `.`, `:` and `-`. |
 | `with(array $data)` | What the job needs: JSON-safe, at most 16 KiB encoded. A joined job keeps the data of the request that wrote it. |
-| `notBefore(DateTimeInterface $when)` | Not before this moment, at most 365 days ahead. Joining a waiting job keeps the earlier of the two moments, so a delay gathers a burst. |
+| `notBefore(DateTimeInterface $when)` | Not before this moment, at most 365 days ahead. Joining a waiting job keeps the earlier of the two moments, so a delay gathers a burst; a job waiting to try again after a failure keeps its wait. |
 
 **Joining.** A request for a job whose scope already waits joins it, its data unchanged. A request while it runs makes
 it run once more from the start when it finishes, so the job always ends having walked what was asked last.
@@ -154,7 +155,7 @@ the engine's rescue, two minutes later.
 
 | Field | Meaning |
 |---|---|
-| `id` | The row written or joined; the waiting task's id when refused for its data; 0 when nothing was written |
+| `id` | The row written or joined; the id of the task that waits or runs when refused for its data; 0 when nothing was written |
 | `joined` | True when a waiting or running one was joined |
 | `refused` | True when nothing was written |
 | `reason` | `Enqueued::OTHER_DATA` (a task of the same `once()` key waits or runs with other data) or `Enqueued::TOO_FAR` (`notBefore()` more than 365 days ahead); `''` otherwise |
@@ -214,8 +215,8 @@ private function submitInvoice(RunTaskEvent $task): void
 - `part($name)` is one named part (a recipient, a call to another system). Ask `isDone()` first, then record `done()`,
   `failed($why)` or `unknown($why)` as soon as the outcome is known. A part done is never done again: a retry and
   staff's Run again skip it. `unknown()` holds the task for staff at once.
-- `result([...])` is what the finished task reports: JSON-safe, at most 16 KiB, kept with its row and shown in
-  Tools > Tasks.
+- `result([...])` is what the finished task reports: JSON-safe, at most 16 KiB, kept with its row and read with
+  `find()` and over the REST API. Tools > Tasks lists a task only while it is failed or held.
 - Returning ends the task done.
 
 ## Running a job
@@ -259,23 +260,24 @@ Throw a `WorkFailure` to say how a run failed:
 | throws `WorkFailure::failed($why)` | failed at once; staff decide | failed at once; staff decide |
 | calls `part(...)->unknown($why)` | held at once; staff decide | not offered: a step is always safe to repeat |
 | throws any other error | `repeatable()`: tried again; otherwise held | tried again |
-| leaves a transaction open | rolled back, counted as an unexpected error | the same |
+| leaves a transaction open | rolled back, counted as an unexpected error | the same for a step inside the engine's transaction; a `callsOtherSystems()` step is not checked, so it closes its own |
 
 | Work | Waits between tries | After the last try |
 |---|---|---|
 | A task | 1 min, 5 min, 30 min, 2 h, 6 h, 24 h | failed |
 | A job | 30 s, doubling, each wait at most 1 h; 8 failures in a row | failed |
-| A job that `callsOtherSystems()` | 1 min, 5 min, 30 min, 2 h, 6 h, 24 h | failed |
+| A job that `callsOtherSystems()` | 1 min, 5 min, 30 min, 2 h, 6 h; 6 failures in a row | failed |
 | Any, with `WorkFailure::retry(after: N)` | the ladder's wait, or N seconds when longer (a receiver's Retry-After) | as above |
 
 A step that succeeds sets a job's count of failures back to zero. The message of a failure is read by staff: put no
 password, host or database text in it. A failed or held row stays, never deleted by age, until staff act on it in
-Tools > Tasks.
+Tools > Tasks; a failed job is also closed, resolved, when a later job of its name and scope ends done.
 
 ## Reading and cancelling
 
 `BackgroundWork::of($this)->find($id)` answers one of the plugin's tasks or jobs as it stands, a `WorkStatus`, or
-`null` when it is another owner's, never existed, or was deleted (a row goes 30 days after it ends).
+`null` when it is another owner's, never existed, or was deleted (a done, resolved or cancelled row goes 30 days after
+it ends).
 
 | `WorkStatus` | Meaning |
 |---|---|
@@ -292,7 +294,7 @@ Tools > Tasks.
 - a waiting task or job is cancelled at once, with a history entry; its scope is free for a new request;
 - a running job is marked and stays running, so its scope stays taken: the engine runs no further step, the step in
   progress keeps nothing (with `callsOtherSystems()`, its bookmark does not move), and the engine then settles it
-  cancelled;
+  cancelled; when it was asked for again meanwhile, it starts again from the beginning instead;
 - a running task is refused (`false`): a task is one go, and stopping it half way would leave its effect unknown;
 - a finished row, or another owner's, is refused (`false`).
 
@@ -301,8 +303,9 @@ Staff cancel a plugin's waiting or running job from Tools > Tasks, with a reason
 ## Told when it ends
 
 A plugin with a public `onAlfaWorkSettled(WorkSettledEvent $settled)` is told when one of its tasks or jobs ends:
-done, failed, held, resolved by staff or cancelled. `getStatus()` is the row as it ended (a `WorkStatus`), and
-`getReason()` staff's reason for Mark resolved or Cancel.
+done, failed, held, resolved (by staff, or by a later job of its scope that ended done) or cancelled. `getStatus()` is
+the row as it ended (a `WorkStatus`), and `getReason()` staff's reason for Mark resolved or for the Cancel of a waiting
+task or job; `''` otherwise, the Cancel of a running job included.
 
 ```php
 public function onAlfaWorkSettled(WorkSettledEvent $settled): void
@@ -329,8 +332,8 @@ none.
 
 | The plugin is | Its declarations | Its tasks and jobs |
 |---|---|---|
-| installed, updated, saved or enabled | read again; names no longer declared deleted | a waiting row of a name no longer declared stays, and Tools > Tasks says it waits because the extension no longer declares this work; staff cancel a job, the plugin cancels a task |
-| disabled | kept, marked disabled | they wait, with no try counted, and run once it is enabled; Tools > Tasks says it waits because the extension is disabled |
+| installed, updated, saved or enabled | read again; names no longer declared deleted | a waiting row of a name no longer declared stays, and Tools > Tasks says on such a job that it waits because the extension no longer declares this work; staff cancel a job, the plugin cancels a task |
+| disabled | kept, marked disabled | they wait, with no try counted, and run once it is enabled; Tools > Tasks says on a job that it waits because the extension is disabled |
 | uninstalled | deleted | waiting rows and running jobs cancelled, with the reason that the extension was uninstalled; failed and held rows kept for staff |
 | removed with Tools > Extensions, "Remove extension and its data" | deleted | every row of the plugin deleted, after its own Clear Data |
 
@@ -343,12 +346,13 @@ declarations again, so their schedules resume.
 
 A plugin's rows are in the same lists as Alfa's, with the same buttons. Each shows its label in the plugin's own words
 with the plugin's name beneath it (its name as Extensions: Plugins lists it), Covers (the `covers()` text with the
-scope, or a task's subject), progress, times, the last error and the next try. A done row shows its result as
+scope, or a task's subject), progress, times, the last error and the next try. A done job shows its result as
 `key: value` lines. A job that cannot run says why: the extension is disabled, or no longer declares this work.
 
 Staff press **Run again** or **Mark resolved** on a failed or held task, **Retry** or **Mark resolved** on a failed
-job, **Process now** on a waiting job, and **Cancel**, with a reason, on a plugin's waiting or running job. Every button asks the permission to use Tools (`alfa.tools`), as for Alfa's own rows. No permission is
-added for a plugin's work: who may cause it is your own route's or screen's permission.
+job, **Process now** on a waiting job, and **Cancel**, with a reason, on a plugin's waiting or running job. Every
+button asks the permission to use Tools (`alfa.tools`), as for Alfa's own rows. No permission is added for a plugin's
+work: who may cause it is your own route's or screen's permission.
 
 Over the REST API, the task routes read a plugin's rows with their `owner` and `result`, and `filter[owner]` lists
 one plugin's (see [Documents and tasks](../api/documents-and-tasks.md)). To let a client ask for work, declare a route
@@ -452,10 +456,10 @@ when done, `low: 3`.
 | `InvalidArgumentException`: "... declares no background work named ..." | The name is not in `onAlfaDeclareWork`, or its declaration was left out (the log `com_alfa.tasks` says why) |
 | `InvalidArgumentException`: "... is a job: ask for it with job()" (or a task) | The name is declared as the other kind |
 | `InvalidArgumentException` from `of()` | The object is not the plugin Joomla booted for its group and element, is not of an `alfa` group, or is not installed and enabled |
-| A job says "Waits: the extension is disabled." | Enable the plugin: its work runs at the engine's next turn |
-| A job says "Waits: the extension no longer declares this work." | An update removed the name. Declare it again, or cancel the job. |
+| A job says "Waits: the extension is disabled. It runs once the extension is enabled." | Enable the plugin: its work runs at the engine's next turn |
+| A job says "Waits: the extension no longer declares this work. Cancel it, or update the extension." | An update removed the name. Declare it again, or cancel the job. |
 | A job fails with "The plugin ... has no public onAlfaRunJob() method." | The plugin declares a job but has no method to run it. Add it, then Retry. |
 | A job fails with "... ended with neither next() nor finished() ..." | A step returned without saying how it ended |
 | A task is held after the server restarted | The task is not `repeatable()`, so an interrupted run waits for staff. Staff Run again or Mark resolved. |
 | `onAlfaWorkSettled` is told twice of one end | Its first call threw, or the server stopped inside it. Make it safe to repeat. |
-| Your method is called on every plugin's event too | It is listed in `getSubscribedEvents()`, or the plugin is not a `SubscriberInterface` plugin |
+| The log `com_alfa.plugins` says your plugin lists an event "both as a targeted handler and on the shared dispatcher" | One of the four events is listed in `getSubscribedEvents()`, or the plugin is not a `SubscriberInterface` plugin, so Joomla puts every public `on...` method on its shared dispatcher. Alfa still calls the method; remove it from the list. |
