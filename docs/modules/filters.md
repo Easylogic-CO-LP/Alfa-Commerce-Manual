@@ -12,9 +12,9 @@ description: How the filters panel applies what the shopper ticks, how its optio
 
 The filters module (`mod_alfa_filters`, shipped with Alfa Commerce) is the panel beside the product listing where a
 shopper narrows the catalogue: categories, manufacturers, price, availability, sale items and every item field marked
-as filterable (a colour, a size). On a wide screen it is a **column** beside the products. Below the module's
-breakpoint (**Responsive Change**, 800 pixels by default), or always when **Fixed Positioning** is on, it is a panel that
-**lies over the page**: the module's own button opens it, and so can any button or link of yours (see
+as filterable (a colour, a size). From the module's breakpoint up (**Responsive Change**, 800 pixels by default: at
+800 and wider) it is a **column** beside the products. Narrower, or always when **Fixed Positioning** is on, it is a
+panel that **lies over the page**: the module's own button opens it, and so can any button or link of yours (see
 [Opening the filters from your own button](#opening-the-filters-from-your-own-button)). In a shop that shows its
 catalogue only, the panel has no price, sale or discount filters (see
 [Online sales](../getting-started/store-setup.md#online-sales)).
@@ -27,7 +27,7 @@ When the **results** change depends on the module's setting **Dynamic Filtering*
 | Dynamic Filtering | Where | The results |
 |---|---|---|
 | Enabled | On the shop's listing | Change at once with every tick. The listing is swapped in place, the address bar follows, and the new results are brought into view. |
-| Disabled (the default), or any page that is not the listing | Anywhere | Change when the shopper presses the panel's results button (the form is sent and the listing page opens). |
+| Disabled (the default), or any page that is not the listing | Anywhere | Change when the shopper presses the panel's results button (the form is sent and the listing opens: on a listing page, that listing with its category; anywhere else, the shop's listing). |
 
 ## The option groups
 
@@ -60,7 +60,7 @@ At the bottom of the panel, in view while the panel scrolls, the foot answers wh
   refresh). With Dynamic Filtering enabled, on the listing, the results are already in place behind the panel, so the
   button closes the panel. Otherwise the button sends the form, and the listing opens with the filters applied.
 - **Clear all**, beside it while any filter is in effect. It clears every filter and empties the groups' search
-  boxes.
+  boxes. Once nothing is left to clear it goes, and the keyboard moves on to the results button.
 
 In the column, the bar above the groups carries Clear all instead, and a foot whose results already apply at once is
 not shown (the results are beside the panel). A foot that sends the form stays, as the form's button.
@@ -86,8 +86,8 @@ new module first asks to be saved).
 What happens next:
 
 - While the panel is open, every opener of the module carries `aria-expanded="true"`, and `false` once it closes.
-- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape close it and give the
-  focus back to the element that opened it. Escape pressed in a group's search box that holds text, or while a
+- Opening puts the focus on the panel's close button. The backdrop, the close button and Escape (wherever the focus
+  is while the panel lies open) close it and give the focus back to the element that opened it. Escape pressed in a group's search box that holds text, or while a
   dropdown is open, is left to the box or the dropdown and does not close the panel.
 - Where the panel is a column beside the products, an opener brings the panel into view and puts the focus in it.
 - An opener added to the page later (by a script, or a module loaded afterwards) works too: the module finds openers

@@ -28,13 +28,16 @@ draws nothing (see [Online sales](../getting-started/store-setup.md#online-sales
 - **Its movement** is the module's setting **Animation**: Zoom In, From Top, From Left or From Right.
   The drawer closes with the same movement, by its close button, a click beside it, or Escape; the focus then returns
   to what opened it.
+- **More than one cart module on a page** works: each has its own button and drawer, a change made in one drawer is
+  read again by the others, and with **When an item is added** set to "Open the cart" on several, the first drawer to
+  open is the one shown.
 
 ## For a template override
 
 A template override of `mod_alfa_cart/tmpl/default.php` keeps these, or the drawer does not open:
 
-- `data-mod-cart-outer` on the module's outer element, with the button and the drawer inside it (the script works with
-  the first such element on the page);
+- `data-mod-cart-outer` on the module's outer element, with the button and the drawer inside it (the script wires
+  every such element on the page, each module on its own);
 - the class `cart-toggler` on the button (a `<button type="button">` in the shipped layout);
 - the drawer as a `<dialog>` whose direct child is the block `default_items.php` prints (`data-cart-items`): the script
   opens that block's parent with the browser's `showModal()`.
