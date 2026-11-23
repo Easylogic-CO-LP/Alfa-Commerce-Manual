@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 119 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
+description: The 120 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -17,11 +17,11 @@ Its comments explain most columns. When a line below says "see the SQL", read th
 
 ## What it does
 
-The install file creates **119 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
+The install file creates **120 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh site with one content language (English) holds 134 tables: these 119, fourteen more language tables and the
+A fresh site with one content language (English) holds 135 tables: these 120, fourteen more language tables and the
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
@@ -51,6 +51,7 @@ flowchart TB
 | `#__alfa_items_categories` | Which categories an item is in (pair key) |
 | `#__alfa_items_manufacturers` | Which manufacturers an item has (pair key) |
 | `#__alfa_items_links` | Which products a product page shows as related, in order. A row from A to B shows B on A's page only. `link_type` names the kind of link: related is the one kind Alfa Commerce writes and reads (key: the pair and the kind) |
+| `#__alfa_items_link_values` | The values a link preselects on the linked product's card, one per field (key: the link and the field) |
 | `#__alfa_skus` | Every SKU in use, once (key: the SKU): the SKU of each product and each combination, archived ones included. One row per unit |
 | `#__alfa_items_usergroups` | The user groups allowed to see an item (pair key) |
 | `#__alfa_items_users` | The users allowed to see an item (pair key) |
@@ -147,7 +148,7 @@ flowchart TB
 
 An order is self-contained: it keeps its own copy of the customer's name and e-mail, the names of the methods, and
 on each line the name, the prices and the tax as they were when it was placed. Later changes to the catalogue do not
-change an order. Payments, refunds and shipments are rows that belong to the order.
+change an order. Payments, refunds, disputes and shipments are rows that belong to the order.
 
 ```mermaid
 flowchart TB
@@ -173,6 +174,7 @@ flowchart TB
 | `#__alfa_order_activity_log` | The order's history: one row per event, with who did it, the status at that moment and a summary |
 | `#__alfa_order_payments` | The money rows of an order: payment, refund, authorization, reversal, chargeback. The amount is always positive and the type gives the direction |
 | `#__alfa_payment_references` | Stored payment credentials of a customer, for charges the merchant starts later |
+| `#__alfa_order_disputes` | Card disputes: one case a row, tied to the disputed payment, with its state, outcome and evidence deadline. Money moves only through the payment rows it books |
 | `#__alfa_refund_report_outcomes` | The outcome of each refund a payment provider reported as made outside Alfa: recorded, reconciled, or duplicate or invalid |
 | `#__alfa_order_shipments` | The parcels of an order: method, cost and tax, tracking number, status |
 | `#__alfa_order_shipment_items` | Which order lines are in which parcel, and how many of each |
@@ -222,7 +224,6 @@ flowchart TB
 | `#__alfa_inventory_movements` | The stock ledger: one added row for every change of a quantity |
 | `#__alfa_inventory_operations` | One row per command the stock service ran, for audit |
 | `#__alfa_inventory_reservations` | Stock held for orders: quantity, how much was fulfilled and released, state |
-| `#__alfa_inventory_transfers` | A transfer between two locations, owning one movement out and one movement in. No command of Alfa Commerce writes it |
 | `#__alfa_inventory_effect_outbox` | Stock changes that a saved order or document still owes, kept until the movement exists |
 | `#__alfa_inventory_line_resolutions` | Staff decisions about order lines whose item or combination no longer exists, or that staff classified. Rows are only added |
 | `#__alfa_inventory_line_provenance` | For each order line, whether its stock was tracked when it was placed. Removed with its order line (foreign key on `order_item_id`) |
@@ -356,7 +357,7 @@ that the fields and statuses it creates have English names from the first minute
 ### A plugin's log table
 
 A payment or shipping plugin may keep a log table named `#__alfa_{family}_{name}_logs`. The standard payment
-plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 119. The
+plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 120. The
 standard shipping plugin makes its own, `#__alfa_shipments_standard_logs`, from
 `plugins/alfa-shipments/standard/sql/install.mysql.utf8.sql`. It is the one table a shipped plugin creates itself.
 A plugin declares the columns of its log in its `params/logs.xml` file. The plugin types are introduced in
@@ -373,7 +374,7 @@ An insert of a pair that is already there is refused by the database.
 ### One collation
 
 Every table is `utf8mb4_unicode_ci`, as Joomla's own tables are, so a text column of one table can be
-compared with a text column of any other. Only a few columns carry a binary collation of their own: six hash and
+compared with a text column of any other. Only a few columns carry a binary collation of their own: nine hash and
 key columns that must compare bytes, two texts compared exactly (`#__alfa_media.source_url` and
 `#__alfa_orders.external_reference`), and the `params` column of `#__alfa_payments`. If your plugin creates a table,
 give it the same collation, or a query that joins it to an Alfa table can fail with "Illegal mix of collations".
@@ -394,9 +395,8 @@ therefore written twice: in the install file, for new shops, and in a new update
 shops that already exist.
 
 The installer's own script, `script.php`, works beside these files. When you update Alfa Commerce, it drops the
-columns no code reads any more, adds the columns a table lacks, reduces any link written twice to one row before a
-pair key is added, and starts the rebuild of the stored prices in the background when a release changes how they are
-worked out.
+columns no code reads, adds the columns a table lacks, and starts the rebuild of the stored prices in the background
+when a release changes how they are worked out.
 
 ### What can go wrong
 
