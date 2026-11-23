@@ -31,7 +31,7 @@ One more thing happens without an order:
 
 | In plain words | The name in the code | What it means |
 |---|---|---|
-| **A manual adjustment** | `adjustTo`, `adjust` | Staff set the quantity of an item at a location (`adjustTo`), or an extension changes it by a signed amount, for goods received or gone (`adjust`) |
+| **A manual adjustment** | `adjustTo`, `adjust` | Staff, the REST API or an extension set the quantity of an item at a location (`adjustTo`), or the REST API or an extension change it by a signed amount, for goods received or gone (`adjust`). An extension does either through `InventoryCommands`. |
 
 ```mermaid
 sequenceDiagram
@@ -355,8 +355,9 @@ movement from here, and you must not write to stock tables.
 ### onInventoryAdjusted
 
 **When it fires.** After a manual adjustment and the save is final: staff changed the stock figure of an item or of a
-combination, an item's stock tracking was changed with opening quantities (`changeTracking()`), or an extension moved
-stock with `adjust()`. Event class `InventoryAdjustedEvent`.
+combination, an item's stock tracking was changed with opening quantities (`changeTracking()`), or the REST API or an
+extension set or corrected stock with `InventoryCommands`, once for each line that moved stock. Event class
+`InventoryAdjustedEvent`.
 
 | Name for `argument()` | Meaning |
 |---|---|
@@ -365,14 +366,15 @@ stock with `adjust()`. Event class `InventoryAdjustedEvent`.
 | `locationId` | The location |
 | `quantityDelta` | The change: positive adds stock, negative removes it |
 | `movementType` | Always `adjust` |
-| `sourceType`, `sourceId` | What made the change |
+| `sourceType`, `sourceId` | What made the change: `catalog_edit` and the item for the stock editors, a tracking switch and `PATCH v1/alfa/items/units`; `api` and 0 for the REST API's adjustments; what an extension's adjustment names with `source()` |
 | `result` | `operation_id`, and `delta` when the change came from a stock figure |
 
 ### onInventoryTransferred
 
 **When it fires.** Never: no command of Alfa Commerce moves stock between locations, so core announces it from
 nowhere. The event class `InventoryTransferredEvent` and its name stay in the list of events. A move between two
-locations is two `adjust()` calls, each announced as `onInventoryAdjusted`. Nothing builds its arguments: the class adds
+locations is two lines of one adjustment (`InventoryCommands`), a negative `delta()` at one and a positive one at the
+other, each announced as `onInventoryAdjusted`. Nothing builds its arguments: the class adds
 no method to `InventoryAfterEvent`.
 
 ### onInventoryRestored
@@ -579,11 +581,13 @@ final class MainStoreAllocation implements StockAllocationProviderInterface
 
 - Letting go the reservation of a single order line, writing stock off and resolving an order line announce no
   event. A plugin cannot hear them.
-- No screen of Alfa Commerce calls `adjust()`: every screen corrects a stock figure with `adjustTo()`. An extension
-  that moves stock (a return, an import, goods received) calls `adjust()`, which announces `onInventoryAdjusted`.
+- No screen of Alfa Commerce makes a signed change: every screen sets a stock figure, through `InventoryCommands`. An
+  extension that moves stock (a return, an import, goods received) builds an adjustment with `InventoryCommands`, and
+  each line that moved stock announces `onInventoryAdjusted`.
 - Reservations do not expire by time: core orders carry no expiry, and nothing lets a reservation go by its
   deadline.
 - `ReservationPolicyInterface` (decide when an order sets stock aside) exists in the code, but Alfa always uses its
   own rule, "set aside when the order is placed". A plugin cannot supply another.
 - What staff see when a "before" listener refuses while an order's lines are edited or an order is deleted.
-- Calling a command of `InventoryService` other than `adjust()` from a plugin.
+- Calling a command of `InventoryService` from a plugin. The commands are core's own; an extension moves stock through
+  `InventoryCommands` (see [Stock](../services/stock.md#setting-or-correcting-stock-inventorycommands)).
