@@ -113,7 +113,7 @@ $result = CombinationService::create(itemId: 42)
 
 // A change of a variant: the window's fields, publication, the variant the product opens on, stock.
 $result = CombinationService::change(itemId: 42, combinationId: 305)
-    ->with(['sku' => 'SMX-WHT-512-EU', 'gtin' => '5201234567893', 'mpn' => 'SMX512W'])
+    ->set('sku', 'SMX-WHT-512-EU')
     ->set('state', 0)
     ->stock(figures: [1 => '7'], read: [1 => '5'])
     ->save();
@@ -126,7 +126,7 @@ $result = CombinationService::remove(itemId: 42, combinationIds: [305]);
 |---|---|
 | `create(int $itemId)`, `values(array $values)` | A new variant, made by its values on the generator's rules |
 | `change(int $itemId, int $combinationId)` | A change of a variant; its values never change |
-| `set(string $field, mixed $value)`, `with(array $fields)` | The window's fields: `sku`, `gtin`, `mpn`, the overrides and quantity rules, `manage_stock`, a name by its language key (`name_en_gb`), `state`, `default`. `sku`, `gtin` and `mpn` are written on every save, as the window posts them: one left out is saved empty. An override, a quantity rule or a name left out keeps its value. |
+| `set(string $field, mixed $value)`, `with(array $fields)` | The window's fields: `sku`, `gtin`, `mpn`, the overrides and quantity rules, `manage_stock`, a name by its language key (`name_en_gb`), `state`, `default`. `sku`, `gtin`, `mpn`, an override, a quantity rule or a name left out keeps its stored value; `''` clears one. |
 | `prices(array $rows)` | The variant's price rows, as the window writes them (`_mode` `price` or `adjust`, `price_status`): a row kept by its `id`, a row not sent removed. Without `prices()` the rows stay as they are. |
 | `stock(array $figures, array $read)` | Tracked figures by location, each with the figure it was read with |
 | `opening(array $figures)` | Opening stock, when the save switches tracking on or the variant is new |

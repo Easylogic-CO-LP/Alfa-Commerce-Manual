@@ -108,8 +108,8 @@ a variant created without it has none.
 change switches its stock tracking on), `overrides` (weight, dimensions, quantity rules, stock rules; null follows the
 product), `translations` (`{"en_gb": {"name": "White"}}`), `prices` (the variant's rows, a row kept by its id, a row
 left out removed; `state` as the read gives it) and `stock` (`[{"location_id": 1, "quantity": "7"}]`, the figure each
-location takes). An override, a name, `manage_stock` or `prices` left out keeps what is stored. `sku`, `gtin` and
-`mpn` are written on every change, as the variant window writes them: one left out is saved empty, so send all three.
+location takes). `sku`, `gtin`, `mpn`, an override, a name, `manage_stock` or `prices` left out keeps what is stored;
+`""` clears an identifier.
 A variant's values are what it is: `values` in a `PATCH` answers 422; make the variant with the new values and remove
 this one. A stock figure the stock records refuse leaves the rest of the change saved and is named in
 `meta.warnings`. The answer is 200 with the variant.

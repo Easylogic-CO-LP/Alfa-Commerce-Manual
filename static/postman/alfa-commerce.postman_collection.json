@@ -14982,7 +14982,7 @@
 								"{{erpCombinationId}}"
 							]
 						},
-						"description": "A change of a variant's fields; its values never change (values here answer 422). sku, gtin and mpn are written on every change: one left out is saved empty.",
+						"description": "A change of a variant's fields; its values never change (values here answer 422). sku, gtin and mpn left out keep their stored values; \"\" clears one.",
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"sku\": \"ERP-{{run}}-V2\",\n  \"state\": 0\n}"
