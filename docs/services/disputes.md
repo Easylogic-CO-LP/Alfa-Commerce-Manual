@@ -95,7 +95,7 @@ the provider); **A different dispute** books the provider's record by its state.
 ## Deleting
 
 A disputed payment cannot be deleted, and keeps its amount, type and order. An order with an undecided dispute cannot
-be deleted; once the dispute is decided it can, and its dispute records go with it.
+be deleted or put in the trash; once the dispute is decided it can, and its dispute records go with its delete.
 
 ## Disputes recorded before this release
 
