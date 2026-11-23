@@ -1,13 +1,13 @@
 ---
 title: A complete admin panel plugin
-description: "A complete plugin that adds its own administrator screen to Alfa Commerce 2.2, file by file."
+description: "A complete plugin that adds its own administrator screen to Alfa Commerce 2.3.0, file by file."
 ---
 
 # A complete admin panel plugin
 
 <CreatePluginButton type="adminpanel" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -46,6 +46,7 @@ plugins/alfa/storenotes/
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later</license>
     <version>1.0.0</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_STORENOTES_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\Alfa\Storenotes</namespace>
     <files>
