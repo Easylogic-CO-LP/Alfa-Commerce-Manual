@@ -39,11 +39,12 @@ All of them are in **Options**, **Cart**.
 
 How a price of zero reads for the customer, wherever a price is printed: on a product's page and its catalogue cards
 (the items module and the related products included), a line's price and total in the cart, the cart module and the
-added-to-cart card, the subtotal and the total, the order's page after the checkout, the order e-mails (the lines, the
-total and the `{order_total}` tag) and the printed documents (the lines and the totals).
+added-to-cart card, the subtotal and the total, the order's page after the checkout and in the customer's account, the
+order e-mails (the lines, the total and the `{order_total}` tag) and the printed documents (the lines and the totals).
 
 - **Show the amount (0,00)**: the amount, as for any price. The default.
-- **Hide**: nothing where the price would be. A subtotal or a total of zero has no row.
+- **Hide**: nothing where the price would be. A subtotal or a total of zero has no row in the cart, on the order's
+  page and in the e-mails; the printed documents keep the row, empty.
 - **Show "Call for price"**: the text of the language string `COM_ALFA_PRICE_ON_REQUEST`, which you can word your
   own way (see [The words](#the-words)).
 
@@ -52,7 +53,7 @@ the cart, the order, the payments and the REST API, which returns 0.
 
 ### Products without a price
 
-A product with no price for the customer (no price row applies to their currency, country and customer group, or the
+A product with no price for the customer (no price row applies to their currency, place and customer group, or the
 shop shows its catalogue only) cannot be added to the cart. **Products without a price show** decides what its page
 and its cards show where the price would be: the text of `COM_ALFA_PRICE_ON_REQUEST`, or nothing. It is a setting
 apart from **Zero price display** because such a product cannot be bought, while a product at 0,00 can.
@@ -78,16 +79,18 @@ amount as **Zero price display** says).
 
 Hidden, the cart and the checkout have no field for a coupon code, and the storefront takes no code: a code sent all
 the same is refused with the sentence "This shop does not take coupon codes." Cart rules that apply by themselves
-still apply, and a code the cart already holds keeps its remove button. The order builder in the administrator takes
-codes as always.
+still apply, and a code the cart already holds keeps its remove button. Codes entered in the order builder in the
+administrator are not affected.
 
 ### Order status when nothing is to be collected
 
-The status an order takes when it is placed with a total of zero. Create the status first, in **Order statuses**: give
+The status an order takes when it is placed with a total of zero. Create the status first, in **Order Statuses**: give
 it a name such as **Request for offer** and the e-mails the customer and your staff receive for it, the
-acknowledgement of the request among them. Choose one that does not require payment: a status that requires payment
-cannot open an order, and the request would not be placed. Left on **The initial status, as every other order**, a
-request lands where every order lands.
+acknowledgement of the request among them. Choose one that does not require payment: a status with **Requires
+payment** on refuses a new order unless its **Allow unpaid exception** is on too, so the request would not be placed.
+Keep it published: a request sent to a status that is unpublished or deleted lands in the initial status, and the
+notification centre says so. Left on **The initial status, as every other order**, a request lands where every order
+lands.
 
 An order paid in full with the customer's credit is not such an order: its total is not zero, and it lands in the
 initial status.
@@ -107,21 +110,25 @@ the string and write your text.
 | `MOD_ALFA_CART_COMPLETE_ORDER_BUTTON` | Complete Order | Send the request |
 | `COM_ALFA_PRICE_ON_REQUEST` | Call for price | Price on request, or your phone number |
 
-The order e-mails and the printed documents read the administrator's language, so make the override of
-`COM_ALFA_PRICE_ON_REQUEST` for **Administrator** as well. Make each override in every language the site speaks.
+The order e-mails and the printed documents take their texts from the administrator's language files, and those sent
+or printed from the administrator (a status staff set, the payment link, a document) read the administrator's
+overrides, so make the override of `COM_ALFA_PRICE_ON_REQUEST` for **Administrator** as well. Make each override in
+every language the site speaks.
 
 ## Shipping: a free method by arrangement
 
-The request carries no shipping cost. Create a shipping method in **Shipping methods** with the Standard plugin, name
+The request carries no shipping cost. Create a shipping method in **Shipment Methods** with the Standard plugin, name
 it **By arrangement** and set no cost on it: it charges nothing, so the request's total stays zero. The delivery and
 its cost, if any, are part of the offer you write.
 
 ## Payment: a gateway that can be paid later
 
-At the checkout the customer still chooses a payment method; with nothing to collect, nothing is charged. Offer the
-online payment method you want the offer paid with. **Pay now** and **Send payment link** work only with a gateway
-that can open a new payment for an order that already exists, which its plugin declares; core's Standard method (cash on delivery, a bank
-transfer) is paid outside the shop and never shows **Pay now**: you record its payment by hand.
+At the checkout the customer still chooses a payment method; with nothing to collect, there is nothing to charge: a
+gateway charges what the order still owes. Offer the online payment method you want the offer paid with. **Pay now**
+and **Send payment link** work only with a gateway that can open a new payment for an order that already exists, which
+its plugin declares (`supportsPayAgain()`, see
+[Paying an order again](../plugins/payment-plugins.md#paying-an-order-again)); core's Standard method (cash on
+delivery, a bank transfer) is paid outside the shop and never shows **Pay now**: you record its payment by hand.
 
 ## What staff do next
 
@@ -129,14 +136,14 @@ transfer) is paid outside the shop and never shows **Pay now**: you record its p
    centre.
 2. Open the order. For each line, open the line and in **Price** choose **Set a custom unit price**, then enter the
    price you offer. The order's total, its tax and its documents follow the prices you set.
-3. The order now owes its new total. Its payments panel shows the balance due, and the order reads as awaiting
-   payment, on the order screen and on the customer's order page.
+3. The order now owes its new total. On the order screen, **Order Totals** shows it as **Balance Due**, and the
+   customer's order page reads **Awaiting payment**.
 4. Move the order to the status that means the offer is sent, if you have one, and press **Send payment link** in the
    order's payments panel. The customer receives the order e-mail with **Pay now**, the link to the order's payment
    step; the order's page in their account and the page they reached after the checkout show **Pay now** too. Nothing
    is paid from the administrator.
-5. The customer pays through the gateway. The payment is recorded on the order, and the gateway's status settings
-   move the order as for any paid order.
+5. The customer pays through the gateway. The payment is recorded on the order, and the payment method's status
+   settings move the order as for any paid order.
 
 The customer pays the same order: nothing is placed again, no stock moves and no second confirmation e-mail is sent.
 
@@ -148,7 +155,7 @@ The customer pays the same order: nothing is placed again, no stock moves and no
 | Prices hidden or "Call for price" | **Options**, **Cart**, **Zero price display** |
 | A cart without amounts | **Options**, **Cart**, **The cart shows** |
 | No coupon field | **Options**, **Cart**, **Coupon field** |
-| The request's status | **Order statuses**, then **Options**, **Cart**, **Order status when nothing is to be collected** |
+| The request's status | **Order Statuses**, then **Options**, **Cart**, **Order status when nothing is to be collected** |
 | Request an offer | **Language Overrides**, `COM_ALFA_CART_ADD_TO_CART` |
 | Free shipping | A Standard shipping method with no cost |
 | Pricing and the payment link | The order screen: each line's **Price**, then **Send payment link** |
