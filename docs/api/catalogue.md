@@ -90,8 +90,9 @@ and counts only when the body carries `stock` or `inventory_stock`. For a produc
 `stock`, one figure. For several locations send `inventory_stock`, an object of location id to figure, each figure
 the stock to hold there: `{"manage_stock": 1, "inventory_stock": {"1": "3", "2": "2"}}`. The ids are those of
 `v1/alfa/locations`. A product with combinations holds its stock on them. Another shape is refused with 422. A
-product that tracks stock reads `stock` 0 when it holds none; one that does not track stock reads null, or the figure
-its stock records kept when it stopped tracking stock. See [Stock](../services/stock.md).
+product that tracks stock reads `stock` and `available_quantity` 0 when it holds no stock record; one that does not
+track stock reads null for both, or the figures its stock records kept when it stopped tracking stock. See
+[Stock](../services/stock.md).
 
 **A list row holds:** `id`, `name`, `alias`, `sku`, `gtin`, `mpn`, `state`, `stock`, `available_quantity`,
 `manage_stock`, `stock_action`, `is_virtual`, `combination_count`, `id_category_default`, `category_ids`,
@@ -105,7 +106,7 @@ its stock records kept when it stopped tracking stock. See [Stock](../services/s
 `prices_state`, the state of its own price rows, for [Many units in one request](#many-units-in-one-request).
 
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
-`robots`. Left out, each stays as it was.
+`robots`, `related`. Left out, each stays as it was.
 
 **Prices written by two systems.** One record holds `prices_state`, the state of the item's own price rows (32
 hexadecimal digits). A `PATCH` that sends `prices` may send the `prices_state` it read with them: when the item's
@@ -119,14 +120,18 @@ reading. A program that reads an item and sends it back leaves them out. Set the
 administrator. A create or change that carries any of these keys answers 422 naming them, and nothing is saved. A
 refused change leaves the item as it was; it is not checked out. The keys are `fields`,
 `options`, `combinations`, `informational`, and the item form's `combinations_default`, `deleted_combination_ids`,
-`deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required`,
-`item_downloads` and `related`. For a body that carries `options`, the reason reads: "options cannot be written through
-the API: an item's options, combinations, item field values, downloads and related products are edited on its page in
-the administrator. Send the item without them; nothing was saved."
+`deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required` and
+`item_downloads`. For a body that carries `options`, the reason reads: "options cannot be written through the API: an
+item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
+item without them; nothing was saved."
 
-`related` lists the ids of the products the item's page shows as related, in their order. It is for reading: set them
-on the product's Related tab in the administrator. A create or change that carries it answers 422 naming it, and
-nothing is saved; a change that leaves it out keeps the item's related products.
+`related` lists the products the item's page shows as related, in their order, each
+`{"item_id": 57, "combination_id": 305, "values": {"3": 12}}`: the product, the combination its card opens on (null
+for none) and the values chosen for it, an object of item field id to value id. A create or change that carries
+`related` writes the list whole, in the order sent, as the product's Related tab does: `[]` removes every related
+product, and a change that leaves it out keeps them. A row naming the product itself, a product that does not exist,
+a product named twice, or a combination or a value the linked product does not offer answers 422 naming the row
+(`related[0]`), and nothing is saved.
 
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
