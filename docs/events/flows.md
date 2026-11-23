@@ -422,6 +422,7 @@ Which events a command announces:
 | All reservations of an order are let go | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
 | Staff correct a figure | `adjustTo()` | None | `onInventoryAdjusted` |
 | An extension moves stock by a signed amount | `adjust()` | None | `onInventoryAdjusted` |
+| Stock is put back, or taken off again when a credit note is voided | `restore()`, `reverseRestores()` | None | `onInventoryRestored` |
 
 What the picture means:
 
