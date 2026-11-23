@@ -6,15 +6,15 @@ description: What a service is in Alfa Commerce, the service areas with one line
 
 # Services overview
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A **service** is a class that does one job of the shop and is the only place that does it: write an order, change
 an order's status, record a payment, issue a document, calculate a cart. Screens, the REST API and plugins all end
 up in the same service, so the same rules apply whoever asked.
 
 Most services are **core's own**. An extension does not call them. It takes part through a **door**: an event it
-handles, a method of the base class it extends, or a reader object that Alfa hands it. This page lists the service
-areas and names the door for each.
+handles, a method of the base class it extends, a reader object that Alfa hands it, or one of the few calls
+[Calling core](../plugins/calling-core.md) lists. This page lists the service areas and names the door for each.
 
 Read [How events reach a plugin](../events/how-events-reach-a-plugin.md) first. The words "commit", "ledger" and
 "background work" are in the [Glossary](../reference/glossary.md).
@@ -25,8 +25,8 @@ The services live in two folders:
 
 | Folder | What is in it |
 |---|---|
-| `administrator/src/Service` | 21 folders and the file `PriceIndexSyncService.php`. The services that write: orders, payments, shipments, documents, stock, background work. |
-| `site/src/Service` | 13 folders and the file `Router.php`. The storefront's services: the cart, the checkout, prices, and the readers that plugins receive. |
+| `administrator/src/Service` | 24 folders and the file `PriceIndexSyncService.php`. The services that write: orders, payments, shipments, documents, stock, background work. |
+| `site/src/Service` | 14 folders and the file `Router.php`. The storefront's services: the cart, the checkout, prices, and the readers that plugins receive. |
 
 The column **For extensions?** in the tables below has three answers:
 
@@ -45,27 +45,30 @@ section when you need to understand what a service guarantees, so that your plug
 
 | Area | What it is for | For extensions? | Read more |
 |---|---|---|---|
+| `Api` | The routes `alfa` plugins add to the REST API (`ApiRouteRegistrar`, `ApiRouteRegistry`) | Yes, through the events `onAlfaBeforeApiRoute` and `onAlfaApiRequest` | [Adding routes to the REST API](../plugins/api-route-plugins.md) |
 | `Card` | The cards Alfa itself puts on the store's home screen (`CoreCardProvider`) | Yes, through the event `onAlfaCollectCards` | [Dashboard cards](../events/notification-and-setup-events.md#dashboard-cards) |
-| `Cart` | Every write to the cart tables (`CartRepository`), whose cart it is and who operates it (`CartSubject`), the cart's lifetime, and the objects that cart events hand to plugins (`Cart/Plugin`) | Read only, plus one builder: the charge a plugin declares in `onCartTotals` | [Cart and checkout](./cart-and-checkout.md) |
-| `Catalog` | Who may see which items and categories (`CatalogAccessPolicy`), and the notices sent when that changes | Yes, through the events `onCatalogVisibilityChanged` and `onAlfaCatalogEntityChanged` | [Item and catalogue events](../events/item-and-catalogue-events.md#keeping-your-own-copy-of-the-catalogue) |
+| `Cart` | Every write to the cart tables (`CartRepository`), whose cart it is and who operates it (`CartSubject`), the cart's lifetime, and the objects that cart events hand to plugins (`Cart/Plugin`) | Read only, plus one builder (the charge a plugin declares in `onCartTotals`) and one call, `OperatorCheckout::authorized()` | [Cart and checkout](./cart-and-checkout.md), [Calling core](../plugins/calling-core.md#the-shops-data) |
+| `Catalog` | Who may see which items and categories (`CatalogAccessPolicy`), the notices sent when that changes, and the readers of a product's stock and price changes (`CommerceChange`, `PricesState`, `StockPriceList`) | Yes, through the events `onCatalogVisibilityChanged` and `onAlfaCatalogEntityChanged`, and those three readers | [Item and catalogue events](../events/item-and-catalogue-events.md#keeping-your-own-copy-of-the-catalogue), [Calling core](../plugins/calling-core.md#products-their-stock-and-their-prices) |
 | `Catalog` (saving a product) | The one way a product is saved, by the item screen, the REST API and an extension (`ItemWriteService`) | Yes, `ItemWriteService::create()` or `change()`, then `save()` | [Saving a product](./products.md) |
 | `ClearData` | How core calls an extension's Clear Data and records it (`ClearDataExtensions`) | Yes, through the event `onClearData` | [Addressed to one plugin](../events/how-events-reach-a-plugin.md#addressed-to-one-plugin-targeted) |
 | `Credit` | Customer credit, as a list of entries that is only added to (`CustomerCreditLedger`) | No, core's own | |
 | `Document` | Issuing and voiding sales documents (`DocumentIssuer`), drawing them as a page or a PDF | Yes, through three events. The code does not settle whether an extension may call `DocumentIssuer`. | [Documents](./documents.md) |
 | `DocumentTypes` | The list of document types (`DocumentTypeRegistry`) | Yes, through the event `onCollectDocumentTypeProviders` | [Adding a document type](../events/document-events.md#the-provider-contract-adding-a-document-type) |
-| `Download` | Download access for bought files: granting, removing and serving it (`Entitlements`) | No, core's own | |
+| `Download` | Download access for bought files: granting, removing and serving it (`Entitlements`), and the store the files are kept in (`Storage`) | Yes, one call: `Storage::root()`, the store's folder, where a plugin keeps files of its own | [Calling core](../plugins/calling-core.md#installing-an-extension-and-keeping-its-files) |
 | `Inventory` | Stock. `InventoryService` is the only writer of stock. | Yes, through the stock events and a stock allocation provider | [Stock](./stock.md), [Stock events](../events/stock-events.md) |
 | `ItemFields` | Turns an item field or value id into its display name (`ItemFieldDisplayResolver`) | No, core's own | |
 | `Log` | Every log category Alfa writes to, registered in one place (`AlfaLog`) | No, core's own. A payment or shipping plugin logs through its base class. | [Payment plugins: Logging](../plugins/payment-plugins.md#logging) |
 | `Maintenance` | "Clear everything" and "Reset to default" (`FactoryReset`, `ResetToDefault`) | No, core's own. Your data is cleared through `onClearData`. | |
-| `Media` | Making the gallery thumbnails again (`ThumbnailRecreation`) | No, core's own | [Media plugins](../plugins/media-plugins.md) |
-| `Order` | Writing orders (`OrderCreator`), changing their status (`Transition`), the two ledgers, the status e-mails | Yes, through the payment and shipping base classes and the order events | [Orders](./orders.md), [Payments and shipments](./payments-and-shipments.md) |
+| `Media` | Making the gallery thumbnails again (`ThumbnailRecreation`), and fetching the images a write gives by their address (`MediaFetch`, `MediaUrls`) | Yes, `MediaFetch` and `MediaUrls` | [Media plugins](../plugins/media-plugins.md), [Calling core](../plugins/calling-core.md#products-their-stock-and-their-prices) |
+| `Order` | Writing orders (`OrderCreator`), changing their status (`Transition`), the two ledgers, the status e-mails | Yes, through the payment and shipping base classes, the order events, and the calls listed on Calling core | [Orders](./orders.md), [Payments and shipments](./payments-and-shipments.md), [Calling core](../plugins/calling-core.md#orders-payments-and-statuses) |
+| `Outbound` | Telling other systems of the shop's changes: what each consumer is owed (`OutboundFeed`), the consumers (`OutboundConsumers`), the delivery (`OutboundDelivery`) and the check of an outside address (`OutboundAddressGuard`) | Yes, as a consumer plugin through the events `onAlfaOutboundTopics` and `onAlfaOutboundDeliver`, and the calls `OutboundFeed`, `OutboundConsumers::ofPlugin()` and `OutboundAddressGuard` | [Outgoing notifications](../api/notifications.md), [Calling core](../plugins/calling-core.md#outgoing-changes-and-background-work) |
+| `Place` | The places a new shop gets, and the subdivisions a shop can add (`PlaceSeed`) | No, core's own | |
 | `PriceIndexSyncService.php` | Builds and maintains the stored prices (the price index) | Yes, through the event `onAlfaPricesChanged` | [Pricing](./pricing.md), [Item and catalogue events](../events/item-and-catalogue-events.md#onalfapriceschanged) |
 | `Projection` | Sends an item change to everything that stores data derived from the item (`ProjectionManager`) | Yes, through the event `onCollectCatalogProjections` | [Search engine plugins](../plugins/search-plugins.md#oncollectcatalogprojections) |
 | `Search` | Catalogue search, and which search engine serves it (`CatalogSearchService`, `SearchEngineRegistry`) | Yes, as a search engine plugin | [Search engine plugins](../plugins/search-plugins.md) |
-| `Setup` | The component's own setup checks and the steps of an installation | Yes, through the event `onAlfaCollectSetupChecks` | [Setup checks](../events/notification-and-setup-events.md#setup-checks) |
+| `Setup` | The component's own setup checks and the steps of an installation | Yes, through the event `onAlfaCollectSetupChecks`, and `AlfaInstallerGate` for an extension's installer | [Setup checks](../events/notification-and-setup-events.md#setup-checks), [The installer gate](../plugins/overview.md#the-installer-gate) |
 | `Stats` | The figures behind core's dashboard cards (`DashboardStatsService`) | No, core's own | |
-| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | No, core's own. A plugin cannot register a task of its own. | |
+| `Task` | [Background work](../reference/glossary.md#background-work): what a change owes after its save is final, and long work done a part at a time (`Tasks`, `Runner`) | Yes, for a plugin of an `alfa` group: it declares tasks and jobs of its own and asks for them through `BackgroundWork` (in `administrator/src/Background`) | [Background work](../architecture/background-work.md), [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
 | `Tools` | The component's own tools on the Tools screen (`CoreToolProvider`) | Yes, through the events `onGetToolActions` and `onExecuteToolAction` | [Other things a plugin can add](../plugins/admin-screen-plugins.md#other-things-a-plugin-can-add) |
 | `ValuePool` | The values a rule builder offers for one field | No, core's own | |
 
@@ -75,12 +78,13 @@ section when you need to understand what a service guarantees, so that your plug
 |---|---|---|---|
 | `Cart` | What an application may ask of a cart (`CartService`), its totals, and the cart as a plugin reads it (`Cart`, `CartLine`) | Read only in events. A module may call `CartService`. | [Cart and checkout](./cart-and-checkout.md) |
 | `CartRules` | Works out which cart rules and coupons apply to a cart (`CartRulesEngine`) | No, core's own | [Cart and checkout](./cart-and-checkout.md#cart-rules) |
+| `Catalog` | The related products a visitor sees on a product's page (`RelatedProducts`) | No, core's own | |
 | `Checkout` | Placing an order from a cart (`OrderPlacement`) | No, core's own. A plugin takes part through the placement events. | [Cart and checkout](./cart-and-checkout.md#placing-an-order) |
 | `Data` | One reader for the data a plugin keeps on a payment or shipment row (`PluginPayload`) | Read only | [Shipping plugins: Facts of your own on a parcel](../plugins/shipment-plugins.md#facts-of-your-own-on-a-parcel) |
 | `Facet` | Sorts item field values into the groups a filter shows (`FacetGroupResolver`) | Yes, through an item field plugin's event `onItemFieldValueFacetGroups` | [Item field plugins](../plugins/item-field-plugin-events.md#onitemfieldvaluefacetgroups) |
 | `FieldState` | The state a page builds once for fields that depend on each other (`StateBag`) | No, core's own | |
 | `Order` | The order, the payment and the shipment as a plugin reads them (`Order`, `Payment`, `Shipment`) | Read only | [Orders](./orders.md#the-order-reader) |
-| `Place` | The tree of countries, regions and towns, read once per request (`PlaceTree`). `PlaceTree::countryOf()` gives the country of any place with its ISO codes, since a place inside a country carries no codes of its own, and `PlaceTree::forget()` makes the next question read the tree again, for a process that prices in a loop. | No, core's own | |
+| `Place` | The tree of countries, regions and towns, read once per request (`PlaceTree`). `PlaceTree::countryOf()` gives the country of any place with its ISO codes, since a place inside a country carries no codes of its own, and `PlaceTree::forget()` makes the next question read the tree again, for a process that prices in a loop. | Yes, one call: `PlaceTree::countryOf()` | [Calling core](../plugins/calling-core.md#the-shops-data) |
 | `Pricing` | Price calculation, and the `Money` object every amount is handed over as | Read only: plugins receive and pass `Money` | [Pricing](./pricing.md) |
 | `Router.php` | The storefront's address routing | No, core's own | |
 | `Shipping` | A shipping charge with its tax (`ShippingCharge`), and which tax rules a charge carries | No, core's own. A shipping plugin answers the price in `onCalculateShippingCost`. | [Shipping plugins](../plugins/shipment-plugin-events.md#oncalculateshippingcost) |
@@ -98,7 +102,7 @@ section when you need to understand what a service guarantees, so that your plug
 | React to a status change | The event `onOrderStatusChange` | [Order and cart events](../events/order-and-cart-events.md#onorderstatuschange) |
 | Refuse an order before it is placed | The event `onOrderPlaceValidate` | [Order and cart events](../events/order-and-cart-events.md#onorderplacevalidate) |
 | Add a charge to the cart | The event `onCartTotals` and its builder | [Order and cart events](../events/order-and-cart-events.md#oncarttotals) |
-| Read the cart in a module | `CartService::ambient()->read(CartResolution::Current)` | [Cart and checkout](./cart-and-checkout.md#reading-the-cart-in-a-module) |
+| Read the cart in a module | `CartService::ambient()->summary(CartResolution::Current)` | [Cart and checkout](./cart-and-checkout.md#reading-the-cart-in-a-module) |
 | Move an order to another status | From a payment plugin: `orderTransition()`. From a feature plugin: `Transition`, which no shipped plugin calls. For a shipping plugin the code does not settle it. | [Orders](./orders.md#transition) |
 | Create an order without a cart | `OrderCreator::create()`. The code expects a plugin as a caller, and no shipped extension calls it. Read the limits first. | [Orders](./orders.md#who-may-call-it) |
 | Read an order's lines, addresses, payments and parcels | The `Order` reader an event hands you | [Orders](./orders.md#the-order-reader) |
@@ -107,6 +111,7 @@ section when you need to understand what a service guarantees, so that your plug
 | Add a document type | A document type provider | [Document events](../events/document-events.md#the-provider-contract-adding-a-document-type) |
 | Tell staff about something that needs them | `NotificationHelper::push()` | [Notifications](./notifications.md) |
 | Keep my own copy of prices or of the catalogue | `onAlfaPricesChanged`, or a projection | [Item and catalogue events](../events/item-and-catalogue-events.md#keeping-your-own-copy-of-the-catalogue) |
+| Do work of my own in the background, or every so often | From a plugin of an `alfa` group: the tasks and jobs it declares in `onAlfaDeclareWork`, asked for through `BackgroundWork::of($this)` | [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
 
 ## What you must provide
 
