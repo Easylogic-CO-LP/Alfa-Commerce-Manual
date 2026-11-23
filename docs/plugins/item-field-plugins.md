@@ -8,7 +8,7 @@ description: How to write a plugin that adds a new type of item field, the prope
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -122,13 +122,12 @@ sequenceDiagram
     Alfa->>Shopper: Shows the cart line with its price
 ```
 
-Steps 5 and 6 happen only for a field that takes a composition and was sent one. Step 10 happens only when the
+Steps 5 and 6 happen only for a field that takes a composition and was sent one. Step 9 happens only when the
 line carries a composition.
 
-At step 7 the storefront writes the cart line's row and then one row for each field choice, one statement after
-the other, with no database transaction around them. Each write is final as soon as it is made, so there is no
-later commit to wait for. If the write of a field choice fails, the shopper is told that the item could not be
-added, and the line's row that was already written is not taken back.
+At step 7 the storefront writes the cart line's row and one row for each field choice in one database
+transaction. If the write of a field choice fails, the line's row goes with it, so the cart never keeps a line
+without its choices, and the shopper is told that the item could not be added.
 
 ## What you must provide
 
@@ -154,7 +153,8 @@ plugins/alfa-item-fields/choice/
 ### The base class
 
 Your class extends `Alfa\Component\Alfa\Administrator\Plugin\ItemFieldsPlugin`
-(`administrator/src/Plugin/ItemFieldsPlugin.php`). A plugin in this group that does not extend it is never called.
+(`administrator/src/Plugin/ItemFieldsPlugin.php`). Alfa never addresses an event to a plugin in this group that does
+not extend it.
 
 **How you handle an event.** You write a public method with the event's name; Alfa calls it on the field's own
 plugin. Do not list these events in `getSubscribedEvents()`.
@@ -199,7 +199,8 @@ Both files are optional.
 | `params/params.xml` | `<fields name="itemfieldsparams">` | With the field | `$event->getField()->params_decoded` (an array) |
 | `params/value.xml` | `<fields name="valueparams">` | With each value of the field | Each value's `params_decoded` |
 
-Alfa stores both as JSON and never reads their content.
+Alfa stores both as JSON and never reads your settings. The field's own condition (ShowOn) is kept in the same
+JSON of the field, under `showon` and `showon_effect`, so do not use these two names in `params.xml`.
 
 ## What happens next
 
@@ -233,7 +234,8 @@ current visitor does not hold. Alfa never asks another plugin instead.
 | Orders already placed | They keep their amounts |
 | An administrator action of the plugin | Refused with a message |
 
-Alfa writes one warning per plugin and request to Joomla's log, category `com_alfa.pricing`.
+When the cart or the price needs the plugin, Alfa writes one warning per plugin and request to Joomla's log,
+category `com_alfa.pricing`.
 
 :::warning Access must be Public
 A guest sees item pages and fills carts. An item field plugin whose Access (Extensions: Plugins) is not Public is
@@ -258,9 +260,9 @@ The names of fields and values are not the plugin's. Staff type them per languag
 | What you see | The usual cause |
 |---|---|
 | Your method is never called | The class does not extend `ItemFieldsPlugin`, the method's name is not exactly the event's, or the method is not public |
-| A targeted event never arrives | It was listed in `getSubscribedEvents()`. Targeted events are never delivered from there. |
+| An error in the log, category `com_alfa.plugins`: the plugin "lists ... both as a targeted handler and on the shared dispatcher" | A targeted event was also listed in `getSubscribedEvents()`. Alfa still calls your method directly; take the event out of that list. |
 | The field shows for staff and not for guests | The plugin's Access is not Public |
-| "declared a variant selector ... but the field is NOT a combination dimension" | `variantSelector()` was used for an option, or `optionSelector()` for a variant field |
+| "declared a variant selector ... but the field is NOT a combination dimension", or "declared a option selector ... but the field IS a combination dimension" | `variantSelector()` was used for an option, or `optionSelector()` for a variant field |
 | Picking a value does nothing | The input does not use `$inputName`, or lacks `data-item-reload` |
 | The field is on the item page and not on the cards | "Show on listings" is off for the field, or `onItemListPrepare` is not written |
 | A composition is refused with "cannot take a custom design" | The plugin has no `onPrepareForCart` method |
@@ -273,7 +275,8 @@ Rules every item field plugin follows:
 
 - Every event of this family except `onItemsListPrepare` is addressed to the field's own plugin, on its public
   method with the event's name. A plugin that extends the base class has a method for most of them already.
-- A disabled item field plugin is never started.
+- A disabled item field plugin is never started, except for Clear Data (Tools: Extensions, or Clear everything),
+  which runs its `onClearData` whether it is enabled or not.
 - A cart line that needs an unavailable plugin is never priced without it. It stays in the cart without a price
   and cannot be ordered.
 
@@ -281,8 +284,7 @@ Rules every item field plugin follows:
 
 - The screens where staff define fields and values and build an item's combinations and options.
 - How Alfa finds the combination for a set of picks, and how stock and price follow it.
-- Field conditions on item fields beyond the reference above, and how a plugin publishes its own state for
-  them.
+- Field conditions (ShowOn) on item fields, and how a plugin publishes its own state for them.
 - The full list of properties of the item, the field and the cart line that the events carry.
 - How the admin order line editor sends compositions and files, and how the storefront sends full compositions
   and uploads.
