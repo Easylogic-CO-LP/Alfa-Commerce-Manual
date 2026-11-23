@@ -74,6 +74,8 @@ Use Browser Caching: each is purged by its own means.
 Where a product's price would be, its page and its cards say **Call for price**. To word it your own way (a phone
 number, "Ask us"), override the language string `COM_ALFA_PRICE_ON_REQUEST` in Joomla's **Language Overrides** for the
 site; an override with no text shows nothing there. While the shop sells, a product with no price shows nothing there.
+A product that cannot be bought now and whose stock rule offers **Notify me when available** keeps that button in the
+catalogue too: it is drawn beside the add to cart, not in its place.
 
 While the shop shows its catalogue only, the notification centre says so, with the note **Online sales**. The
 site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and publish it
