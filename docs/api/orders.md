@@ -60,8 +60,9 @@ your shop.
 | `payment` | `id_payment_method`, `amount`, `transaction_status` (`pending`, the default, or `completed`), `transaction_id` | `id_payment_method`, `amount` |
 
 A line is priced as the shop prices it for this customer, unless it states its own price. The payment is judged
-against the lines and the shipping charge: it cannot be more than the order owes. The parcel carries no lines yet;
-give it its lines with [Change a parcel](#shipments). An order takes its payment and shipping methods from its
+against the lines and the shipping charge: it cannot be more than the order owes. The parcel carries every unit of the
+lines the create wrote, and its method is judged against them: a method that does not deliver one of them is
+refused at `/shipment`, as a part the shop refuses. An order takes its payment and shipping methods from its
 payments and parcels: send them inside `payment` and `shipment`. `id_payment_method`, `payment_method_name`,
 `id_shipment_method` or `shipment_method_name` at the top level of the body is refused with 422, and nothing is
 created.
