@@ -91,15 +91,12 @@ and counts only when the body carries `stock`. See [Stock](../services/stock.md)
 **Related lists you can send:** `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices`,
 `robots`. Left out, each stays as it was.
 
-**Options, combinations and item field values** (`fields`, `options`, `combinations`, `informational`) are for
-reading. A program that reads an item and sends it back leaves them out. Set them on the item's page in the
-administrator. A create or change that carries any of these keys answers 422 naming them, and nothing is saved. A
-refused change leaves the item as it was; it is not checked out. The keys are `fields`,
-`options`, `combinations`, `informational`, and the item form's `combinations_default`, `deleted_combination_ids`,
-`deleted_option_value_ids`, `deleted_info_value_ids`, `info_values`, `field_order`, `field_required` and
-`item_downloads`. For a body that carries `options`, the reason reads: "options cannot be written through the API: an
-item's options, combinations, item field values and downloads are edited on its page in the administrator. Send the
-item without them; nothing was saved."
+**A product with its graph.** A create or change also takes `field_values`, `options`, `informational` and
+`combinations` (each variant with its `stock`), written with the product in one transaction, in a fixed order: see
+[A product with its graph](./variants.md#a-product-with-its-graph). The read's `fields` and the item form's own lists
+(`combinations_default`, `deleted_combination_ids`, `deleted_option_value_ids`, `deleted_info_value_ids`,
+`info_values`, `field_order`, `field_required`, `item_downloads`) are not keys of the API: a create or change that
+carries one answers 422 naming it, and nothing is saved; the item is not checked out.
 
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
@@ -142,8 +139,8 @@ that it was archived instead of deleted.
 
 A SKU names one product or one variant: a write that gives a product a SKU another product or variant holds answers
 409 naming the holder, nothing saved. A copy of a product made in the item screen is saved without its original's
-SKU. A product's variants, and stock set or corrected by SKU or by id, have routes of their own: see
-[Variants and stock](./variants.md).
+SKU. A product's variants, options, specifications and item field values, and stock set or corrected by SKU or by id,
+have routes of their own: see [Variants and stock](./variants.md).
 
 ### Images given by their address
 
@@ -256,9 +253,9 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 
 **One record holds also:** `description`, `categories`, `translations`.
 
-**Related lists you can send:** `categories`. Edit a field's values on its page in the administrator: a create or
-change that carries `values` or `deleted_value_ids` answers 422 naming them, and nothing is saved; the field is not
-checked out.
+**Related lists you can send:** `categories`. A field's values have routes of their own: see
+[Item field values](./variants.md#item-field-values). A create or change of the field that carries `values` or
+`deleted_value_ids` answers 422 naming them, and nothing is saved; the field is not checked out.
 
 **Delete.** Only an item field in the trash is deleted; any other answers 409 and nothing is deleted. Move it to the
 trash first (`PATCH` with `state` -2). Deleting an item field that items still use (their combinations, offered
@@ -322,4 +319,3 @@ The price here is worked out when you ask, by the same pricing code as the item 
 ## Not documented yet
 
 - The parts of the `price` object one by one, and the `variant`, `combinations` and `cartState` objects.
-- How to send combinations and item field values of an item in a write. The API has no supported way to write them.
