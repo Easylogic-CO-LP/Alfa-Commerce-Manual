@@ -56,7 +56,7 @@ libraries. A one line fix and a new feature follow the same path.
 | You need | Why |
 |---|---|
 | PHP 8.3 or newer | The installer refuses an older PHP. 8.4 is recommended. |
-| Joomla 6.1 or a later Joomla 6 release | The installer refuses Joomla 6.0 and older. It also refuses Joomla 7. In both cases nothing is installed. |
+| Joomla 6.2 or a later Joomla 6 release | The installer refuses an older Joomla. It also refuses Joomla 7. In both cases nothing is installed. |
 | MySQL 8.0.13 or newer, or MariaDB 10.6 or newer | The database requirement of the release. |
 | Git and a GitHub account | To commit and to open the pull request. |
 | GitHub Desktop (optional) | For the path below that needs no terminal. |

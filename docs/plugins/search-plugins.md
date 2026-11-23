@@ -372,8 +372,10 @@ ProjectionInterface $projection, string $version = ''): static`. The contributor
 group.element; it answers the event, so further projections chain on.
 
 **What you are expected to do.** Only if your plugin keeps item data of its own besides the search index: add an
-object that implements `ProjectionInterface` (`syncItem(int $itemId)`, `syncItems(array $itemIds)`,
-`deleteForItem(int $itemId)`). The list is written only through
+object that implements `ProjectionInterface`: `syncItem(int $itemId)`, `syncItems(array $itemIds)`,
+`syncItemsOrFail(array $itemIds)` (the catalogue rebuild's call: let a failure reach Alfa, which marks the items owed),
+`deleteForItem(int $itemId)` and `deleteForItems(array $itemIds)` (a removal hands you the whole selection in one
+call). The list is written only through
 `addProjection()`. Setting the projections argument (`setArgument()` or `$event['projections']`) throws a
 `BadMethodCallException`, and `getArgument('projections')` reads `null`; `getProjections()` is the reader.
 
