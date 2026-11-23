@@ -308,7 +308,7 @@ No terminal needed.
 
 Fork the repository on GitHub, then in Desktop clone **your** fork instead of step 1. When asked "How are you
 planning to use this fork?", choose **To contribute to the parent project**. Steps 2 to 8 are unchanged. Your pull
-request targets the parent's `developer`. A pull request from a fork gets no AI review.
+request targets the parent's `developer`. A pull request from a fork gets no AI review when it is opened or updated.
 
 </details>
 
@@ -355,7 +355,8 @@ git merge upstream/developer
 ```
 
 Steps 3 to 5 and 7 are unchanged; your push goes to your fork. In step 8, open the pull request from your fork into
-`developer` of `Easylogic-CO-LP/Alfa-Commerce`. A pull request from a fork gets no AI review.
+`developer` of `Easylogic-CO-LP/Alfa-Commerce`. A pull request from a fork gets no AI review when it is opened or
+updated.
 
 </details>
 
@@ -457,8 +458,8 @@ GitHub runs these on your pull request. Each has its own page.
 | [Copy-clean](../tooling/workflows#copy-clean) | Refuses unclean comments and texts, see the rules above. | Yes. |
 | [Media forms](../tooling/workflows#media-forms) | Checks that every style and script has its `.min` and `.min.gz`, that every registration names the `.min` file, and that each `.min` is the one the build made from its source as it is now. It runs in the Copy-clean job. | Yes. |
 | [PHPStan](../tooling/phpstan) | Reads the code for likely bugs and prints its findings on the run's page. | Yes, when it finds something beyond the baseline. Open the run and read what it found. |
-| [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript and the PHP Alfa Commerce ships for security problems, and the history for secrets that are live. | Yes, when it finds a problem in the PHP, a live secret, or one of its steps breaks. |
-| [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. It runs only for a pull request from a branch of this repository, by a person with write access. | It posts comments. Nothing in its file fails a pull request because of a finding. |
+| [Security Scan](../tooling/workflows#security-scan) | Scans the JavaScript and the PHP Alfa Commerce ships for security problems, and the commits of the pull request for secrets that are live. | Yes, when it finds a problem in the PHP, a live secret, or one of its steps breaks. |
+| [AI review](../tooling/workflows#the-ai-review) | Reads the reviewer rulebook, then comments on the changed lines. It runs for a pull request from a branch of this repository, and for a comment that contains `@claude` on a pull request, each time only for a person with write access. | It posts comments. Nothing in its file fails a pull request because of a finding. |
 
 Code Quality and Security Scan run only for pull requests into `main` or `developer`. Which checks must be green
 before a merge is set in the repository's branch rules on GitHub, which are not part of the code. All details are on
@@ -467,8 +468,8 @@ before a merge is set in the repository's branch rules on GitHub, which are not 
 After PHP CS Fixer commits to your branch, pull before you commit again.
 
 A pull request from a fork runs the same checks, but PHP CS Fixer cannot push to the fork's branch: when it changes a
-file, its commit step fails and the check turns red. The AI review does not run. Running the fixer on your computer
-before you push is required, from the root of the repository, so that it finds nothing left to fix:
+file, its commit step fails and the check turns red. The AI review does not run by itself. Running the fixer on your
+computer before you push is required, from the root of the repository, so that it finds nothing left to fix:
 
 ```bash
 php-cs-fixer fix --config=.php-cs-fixer.php --allow-risky=yes --diff
