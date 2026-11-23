@@ -380,7 +380,7 @@ extension set or corrected stock with `InventoryCommands`, once for each line th
 | `locationId` | The location |
 | `quantityDelta` | The change: positive adds stock, negative removes it |
 | `movementType` | Always `adjust` |
-| `sourceType`, `sourceId` | What made the change: `catalog_edit` and the item for the stock editors, a tracking switch and `PATCH v1/alfa/items/units`; `api` and 0 for the REST API's adjustments; what an extension's adjustment names with `source()` |
+| `sourceType`, `sourceId` | What made the change: `catalog_edit` and the item for the stock editors, a tracking switch and `PATCH v1/alfa/items/units`; `api` and 0 for the REST API's adjustments; `api` (or `sync`) and the item for a product written with its variants' stock in one request (`catalog_edit` when that write comes from the administrator); what an extension's adjustment names with `source()` |
 | `result` | `operation_id`, and `delta` when the change came from a stock figure |
 
 ### onInventoryRestored
