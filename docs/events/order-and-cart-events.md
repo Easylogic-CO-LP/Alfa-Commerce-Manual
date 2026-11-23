@@ -6,7 +6,7 @@ description: The five events a feature plugin handles around the cart and the or
 
 # Order and cart events
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 These are the events around the cart and the order that belong to no single plugin family. A payment plugin, a
 shipping plugin and an item field each have events of their own, described on their own pages. The five events here
@@ -110,7 +110,7 @@ handlers run often. Keep them fast.
 placed.
 
 **Who receives it.** Addressed to each admitted plugin of the `alfa` group, in Joomla's plugin order, each once. All
-of them receive the same event object (`dispatchToEachIsolated()` in the code).
+of them receive the same event object (`dispatchToEachIsolatedFor()` in the code).
 
 **What you are given.** `CartTotalsEvent` (`administrator/src/Event/Cart/CartTotalsEvent.php`).
 
@@ -174,7 +174,7 @@ order keeps it whatever your plugin does later.
 parts.
 
 **Who receives it.** Addressed to each admitted plugin of the `alfa` group, in turn, each once for the line
-(`dispatchToEachIsolated()`).
+(`dispatchToEachIsolatedFor()`).
 
 **What you are given.** `CartItemDisplayEvent` (`administrator/src/Event/Items/CartItemDisplayEvent.php`).
 
@@ -266,7 +266,7 @@ sequenceDiagram
     Alfa->>Alfa: Asks the payment and the shipping plugin the same
     Alfa->>Alfa: Writes the order, its lines and the stock, and removes the cart
     Note over Alfa: The save is final here
-    Alfa->>Alfa: Has the payment and shipping plugins write their records
+    Alfa->>Alfa: Has the payment plugin write its record, records the parcel and has the shipping plugin complete it
     Alfa->>Alfa: Sends the confirmation e-mail
     Alfa->>P: onAlfaOrderPlaced: an order was placed
     P->>Alfa: Finished
@@ -275,7 +275,7 @@ sequenceDiagram
 
 If step 3 refuses, nothing after it happens: no order, no stock movement, no e-mail, and the cart stays as it was.
 
-Step 7 is the event `onOrderAfterPlace`. It is addressed to the one payment plugin and the one shipping plugin of the
+Step 6 is the event `onOrderAfterPlace`. It is addressed to the one payment plugin and the one shipping plugin of the
 order, never to a feature plugin. See [Payment plugins](../plugins/payment-plugins.md) and
 [Shipping plugins](../plugins/shipment-plugins.md).
 
@@ -290,9 +290,10 @@ The event announced after a placement is `onAlfaOrderPlaced`. No event named `on
 and shipping plugins are asked. Nothing is written yet.
 
 **Who receives it.** Addressed to each admitted plugin of the `alfa` group, in turn, each once. All receive the same
-event object, so refusals add up (`dispatchToEach()` in the code). Alfa first reads which plugins take part (`participants()` in the code), and refuses the order there for a plugin that is
-not loaded for the member of staff, before any plugin is asked. It then hands the event to each of them in turn, one
-call of `dispatchToEach()` for each, so that a plugin that throws an error can be named.
+event object, so refusals add up (`dispatchToEachFor()` in the code). Alfa first reads which plugins take part
+(`participantsFor()` in the code), and refuses the order there for a plugin that is not loaded for the member of staff,
+before any plugin is asked. It then hands the event to each of them in turn, one call of `dispatchToEachFor()` for each,
+so that a plugin that throws an error can be named.
 
 **What you are given.** `OrderPlaceValidateEvent` (`administrator/src/Event/Orders/OrderPlaceValidateEvent.php`).
 
@@ -404,7 +405,8 @@ sequenceDiagram
 
 The reactions of plugins are **background work**: Alfa records a **task** together with the status change, in the
 same save, and carries it out once the save is final and its locks are released. The task is written only when at
-least one plugin listens. If the status change is undone, the task is undone with it and no listener is called.
+least one plugin listens, or when Alfa cannot tell because a plugin of the `alfa` group failed to load. If the status
+change is undone, the task is undone with it and no listener is called.
 
 ### onOrderStatusChange
 
@@ -487,7 +489,7 @@ The events about stock and about documents (invoices, credit notes) that follow 
 
 | What you see | The usual cause |
 |---|---|
-| `onCartTotals`, `onCartItemDisplay` or `onOrderPlaceValidate` is never called | It is listed in `getSubscribedEvents()`. These three are handled only by public methods of their names. Or the plugin is not in the `alfa` group. |
+| `onCartTotals`, `onCartItemDisplay` or `onOrderPlaceValidate` is never called | The plugin has no public method of the event's name. These three are handled only by such methods; listing them in `getSubscribedEvents()` does not deliver them. Or the plugin is not in the `alfa` group. |
 | It works for one customer and not for another | The plugin's Access is a level the second customer does not hold. |
 | Staff cannot place a customer's cart | A plugin is admitted for the customer and not loaded for the member of staff, who may not check out on a customer's behalf. See "When staff operate a customer's cart". |
 | Your charge is missing and there is no error on the page | The charge was incomplete, or it named another plugin. Look in the log, category `com_alfa.cart`. |
