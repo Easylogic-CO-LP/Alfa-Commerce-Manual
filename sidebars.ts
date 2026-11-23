@@ -92,6 +92,7 @@ const sidebars: SidebarsConfig = {
             {type: 'doc', id: 'plugins/admin-panel-example', label: 'Complete admin panel example'},
           ],
         },
+        'plugins/background-work-plugins',
         'plugins/system-console-task-plugins',
       ],
     },

@@ -169,6 +169,10 @@ On the card:
 - **Discard** leaves them unsent; they stop being counted.
 - **Pause** and **Resume** stop and restart a consumer, as the webhook's state does.
 
+The changes given up are the queue's own record of what failed, change by change. A failure of the delivery job
+itself is a failed job "Outgoing notifications" in Tools > Tasks; Retry continues it, and Mark resolved on it discards
+no change.
+
 A stock or price change that is given up does not block its unit: the unit's next change is told with the newest
 figure. Changes that were taken, or that no consumer took, are kept for 7 days, changes given up or discarded for 30
 days, then removed.
@@ -250,8 +254,9 @@ public function onAlfaOutboundDeliver(OutboundDeliverEvent $event): void
 ```
 
 A change the plugin does not answer is sent again later, on the same waits as a webhook's. A handler that throws has
-every change of the batch sent again, and the failure is written to the log `com_alfa.outbound`. A plugin that
-cannot be loaded leaves the batch waiting. A reason must never contain a credential: staff read it on the card.
+every change of the batch sent again, and the failure is written to the log `com_alfa.outbound`. The plugin is loaded
+for the delivery whatever its Access, as long as it is installed and enabled, whichever request runs the delivery. A
+plugin that cannot be loaded leaves the batch waiting. A reason must never contain a credential: staff read it on the card.
 
 A plugin that names topics but has no `onAlfaOutboundDeliver` method takes no change. Its changes are settled as taken
 by **no consumer**: they are not sent again, not given up and not counted, no notice is shown, and the card shows its

@@ -36,19 +36,19 @@ The words "the save is final" (the **commit**), "transaction" and "lock" are exp
 
 ## What an extension author must know first
 
-**A plugin cannot add a kind of task or job. A plugin of an `alfa` group can owe a job of its own, of the one kind
-made for that, through `ExtensionJob::enqueue()`.**
+**A plugin of an `alfa` group declares tasks and jobs of its own, asks for them through `BackgroundWork::of($this)`
+and runs them in public methods named as the events. The engine runs them as it runs Alfa's own.**
 
-- The kinds of work that can run are two fixed lists inside Alfa. Nothing adds to them: no event, no setting, no
-  naming rule. A plugin's own work runs as a job of the kind `extension.job`, which hands it back to the plugin.
-- Asking for a kind that is not on the lists is refused at once with an error.
-- Apart from `ExtensionJob::enqueue()`, the classes that make up the engine are internal. This page names a few files
-  at the end so that you can find them and read them. They are not there to be called, and their methods and
-  arguments can change in any release.
+- Every task and job has an **owner**: `com_alfa` for Alfa's own work, or the plugin that declared it, as
+  `group.element`. A plugin reaches its own work only, never another plugin's and never Alfa's.
+- A plugin declares its work in `onAlfaDeclareWork`; asking for a name it does not declare is refused at once.
+- `BackgroundWork` and the classes and events beside it are what an extension uses: see
+  [Background work of a plugin](../plugins/background-work-plugins.md). The other classes that make up the engine
+  are internal. This page names a few files at the end so that you can find them and read them. They are not there
+  to be called, and their methods and arguments can change in any release.
 
 What an extension can do is listed under [What an extension can do](#what-an-extension-can-do). In short: its code
-can run inside work that Alfa creates, a plugin of an `alfa` group can owe a job of its own, and for scheduled work it
-uses Joomla's Scheduled Tasks.
+can run inside work that Alfa creates, and a plugin of an `alfa` group runs work of its own, once or every so often.
 
 ## What it does
 
@@ -79,6 +79,7 @@ Alfa creates tasks at these moments:
 | A refund of a payment is settled, or a settled refund's amount changes | Marking that payment refunded, when its settled refunds cover it |
 | A stock plugin refuses on purpose the stock movement of a document | One task for that document, which waits for staff |
 | A notification is raised while something is being saved | The notification, written as soon as the save is final |
+| A task or job of a plugin ends, and the plugin has a public `onAlfaWorkSettled` | The task that tells it (`work.settled`), written in the same save that ends the work |
 
 Alfa creates jobs for: preparing the list prices of a pricing context that is new to the shop, or its next generation
 (`price.set.prepare`, one job a context, its scope `price.set.prepare:<context id>`), removing the generations of the
@@ -88,8 +89,8 @@ owed, recreating thumbnails, deleting finished tasks, fetching the images a REST
 (`media.fetch`, one job a write; see [Catalogue](../api/catalogue.md#images-given-by-their-address)), and telling each
 consumer of the shop's changes what it is owed (`outbound.deliver`, one job a consumer; see
 [Outgoing notifications](../api/notifications.md)). The changes a consumer is owed are written in the save of the
-change itself, as a task is. A plugin of an `alfa` group owes a job of the kind `extension.job`, one a plugin and key
-(see [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin)).
+change itself, as a task is. A plugin of an `alfa` group asks for the tasks and jobs it declares, under its own names
+(see [Background work of a plugin](../plugins/background-work-plugins.md)).
 
 The picture of a status change, with each task in its place, is on [Event flows](../events/flows.md).
 
@@ -108,6 +109,7 @@ The column `state` holds one of these words. Tools > Tasks shows a failed task a
 | `failed` | The work failed and Alfa will not try it again by itself. It waits for staff. |
 | `held` | Nobody can know whether the work took effect. Alfa will not try it again by itself. It waits for staff. |
 | `resolved` | Staff closed it: by Resend, by Run again, or by Mark resolved |
+| `cancelled` | A plugin's task cancelled by the plugin while it waited |
 
 ```mermaid
 stateDiagram-v2
@@ -120,11 +122,13 @@ stateDiagram-v2
     running --> held: the outcome cannot be known
     failed --> resolved: staff Resend, Run again or Mark resolved
     held --> resolved: staff Resend, Run again or Mark resolved
+    pending --> cancelled: a plugin's task, cancelled by the plugin
     done --> [*]: deleted after 7 or 30 days
     resolved --> [*]: deleted after 30 days
+    cancelled --> [*]: deleted after 30 days
 ```
 
-A seventh word, `cancelled`, exists in the table's description. Nothing in Alfa Commerce sets it.
+Alfa's own tasks are never cancelled.
 
 ### When it first runs
 
@@ -185,6 +189,8 @@ The name in the first column is what Tools > Tasks shows. The name in code style
 | Order status after a shipment (`shipment.automation`) | Moves the order to the status the shipment's state asks for | Yes | Run again | Mark resolved | 7 days |
 | Payment refunded once its refunds cover it (`payment.refund_flip`) | Marks a payment refunded when its settled refunds cover it | Yes | Run again | Mark resolved | 7 days |
 | Notification after a save (`notice`) | Writes a notification raised during a save | Yes. A failure is only written to the log. | Written later by the engine | Mark resolved. It raises no notice, so only Tools > Tasks shows it. | Deleted as soon as it is written |
+| Telling a plugin how its work ended (`work.settled`) | Calls the plugin's `onAlfaWorkSettled` with the task or job as it ended | Yes, with the waits above | Run again | **Run again**, Mark resolved | 30 days |
+| A plugin's own task (the name it declares, under its own label) | What the plugin's `onAlfaRunTask` does | When the plugin says so (`WorkFailure::retry()`), and for an unexpected error when it declares the task `repeatable()` | Run again when `repeatable()`, otherwise held | **Run again**, Mark resolved | 30 days |
 
 Why two kinds are never repeated by Alfa itself:
 
@@ -214,6 +220,10 @@ while an e-mail or a plugin reaction is among them, otherwise a warning.
 | **Run again** | A failed or held plugin reaction | Writes a new task that calls only the listeners not recorded as done. The old task becomes `resolved`. |
 | **Mark resolved** | Every failed or held task | Closes the task with no action. A reason must be typed. |
 
+A plugin's task or job is listed with its label in the plugin's own words and the plugin's name beneath it, and a
+done one with its result. When the plugin cannot run it, the row says why: the extension is disabled, or no longer
+declares this work. A failed task of a plugin that declares it urgent makes the notice a danger notice.
+
 Each button needs the permission to use Tools (`alfa.tools`). Nothing failed or held is ever run again without one of
 these buttons.
 
@@ -237,7 +247,8 @@ staff pressed, with the time, what started it and the user. Tools > Tasks shows 
 was sent (naming each recipient), an e-mail or a plugin reaction that failed or is held, a Resend, a Run again and a
 Mark resolved, with who did it. These entries stay after the task itself is deleted.
 
-**No event announces the end of a task.** A plugin cannot listen for "a task finished".
+**The end of Alfa's own tasks is announced by no event.** A plugin is told the end of its own tasks and jobs through
+`onAlfaWorkSettled` (see [Background work of a plugin](../plugins/background-work-plugins.md#told-when-it-ends)).
 
 ### How long a finished task is kept
 
@@ -247,7 +258,8 @@ Mark resolved, with who did it. These entries stay after the task itself is dele
 | `failed` or `held` | Never by age. It stays until staff act. |
 | `resolved` | 30 days after staff acted |
 | `done`, of the kinds marked "7 days" in the table above | 7 days after it finished |
-| `done`, of every other kind (the e-mails, the plugins' reaction) | 30 days after it finished |
+| `done`, of every other kind (the e-mails, the plugins' reaction, a plugin's own tasks) | 30 days after it finished |
+| `cancelled` | 30 days after it was cancelled |
 
 The deletion is itself a job, "Delete finished tasks", which runs about once an hour. Staff can also start it from
 Tools > Tasks, and a server can run it with the console command `alfa:tasks:prune` (see
@@ -270,7 +282,8 @@ Tools > Tasks, and a server can run it with the console command `alfa:tasks:prun
 
 ### The states
 
-A job uses `pending`, `running`, `done`, `failed` and `resolved`. A job is never `held`.
+A job uses `pending`, `running`, `done`, `failed` and `resolved`, and a plugin's job also `cancelled`. A job is never
+`held`.
 
 ```mermaid
 stateDiagram-v2
@@ -285,8 +298,11 @@ stateDiagram-v2
     failed --> pending: staff Retry
     failed --> resolved: staff Mark resolved
     failed --> resolved: a later job for the same thing ended done
+    pending --> cancelled: a plugin's job, cancelled by the plugin or by staff
+    running --> cancelled: a plugin's job cancelled: its step keeps nothing, then it ends
     done --> [*]: deleted after 30 days
     resolved --> [*]: deleted after 30 days
+    cancelled --> [*]: deleted after 30 days
 ```
 
 ### How it is asked for, and joining
@@ -322,6 +338,7 @@ they finish, so that nothing the second request meant is missed.
 |---|---|
 | A part fails | Undoes what the part wrote in the engine's transaction. Waits 30 seconds, then tries again. Each further failure in a row doubles the wait: 30 seconds, 1, 2, 4, 8, 16 and 32 minutes. |
 | The 8th failure in a row | The job is `failed` and waits for staff |
+| A part of a plugin's job that calls another system fails | Its bookmark does not move. It waits as a task does: 1 minute, 5, 30, 2 hours, 6, 24; after the 6th failure in a row the job is `failed`. |
 | A part succeeds | The count of failures starts again at zero |
 | The process dies inside a part three runs in a row (usually at PHP's memory or time limit), so that nothing could be recorded | The job is `failed` with the error "Stopped after 3 runs that each ended before finishing a step, usually at the server's PHP memory or time limit. Raise the limit, then Retry." The jobs behind it can then run. |
 
@@ -332,15 +349,17 @@ they finish, so that nothing the second request meant is missed.
 | **Process now** | A waiting job | Opens a progress page that works the job in steps of 2 seconds while the page is open, and shows how far it is |
 | **Retry** | A failed job | Puts it back in the queue with its failures reset. It continues from where it stopped. Refused when another job for the same thing is already waiting or running. |
 | **Mark resolved** | A failed job | Closes it, with a reason |
+| **Cancel** | A plugin's job that waits or runs | Closes it, with a reason. A waiting job is cancelled at once. A running one finishes no further part: the part in progress keeps nothing, then the job is `cancelled`. |
 
-A job cannot be cancelled.
+Alfa's own jobs cannot be cancelled.
 
 ### How long a finished job is kept
 
 A `done` or `resolved` job is deleted after 30 days. One exception: for each job that covers the whole shop (stock
 movements, catalogue entries, the search index, thumbnails, the deletion of tasks, the tidy of the price index), the
-newest finished run is never deleted, so that Tools > Tasks can always show the last run. A `failed` job stays until
-staff act, or until a later job for the same thing ends done, which closes it.
+newest finished run is never deleted, so that Tools > Tasks can always show the last run. A plugin's `done`, `resolved`
+or `cancelled` job is deleted after 30 days. A `failed` job stays until staff act, or until a later job for the same
+thing ends done, which closes it.
 
 ### Where a job's state is read
 
@@ -351,8 +370,8 @@ last error.
 
 | Request | Who may call it | Answer |
 |---|---|---|
-| `GET v1/alfa/tasks` | A user with the Tools permission. Anyone else: 403. | The tasks and jobs, newest first, 20 to a page, 100 at most (`page[limit]`, `page[offset]`). Filters: `filter[state]`, `filter[type]` (`single` or `job`), `filter[owner]`. |
-| `GET v1/alfa/tasks/{id}` | The user who created it. For a task about an order: also anyone who may view orders. For anything else: also anyone with the Tools permission. | One task or job. For everyone else, and for a task that no longer exists: 404, so that nobody learns whether a task exists. |
+| `GET v1/alfa/tasks` | A user with the Tools permission. Anyone else: 403. | The tasks and jobs, newest first, 20 to a page, 100 at most (`page[limit]`, `page[offset]`). Filters: `filter[state]`, `filter[type]` (`single` or `job`), `filter[owner]` (`com_alfa`, or a plugin as `alfa.example`). |
+| `GET v1/alfa/tasks/{id}` | The user who created it. For an Alfa task about an order: also anyone who may view orders. For anything else, a plugin's task about an order included: also anyone with the Tools permission. | One task or job. For everyone else, and for a task that no longer exists: 404, so that nobody learns whether a task exists. |
 | `POST v1/alfa/tasks/{id}/process` | A user with the Tools permission who may read it | Works that job for up to 2 seconds. **200** with the job when it is no longer waiting or running. **202** with the headers `Location` (the job's address) and `Retry-After: 5` while it still is. **409** when the id is a task and not a job. **403** without the Tools permission. |
 
 The fields of one task in an answer:
@@ -361,15 +380,15 @@ The fields of one task in an answer:
 |---|---|
 | `id` | Its number |
 | `type` | `single` or `job` |
-| `handler` | The kind, for example `order.status_email` or `search.rebuild` |
-| `owner` | Always `com_alfa` |
+| `handler` | The kind, for example `order.status_email` or `search.rebuild`; for a plugin's work, the name it declares |
+| `owner` | `com_alfa` for Alfa's own work, or the plugin that declared it, as `group.element` (`alfa.example`) |
 | `scope` | What it covers: a job's scope, or for a task its subject, for example `order:15` |
 | `state` | One of the states above |
 | `done_units`, `total_units`, `percent` | Progress |
 | `run_after`, `created_at`, `started_at`, `finished_at`, `updated_at` | Times, in UTC |
 | `origin` | Where it was created: `admin`, `site`, `api` or `cli` |
 | `last_error` | The last error, shortened to 200 characters. Shown only to a caller with the Tools permission, otherwise `null`. |
-| `result` | For a `media.fetch` job, what became of each image the write gave by its address (see [Catalogue](../api/catalogue.md#images-given-by-their-address)). `null` for every other kind. |
+| `result` | For a `media.fetch` job, what became of each image the write gave by its address (see [Catalogue](../api/catalogue.md#images-given-by-their-address)). For a plugin's done task or job, what it reported. `null` for every other kind. |
 
 The answer of an API request that saves something also lists, under `meta.tasks`, the jobs that request started or
 joined. An order's answer lists the order's tasks too, each in the state it is in at that moment.
@@ -411,6 +430,10 @@ The console command and its exit codes are on
 The turns from shop pages, from administrator pages and from API requests are started by the plugin "System - Alfa
 Commerce Sync". While that plugin is disabled, the bell, cron and web cron still work.
 
+The engine has two ways to be started and needs no other: the plugin "System - Alfa Commerce Sync" on the shop's and
+the administrator's visits, and the console command `alfa:tasks:run` in the server's cron. Where work must run even
+when nobody visits, add the console command to cron; Joomla's Scheduled Tasks are not needed for it.
+
 **The web cron key.** Staff with the Tools permission make it under Tools > Tasks. The full address is shown once.
 Alfa keeps only a fingerprint of the key, never the key. Making a new key stops the old address. The key is part of
 the address, so the web server's access log records it.
@@ -436,16 +459,18 @@ says so and points to Tools > Tasks, which shows the cron line and the web cron 
 | React to an order's status change, reliably, after the save is final | Listen to `onOrderStatusChange`. Alfa records each listener as a part of a task, and staff can run a failed one again. | [Order and cart events](../events/order-and-cart-events.md) |
 | Keep your own data that is derived from the catalogue in step with it | Add a projection through `onCollectCatalogProjections`. Alfa calls it whenever it rebuilds an item's own entries, in a save and in the job "Rebuild catalogue projections". | [Search engine plugins](../plugins/search-plugins.md) |
 | React when stock is set aside, taken, given back, corrected or moved | Listen to the stock events. They are also announced when the job "Apply outstanding stock movements" applies a movement later. | [Stock events](../events/stock-events.md) |
-| Do work of your own in the background (tell another system of a change, work that does not fit in a request) | From a plugin of an `alfa` group, `ExtensionJob::enqueue()`: one job a plugin and key, handed back to the plugin with `onAlfaExtensionJob` outside any transaction, tried again on the waits of a job, listed in Tools > Tasks as "Work an extension owes". | [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
-| Do scheduled work of your own (a nightly export, a sync with another system) | Joomla's Scheduled Tasks: a plugin of the `task` group. This is Joomla's feature, not Alfa's. | [System, console and task plugins](../plugins/system-console-task-plugins.md) |
+| Do work of your own in the background (tell another system of a change, work that does not fit in a request) | From a plugin of an `alfa` group: declare a task or a job in `onAlfaDeclareWork`, ask for it with `BackgroundWork::of($this)`, run it in `onAlfaRunTask` or `onAlfaRunJob`. It is listed in Tools > Tasks under the plugin's own label and name. | [Background work of a plugin](../plugins/background-work-plugins.md) |
+| Do work of your own every so often (a sync every six hours, a report once a day) | Declare the job with `every()`: the engine asks for it by itself, once a span. | [Background work of a plugin](../plugins/background-work-plugins.md#a-job-every-so-often) |
+| Do work of your own at a fixed time of day (a report at 03:00) | Joomla's Scheduled Tasks, where the shop runs Joomla's scheduler from cron: a routine of your own `task` plugin whose whole run is one line, `BackgroundWork::of($app->bootPlugin('example', 'alfa'))->job('report.nightly')->enqueue()`. Joomla's scheduler says when; the work runs, is tried again and shows in Alfa's engine. | [System, console and task plugins](../plugins/system-console-task-plugins.md) |
 
-The first three let a plugin's code run inside work that Alfa queues. `ExtensionJob::enqueue()` is the one way a
+The first three let a plugin's code run inside work that Alfa queues. `BackgroundWork::of($this)` is the one way a
 plugin puts work of its own in Alfa's queue.
 
 ## What you must provide
 
-Nothing is registered. A plugin that owes a job provides the public method `onAlfaExtensionJob()`, which the engine
-calls. What matters is how your listener, or that method, behaves when it is called from background work.
+Nothing is registered. A plugin that declares work provides the public methods `onAlfaDeclareWork()`, and
+`onAlfaRunTask()` or `onAlfaRunJob()`, which the engine calls on that plugin alone. What matters is how your listener,
+or those methods, behave when they are called from background work.
 
 ### What a listener that runs under background work must expect
 
@@ -480,8 +505,9 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 
 | What you see | The usual cause |
 |---|---|
-| An error "No task handler is named ..." or "No job handler is named ..." | Code tried to create background work of a kind Alfa does not have. A plugin cannot add kinds. |
-| A job "Work an extension owes" fails with "The plugin ... has no onAlfaExtensionJob() method; its job ... waits." | The plugin that owed the job has no public method of that name. Add it, then Retry. |
+| An error "... declares no background work named ..." | The plugin asked for a name it does not declare in `onAlfaDeclareWork`, or its declaration was left out (the log `com_alfa.tasks` says why). |
+| An extension's job says "Waits: the extension is disabled." or "Waits: the extension no longer declares this work." | Enable the plugin, or update it; staff cancel a job that is no longer declared. |
+| A job of an extension fails with "The plugin ... has no public onAlfaRunJob() method." | The plugin declares the job but has no method to run it. Add it, then Retry. |
 | Your `onOrderStatusChange` listener ran twice for one change | Staff pressed Run again. Make the listener safe to repeat. |
 | Your listener sees a user with id 0 | The engine carried the work on some other request. Take the actor from the event. |
 | A task "Plugin reactions to a status change" stays Failed | A listener threw an error. Alfa never repeats this kind by itself. Fix the cause, then Run again or Mark resolved. |
@@ -493,7 +519,8 @@ rebuilt is in use at once: the new search index answers searches, the prepared p
 
 ## Where it lives in the code
 
-For reading only. These classes are internal, apart from `ExtensionJob::enqueue()`.
+For reading only. These classes are internal; an extension uses `BackgroundWork` and the classes and events beside it
+(`administrator/src/Background/`, `administrator/src/Event/Background/`).
 
 | What | File |
 |---|---|
@@ -501,6 +528,7 @@ For reading only. These classes are internal, apart from `ExtensionJob::enqueue(
 | Jobs and the turns of the engine | `administrator/src/Service/Task/Runner.php` |
 | The kinds of task about an order | `administrator/src/Service/Order/Task/` |
 | The kinds of job | `administrator/src/Service/Task/Job/` |
+| The work each owner declares | `administrator/src/Service/Task/WorkDeclarations.php` |
 | How long finished work is kept | `administrator/src/Service/Task/TaskRetention.php` |
 | What staff can do | `administrator/src/Service/Task/TaskStaff.php` |
 | The REST routes | `api/src/Controller/TasksController.php` |
@@ -508,9 +536,6 @@ For reading only. These classes are internal, apart from `ExtensionJob::enqueue(
 
 ## Not documented yet
 
-- A way for an extension to register its own kind of task or job. None exists: a plugin's work runs as an
-  `extension.job`. The API field `owner` and the filter `filter[owner]` are placeholders: `owner` always reads
-  `com_alfa`.
 - The engine's PHP classes as something to call. They are internal, and this manual does not describe their methods.
 - The data each kind of task carries with it (its payload). It is internal and has no stated contract.
 - The exact JSON envelope of the three REST routes beyond the fields listed above.

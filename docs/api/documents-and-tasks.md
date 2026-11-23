@@ -126,8 +126,8 @@ records.
 
 | Method and address | What it does | Who may |
 |---|---|---|
-| `GET v1/alfa/tasks` | Lists tasks. Filters: `filter[state]`, `filter[type]`, `filter[owner]`. `page[limit]` is 100 at most. | Users with the Tools permission |
-| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it; for a single of an order, a user with Orders: View; for any other task, a user with the Tools permission |
+| `GET v1/alfa/tasks` | Lists tasks. Filters: `filter[state]`, `filter[type]`, `filter[owner]` (`com_alfa`, or a plugin as `alfa.example`). `page[limit]` is 100 at most. | Users with the Tools permission |
+| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it; for a single of an order that is Alfa's own, a user with Orders: View; for any other task, a plugin's task about an order included, a user with the Tools permission |
 | `POST v1/alfa/tasks/:id/process` | Works on a job for up to 2 seconds | Users with the Tools permission |
 
 A task you may not read answers 404, the same as a task that does not exist, so the API never reveals that a
@@ -135,6 +135,10 @@ task is there.
 
 **A task holds:** `id`, `type`, `handler`, `owner`, `scope`, `state`, `done_units`, `total_units`, `percent`,
 `run_after`, `created_at`, `started_at`, `finished_at`, `updated_at`, `origin`, `last_error`, `result`.
+
+`owner` is `com_alfa` for the shop's own work, or the plugin that declared the work, as `group.element`
+(`alfa.example`); `handler` is then the name the plugin declares. `result` is what a plugin's done task or job
+reported (and, for a `media.fetch` job, what became of each image); `null` otherwise.
 
 **Waiting for a job.** Call `process` until the job no longer waits:
 
@@ -161,9 +165,9 @@ Only a job can be processed:
 {"errors":[{"title":"Only a job can be processed; a single runs after the save that wrote it.","code":409}]}
 ```
 
-The API has no route that creates a task: tasks are left by the shop's own saves, and by a plugin that owes
-background work of its own (see
-[Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin)).
+The API has no route that creates a task: tasks are left by the shop's own saves, and by a plugin that asks for
+background work of its own. A plugin that lets a client ask for its work adds a route of its own for it (see
+[Background work of a plugin](../plugins/background-work-plugins.md)).
 
 ## Not documented yet
 

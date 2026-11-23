@@ -40,16 +40,16 @@ One table per area. Every row is one event name.
 
 | What was counted | Count |
 |---|---|
-| Files under `administrator/src/Event/` | 143 |
-| Event classes that can be created (not abstract) | 106 |
-| Of those, sent to plugins | 102 |
+| Files under `administrator/src/Event/` | 146 |
+| Event classes that can be created (not abstract) | 109 |
+| Of those, sent to plugins | 105 |
 | Of those, defined and not sent | 4 |
 | Abstract bases, interfaces and traits | 22 |
 | Other helper classes and enums in the folder | 15 |
-| Different event names sent | 93 |
+| Different event names sent | 96 |
 
 Eight names are sent with more than one class, because a payment plugin, a shipping plugin and an item field plugin
-each get their own class under the same name. That is why 93 names use 102 classes. Two of the helper classes are
+each get their own class under the same name. That is why 96 names use 105 classes. Two of the helper classes are
 `OrderPlaceRefusedException` in `Orders/`, an exception a listener of `onOrderPlaceValidate` may throw, and
 `SurfaceMap` in `ItemFields/`, the read-only surfaces of a page.
 
@@ -250,7 +250,10 @@ The classes are in `Documents/`.
 |---|---|---|---|---|---|---|
 | `onAlfaBeforeApiRoute` | `ApiRoutesEvent` in `Api/` | One plugin | No veto. An error makes the plugin's addresses answer 503. | On request: a REST request under the plugin's address `v1/alfa/ext/<element>/`, and Tools, Security | `administrator/src/Service/Api/ApiRouteRegistrar.php:209` and `:267` | [Adding routes to the REST API](../plugins/api-route-plugins.md#what-it-does) |
 | `onAlfaApiRequest` | `ApiRequestEvent` in `Api/` | One plugin | No veto. An error is answered 500. | On request: a REST request on one of the plugin's routes | `api/src/Controller/ExtController.php:188` | [Adding routes to the REST API](../plugins/api-route-plugins.md#answering-a-request) |
-| `onAlfaExtensionJob` | `ExtensionJobEvent` in `Task/` | One plugin | No veto. An error is tried again on the task runner's backoff. | On request: when the task runner runs one of the plugin's jobs, in the background | `administrator/src/Service/Task/Job/ExtensionJob.php:132` | [Adding routes to the REST API](../plugins/api-route-plugins.md#background-work-of-a-plugin) |
+| `onAlfaDeclareWork` | `DeclareWorkEvent` in `Background/` | One plugin | No veto. An error keeps the plugin's previous declarations. | On request: when the plugin is installed, updated, saved or enabled | `administrator/src/Service/Task/WorkDeclarations.php:292` | [Background work of a plugin](../plugins/background-work-plugins.md#declaring-the-work) |
+| `onAlfaRunTask` | `RunTaskEvent` in `Background/` | One plugin | No veto. `WorkFailure` says how the run failed; any other error is tried again or held. | After the save is final, and in the background | `administrator/src/Service/Task/PluginTask.php:79` | [Background work of a plugin](../plugins/background-work-plugins.md#running-a-task) |
+| `onAlfaRunJob` | `RunJobEvent` in `Background/` | One plugin | No veto. `WorkFailure` says how the step failed; any other error is tried again. | In the background, once a step | `administrator/src/Service/Task/PluginJob.php:137` | [Background work of a plugin](../plugins/background-work-plugins.md#running-a-job) |
+| `onAlfaWorkSettled` | `WorkSettledEvent` in `Background/` | One plugin | No veto. An error is tried again later. | In the background, after the save that ended the plugin's task or job is final | `administrator/src/Service/Task/WorkSettled.php:121` | [Background work of a plugin](../plugins/background-work-plugins.md#told-when-it-ends) |
 
 ## Joomla events Alfa raises or relies on
 

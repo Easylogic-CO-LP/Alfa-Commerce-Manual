@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 115 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
+description: The 116 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -17,11 +17,11 @@ Its comments explain most columns. When a line below says "see the SQL", read th
 
 ## What it does
 
-The install file creates **115 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
+The install file creates **116 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh site with one content language (English) holds 130 tables: these 115, fourteen more language tables and the
+A fresh site with one content language (English) holds 131 tables: these 116, fourteen more language tables and the
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
@@ -292,7 +292,8 @@ Work that runs after a save or in the background. See [Background work](backgrou
 
 | Table | What it holds |
 |---|---|
-| `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps |
+| `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps. Each row has its owner: `com_alfa`, or the plugin that declared the work |
+| `#__alfa_work_declarations` | The background work each owner declares: Alfa's own from its classes, a plugin's from its `onAlfaDeclareWork`, with its kind, label, Covers text, weight, schedule and whether the plugin is enabled. Written by Alfa only. See [Background work of a plugin](../plugins/background-work-plugins.md) |
 | `#__alfa_task_slots` | Named slots that limit how many jobs run at once (one heavy job at a time) |
 | `#__alfa_outbound_consumers` | Who the shop tells of its changes: a webhook (an https address, its signing secret, its topics) or a plugin consumer, delivering or paused, with its last delivery and the answer. See [Outgoing notifications](../api/notifications.md) |
 | `#__alfa_outbound_deliveries` | What each consumer is owed: one row a change, written in the transaction of the change; a stock or price change waits once per unit; pending, sent, taken by no consumer (a plugin with no delivery), given up or discarded, with its attempts and the last error |
