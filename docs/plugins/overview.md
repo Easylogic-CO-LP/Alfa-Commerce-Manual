@@ -6,7 +6,7 @@ description: What a plugin can do in Alfa Commerce, which plugin types exist, ho
 
 # Plugin overview
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce is extended with Joomla plugins. A plugin adds to the shop without changing Alfa's own files, so an
 update of Alfa Commerce does not undo it.
@@ -31,7 +31,8 @@ A plugin can:
 
 Alfa tells plugins what is happening through **events**. How an event gets to a plugin is the same for every type
 and is explained once, in [How events reach a plugin](../events/how-events-reach-a-plugin.md). Read that page before
-any page listed below.
+any page listed below. The [Event index](../events/event-index.md) lists every event, how it is delivered and the
+page that explains it.
 
 ## The plugin types
 
@@ -47,6 +48,7 @@ is the class a plugin of that group extends; the base classes are in `administra
 | Media | `alfa-media` | None. Joomla's `CMSPlugin`. | Nothing | [Media plugins](./media-plugins.md) |
 | Search engines | `alfa-search` | `SearchEnginePlugin` | Nothing, on purpose | [Search engine plugins](./search-plugins.md) |
 | Feature plugins | `alfa` | None. Joomla's `CMSPlugin`. | Nothing | [Admin screens](./admin-screen-plugins.md) and [Admin panels](./admin-panels.md) |
+| Stock allocation | `alfa-inventory` | None. Joomla's `CMSPlugin`. | Nothing | [Stock events](../events/stock-events.md#oncollectstockallocationproviders) |
 | System, console and task (Joomla's own plugin types) | `system`, `console`, `task` | None. Joomla's `CMSPlugin`. | `system`: `alfasync`. `console`: `alfa`. `task`: nothing. | [System, console and task plugins](./system-console-task-plugins.md) |
 
 For the five groups with a base class, Alfa checks that the plugin really extends it. A plugin in `alfa-payments`
@@ -203,7 +205,7 @@ Every shipped plugin has a manifest of the same shape. This is the Standard paym
 | Line | The convention |
 |---|---|
 | `extension` | `type="plugin"`, the `group`, and `method="upgrade"` so that installing a newer package updates the plugin. |
-| `name` | A language key built from the group and the element: `PLG_ALFA_PAYMENTS_STANDARD`. The key is in both language files, so Joomla shows the plugin's real name. The shipped `system` and `console` plugins write it in lower case (`plg_system_alfasync`). |
+| `name` | A language key built from the group and the element: `PLG_ALFA_PAYMENTS_STANDARD`. The key is in both language files, so Joomla shows the plugin's real name. The shipped `system`, `console` and `webservices` plugins write it in lower case (`plg_system_alfasync`). |
 | `version` | The shipped plugins carry Alfa Commerce's own version. Your plugin carries its own. |
 | `alfacore` | The lines of Alfa Commerce the plugin is built for. See [The Alfa Commerce lines your extension is built for](#the-alfa-commerce-lines-your-extension-is-built-for). |
 | `namespace` | `path="src"`, then your vendor name, `Plugin`, the group in capitals without the hyphen, and the element: `Alfa\Plugin\AlfaPayments\Standard`. Use your own vendor name in place of `Alfa`. |
@@ -248,7 +250,7 @@ State the oldest Alfa Commerce version your extension works with, and ask the ga
 itself prescribes. Replace `Example plugin` with your extension's name.
 
 ```php
-public const MIN_ALFA_VERSION = '2.2.0';
+public const MIN_ALFA_VERSION = '2.3.0';
 
 public function preflight($type, $parent): bool
 {
@@ -264,7 +266,7 @@ public function preflight($type, $parent): bool
     }
 
     if (!class_exists($gate)) {
-        // No Alfa Commerce on this site, or one older than 2.1.0.
+        // No Alfa Commerce on this site.
         \Joomla\CMS\Factory::getApplication()->enqueueMessage(sprintf(
             'Example plugin requires Alfa Commerce %1$s or later, and this site has no Alfa Commerce %1$s or later'
             . ' installed. Install or update Alfa Commerce first, then install Example plugin again. Nothing was changed.',
@@ -316,11 +318,11 @@ namespace starts with `Alfa\`, a module whose name starts with `mod_alfa`, and a
 ### What it does
 
 An Alfa extension states once, in its manifest beside its version, the lines of Alfa Commerce it is built for. A
-line is a major and a minor version: `2.2` covers every 2.2 release.
+line is a major and a minor version: `2.3` covers every 2.3 release.
 
 ```xml
 <version>1.4.0</version>
-<alfacore min="2.2" max="2.2"/>
+<alfacore min="2.3" max="2.3"/>
 ```
 
 `min` is required. `max` is optional for the reader, and without it every line from `min` on is included; the
@@ -343,12 +345,11 @@ update of Alfa Commerce, which reads the manifest file of each installed Alfa pl
 1. The element in the manifest of every plugin and every module your extension installs. Alfa Commerce's check after
    its own update reads those manifests; a package's own manifest is not read there. A package carries the same
    element in its own manifest too, because the gate reads the manifest its installer is given.
-2. A `preflight()` that asks the gate. Where the gate has `rangeRefusal()` it calls it; where the gate has no such
-   method, it falls back to `refusal()` with your own minimum. Replace `Example plugin`
-   with your extension's name.
+2. A `preflight()` that asks the gate's `rangeRefusal()` with the manifest its installer is given. Replace
+   `Example plugin` with your extension's name.
 
 ```php
-public const MIN_ALFA_VERSION = '2.2.0';
+public const MIN_ALFA_VERSION = '2.3.0';
 
 public function preflight($type, $parent): bool
 {
@@ -364,7 +365,7 @@ public function preflight($type, $parent): bool
     }
 
     if (!class_exists($gate)) {
-        // No Alfa Commerce on this site, or one older than 2.1.0.
+        // No Alfa Commerce on this site.
         \Joomla\CMS\Factory::getApplication()->enqueueMessage(sprintf(
             'Example plugin requires Alfa Commerce %1$s or later, and this site has no Alfa Commerce %1$s or later'
             . ' installed. Install or update Alfa Commerce first, then install Example plugin again. Nothing was changed.',
@@ -374,9 +375,7 @@ public function preflight($type, $parent): bool
         return false;
     }
 
-    $refusal = method_exists($gate, 'rangeRefusal')
-        ? $gate::rangeRefusal(name: 'Example plugin', route: (string) $type, manifest: $parent->getManifest())
-        : $gate::refusal(name: 'Example plugin', route: (string) $type, minimum: self::MIN_ALFA_VERSION);
+    $refusal = $gate::rangeRefusal(name: 'Example plugin', route: (string) $type, manifest: $parent->getManifest());
 
     if ($refusal !== null) {
         \Joomla\CMS\Factory::getApplication()->enqueueMessage($refusal, 'error');
@@ -425,7 +424,7 @@ of its plugins and modules is. The extensions that ship inside the Alfa Commerce
 |---|---|
 | After an update of Alfa Commerce your extension is named "compatibility not stated" | Its manifest has no `alfacore` element, or one that cannot be read. Add a valid element to the manifest of each of its plugins and modules. |
 | After an update of Alfa Commerce your extension is named "needs a compatible build" | Its range excludes the installed line. Test it on that line and release it with a raised `max`. |
-| Your package installs on a site outside its range | The package's own manifest has no element, or its `preflight()` still calls only `refusal()`. |
+| Your package installs on a site outside its range | The package's own manifest has no element, or its `preflight()` calls `refusal()` and not `rangeRefusal()`. |
 | The installation of your extension stops with "cannot be installed" | The element in the manifest the installer was given cannot be read. The message names the values written. |
 
 ### The compatibility-range policy
@@ -433,12 +432,11 @@ of its plugins and modules is. The extensions that ship inside the Alfa Commerce
 This is the policy every Alfa extension follows:
 
 1. Every Alfa extension's manifest declares `<alfacore min max>` with both values. `max` names the last line the
-   extension was tested on: a line such as 2.2, never a patch release.
+   extension was tested on: a line such as 2.3, never a patch release.
 2. Every extension that installs on its own (a premium or a third-party extension) enforces the range in its own
-   installer's `preflight()` through `AlfaInstallerGate`, exactly as the gate's class docblock gives: `rangeRefusal()`
-   where it exists, else `refusal()` with the extension's own minimum. Install, update and discover install are
-   refused outside the range with the gate's plain message. Uninstall is never refused. An installation from the
-   command line runs the same `preflight()`.
+   installer's `preflight()` through `AlfaInstallerGate::rangeRefusal()`, as shown above. Install, update and
+   discover install are refused outside the range with the gate's plain message. Uninstall is never refused. An
+   installation from the command line runs the same `preflight()`.
 3. The plugins and modules bundled with Alfa Commerce declare the range and need no gate call. The core package
    installs them itself, so they cannot mismatch the core they arrive with.
 4. Updating Alfa Commerce is never blocked by an extension. After an install or update, Alfa Commerce names every
@@ -455,8 +453,5 @@ This is the policy every Alfa extension follows:
 
 ## Not documented yet
 
-- The group `alfa-inventory`, whose plugins can offer a stock allocation provider through the event
-  `onCollectStockAllocationProviders`. It has no page yet.
-- The complete list of events, with how each is delivered and what it carries.
 - Packaging several plugins as one Joomla package (`pkg_alfa` followed by a name).
 - A full installer script file around the `preflight()` shown above.
