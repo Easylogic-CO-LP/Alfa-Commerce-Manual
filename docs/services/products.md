@@ -6,13 +6,16 @@ description: The one way to save a product from an extension's code, the same sa
 
 # Saving a product
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A product is saved one way: through `ItemWriteService`. The item screen and the REST API's create and update use it,
 and an extension's code uses it the same way. The save is the item save the screen runs, with its rules, its refusals
 and its one transaction: the product, its texts, prices, categories, images, variants and stock are saved together,
-or none of them is. Two parts can be refused on their own once the product is written, its stock figure and the
-changes to its variants: the rest is then saved, and the save answers a warning for the part refused.
+or none of them is. Some parts can be refused on their own once the product is written: its stock figure, the changes
+made in the item screen's variants grid, and its Options and Informational lists. The rest is then saved, and the save
+answers a warning for each part refused. A change of the product's stock tracking, or its move into the archive,
+refused at that point leaves the product as it was in that respect and is said in the application's message queue,
+not in the warnings.
 
 The items list's quick edit of a name, a SKU or a stock figure, and the REST API's `PATCH v1/alfa/items/units` of
 prices and stock, write only those, each on a path of its own.
@@ -76,9 +79,10 @@ $result = ItemWriteService::change(120)
 ```
 
 A row of the record's shape, `['item_id' => 42, 'combination_id' => 304, 'values' => [7 => 71]]`, is taken the same
-way. The save judges every link before anything is written and refuses the whole save, each refusal in `refusals`,
-for a link the product cannot take: a product named twice, a combination that is not a current one of the product,
-a value of another field or one the product does not take, dimension values no combination carries together. Values
+way. The save judges every link before anything is written and refuses the whole save, nothing written, for a link
+the product cannot take: the product itself, a product that does not exist or is named twice, a combination that is
+not a current one of the product, a value of another field or one the product does not take, dimension values no
+current combination carries together. `refusals` then holds the sentences of every link refused, in one entry. Values
 that name every dimension are stored as their combination. Read an item's links with
 `RelatedItems::links($db, $itemId)`.
 
@@ -87,7 +91,8 @@ On the item screen the Related tab is the field `RelatedProducts`: Joomla's repe
 default, each current combination, or Choose values with a select for each dimension, and a select for each option it
 offers). A row whose product changes gets its variant cell from the server, drawn by the field. Both draw com_alfa
 layouts a template overrides: `html/layouts/com_alfa/form/field/relatedproducts.php` and
-`html/layouts/com_alfa/form/field/relatedvariant.php` in the administrator template. The events are on [Item and catalogue events](../events/item-and-catalogue-events.md#related-products).
+`html/layouts/com_alfa/form/field/relatedvariant.php` in the administrator template. The events are on
+[Item and catalogue events](../events/item-and-catalogue-events.md#related-products).
 
 ## What the save answers
 
@@ -100,6 +105,8 @@ layouts a template overrides: `html/layouts/com_alfa/form/field/relatedproducts.
 | `refusals` | Why the save was refused, as sentences; nothing was written. Empty when it was saved. |
 | `warnings` | What the save did not apply, or applied with a remark, each as `['message' => ..., 'type' => ...]`. For example, a stock figure refused after the product was written, or an address the product shares with another. |
 | `tasks` | The ids of the background tasks the save left (a price rebuild, for example) |
+| `written` | What a save with the product's graph wrote, part by part: see [A product with its graph](#a-product-with-its-graph). Empty for a save without one. |
+| `refused` | The refusals of a save with the product's graph, as `Refusal` values: see [A product with its graph](#a-product-with-its-graph). |
 
 ```php
 if (!$result->saved) {
@@ -122,7 +129,9 @@ A SKU names one unit: a product, or one of its variants. A save that gives the p
 another product or variant holds is refused, and nothing is written. Letter case does not count: `smx-128` is held
 when `SMX-128` is. The refusal is a sentence in `refusals` that names the SKU and the product or variant holding it:
 "%1$s is the SKU of %2$s: a SKU names one product or variant. Nothing was saved." (`COM_ALFA_SKU_IN_USE`). A unit
-that keeps the SKU it held before the save is never refused for it.
+that keeps the SKU it held before the save is never refused for it. A copy (the item screen's Save as Copy,
+`asCopyOf($originalId)`) whose SKU another product or variant holds is saved with its SKU empty, and a warning says so;
+the copy takes none of its original's variants.
 
 ## Saving a variant
 
@@ -161,11 +170,11 @@ $result = CombinationService::remove(itemId: 42, combinationIds: [305]);
 | `set(string $field, mixed $value)`, `with(array $fields)` | The window's fields: `sku`, `gtin`, `mpn`, the overrides and quantity rules, `manage_stock`, a name by its language key (`name_en_gb`), `state`, `default`. `sku`, `gtin`, `mpn`, an override, a quantity rule or a name left out keeps its stored value; `''` clears one. |
 | `prices(array $rows)` | The variant's price rows, as the window writes them (`_mode` `price` or `adjust`, `price_status`): a row kept by its `id`, a row not sent removed. Without `prices()` the rows stay as they are. |
 | `stock(array $figures, array $read)` | Tracked figures by location, each with the figure it was read with |
-| `opening(array $figures)` | Opening stock, when the save switches tracking on or the variant is new |
+| `opening(array $figures)` | Opening stock by location, for a save that switches tracking on. On a new variant whose product already tracks stock they are its first stock, set after the save as `stock()` figures are (a refusal there is a warning); on a new variant that does not track stock they are not applied, and a warning says so. |
 | `from(string $origin)` | `admin`, `api` or `sync`, for the event |
 | `refusals()` | What `save()` would refuse, nothing written |
 | `save(): CombinationWriteResult` | Saves: `saved`, `id`, `refusals`, `warnings` |
-| `remove(int $itemId, array $combinationIds, string $origin = 'admin')` | Removes: refused while a variant holds stock; archived where order history names it. Its result names them in `removed` and, of those, `archived`. |
+| `remove(int $itemId, array $combinationIds, string $origin = 'admin')` | Removes: refused while the variant or the product itself holds stock (on hand, reserved, or owed to an open order line); archived where order history names it. Its result names them in `removed` and, of those, `archived`. |
 
 `onAlfaCombinationsChanged` is raised once for each write of `CombinationService`, after its commit, with the `alfa`
 plugin group loaded, to each listener on its own: `itemId()`, `created()`, `changed()`, `archived()`, `removed()`,
@@ -266,9 +275,13 @@ $result = ItemWriteService::create()
 | `combination(array $values, array $fields, ?array $prices, array $stock)` | A variant: created by its values, or changed when the product already has one with those values; its stock figures set |
 | `from(string $origin)` | `admin`, `api` or `sync`: the variants' event and the stock movements record it |
 
-A value is named by its id, or by its field (id or `field_name`) and code: `['field' => 'colour', 'code' => 'silver']`.
-A variant's values are field (id or `field_name`) to value (id or code). So a write can make a value and use it in the
-same call.
+`value()`, `option()`, `informational()` and `combination()` also take `pointer`, where the part stands in the
+caller's request (`/combinations/0`): its refusals point there.
+
+An option's or a specification's value is named by its id (a number) or by its field (id or `field_name`) and code:
+`['field' => 'colour', 'code' => 'silver']`. A variant's values are field (id or `field_name`) to value, where a
+number is the value's id and text is its code: `512` names the value with id 512, `'512'` the value whose code is 512.
+So a write can make a value and use it in the same call.
 
 **The order of resolution** is fixed: the item fields' values first (`ItemFieldValueService`), then the product itself
 (the item save), then its options and specifications (`ItemOptionService`), then its variants (`CombinationService`),
@@ -277,8 +290,8 @@ any step rolls the whole write back: nothing of the product, its values or its v
 nothing: options, variants and values are removed through their own calls.
 
 The result's `written` names what each part wrote: `field_values`, `options` and `combinations`, each entry with its
-`pointer`, its `id` (`value_id` for an option) and `created` (true when it was made, false when it was changed);
-`informational`, the value ids when they were sent; and `stock`, each line applied. `refused` holds the refusals as
-`Refusal` values, each with its JSON pointer (`/combinations/0/values/colour`) and status; `refusals` holds their
-sentences.
+`pointer`, its `id` (`value_id` for an option; a value's entry also names its `field_id`) and `created` (true when it
+was made, false when it was changed); `informational`, the value ids when they were sent; and `stock`, each line
+applied. `refused` holds the refusals as `Refusal` values, each with its JSON pointer (`/combinations/0/values/colour`)
+and status; `refusals` holds their sentences, each led by its place (`combinations[0].values.colour: ...`).
 
