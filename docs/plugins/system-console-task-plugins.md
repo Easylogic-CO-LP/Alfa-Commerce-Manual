@@ -271,7 +271,7 @@ PLG_SYSTEM_SHOPNOTES_XML_DESCRIPTION="Notes completed orders in Joomla's log."
 |---|---|
 | The plugin fails to load after Alfa Commerce was uninstalled | Its class line names an Alfa class or interface. |
 | The tool is not listed on Tools | The plugin lists the tool and declares no `onExecuteToolAction` (Alfa shows a tool only when its plugin can run it), or the tool names no surface with `meta('surface', ...)`. |
-| The targeted method is never called | The event name was put in `getSubscribedEvents()`. A targeted event is never delivered from there. |
+| The targeted method is never called | The method is not public, or its name is not the event's. Listing the event in `getSubscribedEvents()` does not deliver it: Alfa calls the public method of the event's name. |
 | Alfa's log says an event is listed in both places | The event is addressed to this plugin and also listed in `getSubscribedEvents()`. |
 | The plugin does not appear under Tools > Extensions, so its data cannot be cleared from there | Alfa lists there the plugins of groups whose name starts with `alfa`, plugins whose namespace starts with `Alfa\`, and a plugin of any other group whose class has a public `onClearData()` method, enabled or not. If yours is missing, the method is not public or is not named `onClearData`. If it is shown as "Could not be read", its code threw while Alfa loaded it, and the maintenance log (`com_alfa_maintenance.php`) says what. |
 

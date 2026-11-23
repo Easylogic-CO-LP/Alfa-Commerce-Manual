@@ -82,8 +82,8 @@ public function onAlfaPanelTask(PanelTaskEvent $event): void {}
 
 The event classes are in `Alfa\Component\Alfa\Administrator\Event\Panel`. Write only the methods you handle: an
 event without its method is skipped or refused, as [What can go wrong](#what-can-go-wrong) says. A method that is not
-public, or whose name is not the event's, is never called, and a panel event is never delivered from
-`getSubscribedEvents()`. When Alfa addresses a panel event to a plugin that also lists it there, it writes an error to
+public, or whose name is not the event's, is never called, and listing a panel event in `getSubscribedEvents()` does
+not deliver it: Alfa calls the method of the event's name. When Alfa addresses a panel event to a plugin that also lists it there, it writes an error to
 Joomla's log.
 
 ### A menu entry, which is also the gate
