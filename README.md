@@ -21,16 +21,20 @@ Run `npm run build` before opening a pull request. The build fails on a broken i
 |---|---|
 | `docs/` | The pages, in Markdown |
 | `sidebars.ts` | The order of the pages in the sidebar |
-| `docusaurus.config.ts` | Site settings, and the Alfa Commerce release the manual documents (`customFields.alfaVersion`) |
-| `src/components/AlfaVersion.tsx` | The version line under each page's title |
+| `docusaurus.config.ts` | Site settings |
+| `src/components/AlfaVersion.tsx` | The marker of the release a page was last checked against; it prints nothing |
+| `scripts/plugin-templates.mjs`, `src/data/pluginTemplates.json` | The plugin generator's templates, made from the example pages before every start and build |
 | `src/pages/index.tsx` | The landing page |
 | `static/` | Images and other static files |
 
 ## Versions
 
-The manual documents one Alfa Commerce release, set once in `docusaurus.config.ts`. Each page states the release it
-was last checked against, with `<AlfaVersion verified="2.2.0" />` under its title. Change a page's value only when
-the page has been checked against that release's code.
+The manual documents the current Alfa Commerce release. Each page records the release it was last checked against,
+with `<AlfaVersion verified="2.3.0" />` under its title; nothing is printed. Change a page's value only when the whole
+page has been checked against that release's code.
+
+A change to an example plugin's page changes the plugin generator's templates: `npm run build` (or `npm start`) writes
+`src/data/pluginTemplates.json` again, and the change to it is committed with the page.
 
 ## Publishing
 
