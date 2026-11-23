@@ -13716,6 +13716,525 @@
 			"description": "Stock locations and the append-only movement ledger."
 		},
 		{
+			"name": "Variants and stock",
+			"description": "A product's variants and its stock through the same services the administrator's screens use (CombinationService, InventoryCommands). See the Manual, Variants and stock.",
+			"item": [
+				{
+					"name": "Setup: a product tracking stock",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items"
+							]
+						},
+						"description": "A product of the run, tracking stock, for the adjustments below (set erpCategoryId to a category of your shop).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name_en_gb\": \"ERP product {{run}}\",\n  \"sku\": \"ERP-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const run = (Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36)).toUpperCase();",
+									"pm.collectionVariables.set('run', run);",
+									"pm.collectionVariables.set('erpKey', 'erp-' + run);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 201', () => pm.expect(pm.response.code).to.eql(201));",
+									"if (pm.response.code === 201) { pm.collectionVariables.set('erpItemId', String(pm.response.json().data.id)); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Adjustments: set by SKU and a delta by id",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{erpKey}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/inventory/adjustments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"inventory",
+								"adjustments"
+							]
+						},
+						"description": "Every line judged as the stock editors judge a figure, then all applied in one transaction, or none. The Idempotency-Key makes a resend safe.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"ERP stock sync\",\n  \"lines\": [\n    {\n      \"sku\": \"ERP-{{run}}\",\n      \"set\": \"7\"\n    },\n    {\n      \"item_id\": \"{{erpItemId}}\",\n      \"delta\": \"-2\"\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));",
+									"const lines = pm.response.json().data.attributes.lines;",
+									"pm.test('Two lines: 7 then 5', () => { pm.expect(lines[0].after).to.eql(7); pm.expect(lines[1].after).to.eql(5); });",
+									"pm.collectionVariables.set('erpOperationId', lines[0].operation_id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Adjustments: the same request again (replayed)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{erpKey}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/inventory/adjustments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"inventory",
+								"adjustments"
+							]
+						},
+						"description": "The same body with the same Idempotency-Key answers the first lines with meta.replayed and changes nothing.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"ERP stock sync\",\n  \"lines\": [\n    {\n      \"sku\": \"ERP-{{run}}\",\n      \"set\": \"7\"\n    },\n    {\n      \"item_id\": \"{{erpItemId}}\",\n      \"delta\": \"-2\"\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200, replayed', () => { pm.expect(pm.response.code).to.eql(200); pm.expect(pm.response.json().meta.replayed).to.eql(true); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Adjustments: below zero (refused)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{erpKey}}-neg"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/inventory/adjustments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"inventory",
+								"adjustments"
+							]
+						},
+						"description": "A figure below zero answers 409 pointing at its line; nothing changes.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"lines\": [\n    {\n      \"item_id\": \"{{erpItemId}}\",\n      \"set\": \"-1\"\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 409 at /lines/0', () => { pm.expect(pm.response.code).to.eql(409); pm.expect(pm.response.json().errors[0].source.pointer).to.eql('/lines/0'); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Stock records by SKU",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/inventory/stock?filter[sku]=ERP-{{run}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"inventory",
+								"stock"
+							],
+							"query": [
+								{
+									"key": "filter[sku]",
+									"value": "ERP-{{run}}"
+								}
+							]
+						},
+						"description": "The stock records of the unit the SKU names: quantity, reserved, available, by location."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Movements of an operation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/inventorymovements?filter[operation_id]={{erpOperationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"inventorymovements"
+							],
+							"query": [
+								{
+									"key": "filter[operation_id]",
+									"value": "{{erpOperationId}}"
+								}
+							]
+						},
+						"description": "The movement the first line wrote: source api, the key as its correlation, the reason as its note."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('One movement', () => pm.expect(pm.response.json().data.length).to.eql(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Variants of a product",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/combinations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}",
+								"combinations"
+							]
+						},
+						"description": "The product's variants, published and unpublished, with values, prices, stock by location, overrides and names."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Variant: create by its values",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpVariantItemId}}/combinations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpVariantItemId}}",
+								"combinations"
+							]
+						},
+						"description": "A new variant by one value of each of the product's variant fields (set erpVariantItemId, erpFieldId and erpValueId to a product with variants of your shop and one of its fields and values).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"values\": {\n    \"{{erpFieldId}}\": \"{{erpValueId}}\"\n  },\n  \"sku\": \"ERP-{{run}}-V\",\n  \"state\": 1,\n  \"opening_stock\": [\n    {\n      \"location_id\": 1,\n      \"quantity\": \"5\"\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 201 or 409', () => pm.expect([201, 409]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) { pm.collectionVariables.set('erpCombinationId', String(pm.response.json().data.id)); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Variant: change its SKU and unpublish it",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpVariantItemId}}/combinations/{{erpCombinationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpVariantItemId}}",
+								"combinations",
+								"{{erpCombinationId}}"
+							]
+						},
+						"description": "A change of a variant's fields; its values never change (values here answer 422).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"ERP-{{run}}-V2\",\n  \"state\": 0\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Variants by SKU (flat)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/combinations?filter[sku]=ERP-{{run}}-V2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"combinations"
+							],
+							"query": [
+								{
+									"key": "filter[sku]",
+									"value": "ERP-{{run}}-V2"
+								}
+							]
+						},
+						"description": "Every product's variants, flat; the SKU exact, letter case aside."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Variant: remove",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpVariantItemId}}/combinations/{{erpCombinationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpVariantItemId}}",
+								"combinations",
+								"{{erpCombinationId}}"
+							]
+						},
+						"description": "204 when deleted; 200 with meta.note when order history names it and it is archived; 409 while it holds stock."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 204, 200 or 409', () => pm.expect([204, 200, 409]).to.include(pm.response.code));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Documents",
 			"item": [
 				{
@@ -14907,6 +15426,46 @@
 		},
 		{
 			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpCategoryId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpItemId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpKey",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpOperationId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpVariantItemId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpFieldId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpValueId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpCombinationId",
 			"value": "",
 			"type": "string"
 		}
