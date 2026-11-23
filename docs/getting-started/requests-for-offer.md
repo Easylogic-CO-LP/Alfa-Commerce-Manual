@@ -86,8 +86,9 @@ administrator are not affected.
 
 The status an order takes when it is placed with a total of zero. Create the status first, in **Order Statuses**: give
 it a name such as **Request for offer** and the e-mails the customer and your staff receive for it, the
-acknowledgement of the request among them. Choose one that does not require payment: a status with **Requires
-payment** on refuses a new order unless its **Allow unpaid exception** is on too, so the request would not be placed.
+acknowledgement of the request among them. Nothing is due on such an order, so it is paid: a status with **Requires
+payment** on takes it too, and its **Allow unpaid exception** plays no part (that exception is for orders with money
+due).
 Keep it published: a request sent to a status that is unpublished or deleted lands in the initial status, and the
 notification centre says so. Left on **The initial status, as every other order**, a request lands where every order
 lands.

@@ -92,6 +92,7 @@ The **draft** is a plain array. Keys marked required must be there; the others h
 | `created_by` | Who created it | The current user |
 | `deduct_stock` | Whether the order claims stock | `true` |
 | `allow_empty` | Allows an order without lines | `false` |
+| `nothing_due` | The caller's statement that the order's total is zero (lines, carriage, fees and rules): nothing is due, so the order is paid and a starting status that requires payment takes it. The checkout sets it from the cart's total. | `false` |
 | `external_source`, `external_reference` | The other system the order comes from and its id of the order there, stored on the order. The pair is unique: a pair another order holds makes the write fail. | none |
 
 Each line:
@@ -168,7 +169,7 @@ payment row, and core records the parcel before the shipping plugin completes it
 | A line without `id_item` or with a quantity of 0 or less | `OrderCreator: line N needs id_item and a positive quantity` |
 | A line without both unit prices | `OrderCreator: line N needs explicit unit prices` |
 | A line without `total_price_tax_excl` or `total_price_tax_incl`. Nothing is written. | `OrderCreator: line N needs its totals,` followed by the missing keys and "(a line is never priced as its unit times its quantity)." |
-| A starting status that requires the order to be paid, unless that status allows an unpaid exception | `OrderCreator: status N requires payment` |
+| A starting status that requires the order to be paid, unless that status allows an unpaid exception or the draft says `nothing_due` | `OrderCreator: status N requires payment` |
 | A shop with no order status at all | `OrderCreator: no target status and no is_initial status exists` |
 | A draft that names a shipping method and no existing delivery address. Nothing is written. | `OrderCreator: id_address_delivery must name an existing delivery record` |
 | Any write that fails, the stock claim included | `OrderCreator: order creation failed:` |
@@ -177,7 +178,7 @@ Two more public methods:
 
 | Method | What it does |
 |---|---|
-| `mayCreateInto(int $statusId): bool` | Whether a new order may start in this status. `false` for a status that requires payment and allows no unpaid exception. Ask it before you offer a status as a starting status. |
+| `mayCreateInto(int $statusId): bool` | Whether a new order may start in this status. `false` for a status that requires payment and allows no unpaid exception. It asks about orders with money due: a draft with `nothing_due` enters such a status all the same. Ask it before you offer a status as a starting status. |
 | `clampTaxName(string $name, string $context): string` | Shortens a tax name to 255 characters (`OrderCreator::TAX_NAME_MAX`) and logs when it had to. For a plugin that keeps a tax name in a column of its own of that width. Core does not call it: an order line keeps the tax name whole. |
 
 ## Transition

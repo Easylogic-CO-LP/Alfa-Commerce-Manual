@@ -396,8 +396,10 @@ whose total is zero, when no operator names a status, lands in the status the sh
 catalogue priced at zero (see [A catalogue with requests for offer](../getting-started/requests-for-offer.md)). An
 order the customer's credit pays in full is not such an order: its total is not zero. The confirmation e-mail is that
 status's own, and the download access is that status's. `OrderCreator` checks the status: one that does not exist or
-is not published lands the order in the initial status with a notice to staff, and one that requires payment refuses
-the placement unless it allows the unpaid exception (**Allow unpaid exception**).
+is not published lands the order in the initial status with a notice to staff. A status that requires payment takes
+an order placed with a total of zero, which is paid since nothing is due on it (the placement tells `OrderCreator` so
+with `nothing_due`); any other new order it refuses unless it allows the unpaid exception (**Allow unpaid
+exception**).
 
 ### What happens to the cart
 
