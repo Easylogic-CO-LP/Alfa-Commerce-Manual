@@ -6,7 +6,7 @@ description: The event announced for every staff notification, how a plugin rais
 
 # Notification and setup events
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 This page covers what a plugin can do around the administrator's notification bell, the dashboard and the store
 setup checklist. It ends with pointers to the other "collecting" events, which are described on the administrator
@@ -58,9 +58,10 @@ undone, the note is undone with it: no notification, no event. If the save becom
 written, and plugins hear of it only when the whole save is finished, its payment steps included, and Alfa's locks
 are released.
 
-A notification raised outside any save is written at once. It is announced at once too, unless Alfa still holds one
-of its locks or is finishing the follow-up work of a save (as it is right after an order is placed). The event then
-waits for that to end.
+A notification raised outside any save is written at once, unless a notification of the same key raised inside a
+save is still waiting to be written: it is then written after that one. It is announced at once too, unless Alfa still
+holds one of its locks or is finishing the follow-up work of a save (as it is right after an order is placed). The
+event then waits for that to end.
 
 ### onAlfaNotificationPushed
 
@@ -184,8 +185,10 @@ the same event as a plugin's.
 
 ### onAlfaCollectCards
 
-**When it fires.** When the dashboard's cards are collected. The result is kept for five minutes for each viewer, so
-your handler does not run on every page.
+**When it fires.** Each time the dashboard is drawn. The cards are kept for five minutes for each viewer, so the
+data of a card that is not `live()` is worked out once in that time. Alfa's own card of the background work is live,
+so the event is asked again on every draw and your handler runs each time: keep it cheap, and put the queries in the
+function you hand to `setLayoutData()`.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first.
 
@@ -260,9 +263,10 @@ list is worked out, the check looks at what is true now.
 
 ### onAlfaCollectSetupChecks
 
-**When it fires.** When the checklist is worked out: when its stored result is older than six hours, after a save in
-the administrator that may change it, and when staff refresh the card. Also after a payment or shipping plugin is enabled
-or disabled from the Plugins list, and after an Alfa extension is installed, updated, uninstalled, enabled or disabled.
+**When it fires.** When the checklist is worked out, which an Alfa Commerce administrator page asks for: when its
+stored result is older than six hours, when staff refresh the card, and after a change that may alter it. Such a
+change is a save in the administrator that may change it, a save of Alfa Commerce's Options or of a site menu item,
+and an Alfa extension installed, updated, uninstalled, saved, enabled or disabled.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` group first. Alfa's own checks are already in the
 event when you receive it.
