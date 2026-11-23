@@ -140,9 +140,10 @@ What the picture means:
   shopper's return only decides which page the shopper sees.
 - **An offline method stops after step 7.** It sets nothing in `onOrderProcessView`, the shopper goes to the
   completed page, and staff settle the payment later with a button.
-- **Step 7 can come again for the same order.** While an order still owes money, its confirmation page, the
-  customer's order e-mail and the payment link staff send from the order screen show Pay now, which leads the buyer
-  back to the process page of the same order; nothing is placed again. See [Paying an order again](#paying-an-order-again).
+- **Step 7 can come again for the same order.** While an order still owes money, its confirmation page, its page in
+  the customer's account, the customer's order e-mail and the payment link staff send from the order screen show Pay
+  now, which leads the buyer back to the process page of the same order; nothing is placed again. See [Paying an order
+  again](#paying-an-order-again).
 - **Settling is its own save.** When your plugin settles a payment, Alfa writes the payment row and makes that save
   final. Only then, and after Alfa's locks are released, does the order move to the status the method's settings name
   (see [The order's status](./payment-plugin-money.md#the-orders-status)).

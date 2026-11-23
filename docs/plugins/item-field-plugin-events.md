@@ -122,9 +122,9 @@ never replaced by that link.
 
 **If you are missing or you fail.** A missing plugin draws nothing, and the same log line is written for it. An
 error you throw is written to Joomla's log (category `com_alfa`) with the field's name and your plugin's name
-(`alfa-item-fields.<type>`). Whatever your method set or changed on the card before the error is undone, the add to
-cart area included, also when your field is the card's last; the card shows the other fields' parts and the add to
-cart area they set, or the normal one.
+(`alfa-item-fields.<type>`). What your method set on the card's places and its add to cart area before the error is
+dropped, also when your field is the card's last; the card shows the other fields' parts and the add to cart area they
+set, or the normal one. A change your method made to the item itself stays.
 
 ## onItemsListPrepare
 
