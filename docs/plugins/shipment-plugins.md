@@ -109,9 +109,11 @@ All twelve are **addressed to one plugin** (targeted). No other plugin sees them
 Your class must contain three methods: `onItemView()`, `onCartView()` and `onCalculateShippingCost()`. PHP refuses
 to load the class without them, because the base classes declare them abstract.
 
-Alfa draws the method on the item page itself: its image, its title and its description. `onItemView()` sets a layout
-only to add something below them; with nothing to add, it sets none. `onCartView()` always sets a layout, even an
-empty one.
+Alfa draws the method on the item page and in the cart itself: its image, its title and its description (and its
+radio in the cart). Your plugin draws only what it adds, through the place its event offers: `shipmentMethods()` on
+the item page and in the cart, each a builder:
+`$event->shipmentMethods()->setLayout('default_cart_view')->setData([...])`. The events have no layout of their own.
+With nothing to add, a hook draws nothing.
 
 **How you handle an event.** Write a public method with the event's name. Nothing else: Alfa calls it on the carrier
 it addresses. The twelve events are on [Shipping plugin events](./shipment-plugin-events.md).

@@ -116,8 +116,7 @@ final class Flat extends ShipmentsPlugin
     // The cart: this plugin has nothing to add beside its method.
     public function onCartView($event): void
     {
-        $event->setLayout('default_cart_view');
-        $event->setLayoutData([]);
+        $event->shipmentMethods()->setLayout('default_cart_view')->setData([]);
     }
 
     // The price: the one the merchant typed on the method, or a refusal.

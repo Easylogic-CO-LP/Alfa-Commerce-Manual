@@ -24,17 +24,15 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | **When it fires** | When the storefront draws an item page, once for each shipping method of your plugin that has "Show on item page" switched on. |
 | **Who receives it** | The plugin of that method. |
 | **What you are given** | `ItemViewEvent`. See the table below. |
-| **What you are expected to do** | Name a layout file of your `tmpl` folder and hand it its data. Never print HTML yourself. Alfa draws the method itself first: its image, its title and its description. Your layout adds only what is yours below them (a "pay in instalments" note, for example), never a logo, the title or the description. With nothing to add, set no layout. |
-| **What happens next** | Alfa draws your layout in the shipping methods area of the item page. A site template can override it at `templates/<template>/html/plg_alfa-shipments_<element>/<layout>.php`. |
+| **What you are expected to do** | Ask the event for a place, then name a layout file of your `tmpl` folder and hand it its data: `$event->shipmentMethods()->setLayout('default_item_view')->setData([...])`. Never print HTML yourself. Alfa draws the method itself first: its image, its title and its description. Your layout adds only what is yours below them (a "ships in two days" note, for example), never a logo, the title or the description. With nothing to add, draw nothing. |
+| **What happens next** | Alfa draws your layout in the place you asked for. A site template can override it at `templates/<template>/html/plg_alfa-shipments_<element>/<layout>.php`. |
 | **If you are missing or you fail** | Nothing of yours is drawn. An error is written to Joomla's log (category `com_alfa`) and the page is still shown. |
 
 | Method of the event | Meaning |
 |---|---|
 | `getItem()` | The item being shown |
 | `getMethod()` | The method's record, an object with `name`, `description` and the other columns |
-| `setLayout('default_item_view')` | The layout file to draw, without `.php` |
-| `setLayoutData([...])` | What the layout receives in `$displayData` |
-| `shipmentMethods()`, `title()`, `nearAddToCart()` | Three places on the page. Each returns a builder: `$event->title()->setLayout('badge')->setData([...])` |
+| `shipmentMethods()`, `title()`, `nearAddToCart()` | The three places on the page: under the method in the shipping methods area, beside the item's title, next to the add to cart button. Each returns a builder: `setLayout('badge')` (the layout file, without `.php`), `setData([...])` (what the layout receives in `$displayData`); the layout is your plugin's unless you name another with `setPluginType()` and `setPluginName()`. The event has no layout of its own. |
 | `setRedirectUrl($url)` | Sends the shopper elsewhere instead of showing the page |
 
 ## onCartViewAssets
@@ -55,8 +53,8 @@ The event classes are in `administrator/src/Event/Shipments`. Each card answers 
 | **When it fires** | Once for each offered method, every time the checkout reads its methods. That includes the JSON answers that replace the methods block after the shopper changes something. A reading without methods, such as the cart module's, does not ask. |
 | **Who receives it** | The plugin of that method. |
 | **What you are given** | `CartViewEvent`: `getMethod()` (a `Method` reader, see [Method settings](./shipment-plugins.md#method-settings)), `getCart()` (the cart, read only), `getRequest()` (both, as one object). |
-| **What you are expected to do** | Call `setLayout()` and `setLayoutData()`. The layout holds markup and `data-` attributes only. A script named here is lost the first time the block is replaced: declare scripts in `onCartViewAssets`. Pass only what the layout prints. |
-| **What happens next** | Alfa draws your layout beside the method in the cart. |
+| **What you are expected to do** | Draw your panel through the event's place: `$event->shipmentMethods()->setLayout('default_cart_view')->setData([...])`. The layout holds markup and `data-` attributes only. A script named here is lost the first time the block is replaced: declare scripts in `onCartViewAssets`. Pass only what the layout prints. With nothing to add, draw nothing. Every offered method is asked and every panel drawn is shown under its own method; a panel that belongs to the chosen method only, such as a locker picker, checks `$event->getMethod()->isSelected()` first and draws nothing for the others. |
+| **What happens next** | Alfa draws your layout under the method in the cart, after the method's radio, image, title and description. |
 | **If you are missing or you fail** | The method stays offered and is drawn without your part. A warning is written to the log (category `com_alfa.cart`). |
 
 ## onCalculateShippingCost

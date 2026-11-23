@@ -420,7 +420,7 @@ use Alfa\Component\Alfa\Site\Helper\PriceSettings;
 
 $settings = PriceSettings::get();          // for the current visitor
 $minimal  = PriceSettings::minimal();      // the final price only, without its label
-$custom   = PriceSettings::make()->show('final')->show('base', false)->get();
+$custom   = PriceSettings::make()->show('final_price')->show('base_price', false)->get();
 ```
 
 | Method | What it does | What it guarantees |
@@ -429,13 +429,27 @@ $custom   = PriceSettings::make()->show('final')->show('base', false)->get();
 | `PriceSettings::minimal(): array` | Only the final price, without label | |
 | `PriceSettings::netSaving(array $settings): bool` | Whether a price block drawn with these settings shows the net saving first: it shows a net figure, and the saving's row sits beside one | The price block draws its saving rows by it, and the saving filter and sort compare on the same basis |
 | `PriceSettings::make(): PriceSettingsBuilder` | Starts a builder with everything hidden | |
-| `PriceSettingsBuilder::show(string $element, bool $withLabel = true): self` | Shows one figure | A name it does not know is ignored, without an error |
-| `PriceSettingsBuilder::hide(string $element): self` | Hides one figure | |
+| `PriceSettingsBuilder::show(string $element, bool $withLabel = true): self` | Shows one figure, with its label or without | Any name but the seven below throws `InvalidArgumentException` |
+| `PriceSettingsBuilder::hide(string $element): self` | Hides one figure and its label | The same |
 | `PriceSettingsBuilder::withoutLabels(): self` | Hides every label | |
 | `PriceSettingsBuilder::get(): array` | The finished settings | |
 
-`PriceSettings` has no other public method. The names the builder accepts include `base`, `subtotal`, `discount`,
-`tax`, `base_with_tax`, `final` and `breakdown` (the full list is `PriceSettings::ALIASES`).
+`PriceSettings` has no other public method. Each figure has one name, the stem of its key in the settings array,
+written exactly so:
+
+| Name | The figure |
+|---|---|
+| `base_price` | The price before discounts and tax |
+| `base_price_with_discounts` | The price after discounts, before tax |
+| `discount_amount` | The discount |
+| `tax_amount` | The tax |
+| `base_price_with_tax` | The price before discounts, with tax |
+| `final_price` | The price the shopper pays |
+| `price_breakdown` | The breakdown of how the price is worked out (it has no label) |
+
+Any other name is refused with an `InvalidArgumentException` that names it, lists these seven and points to this
+section: a short form such as `final`, `total`, `tax` or `subtotal`, and a name written with capitals, spaces or
+hyphens (`Final_Price`, `final-price`). The builder returns the keys below and no others.
 
 The settings array has these keys (`PriceSettings::FIELDS`), each 1 or 0: `base_price_show`,
 `base_price_with_discounts_show`, `discount_amount_show`, `tax_amount_show`, `base_price_with_tax_show` and
@@ -749,6 +763,7 @@ The shipping taxes follow the same order as the goods' taxes (see
 | `calculate()` fails for an array of ids | The quantity map does not hold every id of the array. Give each id a quantity. |
 | A unit price prints as 0.00 | It was printed with a per unit method of the result. Use `PriceUnits::page()`. |
 | `Call to private method PriceSettings::global()` or to an unknown method | `global()` is private, and `compact()`, `full()`, `only()` and `except()` do not exist. Use `get()`, `minimal()` or `make()`. |
+| `InvalidArgumentException`: Unknown price element | A name passed to `show()` or `hide()` is not one of the seven in [Which figures are shown](#which-figures-are-shown-pricesettings), for example `final` for `final_price`. Use the name as the table writes it. |
 | `Non-static method ... cannot be called statically` on the index service | Its sync methods are instance methods. The service is core's own, see [PriceIndexSyncService](#priceindexsyncservice). |
 | The price filter or the sort by price uses an old price after price data was written without Alfa's models | The index was not rebuilt for those items. Staff rebuild it with Tools > Database Sync, "Rebuild catalogue projections". |
 | For a while some customers are filtered and sorted by another group's prices | Their pricing context is still being prepared by the `price.set.prepare` job; until then they read the nearest prepared group's prices |
