@@ -17,13 +17,13 @@ Open **Components**, **Alfa Commerce**. The Dashboard shows a **setup checklist*
 needs, checked against the shop as it is now, and each row opens the screen where it is done or starts a guided tour
 of it.
 
-The checklist has 18 rows in three groups, and says how many are done:
+The checklist has 20 rows in three groups, and says how many are done:
 
 | Group | Rows |
 |---|---|
 | **Required** | Store name and contact e-mail, default currency, at least one active tax, storefront menu items, at least one published category, at least one published item |
-| **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, Joomla mail configured, media folder writable |
-| **Optional** | Item fields, search-engine-friendly addresses, HTTPS |
+| **Recommended** | Checkout form fields, required form fields can be filled in, an active payment method, an active shipping method, customer pages, storefront pages linked across languages, document numbering series, each SKU names one product or variant, Joomla mail configured, media folder writable |
+| **Optional** | Customer cancel, item fields, search-engine-friendly addresses, HTTPS |
 
 Item fields moves to the required rows while the shop has item fields and none of them is published.
 
