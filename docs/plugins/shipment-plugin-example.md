@@ -40,6 +40,7 @@ plugins/alfa-shipments/flat/
     <creationDate>2026-11-12</creationDate>
     <license>GNU General Public License version 3 or later</license>
     <version>1.0.0</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_SHIPMENTS_FLAT_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\AlfaShipments\Flat</namespace>
     <files>

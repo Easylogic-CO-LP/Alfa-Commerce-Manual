@@ -30,6 +30,7 @@ is one that `choice` makes. Every file is printed in full.
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later; see LICENSE</license>
     <version>1.0.0</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_ITEM_FIELDS_PICKER_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\AlfaItemFields\Picker</namespace>
     <files>

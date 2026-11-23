@@ -454,6 +454,7 @@ plugins/alfa-search/example/
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later; see LICENSE</license>
     <version>1.0.0</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_SEARCH_EXAMPLE_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\AlfaSearch\Example</namespace>
     <files>

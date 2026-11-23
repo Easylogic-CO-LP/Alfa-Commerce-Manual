@@ -47,6 +47,7 @@ plugins/alfa/keeplist/
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later</license>
     <version>1.0.0</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_KEEPLIST_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\Alfa\Keeplist</namespace>
     <files>

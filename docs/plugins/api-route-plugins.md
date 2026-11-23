@@ -93,6 +93,7 @@ are the plugin's settings, read as `$this->params`.
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later</license>
     <version>1.0.2</version>
+    <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_EXAMPLE_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\Alfa\Example</namespace>
     <files>
