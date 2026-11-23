@@ -222,10 +222,12 @@ What else an update does:
 - **The database.** When you update Alfa Commerce, the installation drops the columns no code reads, adds the ones it
   needs, and, when a release changes how prices are worked out, rebuilds the item prices once in the background
   (**Tools**, **Tasks**). The columns it drops are the orders' coupon id, coupon code, invoice date and invoice
-  number, the invoice id of order lines, parcels and order cart rules, and the e-mail subject and body columns of each
-  language's order status table. A report or an extension of your own that reads one of them by name stops working. On
-  MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the table's definition; an older MySQL 8.0
-  rebuilds each table, which takes longer on a large shop, so choose a quiet hour.
+  number, the invoice id of order lines, parcels and order cart rules, the e-mail subject and body columns of each
+  language's order status table, and the stock movements' `transfer_id`. It also drops the table of stock transfers
+  (`#__alfa_inventory_transfers`), which nothing writes or reads. A report or an extension of your own that reads one
+  of them by name stops working. On MariaDB 10.6 and on MySQL 8.0.29 or later a dropped column changes only the
+  table's definition; an older MySQL 8.0 rebuilds each table, which takes longer on a large shop, so choose a quiet
+  hour.
 - **The prices.** When an update changes the price index's tables, it builds the index again in the background.
   Until it is complete, the product list filters and sorts by the prices the shop had until the update, while the
   product page and the cart already show the new ones; then it switches by itself. Tools > Database Sync, Rebuild
