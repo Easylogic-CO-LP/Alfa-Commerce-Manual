@@ -140,6 +140,7 @@ const sidebars: SidebarsConfig = {
         'api/overview',
         'api/integrating',
         'api/catalogue',
+        'api/variants',
         'api/customers-and-configuration',
         'api/orders',
         'api/documents-and-tasks',

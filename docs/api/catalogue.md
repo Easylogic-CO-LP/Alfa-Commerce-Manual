@@ -6,7 +6,7 @@ description: "The REST API routes for items, categories, manufacturers and item 
 
 # Catalogue
 
-<AlfaVersion verified="2.3.0" />
+<AlfaVersion verified="2.2.1" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows: the token, pages, languages, how
 texts and money are sent, and the status codes.
@@ -166,6 +166,13 @@ item in any other state answers 409 and nothing is deleted. An item that was nev
 item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
 that it was archived instead of deleted. An item that still holds stock or reservations is neither removed nor
 archived: the answer is 409 with the reason; bring its stock to zero first.
+
+### SKUs and variants
+
+A SKU names one product or one variant: a write that gives a product a SKU another product or variant holds answers
+409 naming the holder, nothing saved. A copy of a product made in the item screen is saved without its original's
+SKU. A product's variants, and stock set or corrected by SKU or by id, have routes of their own: see
+[Variants and stock](./variants.md).
 
 ### Images given by their address
 
