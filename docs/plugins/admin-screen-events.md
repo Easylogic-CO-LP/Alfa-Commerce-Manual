@@ -128,7 +128,7 @@ These slots exist:
 
 | Slot | Where | Guard |
 |---|---|---|
-| `before-grid` | Above the table, on 24 of the 25 list screens. The carts list has none. | `$event->isListScreen() && $event->at('before-grid')` |
+| `before-grid` | Above the table, on 24 of the 26 list screens. The carts and webhooks lists have none. | `$event->isListScreen() && $event->at('before-grid')` |
 | `order-details` | Order edit screen, right column, under Order Details | `$event->targets('order') && $event->at('order-details')` |
 | `order-main` | Order edit screen, full width, at the end of the Order tab | `$event->targets('order') && $event->at('order-main')` |
 | `cartrule-sidebar` | Cart rule edit screen, in the side column | `$event->targets('cartrule') && $event->at('cartrule-sidebar')` |
