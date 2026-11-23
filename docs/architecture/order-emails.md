@@ -9,23 +9,25 @@ description: Which e-mails Alfa Commerce sends for an order, what triggers each,
 <AlfaVersion verified="2.3.0" />
 
 Alfa Commerce sends an e-mail when an order is placed, when an order enters a status that is set to tell somebody,
-and when staff send an order's payment link. The e-mail of a placement or a status change is never sent inside the
-save. Alfa writes down "this e-mail is owed" together with the change, and sends it once the save is final (the
-commit). That piece of owed work is a **task**. Read
-[Background work](./background-work.md) first: it explains tasks, their states and Tools > Tasks.
+when staff send an order's payment link, and to the shop about a card dispute on an order's payment. The e-mail of a
+placement, a status change or a dispute is never sent inside the save. Alfa writes down "this e-mail is owed"
+together with the change, and sends it once the save is final (the commit). That piece of owed work is a **task**.
+Read [Background work](./background-work.md) first: it explains tasks, their states and Tools > Tasks.
 
 ## What it does
 
 ### Which e-mails exist
 
-There are two kinds of e-mail task. Each can go to the customer, to staff, or to both.
+There are three kinds of e-mail task. The first two can go to the customer, to staff, or to both; the dispute e-mail
+goes to the shop alone.
 
 | E-mail | What triggers it | Kind of task |
 |---|---|---|
-| **Order confirmation e-mail** | An order is placed at checkout, or created with its lines through the REST API. It is the e-mail of the status the order is placed in. | `order.placement_email` |
+| **Order confirmation e-mail** | An order is placed, at checkout or from the order builder in the administrator, or is created with its lines through the REST API. It is the e-mail of the status the order is placed in. | `order.placement_email` |
 | **Status e-mail** | An order enters a status, by any route: staff, a payment, a shipment, the API | `order.status_email` |
+| **Dispute e-mail** | A card dispute on a payment of the order is recorded or first reported, is decided, and three days before its evidence is due while none is marked sent | `order.dispute_email` |
 
-Who receives it is set on the order status, not in code:
+Who receives a confirmation or a status e-mail is set on the order status, not in code:
 
 | Recipient | When it is sent | The address |
 |---|---|---|
@@ -34,6 +36,10 @@ Who receives it is set on the order status, not in code:
 
 A status change into a status that tells nobody creates no e-mail task at all. A new order always has its
 confirmation task, which sends nothing when the status tells nobody.
+
+The dispute e-mail goes to the shop's own address (Options, General, **Store contact email**) and says what the
+dispute's notification says, with the link to the order. With no such address there is no dispute e-mail task, and the
+notification bell still tells staff. The customer gets no e-mail about a dispute.
 
 A third e-mail is not a task: the **payment link** that staff send from the order screen (Send payment link, on the
 payments panel of an order its customer may pay again). It goes to the customer alone, at once, and the operator reads
@@ -88,8 +94,8 @@ The e-mails of one order go out in the order their statuses were entered. The pl
 
 ## When it is used
 
-- At checkout, and when an order is created with its lines through the REST API, for the status the new order opens
-  in.
+- At checkout, at a placement from the order builder, and when an order is created with its lines through the REST
+  API, for the status the new order opens in.
 - At every status change, when the new status tells somebody.
 - Not when the code that makes the change asks for no e-mail. Code that calls `Transition::silent()` sends nothing,
   to the customer or to staff, and `Transition::silentCustomer()` leaves out the customer alone. The REST API's
@@ -148,9 +154,10 @@ language, it is written in the **default content language**. It is never the lan
 happens to change the status. The staff copy uses the same language as the customer's.
 
 Each of the status's texts is taken on its own from the default content language when the order's language has none
-stored: its name, its name for the customer, the customer's e-mail and the staff e-mail. An e-mail's subject and
-content blocks are stored together, so they come from one language. So an e-mail does not go out blank in a language
-whose texts were never saved for the status.
+stored: its name, the customer's e-mail and the staff e-mail. Its name for the customer is the customer-facing name
+in the order's language, else the internal name in that language, then the default content language the same way. An
+e-mail's subject and content blocks are stored together, so they come from one language. So an e-mail does not go
+out blank in a language whose texts were never saved for the status.
 
 ## Layouts, and how a template changes them
 
@@ -177,8 +184,9 @@ A status picks two layouts: one for the customer's e-mail (`email_layout_custome
 | Site | `{site_name}`, `{site_url}` |
 
 `{order_number}` is the order's id. `{status}` is the status's internal name; `{status_customer}` is the name customers
-read: the status's customer-facing name in the e-mail's language, else its internal name in that language (see [The
-customer's account](../services/customer-account.md#the-name-of-a-status)).
+read: the status's customer-facing name in the e-mail's language, else its internal name in that language, then the
+default content language the same way (see
+[The customer's account](../services/customer-account.md#the-name-of-a-status)).
 
 On the customer's own e-mail (never a staff e-mail, a preview or a test) the layout is also given `$orderUrl`, the
 order's page: an account's order in the customer's account, a guest's order on its keyed page. The shipped layout
