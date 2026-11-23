@@ -69,7 +69,8 @@ Alfa-Commerce/
 │   ├── mod_alfa_items/         # Items
 │   └── mod_easy_articles/      # Joomla articles
 │
-├── libraries/                  # lib_libphonenumber, lib_giggsey_locale
+├── libraries/                  # Seven libraries: libphonenumber and giggsey/locale (phone numbers); dompdf and the
+│                               # four it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser)
 │
 ├── media/                      # Installed as media/com_alfa
 │   ├── css/  js/               # Each with admin/, site/ and libraries/; every file as x.js, x.min.js, x.min.js.gz
