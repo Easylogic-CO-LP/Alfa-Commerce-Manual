@@ -352,7 +352,7 @@ that placed the order, so the person who placed it is still the current user.
 | Method | Meaning |
 |---|---|
 | `getOrderId()` | The id of the new order. |
-| `getOrder()` | The order as an `Order` object (`site/src/Service/Order/Order.php`): `id()`, `reference()`, `customerId()`, `isGuest()`, `getEmail()`, `total()`, `currency()`, `items()` and the others. |
+| `getOrder()` | The order as an `Order` object (`site/src/Service/Order/Order.php`): `id()`, `customerId()`, `isGuest()`, `getEmail()`, `total()`, `currency()`, `items()` and the others. |
 
 The event has no setters.
 
@@ -365,7 +365,7 @@ public function onAlfaOrderPlaced(OrderPlacedEvent $event): void
 {
     $order = $event->getOrder();
 
-    // Your own work, for example with $event->getOrderId(), $order->reference() and $order->isGuest().
+    // Your own work, for example with $event->getOrderId() and $order->isGuest().
 }
 ```
 
@@ -460,7 +460,7 @@ public function onOrderStatusChange(OrderStatusChangeEvent $event): void
         return;
     }
 
-    // Your own work, for example with $order->id(), $order->reference() and $event->getNewStatusId().
+    // Your own work, for example with $order->id() and $event->getNewStatusId().
 }
 ```
 

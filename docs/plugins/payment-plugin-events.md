@@ -148,7 +148,7 @@ Event class: `OrderAfterPlaceEvent`. Optional, but this is where almost every ga
 **Who receives it.** One plugin: the plugin of the order's payment method.
 
 **What you are given.** `getOrder()` returns the order as an `Order` object. Read it with methods, not properties:
-`id()`, `reference()`, `total()`, `currency()`, `paymentMethodId()`.
+`id()`, `total()`, `currency()`, `paymentMethodId()`.
 
 **What you are expected to do.** Record the first payment attempt, as pending:
 

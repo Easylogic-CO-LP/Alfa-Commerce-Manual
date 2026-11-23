@@ -102,7 +102,7 @@ final class Thanks extends CMSPlugin implements SubscriberInterface
 
         $order = $event->getOrder();
 
-        // Your own work, for example with $order->id() and $order->reference().
+        // Your own work, for example with $order->id().
     }
 }
 ```
