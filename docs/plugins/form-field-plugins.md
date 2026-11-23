@@ -8,7 +8,7 @@ description: How to write a plugin that adds a new type of field to the customer
 
 <CreatePluginButton type="formfield" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A **form field** is one field of the customer's details: a name, a phone number, a country, a tax office. Staff
 define the fields of their shop, and each field has a **type**. A form field plugin adds one type.
@@ -112,8 +112,8 @@ When step 8 becomes final (the commit) depends on the form:
 | The customer's saved details on the storefront, and registration | The row is written on its own, outside any transaction. It is final as soon as it is written. |
 
 At registration, steps 6 and 7 decide whether the form is accepted, and registration stores what the filters
-returned, as the other forms do, and nothing for a field that a condition hides. "System - Alfa Commerce Sync" does not read customer details from the
-request when a Joomla account is saved.
+returned, as the other forms do, and nothing for a field that a condition hides. "System - Alfa Commerce Sync" does
+not read customer details from the request when a Joomla account is saved.
 
 ## What you must provide
 
@@ -161,7 +161,7 @@ directly, as an **operation** of the base class, the only one this family has. T
 
 | Getter | What it returns |
 |---|---|
-| `getField(): object` | The field as staff defined it. The properties the base class reads are `field_name`, `type`, `params` (the field's settings, as JSON text), `field_label`, `field_description`, `default_value` and `role`. |
+| `getField(): object` | The field as staff defined it. The properties the base class reads are `field_name`, `type`, `params` (the field's settings, as JSON text), `field_label`, `field_description`, `default_value`, `role`, and `registration`, `shipping` and `billing` (where the field shows, and whether it is required there). |
 | `getFieldset(): DOMElement` | The XML element of the form that your field's description is added to |
 | `getForm(): Form` | The Joomla form being built |
 | `getContext(): string` | Which form is being built, for example `cart.shipping` or `user.register`. An empty string means unknown. |
@@ -197,7 +197,7 @@ the `filter` and the `validate` attributes you left on the element.
 
 | What is wrong | What Alfa does |
 |---|---|
-| Your `prepareDom()` throws an error | The error is written to Joomla's log (category `com_alfa.cart`) with your plugin's name, the field and the form. The form is still shown. If the error came after `parent::prepareDom()` returned, the field is in the form as the base class described it, without your changes. If it came before, the field is missing. |
+| Your `prepareDom()` throws an error | The error is written to Joomla's log (category `com_alfa.cart`) with your plugin's name, the field and the form. The form is still shown. If the error came after `parent::prepareDom()` returned, the field is in the form as the base class described it, with only the changes you made before the error. If it came before, the field is handled as a field whose plugin cannot be used (below). |
 
 A field whose plugin cannot be used (missing, disabled, not loaded for the visitor because of its Access, failing to
 start, or a `prepareDom()` that threw before the field was added) is handled by whether the form must ask for it:
@@ -255,10 +255,11 @@ Every form field is one column of the table `#__alfa_user_info`. One row of that
 details: a delivery record or an invoice record. The column's name is the field's `field_name`.
 
 A field name is lowercase letters, digits, underscores and hyphens, at most 64 characters, since it names the
-column. Any other character becomes a hyphen, and letters of other alphabets are spelled in Latin letters of the
-site's default language, so `VAT number` is saved as `vat-number` and `vat_number` stays `vat_number`. A name
-that leaves no letters, or is longer than 64 characters, is refused before anything is saved. When the name is
-left empty, it is made from the field's title by the same rule. Saving a field again keeps its column.
+column. Any other run of characters becomes one hyphen, with none at either end, and letters of other alphabets are
+spelled in Latin letters of the site's default language, so `VAT number` is saved as `vat-number` and `vat_number`
+stays `vat_number`. A name that leaves nothing for the column, or is longer than 64 characters, is refused before
+anything is saved. When the name is left empty, it is made from the field's title by the same rule. Saving a field
+again keeps its column.
 
 | When staff | Alfa |
 |---|---|
@@ -271,7 +272,7 @@ The column is added only after the field itself is saved, because a column chang
 `sql_type` must be one of the types Alfa accepts, written exactly:
 
 - `tinyint`, `smallint`, `mediumint`, `int`, `bigint`, each also with a length such as `int(11)`
-- `float`, `double`, `real`, `decimal(M,N)`, `numeric(M,N)`
+- `float`, `double`, each also with a precision such as `double(10,2)`, `real`, `decimal(M,N)`, `numeric(M,N)`
 - `date`, `datetime`, `timestamp`, `time`, `year`
 - `char(N)`, `varchar(N)`, `binary(N)`, `varbinary(N)`
 - `tinytext`, `text`, `mediumtext`, `longtext`, `json`
@@ -391,7 +392,7 @@ shipped `tel` plugin does both in `media/js/tel.js`.
 
 ### System fields
 
-A new installation creates four fields:
+A new installation creates seven fields:
 
 | Field | Type | Kind |
 |---|---|---|
@@ -399,6 +400,7 @@ A new installation creates four fields:
 | `email` | `text` with the e-mail validation | A system field, with the same limits |
 | `phone` | `tel` | An ordinary field that staff may change or delete |
 | `country` | `country` | An ordinary field that staff may change or delete |
+| `address`, `city`, `postcode` | `text` | Ordinary fields that staff may change or delete |
 
 Two consequences for a form built for a customer:
 
@@ -606,9 +608,9 @@ The label, the description and the group title of a field are not the plugin's. 
 | The type is not in the Type list | The plugin is not enabled, or its Access is a level the member of staff does not hold |
 | The class is never called | It does not extend `FormFieldsPlugin` |
 | The field shows for staff and not for guests | The plugin's Access is not Public |
-| The field is in the form without your changes, or is missing, with no message | Your `prepareDom()` threw an error. Look in Joomla's log, category `com_alfa.cart`. |
+| The field is in the form without some of your changes, or is missing, with no message | Your `prepareDom()` threw an error. Look in Joomla's log, category `com_alfa.cart`. |
 | An error in the log for the e-mail field of logged in customers, or for `name` and `email` at registration | The override used the result of `parent::prepareDom()` without checking for `null`. Those fields are left out there on purpose (see System fields). |
-| The field is missing from a form and the log says nothing | The plugin is unavailable. Alfa logs this only for the two system fields. |
+| The field is missing from a form and the log says nothing | The field is hidden in that section, limited to other users or user groups, or in a disabled field group. A field whose plugin cannot be used is logged (category `com_alfa`). |
 | Saving a field fails with "Invalid sql_type for form field" | `sql_type` in `params.xml` is not one of the accepted types |
 | The column of a new field is `text` | `params.xml` has no `sql_type` field |
 | The settings do not appear under the field | They are not inside `<fields name="formfieldsparams">` |
@@ -622,7 +624,8 @@ Rules every form field plugin follows:
 
 - `prepareDom()` is called through Alfa's plugin helper as an operation of the base class. A plugin that does not
   extend `FormFieldsPlugin` is not called at all.
-- A disabled form field plugin is never started.
+- A disabled form field plugin is never started, except by Clear Data (Tools: Extensions, or Clear everything), which
+  starts it, enabled or not, to ask for its `onClearData`.
 - The field condition format is `{match, action, rules}` with the operators listed above. No other format is
   read.
 - Do not pass a dispatcher to the plugin's constructor in `services/provider.php`. Joomla marks it as deprecated.
