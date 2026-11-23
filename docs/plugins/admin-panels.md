@@ -8,7 +8,7 @@ description: How a plugin of the alfa group adds a whole administrator screen of
 
 <CreatePluginButton type="adminpanel" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -112,7 +112,7 @@ if ($event->getIdentity()->panel !== 'notes') {
 plugins/alfa/<yourplugin>/
 ├── <yourplugin>.xml               the manifest, group="alfa"
 ├── services/provider.php          starts the plugin
-├── src/Extension/<YourPlugin>.php the two lists and the handlers
+├── src/Extension/<YourPlugin>.php the event list and the handlers
 ├── forms/filter_<panel>.xml       the list's search, filters and sort order (found by its name)
 ├── forms/<record>.xml             the edit form
 ├── layouts/<panel>/list.php       your list screen
@@ -206,7 +206,8 @@ could not be completed, even when your code did its work.
 ### onAlfaBuildMenu
 
 - **When it fires.** Whenever Alfa builds its administrator menu: on every Alfa Commerce administrator page that
-  shows the menu, and as the access check of every panel request. It is built once for each request.
+  shows the menu, and as the access check of every panel request. It is built once for each request. The event also
+  fires when the Permissions tab of the Options screen puts its rows in the menu's order.
 - **Who receives it.** Announced to everyone: every loaded plugin that listed the event.
 - **What you are given.** The event, with `item()`, `add()` and `section()`.
 - **What you are expected to do.** Declare your entry. `item('group.element', $id)` returns the entry, and you chain
@@ -217,14 +218,15 @@ could not be completed, even when your code did its work.
 | `title($languageKey)` | The text of the entry. It is also the title of the panel's page. Required. |
 | `panel($group, $element, $panel)` | Point the entry at your panel. (`view($view)` points at a screen of Alfa Commerce, `link($url, $activeWhen)` at any address.) |
 | `section($languageKey)` | The heading the entry sits under. Leave it out for the group at the top, which has no heading. |
-| `ordering($number)` | The position under the heading. Alfa's own entries are spaced by 100. |
+| `ordering($number)` | The position under the heading. Alfa's own entries mostly use steps of 100. |
 | `icon($path)` | The path of an SVG file, from the site's root. Not an icon class. |
 | `access($action, $asset = 'com_alfa')` | The permission needed to see the entry and to use the panel |
 | `lookups(...$tasks)` | The tasks of the panel that only read, which may arrive by GET (see "Tasks arrive by POST") |
 
 - **What happens next.** Alfa drops the entries the person may not see, sorts the rest and draws the menu.
 - `all()` hands copies of the entries, so changing an entry you read
-  through it changes nothing in the menu. A plugin changes only the entries `item()` and `add()` returned to it.
+  through it changes nothing in the menu. A plugin changes only the entries `item()` returned to it and the ones it
+  passed to `add()`.
 - **If you are missing or you fail.** There is no entry, and the panel answers "not authorised". An error in your
   handler is written to the log (category `com_alfa.plugins`) and the rest of the menu is drawn.
 
@@ -325,7 +327,7 @@ The screen name is open. `list` and `edit` are what Alfa's own buttons use. Your
 |---|---|
 | `addMessage($text, $type = 'message')` | A message for staff. The type is `message`, `error`, `warning` or `notice`. |
 | `setRedirect($url)` | Where to go next. Without it, Alfa goes to the panel's list. |
-| `keepInput()` | After a refused save: keep what was typed and hand it back to `onAlfaPanelView` as `getData()['form']` |
+| `keepInput()` | After a refused save: keep what was typed and hand it back to `onAlfaPanelView` as `getData()['form']` when the edit screen opens again. Send staff there with `setRedirect()`, or they land on the list. |
 | `markHandled()` | Say that you handled the request. Needed in `onAlfaPanelTask`. |
 
 - **What happens next.** Alfa shows your messages and goes where you said.
@@ -356,7 +358,7 @@ The screen name is open. `list` and `edit` are what Alfa's own buttons use. Your
 - **If you are missing or you fail.** A task nobody marked as handled is reported as "Unknown panel action".
 
 ```php
-public function onAlfaPanelTask(PanelTaskEvent $event): void {}
+public function onAlfaPanelTask(PanelTaskEvent $event): void
 {
     if ($event->getIdentity()->panel !== 'notes' || $event->getTask() !== 'publish') {
         return;                                   // not mine: leave it unhandled
@@ -484,7 +486,7 @@ by name.
 is for a panel whose rows have a state and whose filter form has a `state` filter:
 
 ```php
-public function onAlfaPanelToolbar(PanelToolbarEvent $event): void {}
+public function onAlfaPanelToolbar(PanelToolbarEvent $event): void
 {
     if ($event->getIdentity()->panel !== 'notes' || $event->getScreen() !== 'list') {
         return;                                   // the edit screen keeps Save and Close, and Cancel
