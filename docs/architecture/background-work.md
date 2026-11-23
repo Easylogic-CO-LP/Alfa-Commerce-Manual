@@ -347,7 +347,8 @@ they finish, so that nothing the second request meant is missed.
 |---|---|
 | A part fails | Undoes what the part wrote in the engine's transaction. Waits 30 seconds, then tries again. Each further failure in a row doubles the wait: 30 seconds, 1, 2, 4, 8, 16 and 32 minutes. |
 | The 8th failure in a row | The job is `failed` and waits for staff |
-| A part of a plugin's job that calls another system fails | Its bookmark does not move. It waits 1 minute, then 5 and 30 minutes, 2 and 6 hours; the 6th failure in a row makes the job `failed`. |
+| A part of a plugin's job that calls another system fails | Its bookmark does not move. It waits as a task does: 1 minute, then 5 and 30 minutes, 2, 6 and 24 hours; the 7th failure in a row makes the job `failed`. |
+| A part that writes through transactions of its own leaves one open | The engine rolls it back, so nothing of that part is kept, and counts a failure: "A step of this job left a database transaction open. It was rolled back, so nothing of that step was kept. It is tried again." |
 | A part succeeds | The count of failures starts again at zero |
 | The process dies inside a part three runs in a row (usually at PHP's memory or time limit), so that nothing could be recorded | The job is `failed` with the error "Stopped after 3 runs that each ended before finishing a step, usually at the server's PHP memory or time limit. Raise the limit, then Retry." The jobs behind it can then run. |
 

@@ -260,13 +260,13 @@ Throw a `WorkFailure` to say how a run failed:
 | throws `WorkFailure::failed($why)` | failed at once; staff decide | failed at once; staff decide |
 | calls `part(...)->unknown($why)` | held at once; staff decide | not offered: a step is always safe to repeat |
 | throws any other error | `repeatable()`: tried again; otherwise held | tried again |
-| leaves a transaction open | rolled back, counted as an unexpected error | the same for a step inside the engine's transaction; a `callsOtherSystems()` step is not checked, so it closes its own |
+| leaves a transaction open | rolled back, counted as an unexpected error | rolled back, so nothing of the step is kept, and tried again; a `callsOtherSystems()` step's failure reads "A step of this job left a database transaction open. It was rolled back, so nothing of that step was kept. It is tried again." |
 
 | Work | Waits between tries | After the last try |
 |---|---|---|
 | A task | 1 min, 5 min, 30 min, 2 h, 6 h, 24 h | failed |
 | A job | 30 s, doubling, each wait at most 1 h; 8 failures in a row | failed |
-| A job that `callsOtherSystems()` | 1 min, 5 min, 30 min, 2 h, 6 h; 6 failures in a row | failed |
+| A job that `callsOtherSystems()` | 1 min, 5 min, 30 min, 2 h, 6 h, 24 h, as a task; the 7th failure in a row | failed |
 | Any, with `WorkFailure::retry(after: N)` | the ladder's wait, or N seconds when longer (a receiver's Retry-After) | as above |
 
 A step that succeeds sets a job's count of failures back to zero. The message of a failure is read by staff: put no
@@ -304,8 +304,9 @@ Staff cancel a plugin's waiting or running job from Tools > Tasks, with a reason
 
 A plugin with a public `onAlfaWorkSettled(WorkSettledEvent $settled)` is told when one of its tasks or jobs ends:
 done, failed, held, resolved (by staff, or by a later job of its scope that ended done) or cancelled. `getStatus()` is
-the row as it ended (a `WorkStatus`), and `getReason()` staff's reason for Mark resolved or for the Cancel of a waiting
-task or job; `''` otherwise, the Cancel of a running job included.
+the row as it ended (a `WorkStatus`), and `getReason()` the reason given with Mark resolved or with the Cancel of a
+waiting or running task or job (for a running job, the reason given when the cancel was asked); `''` when none was
+given.
 
 ```php
 public function onAlfaWorkSettled(WorkSettledEvent $settled): void
