@@ -6,7 +6,7 @@ description: What Alfa Commerce keeps in Joomla's cache, what clears each cache,
 
 # Caches and the page cache
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 A **cache** is a stored copy of something that is slow to work out, kept for a while so that the next request does
 not work it out again. The danger of a cache is a copy that is out of date, or a copy made for one visitor that is
@@ -28,9 +28,9 @@ by one under Joomla's System > Clear Cache.
 
 | Group | What is kept | For how long | What clears it before that |
 |---|---|---|---|
-| `com_alfa.cards` | The dashboard's cards, worked out. One copy for each viewer, administrator language, period and set of permissions, so that one person's figures are never shown to another. | 5 minutes | A save, delete, publish or unpublish, made in the administrator, of an order, an item, a payment method or an order status. Installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
-| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again. A payment or shipping plugin enabled or disabled from the Plugins list. Installing, updating, uninstalling, enabling or disabling an Alfa extension, "System - Alfa Commerce Sync" among them (in the Plugins list, in Extensions: Manage, or saved in its own form). |
-| `com_alfa.categories` | The storefront's category data: each category, its path and the category tree. One copy for each language and for each kind of visitor (who may see what, and how the shop treats items that are out of stock). | 1 year | A save, delete, publish, unpublish, move or reorder of a category. A save, delete, publish or unpublish of an item. The Tools action that fills empty translations of categories. |
+| `com_alfa.cards` | The dashboard's cards, worked out. One copy for each viewer, administrator language, period and set of permissions, so that one person's figures are never shown to another. | 5 minutes | A save, delete, publish or unpublish, made in the administrator or through the REST API, of an order, an item, a payment method or an order status. Installing, updating, uninstalling, enabling or disabling an Alfa extension (in the Plugins list, in Extensions: Manage, or saved in its own form). |
+| `com_alfa.setup` | The verdict of the setup checklist | 6 hours | A save, delete, publish or unpublish of a payment method, shipping method, tax, category, item, form field, form field group, document series or currency. Saving Alfa's Options. Saving a payment or shipping plugin. Saving or deleting a site menu item. The Tools action that runs the checklist again, and the checklist card's own refresh, its set-up actions and its Ignore and Show again. A payment or shipping plugin enabled or disabled from the Plugins list. The state of an Alfa Commerce guided tour saved. A run of Clear everything. Installing, updating, uninstalling, enabling or disabling an Alfa extension, "System - Alfa Commerce Sync" among them (in the Plugins list, in Extensions: Manage, or saved in its own form). |
+| `com_alfa.categories` | The storefront's category data: each category, its path and the category tree. One copy for each language and for each kind of visitor (who may see what, and how the shop treats items that are out of stock). | 1 year | A save, delete, publish, unpublish, move or reorder of a category. A save, delete, publish, unpublish, archive or restore of an item, and a batch move of items to another category. The Tools action that fills empty translations of categories. |
 | `com_alfa.integrity` | The last answer of the file check under Tools > Security | 24 hours | The button "Recheck now". An update of Alfa Commerce. |
 | `com_alfa.tasks` | No data. Three marks that stop a check from running too often: the notice about failed tasks (2 minutes), the notice that background work is not running (10 minutes), the fallback deletion of finished tasks (1 hour). | As stated | Nothing. They run out. |
 | `com_alfa.notifications` | No data. The mark that limits the deletion of expired notifications to once an hour. | 1 hour | Nothing |
@@ -42,12 +42,16 @@ The category cache is the only one with a switch. Alfa's Options have a tab **Ca
 and "Cache Categories". Both are on after an installation. With either off, categories are read from the database on
 every request.
 
-Two more caches belong to the items module (`mod_alfa_items`), not to the component:
+More caches belong to the modules the package ships, not to the component. The items module keeps two in its group
+`mod_alfa_items`, the easy articles module one in `mod_easy_articles`, and Joomla itself keeps the whole output of the
+filters module and of the search module in `mod_alfa_filters` and `mod_alfa_search`:
 
 | What is kept | For how long | Notes |
 |---|---|---|
-| The module's list of items | The module's own cache time, when the module's caching is on | One copy for each module, source, ordering, page, price setting of the visitor and stock setting. A "recently viewed" or random list is never cached. A page that shows a visitor's own, non-empty "recently viewed" list is also kept out of Joomla's page cache. |
-| The ranking of best sellers | Set by the module's field "Refresh the best-sellers ranking every (minutes)", 60 unless changed. 0 switches it off. The ranking is kept for the minutes the field says. | The ranking is the same for every visitor. What a visitor may see is applied when the list is read. |
+| The items module's list of items | The module's own cache time, when the module's caching and Joomla's caching are on, for a visitor who is not logged in | One copy for each module, source, ordering, page, price setting of the visitor, stock setting and online selling setting, and new copies after each change of stock. A "recently viewed" or random list is never cached. A page that shows a visitor's own, non-empty "recently viewed" list is also kept out of Joomla's page cache. |
+| The items module's ranking of best sellers | Set by the module's field "Refresh the best-sellers ranking every (minutes)", 60 unless changed. 0 switches it off. The ranking is kept for the minutes the field says. | The ranking is the same for every visitor. What a visitor may see is applied when the list is read. |
+| The easy articles module's list of articles | The module's own cache time, 900 seconds unless changed, when the module's caching and Joomla's caching are on, for a visitor who is not logged in | One copy for each module and query. A "recently read" or random list is never cached. A page that shows a visitor's own, non-empty "recently read" list is also kept out of Joomla's page cache. |
+| The whole output of the filters module or of the search module | The module's Cache Time, 900 seconds unless changed, when Joomla's caching is on and the module's Caching is left at Use Global, for a visitor who is not logged in | Joomla's own module cache, in its static mode: one copy for each module and language, served on every page. The filters module draws the filters of the page it is on, so with Joomla's caching on set its Caching to No caching. |
 
 ### What an update cleans
 
@@ -61,8 +65,8 @@ So no page or card stored before the update is served after it. Nothing has to b
 group cannot be cleaned, that is written to the maintenance log and the update goes on; the group's entries then run
 out by themselves.
 
-The update also cleans both caches of the items module. It does not
-clean other extensions' caches.
+The update also cleans both caches of the items module. It does not clean the caches of the easy articles, filters
+and search modules, or other extensions' caches.
 
 ### The page cache rule
 
@@ -73,9 +77,10 @@ given to the next visitor.
 **Who this concerns.** Only a shop that has switched on Joomla's plugin "System - Page Cache". Joomla installs that
 plugin disabled. A shop that does not use it stores no whole pages, and nothing in this section applies to it.
 
-The cart page, and every page of a visitor whose session holds a cart, typed checkout details, or a currency or a
-place of their own (the session keys `alfa.currency_id` and `alfa.location_id`, which the storefront's prices
-follow), are never stored. Such a visitor is also never given a stored page. Every other page is cached.
+The cart page, and every page of a visitor whose browser holds a cart with items, whose session holds typed checkout
+details, or who has a currency or a place of their own (the session keys `alfa.currency_id` and `alfa.location_id`,
+which the storefront's prices follow), are never stored. Such a visitor is also never given a stored page. Every other
+page is cached.
 
 Alfa answers two questions that Joomla's page cache asks. Joomla's page cache works only on a GET request of a
 visitor who is not logged in, and only while no message is waiting to be shown:
@@ -119,9 +124,9 @@ Two more kinds of page keep themselves out of the page cache, whatever the visit
 
 These keep themselves out too, whatever the state of "System - Alfa Commerce Sync":
 
-- **The cart page in every form:** the cart with the checkout form, the empty cart, the order process page (the
-  order's page shown before payment, also when it is opened again by a reload or by Try again) and the
-  order-completed page.
+- **The cart page in every form:** the cart with the checkout form, the empty cart, the sentence it shows while the
+  shop sells nothing online, the order process page (the order's page shown before payment, also when it is opened
+  again by a reload or by Try again) and the order-completed page.
 - **The item page opened to change a line of the cart** (the address with `edit_line`, linked from each line of the
   cart). It shows that line's choices and the Update form, so it is never stored, whichever line it names.
 - **Any page while the cart module on it shows items.** A page whose cart module is empty can still be stored.
@@ -290,5 +295,3 @@ No event lets a plugin tell Alfa "clear your cache". What exists:
   "Joomla page cache" notice names what such a cache must keep out: the cart, the checkout, the order pages and the
   registration page of Alfa Commerce, and every page of a visitor with items in the cart, typed checkout details, or a
   currency or place of their own.
-- The caching settings of the filters module and the search module. Their forms have Joomla's standard caching
-  fields; what they store was not read for this page.
