@@ -122,14 +122,6 @@ prices are written as sent. `prices_state` sent on a create, without `prices`, o
 `info_values`, `field_order`, `field_required`, `item_downloads`) are not keys of the API: a create or change that
 carries one answers 422 naming it, and nothing is saved; the item is not checked out.
 
-`related` lists the products the item's page shows as related, in their order, each
-`{"item_id": 57, "combination_id": 305, "values": {"3": 12}}`: the product, the combination its card opens on (null
-for none) and the values chosen for it, an object of item field id to value id. A create or change that carries
-`related` writes the list whole, in the order sent, as the product's Related tab does: `[]` removes every related
-product, and a change that leaves it out keeps them. A row naming the product itself, a product that does not exist,
-a product named twice, or a combination or a value the linked product does not offer answers 422 naming the row
-(`related[0]`), and nothing is saved.
-
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
 
@@ -168,6 +160,60 @@ item in any other state answers 409 and nothing is deleted. An item that was nev
 item that an order holds stays, archived (`state` 2), and the answer is 200 with the item and `meta.note` saying
 that it was archived instead of deleted. An item that still holds stock or reservations is neither removed nor
 archived: the answer is 409 with the reason; bring its stock to zero first.
+
+### Related products
+
+`related` lists the products the item's page shows as related, in their order, each an object: `item_id` (the
+product), `combination_id` (the combination its card opens on; `null` for none) and `values` (an object of item field
+id to value id: values of the product's variant dimensions and of the options it offers, one a field, that its card
+opens with). A link with neither opens the card on the product's default, as a listing card. A `POST` or `PATCH` that
+sends `related` replaces the list with it, in the order sent; a `PATCH` that leaves it out keeps it. A product is
+linked at most once.
+
+```http
+PATCH /api/index.php/v1/alfa/items/120
+X-Joomla-Token: YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "related": [
+    {"item_id": 42, "values": {"5": 12, "6": 22, "7": 71}},
+    {"item_id": 57, "values": {"5": 12}},
+    {"item_id": 63}
+  ]
+}
+```
+
+The record read back:
+
+```json
+"related": [
+  {"item_id": 42, "combination_id": 304, "values": {"7": 71}},
+  {"item_id": 57, "combination_id": null, "values": {"5": 12}},
+  {"item_id": 63, "combination_id": null, "values": {}}
+]
+```
+
+Values that name every dimension of the product are stored as the combination that carries them, so the first link
+comes back as combination 304 with its option kept. A link the product cannot take answers 422, each refusal led by
+its row, and nothing is saved:
+
+```json
+{"errors": [{"title": "related[0]: Smartphone X has no variant White / 128 GB. Nothing was saved.", "code": 422}]}
+```
+
+Refused: the item itself, a product sent twice, a product that does not exist, a `combination_id` that is not a current
+combination of the product (another product's, deleted or archived), a value that is not a value of the field named, a
+value the product does not take (a field that is neither a dimension of its combinations nor the field of an option it
+offers, a dimension value none of its current combinations carries, an option value it does not offer), and dimension
+values that no current combination carries together. An unpublished product or combination may be linked: it shows
+once published. A combination removed (the variants grid, `DELETE v1/alfa/items/:id/combinations/:combinationId`,
+deleted or archived for its order history), an option removed from the product and a value deleted from its field take
+the links that name them with them, in the same write.
+
+The storefront judges every link again when it draws the item's page: a combination that is not published, a value
+the product no longer offers, or a unit out of stock while the shop hides out-of-stock products skips the link, and
+the next one takes its place.
 
 ### SKUs and variants
 
@@ -391,6 +437,14 @@ chooses, such as a colour. `type` names the item field plugin that handles it. S
 `searchable`, `show_on_listing`, `state`, `ordering`.
 
 **One record holds also:** `description`, `categories`, `translations`.
+
+**Show on listing** (`show_on_listing`) decides what a product card draws: a field with it on is drawn on the cards
+of the lists, the items module and the related products, a field with it off on the product page only. For a field
+that is a variant dimension of a product, it decides whether that product's variants appear on its card: on, the card
+draws the field's selector and a shopper picks the variant there; off, the card shows the combination it opens on (the
+product's default, or the one its related link names) and, when the dimension has two values or more, its button
+reads Choose options and opens the product page on that combination. The card's price, image, SKU and stock are those
+of the combination it shows either way.
 
 **Related lists you can send:** `categories`. A field's values have routes of their own: see
 [Item field values](./variants.md#item-field-values). A create or change of the field that carries `values` or
