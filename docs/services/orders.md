@@ -429,9 +429,9 @@ the code:
 
 The order's money changes at a dispute's **decision**, never while the bank decides: an inquiry, an open chargeback
 and a case under review leave the order paid as it was. A loss books a chargeback of the disputed amount and the order
-reads owed again by it (its balance is positive, its payment status partial); a win books nothing, and a win after a
-loss reverses that chargeback. A case opened again keeps its last decision until the bank decides again. No order
-status moves at any step. See [Card disputes](./disputes.md).
+reads owed again by it (its balance is positive; with no refund its payment status reads partial, never refunded); a
+win books nothing, and a win after a loss reverses that chargeback. A case opened again keeps its last decision until
+the bank decides again. No order status moves at any step. See [Card disputes](./disputes.md).
 
 ## OrderStatusHelper
 
