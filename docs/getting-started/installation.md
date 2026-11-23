@@ -153,7 +153,8 @@ why:
 2. Joomla is 7.0 or newer.
 3. PHP is older than 8.3.
 4. A required PHP extension is missing (each one is named).
-5. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
+5. An Alfa Commerce older than the 2.2.x line is installed: it updates to 2.2.1 first.
+6. Alfa Commerce tables of another version were left in the database and cannot be reconnected.
 
 ## After installing
 
@@ -197,9 +198,9 @@ it from cron with the console command `alfa:tasks:run`.
 
 ## Updating
 
-Alfa Commerce updates in place from any 2.x release; this page describes the update from the 2.2.x line to 2.3.0. It
-updates through Joomla's own update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by
-installing the new ZIP over the installed version. Joomla runs each release's database changes itself.
+Alfa Commerce updates in place from the 2.2.x line; an older installation updates to 2.2.1 first. It updates through
+Joomla's own update system (update server `https://cdn.alfacommerce.gr/com_alfa/update.xml`), or by installing the new
+ZIP over the installed version. Joomla runs each release's database changes itself.
 
 An update also removes the files the new version no longer ships, cleans Joomla's page cache and Alfa Commerce's
 own caches, and pauses the shop's background work while it runs (at most ten minutes).

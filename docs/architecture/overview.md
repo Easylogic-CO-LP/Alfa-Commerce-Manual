@@ -265,7 +265,7 @@ and refuses with a message when a floor is not met.
 | Joomla | 6.1.0 or a later 6.x. Joomla 7 is refused |
 | PHP | 8.3.0 or newer. 8.4 is recommended |
 | PHP extensions | bcmath, intl, mbstring, gd, openssl |
-| An update | From any 2.x release |
+| An update | From the 2.2.x line. An older installation updates to 2.2.1 first |
 
 Write your extension for these floors. You may use PHP 8.3 syntax and Joomla 6.1 classes.
 
