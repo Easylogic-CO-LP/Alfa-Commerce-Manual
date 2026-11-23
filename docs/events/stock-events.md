@@ -100,7 +100,6 @@ events, and the group `alfa-inventory` before `onCollectStockAllocationProviders
 | `onInventoryCommitted` | After goods were taken from stock and the save is final | No | Logged, the others still run |
 | `onInventoryReleased` | After reservations were let go and the save is final | No | Logged, the others still run |
 | `onInventoryAdjusted` | After a manual adjustment and the save is final | No | Logged, the others still run |
-| `onInventoryTransferred` | Never: no command moves stock between locations | No | Logged, the others still run |
 | `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
@@ -288,7 +287,7 @@ other exception is tried again with the waits above.
 
 ## The events that only report
 
-These six are "after" events. They all share one base class,
+These five are "after" events. They all share one base class,
 `Alfa\Component\Alfa\Administrator\Event\Inventory\InventoryAfterEvent`, with two methods:
 
 | Method | What it gives |
@@ -297,7 +296,7 @@ These six are "after" events. They all share one base class,
 | `argument(string $key, mixed $default = null): mixed` | One named value of the event (the tables below list the names) |
 
 **Who receives them.** Each is announced to everyone. The cards below give, for each event, when it fires and what
-it carries. Everything else is the same for all six and is said here once.
+it carries. Everything else is the same for all five and is said here once.
 
 **When they fire, exactly.** Alfa does not announce them when the step finishes. It waits until the whole save the
 step belongs to is final (`PostCommit::defer()`). So:
@@ -368,14 +367,6 @@ extension set or corrected stock with `InventoryCommands`, once for each line th
 | `movementType` | Always `adjust` |
 | `sourceType`, `sourceId` | What made the change: `catalog_edit` and the item for the stock editors, a tracking switch and `PATCH v1/alfa/items/units`; `api` and 0 for the REST API's adjustments; what an extension's adjustment names with `source()` |
 | `result` | `operation_id`, and `delta` when the change came from a stock figure |
-
-### onInventoryTransferred
-
-**When it fires.** Never: no command of Alfa Commerce moves stock between locations, so core announces it from
-nowhere. The event class `InventoryTransferredEvent` and its name stay in the list of events. A move between two
-locations is two lines of one adjustment (`InventoryCommands`), a negative `delta()` at one and a positive one at the
-other, each announced as `onInventoryAdjusted`. Nothing builds its arguments: the class adds
-no method to `InventoryAfterEvent`.
 
 ### onInventoryRestored
 

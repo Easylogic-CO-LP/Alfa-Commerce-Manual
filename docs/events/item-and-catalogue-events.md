@@ -281,8 +281,9 @@ discounts or taxes name and that some customers hold together (table `#__alfa_pr
 for each **pricing context**, not for each customer: a currency, a place class and a customer group set, and, for a
 customer with prices of their own, that customer (table `#__alfa_price_contexts`). Every customer of the same context
 reads the same rows. A context that is new to the shop, or the next generation of one that a large change reaches, is
-prepared a part of the items at a time. Each part its background job prepares is a write with the cause `set`; the
-parts that the save of a discount or a tax prepares itself, in its first seconds, belong to that save's write.
+prepared a part of the items at a time and goes live whole once complete. Its parts are not announced while they are
+written: the switch is, after it is final, as a write with the cause `set`, naming the rows that differ from the
+generation it replaced.
 
 **Who receives it.** Announced to everyone: every loaded plugin that lists it in `getSubscribedEvents()`, a `system`
 plugin included. Alfa loads the `alfa` group first.

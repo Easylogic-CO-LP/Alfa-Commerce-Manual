@@ -278,7 +278,7 @@ answered 400. The `filter[category]` and `filter[manufacturer]` of `items` take 
 | `cartrules` | `filter[state]`, `filter[activation]`, `filter[discount_class]` |
 | `locations` | `filter[state]`, `filter[location_type]` |
 | `users`, `usergroups` | None |
-| `orders` | `filter[id_order_status]`, `filter[id_payment_method]`, `filter[id_shipment_method]`, `filter[show_trashed]` |
+| `orders` | `filter[id_order_status]`, `filter[id_payment_method]`, `filter[id_shipment_method]`, `filter[show_trashed]`, `filter[dispute]`, `filter[dispute_due_before]` |
 | `documents` | `filter[doc_type]`, `filter[status]`, `filter[id_order]` |
 | `inventorymovements` | `filter[movement_type]`, `filter[location_id]`, `filter[combination_id]`, `filter[operation_id]`, `filter[source_type]` |
 | `tasks` | `filter[state]`, `filter[type]`, `filter[owner]`, each left out when it is not one value, and no `filter[search]` |
@@ -291,6 +291,8 @@ Five lists take more filters. Those their administrator screens apply mean what 
 |---|---|---|
 | `orders` | `filter[payment]` | `paid`: a completed payment. `unpaid`: none, and not cancelled. `failed`: a failed or cancelled attempt. `refunded`: a refund that was not reversed. For `failed` and `refunded` the dates below apply to the payment's date. |
 | `orders` | `filter[fulfilment]` | `shipped`: in a completed status. `unshipped`: neither completed nor cancelled. |
+| `orders` | `filter[dispute]` | The orders with a card dispute: `undecided` (an inquiry, open or under review), one state (`inquiry`, `open`, `under_review`, `won`, `lost`, `closed`), or `due` (an inquiry or open dispute with evidence to send within seven days) |
+| `orders` | `filter[dispute_due_before]` | The orders with an inquiry or open dispute whose evidence is due before a UTC time (`YYYY-MM-DD` or with `HH:MM:SS`), none sent yet |
 | `orders` | `filter[waiting]` | `placed_48`: placed more than 48 hours ago. `untouched_48`: not changed for 48 hours. |
 | `orders` | `filter[reconciliation]`, `filter[overpaid]` | With `1` or `true`: the orders the order page says need reconciliation (and the orders that name no currency); the orders that hold more than they ask. With `0`, `false` or an empty value: no filter. |
 | `orders` | `filter[date_start]`, `filter[date_end]` | The order's date, in UTC. With `filter[payment]` `failed` or `refunded`, the payment's date, in UTC. |
