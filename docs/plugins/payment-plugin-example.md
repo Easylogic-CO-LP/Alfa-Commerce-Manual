@@ -1,13 +1,13 @@
 ---
 title: A complete payment plugin
-description: "A complete minimal payment plugin for Alfa Commerce 2.2, file by file."
+description: "A complete minimal payment plugin for Alfa Commerce 2.3.0, file by file."
 ---
 
 # A complete payment plugin
 
 <CreatePluginButton type="payment" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
