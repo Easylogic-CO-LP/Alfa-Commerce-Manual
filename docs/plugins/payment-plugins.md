@@ -124,13 +124,9 @@ What the picture means:
   shopper's return only decides which page the shopper sees.
 - **An offline method stops after step 7.** It sets nothing in `onOrderProcessView`, the shopper goes to the
   completed page, and staff settle the payment later with a button.
-- **Step 7 can come again for the same order.** While an order still owes money, its confirmation page and the
-  customer's order e-mail show Pay now, which leads the buyer back to the process page of the same order; nothing is
-  placed again. Your `onOrderProcessView` then runs for an order that may already hold an earlier attempt of yours:
-  open a fresh attempt (close the earlier pending one with `supersedeAttempt()`) or carry the earlier one on, as your
-  provider allows. Core offers Pay now only while the order is not in the trash, owes money, is neither cancelled nor
-  completed, holds no authorised payment and no unsettled refund, and its method is published with its plugin
-  enabled; core's Standard method never gets it.
+- **Step 7 can come again for the same order.** While an order still owes money, its confirmation page, the
+  customer's order e-mail and the payment link staff send from the order screen show Pay now, which leads the buyer
+  back to the process page of the same order; nothing is placed again. See [Paying an order again](#paying-an-order-again).
 - **Settling is its own save.** When your plugin settles a payment, Alfa writes the payment row and makes that save
   final. Only then, and after Alfa's locks are released, does the order move to the status the method's settings name
   (see [The order's status](./payment-plugin-money.md#the-orders-status)).
@@ -138,6 +134,34 @@ What the picture means:
 The other events are not part of this timeline: `onItemView` (the item page), `onGetActions` and `onExecuteAction`
 (staff), `onAdminOrderDelete`, `onPaymentCheckup` (the method's settings page), `onClearData` (Tools), and the two
 stored credential events.
+
+### Paying an order again
+
+Pay now runs your `onOrderProcessView` again for an order that already exists and still owes money. The order may hold
+an earlier attempt of yours: one the buyer abandoned, one your provider declined, or one that expired. The contract
+for this visit:
+
+| Your process view | What it must do |
+|---|---|
+| Finds nothing owed (`amountToCollect()` is 0) | Set nothing: the buyer goes to the completed page. |
+| Finds a payment of yours authorised, or one your provider is still processing | Open nothing new: show the order's state, as on a first visit. |
+| Finds your own pending attempt | Close it with `supersedeAttemptVerdict()` (or claim the reference-less row your placement wrote), then open a new one. |
+| Opens the attempt | Write the pending row first (`$this->payment($order)->pending()->transactionId($minted)->saveWithVerdict()`), for `amountToCollect()`, then create the provider's payment page for exactly that row, then redirect. |
+
+**A new attempt is the contract.** A process view that only sends the buyer back to a provider page created at
+placement (in `onOrderAfterPlace`) does not meet it: once that page has expired, or its attempt was closed failed or
+cancelled, the buyer has nothing to pay on. Create the provider's page in `onOrderProcessView`, for each visit, and
+let `onOrderAfterPlace` write the pending row only.
+
+Core offers Pay now, and lets staff send the payment link, only while the order is there and not in the trash, still
+owes money (`amountToCollect()`), is neither in the cancelled nor in the completed family of statuses, holds no payment
+authorised at a provider and no refund that is not settled, and its payment method is published with its plugin
+enabled and is not core's Standard method (an offline method takes no payment on the process page). This is checked
+again on every use of the link and just before your process view is asked.
+
+Before you close an earlier attempt, make sure your provider can no longer take money on it: expire or cancel its page
+there, or ask the provider first and settle the attempt when it was paid. Core cannot look inside your process view:
+meeting the contract above is your plugin's part.
 
 ### The life of a refund through a provider
 
