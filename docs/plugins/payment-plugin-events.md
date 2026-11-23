@@ -55,14 +55,16 @@ the item page.
 | `getItem()` | The item being shown |
 | `getMethod()` | The method's record: `id`, `name`, `description`, and `params` already decoded to an array |
 
-**What you are expected to do.** Call `setLayout('<file in tmpl, without .php>')` and `setLayoutData([...])`. Alfa
-draws the method itself first: its image, its title and its description. Your layout adds only what is yours below
-them (a "pay in instalments" note, for example), never a logo, the title or the description. With nothing to add, set
-no layout. To draw somewhere else on the page, ask for a place and set its layout: `paymentMethods()` (the default place),
-`title()` (beside the item's title) or `nearAddToCart()`; each returns a builder with `setLayout()` and `setData()`.
-Change nothing on the item.
+**What you are expected to do.** Ask the event for a place and set your layout there:
+`$event->paymentMethods()->setLayout('<file in tmpl, without .php>')->setData([...])`. Alfa draws the method itself
+first: its image, its title and its description. Your layout adds only what is yours below them (a "pay in
+instalments" note, for example), never a logo, the title or the description. With nothing to add, draw nothing. The
+other places are `title()` (beside the item's title) and `nearAddToCart()`. Each place returns a builder with
+`setLayout()` and `setData()`; the layout belongs to your plugin unless you name another with `setPluginType()` and
+`setPluginName()`. The event has no layout of its own. Change nothing on the item.
 
-**What happens next.** Alfa draws your layout in the payment methods area of the item page.
+**What happens next.** Alfa draws your layout in the place you asked for: under the method in the payment methods
+area, beside the title, or next to the add to cart button.
 
 **If you are missing or you fail.** Alfa still draws the method's image, title and description, nothing of yours is
 added, a thrown error is written to Joomla's log (category `com_alfa`), and the page is shown.
@@ -112,11 +114,30 @@ that replace the methods block after the shopper changes something.
 | `getCart()` | The cart as it is now, read only. It cannot change the cart. |
 | `getRequest()` | Both of the above as one `MethodViewRequest` object (`->method`, `->cart`) |
 
-**What you are expected to do.** Call `setLayout()` and `setLayoutData()`. Pass only what the layout prints. The
+**What you are expected to do.** Draw your panel through the event's place:
+`$event->paymentMethods()->setLayout('default_cart_view')->setData([...])`. Pass only what the layout prints. The
 layout must be markup and `data-` attributes only: a script declared or printed there is lost the first time the
-block arrives as JSON. Declare scripts in `onCartViewAssets`.
+block arrives as JSON. Declare scripts in `onCartViewAssets`. With nothing to add, draw nothing.
 
-**What happens next.** Alfa draws your layout beside the method in the cart.
+Every offered method is asked, and every panel drawn is shown under its own method, the chosen one and the others. A
+panel that belongs to the chosen method only, such as a card form or a "you will be sent to the provider" note, checks
+`$event->getMethod()->isSelected()` first and draws nothing for the others.
+
+```php
+public function onCartView($event): void
+{
+    if (!$event->getMethod()->isSelected()) {
+        return;
+    }
+
+    $event->paymentMethods()->setLayout('default_cart_view')->setData([
+        'method' => $event->getMethod(),
+    ]);
+}
+```
+
+**What happens next.** Alfa draws your layout under the method in the cart, after the method's radio, image, title
+and description.
 
 **If you are missing or you fail.** Your markup is left out and the failure is logged as a warning (category
 `com_alfa.cart`). The method stays offered and the cart is shown. With Joomla's Debug System on, the error is thrown
@@ -205,7 +226,7 @@ before it is read.
 |---|---|
 | Nothing | Goes straight to the completed page. Right for an offline method, and when there is nothing to collect. |
 | `setRedirectUrl($url)` | Is sent to that address, for example the provider's payment page |
-| `setLayout()` and `setLayoutData()` | Sees your layout on the process page: a form that posts to the provider, or a "payment was cancelled" message with a retry button |
+| `$event->orderProcess()->setLayout(...)->setData([...])` | Sees your layout on the process page: a form that posts to the provider, or a "payment was cancelled" message with a retry button |
 
 **What happens next.** As in the table. A redirect uses the code you set with `setRedirectCode()`, or 303.
 
@@ -223,10 +244,12 @@ Event class: `OrderCompleteViewEvent`. You must write this method.
 **What you are given.** `getOrder()` (an `Order` object) and `getMethod()` (the method record, or `null` when the
 method no longer exists).
 
-**What you are expected to do.** Call `setLayout()` and `setLayoutData()` to add your part, such as bank details for
-a transfer. You may redirect with `setRedirectUrl()` instead.
+**What you are expected to do.** Add your part through the event's place, such as bank details for a transfer:
+`$event->orderComplete()->setLayout('default_order_completed')->setData([...])`. With nothing to add, draw nothing.
+You may redirect with `setRedirectUrl()` instead.
 
-**What happens next.** Alfa draws your layout on the completed page.
+**What happens next.** Alfa draws your layout on the completed page, and on the order's page in the customer's
+account.
 
 **If you are missing or you fail.** The page is shown without your part, with a neutral line. It never states a
 payment the order does not hold.

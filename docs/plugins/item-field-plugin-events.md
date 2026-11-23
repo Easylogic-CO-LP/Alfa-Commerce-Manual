@@ -38,7 +38,8 @@ popup that configures an item for an order, or for a line of the order builder, 
 | `getSelections(): array` | What is chosen across all fields now: `['sel' => [field id => value id], 'opt' => [value ids]]` |
 | `getSelectedValueIds(): int[]` | The same, as one flat list of value ids |
 
-**What you are expected to do.** Pick the place of the page, name a layout, pass its data:
+**What you are expected to do.** Pick the place of the page, name a layout, pass its data. The event has no layout of
+its own; what you draw is what you set on a place:
 
 ```php
 $event->buyForm()

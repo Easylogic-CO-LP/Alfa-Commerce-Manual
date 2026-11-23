@@ -82,9 +82,12 @@ public function onOrderProcessView($event): void;
 public function onOrderCompleteView($event): void;
 ```
 
-Alfa draws the method on the item page itself: its image, its title and its description. `onItemView` sets a layout
-only to add something below them; with nothing to add, it sets none. `onCartView` always sets a layout, even an empty
-one.
+Alfa draws the method on the item page and in the cart itself: its image, its title and its description (and its
+radio in the cart). Your plugin draws only what it adds, through the place its event offers: `paymentMethods()` on
+the item page and in the cart, `orderProcess()` on the order process page, `orderComplete()` on the order completed
+page. Each place is a builder: `$event->paymentMethods()->setLayout('default_cart_view')->setData([...])`. The events
+have no layout of their own. With nothing to add, a hook draws nothing; see
+[Payment plugin events](./payment-plugin-events.md) for each hook's places.
 
 Every other event is optional. You take part in an event by writing a public method with the event's name. Nothing
 is listed in `getSubscribedEvents()`: all payment events are addressed to one plugin (targeted), and Alfa calls the

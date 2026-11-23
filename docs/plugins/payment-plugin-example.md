@@ -123,8 +123,7 @@ final class Offline extends PaymentsPlugin
     public function onCartView($event): void
     {
         // The layout prints nothing, so nothing is passed to it.
-        $event->setLayout('default_cart_view');
-        $event->setLayoutData([]);
+        $event->paymentMethods()->setLayout('default_cart_view')->setData([]);
     }
 
     public function onOrderAfterPlace($event): void
@@ -157,8 +156,7 @@ final class Offline extends PaymentsPlugin
 
     public function onOrderCompleteView($event): void
     {
-        $event->setLayout('default_order_completed');
-        $event->setLayoutData([]);
+        $event->orderComplete()->setLayout('default_order_completed')->setData([]);
     }
 
     public function onGetActions($event): void
