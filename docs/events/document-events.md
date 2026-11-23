@@ -6,7 +6,7 @@ description: When Alfa Commerce issues and voids sales documents, the events it 
 
 # Document events
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce tells plugins when a sales document is about to be issued, when it has been issued and when it has been
 voided. A plugin can also add document types of its own. This page explains the words first, then each event, then
@@ -23,7 +23,7 @@ Read [How events reach a plugin](./how-events-reach-a-plugin.md) first. The word
 |---|---|---|
 | **Document** | An invoice, a receipt, a credit note or a delivery note issued for an order. It has a number and it is kept as issued. | A row of `#__alfa_documents` with its lines in `#__alfa_document_items` |
 | **Document type** | The kind of document. Alfa ships five: `core.invoice`, `core.retail_receipt`, `core.credit_invoice`, `core.credit_receipt` and `core.delivery_note`. | The `DocumentHelper::TYPE_*` constants, and a row of `#__alfa_document_types` |
-| **Series** | The numbered sequence a document is issued in. Each type has a default series. | A row of `#__alfa_document_series` |
+| **Series** | The numbered sequence a document is issued in. A type can have one default series, the one an automatic issue uses. | A row of `#__alfa_document_series` |
 | **Draft** | The document as it is about to be issued: its type, its order, its buyer and its lines, as a plain array | The argument of `DocumentIssuer::issue()` |
 
 ### Kept as issued
@@ -34,8 +34,9 @@ brought back. A mistake is corrected with a new document.
 
 ### One way in
 
-Every document is issued by one method, `DocumentIssuer::issue()`, whoever asked for it. So the events on this page
-fire the same way for a document issued by staff and for one issued automatically.
+Every document is issued through one class, `DocumentIssuer`: its `issue()`, or its `replace()` for the new document
+of a void and replace, which runs the same issue path. So the events on this page fire the same way whoever asked for
+the document: staff, or Alfa Commerce automatically.
 
 If the shop's setting says an outside system issues its documents (`documents_issuer` set to `external`), Alfa issues
 nothing automatically, and the order screen's own issue, correction and void and replace actions do nothing either.
@@ -46,8 +47,9 @@ None of these events fire for a status change. See [Documents](../services/docum
 | Who asks | When |
 |---|---|
 | Staff | From the order's screen: issue a document, issue a credit note, void a document, void and replace a document |
-| Alfa Commerce, automatically | When an order enters a status whose settings say "issue a document" or "issue a delivery note" |
+| Alfa Commerce, automatically | When an order enters a status whose settings issue a document ("Issue sales document") or a delivery note ("Issue delivery note") |
 | Alfa Commerce, automatically | When a payment settles on an order whose status issues only once the order is paid |
+| An API client | When it voids a document (`POST v1/alfa/documents/:id/void`) |
 
 The automatic issue is background work: the task `order.documents` is saved together with the status change and runs
 right after the status is final. It never blocks the status change. If a document cannot be issued, the status stays
@@ -62,7 +64,7 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 | `onDocumentBeforeIssue` | Before a document is issued, before anything is saved | Yes | The document is not issued |
 | `onDocumentIssued` | After the document is saved and the save is final | No | Logged, the others still run |
 | `onDocumentVoided` | After the void is saved and the save is final | No | Logged, the others still run |
-| `onCollectDocumentTypeProviders` | On the Document Types screen, when it is shown and when staff press its sync button | No | Logged, the others still run |
+| `onCollectDocumentTypeProviders` | On the Document Types screen, when it is shown to staff who may sync it and when they press its sync button | No | Logged, the others still run |
 
 There is no "before void" event. A plugin cannot refuse a void.
 
@@ -208,7 +210,7 @@ document.
 |---|---|
 | `getDocument(): object` | The document's row as it is after the void. Its number and content are unchanged. |
 | `getReason(): string` | The reason staff gave |
-| `getActorId(): int` | The user id of the member of staff who voided it |
+| `getActorId(): int` | The user id of whoever voided it: staff, or the API client's user |
 
 **What you are expected to do.** React, for example tell another system that the document was cancelled.
 
@@ -282,12 +284,14 @@ shop's list of types and belong to the plugin that offered the provider.
 
 Types are stored data, and Alfa writes them only when staff ask. On the Document Types screen staff press the sync
 button. Alfa then collects the providers with the event `onCollectDocumentTypeProviders` and lets each one declare
-its types. When the screen is shown, Alfa collects the providers the same way without storing anything, to count how
-many are waiting to be synced: a provider with no stored types, or one whose version differs from the stored one.
+its types. When the screen is shown to staff who may sync it, Alfa collects the providers the same way without
+storing anything, to count how many are waiting to be synced: a provider with no stored types, or one whose version
+differs from the stored one.
 
 ### onCollectDocumentTypeProviders
 
-**When it fires.** When the Document Types screen is shown, and when staff press its sync button.
+**When it fires.** When the Document Types screen is shown to staff who hold Sales Documents: Edit, the permission
+the sync asks, and when they press its sync button.
 
 **Who receives it.** Announced to everyone. Alfa loads the `alfa` plugin group first. Event class
 `Alfa\Component\Alfa\Administrator\Event\Documents\CollectDocumentTypeProvidersEvent`.
@@ -303,8 +307,8 @@ many are waiting to be synced: a provider with no stored types, or one whose ver
 changes, the screen tells staff that your types need syncing again.
 
 **What happens next.** On a sync, Alfa calls each provider's `register()` and stores the types under Joomla's name
-for your plugin, `plg_<group>_<element>` (for `alfa.proforma`: `plg_alfa_proforma`). Staff see how many types were
-registered and each provider's error, if any.
+for your plugin, `plg_<group>_<element>` (for `alfa.proforma`: `plg_alfa_proforma`). Staff see how many new types
+were registered and each provider's error, if any.
 
 **If you are missing or you fail.** A contributor name that is not group.element makes `addProvider()` throw
 `InvalidArgumentException`. A listener that throws is logged (category `com_alfa.documents`), shown to staff as a
@@ -354,8 +358,9 @@ Which pool goes with which family:
 
 ### What happens next
 
-The type appears in the shop's list of document types, owned by your plugin. Syncing again updates it. A type is
-never deleted, so documents already issued keep their type.
+The type appears in the shop's list of document types, owned by your plugin. Syncing again updates it. Alfa never
+deletes a type by itself, and staff can delete a plugin's type only while no document or series names it and no
+credit type corrects it, so documents already issued keep their type.
 
 ### What can go wrong
 
