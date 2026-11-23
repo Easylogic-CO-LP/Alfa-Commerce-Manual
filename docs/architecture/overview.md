@@ -6,7 +6,7 @@ description: How Alfa Commerce is built, its three sides, its layers, how a requ
 
 # Architecture Overview
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce is one Joomla component, `com_alfa`, with plugins and modules around it. This page is the map: what the
 parts are, which part does what, and in which order they run. Read it once before you write your first extension.
@@ -23,7 +23,7 @@ shop rules.
 | REST API | `api/` | The same data for other programs, as JSON. Its addresses are registered by the `webservices` plugin in `plugins/webservices/alfa`. See [REST API](../api/overview.md). |
 
 Each side has its own entry class, `src/Dispatcher/Dispatcher.php`, which Joomla calls first. Around the component
-the package ships plugins (`plugins/`), modules (`modules/`) and two libraries (`libraries/`). The folder by folder
+the package ships plugins (`plugins/`), modules (`modules/`) and seven libraries (`libraries/`). The folder by folder
 tour is in [Project structure](../getting-started/project-structure.md).
 
 ### The layers
@@ -57,11 +57,11 @@ all get the same result.
 | Issue a document | The classes in `administrator/src/Service/Document` |
 | Run work later | `Tasks` in `administrator/src/Service/Task` |
 
-The folders under `administrator/src/Service` are Card, Cart, Catalog, ClearData, Credit, Document,
-DocumentTypes, Download, Inventory, ItemFields, Log, Maintenance, Media, Order, Place, Projection, Search, Setup,
-Stats, Task, Tools and ValuePool, plus the file `PriceIndexSyncService.php`. The folders under `site/src/Service` are Cart,
-CartRules, Checkout, Data, Facet, FieldState, Order, Place, Pricing, Shipping, ShowOn, Summary and Variant, plus the
-storefront router `Router.php`. The services a developer calls are described in
+The folders under `administrator/src/Service` are Api, Card, Cart, Catalog, ClearData, Credit, Document,
+DocumentTypes, Download, Inventory, ItemFields, Log, Maintenance, Media, Order, Outbound, Place, Projection, Search,
+Setup, Stats, Task, Tools and ValuePool, plus the file `PriceIndexSyncService.php`. The folders under
+`site/src/Service` are Cart, CartRules, Catalog, Checkout, Data, Facet, FieldState, Order, Place, Pricing, Shipping,
+ShowOn, Summary and Variant, plus the storefront router `Router.php`. The services a developer calls are described in
 [Services](../services/overview.md).
 
 ## When it is used
