@@ -155,8 +155,9 @@ is not documented.
 
 `Alfa\Component\Alfa\Site\Helper\CartShows::options()` reads the shop's **Options**, **Cart**, **The cart shows**: five
 switches for the amounts and one for the coupon field, each on unless the shop hides it. The cart page with its
-checkout summary, the cart module and the added-to-cart card read them; `CartSummary::rows()` gives only the rows the
-switches show.
+checkout summary with its rules progress, the cart module and the added-to-cart card read them; `CartSummary::rows()`
+gives only the rows the switches show, and none for a subtotal or a total of zero that **Zero price display** hides
+(see [Pricing](./pricing.md#a-price-of-zero-and-a-product-with-no-price-pricedisplay)).
 
 | Property | When true |
 |---|---|
@@ -167,9 +168,10 @@ switches show.
 | `total` | The total row, with the fee and cart rule rows |
 | `coupon` | The coupon field; when false, the storefront's `cart.applyCoupon` refuses every code |
 
-`rows(array $rows)` keeps the summary rows the switches show; `shows(SummaryRow $row)` answers for one row. Only the
-showing changes: the cart's totals, the placement and the order carry every amount. An override of the cart's lines,
-of the cart module or of the added-to-cart card shows what the shop chose when it reads `CartShows::options()`.
+`rows(array $rows)` keeps the summary rows the switches show; `shows(SummaryRow $row)` answers for one row, and throws
+`UnexpectedValueException` for a row of a type no switch covers. Only the showing changes: the cart's totals, the
+placement and the order carry every amount. An override of the cart's lines, of the rules progress, of the cart module
+or of the added-to-cart card shows what the shop chose when it reads `CartShows::options()`.
 
 ```php
 use Alfa\Component\Alfa\Site\Helper\CartShows;
@@ -389,12 +391,13 @@ drawn one by one.
 ### The status an order is placed in
 
 An order lands in the store's initial status. An operator placing it in the administrator may name another. An order
-whose total is zero lands in the status the shop names in **Options**, **Cart**, **Order status when nothing is to be
-collected** (`zero_total_status`), when it names one: a request for offer in a catalogue priced at zero (see
-[A catalogue with requests for offer](../getting-started/requests-for-offer.md)). An order the customer's credit pays
-in full is not such an order: its total is not zero. The confirmation e-mail is that status's own, and the download
-access is that status's. `OrderCreator` checks the status: one that is not published lands the order in the initial
-status with a notice to staff, and one that requires payment refuses the placement.
+whose total is zero, when no operator names a status, lands in the status the shop names in **Options**, **Cart**,
+**Order status when nothing is to be collected** (`zero_total_status`), when it names one: a request for offer in a
+catalogue priced at zero (see [A catalogue with requests for offer](../getting-started/requests-for-offer.md)). An
+order the customer's credit pays in full is not such an order: its total is not zero. The confirmation e-mail is that
+status's own, and the download access is that status's. `OrderCreator` checks the status: one that does not exist or
+is not published lands the order in the initial status with a notice to staff, and one that requires payment refuses
+the placement unless it allows the unpaid exception (**Allow unpaid exception**).
 
 ### What happens to the cart
 
