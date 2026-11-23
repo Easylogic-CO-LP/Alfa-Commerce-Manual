@@ -62,7 +62,9 @@ Most are static calls. The classes are in these namespaces:
 | `MediaFetch`, `MediaFetchRefused`, `MediaUrls` | `Alfa\Component\Alfa\Administrator\Service\Media` |
 | `OutboundAddressGuard`, `OutboundAddressRefused`, `OutboundConsumers`, `OutboundFeed` | `Alfa\Component\Alfa\Administrator\Service\Outbound` |
 | `AlfaInstallerGate` | `Alfa\Component\Alfa\Administrator\Service\Setup` |
-| `BackgroundWork`, `Enqueued`, `WorkFailure`, `WorkState` | `Alfa\Component\Alfa\Administrator\Background` |
+| `InventoryAvailabilityService` | `Alfa\Component\Alfa\Administrator\Service\Inventory` |
+| `BackgroundWork`, `TaskRequest`, `JobRequest`, `Enqueued`, `WorkStatus`, `WorkState`, `TaskDeclaration`, `JobDeclaration`, `TaskPart`, `WorkFailure` | `Alfa\Component\Alfa\Administrator\Background` |
+| `DeclareWorkEvent`, `RunTaskEvent`, `RunJobEvent`, `WorkSettledEvent` | `Alfa\Component\Alfa\Administrator\Event\Background` |
 | `AlfaPluginHelper`, `PluginId`, `PluginLogTable` | `Alfa\Component\Alfa\Administrator\Plugin` |
 | `CartService` | `Alfa\Component\Alfa\Site\Service\Cart` |
 | `PluginPayload` | `Alfa\Component\Alfa\Site\Service\Data` |
@@ -179,6 +181,7 @@ $folder = Storage::root() . '/mod_alfa_example';            // a module: mod_<na
 | `CommerceChange::COLUMN`, `now(): string`, `bound(string $bound): ?string`, `mark(DatabaseInterface $db, array $itemIds): void` | **WRITE.** The time a product's stock or prices last changed is its `commerce_changed_at` (`COLUMN`), in UTC to the microsecond; `mark()` sets it to now on the products given, in the caller's transaction; `now()` gives now in that form. `bound()` reads a `changed_since` bound as the column compares it (a bound without a zone is UTC), or `null` when it is not a date and time. |
 | `MediaFetch::fetch(string $url, array $allowedMimes): array` on a `new MediaFetch()`, `MediaFetch::urlHash(string $url): string` | **READ ONLY.** An image fetched from an outside address into a temporary file you store and remove: `file`, `name` and `mime`. Only http and https, every address of the host public (`OutboundAddressGuard`), at most `MAX_REDIRECTS` (3) redirects, each vetted, the size and the seconds of the Options, the type read from the content. A refusal throws `MediaFetchRefused`. `urlHash()` is the hash a media row keeps of its address. |
 | `MediaUrls::prepare(array $rows, string $origin, int $recordId, ?MediaFetch $fetch = null): array`, `refusals(): array` | **WRITE.** The images a write gives as addresses, brought to the upload path: an address the record already holds an image from, or one the write names twice, is dropped; a write that gives at most `INLINE` (2) has them fetched at once; a write that gives more has none fetched, and the save queues them all for one background job. `refusals()` names each refused image by its JSON pointer, once. |
+| `InventoryAvailabilityService::lowStockThreshold(?float $combination, ?float $item): float` | **READ ONLY.** The low-stock level that applies to a unit: its own (`$combination`), else its product's (`$item`), else the shop's; 0 when none applies. `null` is the one spelling of "not set". The one rule an extension that judges low stock follows. |
 
 ### Orders, payments and statuses
 
@@ -304,7 +307,7 @@ These come from the `Plugin` class, so every Alfa plugin has them.
 | `OrderModel::getItem()` for an order on a staff page | `getOrder()`, the `Order` reader the events hand over. A field the reader lacks is a request to the Alfa Commerce project, not a reason to read the model. |
 | `Order::row()` | Not for plugins. `EmailService::orderNumber()` takes the `Order` reader itself. |
 | `TaskAttention` | Nothing: it is Alfa's own summary of failed and held tasks, not a way to write one. |
-| `Tasks::single()`, `BackgroundWork::core()` | `BackgroundWork::of($this)` for the background work your plugin declares. Both write Alfa's own work only, and throw an `InvalidArgumentException` for a name Alfa has no handler of. |
+| `Tasks::single()`, `Runner::enqueue()`, `BackgroundWork::core()` | `BackgroundWork::of($this)` for background work of your own. The others are Alfa's own writes of its own work; a build check keeps `BackgroundWork::core()` inside Alfa Commerce's own code. |
 
 ## Hooks a gateway or carrier overrides
 

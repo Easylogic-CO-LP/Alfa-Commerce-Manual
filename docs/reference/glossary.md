@@ -94,10 +94,14 @@ by itself; it waits for staff to decide.
 **Cancelled.** An extension's task or job stopped before it finished: by its plugin, by staff, or because the plugin
 was uninstalled. Alfa's own tasks and jobs are never cancelled.
 
+**Owner.** Whose work a task or job is: `com_alfa` for Alfa Commerce's own, or the plugin of an Alfa group that
+declared it in `onAlfaDeclareWork`, as `group.element`. A plugin asks for its own work through `BackgroundWork::of()`
+and reaches no other owner's. See [Background work of a plugin](../plugins/background-work-plugins.md).
+
 Alfa Commerce's own kinds of task and job are fixed. A plugin of an Alfa group declares tasks and jobs of its own
 (`onAlfaDeclareWork`), asks for them through `BackgroundWork::of($this)`, runs them in `onAlfaRunTask` and
 `onAlfaRunJob`, and is told how each ended in `onAlfaWorkSettled`.
-See [Background work of a plugin](../plugins/api-route-plugins.md#background-work-of-a-plugin).
+See [Background work of a plugin](../plugins/background-work-plugins.md).
 
 ## Catalogue and prices
 

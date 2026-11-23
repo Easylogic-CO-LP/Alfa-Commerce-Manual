@@ -65,15 +65,17 @@ came through.
 ## A complete plugin: plg_alfa_example
 
 The smallest plugin that uses everything on this page: one address, `GET v1/alfa/ext/example/hello`, behind its own
-permission, answering plain JSON; one setting; one stock event heard. Copy it, rename `example` and `Acme`, and it
-installs and answers.
+permission, answering plain JSON; one setting; one stock event heard. It also checks the product's stock 15 minutes
+after it moved, in one background job, walked line by line on
+[Background work of a plugin](./background-work-plugins.md#the-example-plugins-job-line-by-line). Copy it, rename
+`example` and `Acme`, and it installs and answers.
 
 ```
 plg_alfa_example/
     example.xml                              the manifest
     services/provider.php                    Joomla's service provider: builds the plugin
     src/Extension/Example.php                the plugin
-    language/en-GB/plg_alfa_example.ini      the setting's and the permission's texts
+    language/en-GB/plg_alfa_example.ini      the setting's, the permission's and the job's texts
     language/en-GB/plg_alfa_example.sys.ini  the name in the extension lists
     language/el-GR/...                       the same keys in Greek
 ```
@@ -92,7 +94,7 @@ are the plugin's settings, read as `$this->params`.
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026 Acme</copyright>
     <license>GNU General Public License version 3 or later</license>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <alfacore min="2.3" max="2.3"/>
     <description>PLG_ALFA_EXAMPLE_XML_DESCRIPTION</description>
     <namespace path="src">Acme\Plugin\Alfa\Example</namespace>
@@ -119,8 +121,8 @@ are the plugin's settings, read as `$this->params`.
 
 ### services/provider.php
 
-Joomla calls it to build the plugin: the plugin's row (its saved settings) from `PluginHelper::getPlugin()`, and the
-application. This is Joomla 6's form, the settings alone; a constructor given the dispatcher first is deprecated and
+Joomla calls it to build the plugin: the plugin's row (its saved settings) from `PluginHelper::getPlugin()`, the
+application, and the database the job reads. This is Joomla 6's form, the settings alone; a constructor given the dispatcher first is deprecated and
 goes in Joomla 7.
 
 ```php
@@ -132,6 +134,7 @@ use Acme\Plugin\Alfa\Example\Extension\Example;
 use Joomla\CMS\Extension\PluginInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 
@@ -141,6 +144,7 @@ return new class () implements ServiceProviderInterface {
         $container->set(PluginInterface::class, static function (Container $container): PluginInterface {
             $plugin = new Example((array) PluginHelper::getPlugin('alfa', 'example'));
             $plugin->setApplication(Factory::getApplication());
+            $plugin->setDatabase($container->get(DatabaseInterface::class));
 
             return $plugin;
         });
@@ -157,18 +161,27 @@ namespace Acme\Plugin\Alfa\Example\Extension;
 
 \defined('_JEXEC') or die;
 
+use Alfa\Component\Alfa\Administrator\Background\BackgroundWork;
 use Alfa\Component\Alfa\Administrator\Event\Access\GetAccessActionsEvent;
 use Alfa\Component\Alfa\Administrator\Event\Api\ApiRequestEvent;
 use Alfa\Component\Alfa\Administrator\Event\Api\ApiRoutesEvent;
+use Alfa\Component\Alfa\Administrator\Event\Background\DeclareWorkEvent;
+use Alfa\Component\Alfa\Administrator\Event\Background\RunJobEvent;
 use Alfa\Component\Alfa\Administrator\Event\Inventory\InventoryAdjustedEvent;
+use Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryAvailabilityService;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Database\DatabaseAwareInterface;
+use Joomla\Database\DatabaseAwareTrait;
+use Joomla\Database\ParameterType;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Router\Route;
 
-final class Example extends CMSPlugin implements SubscriberInterface
+final class Example extends CMSPlugin implements SubscriberInterface, DatabaseAwareInterface
 {
+    use DatabaseAwareTrait;
+
     protected $autoloadLanguage = true;
 
     /** @return array<string, string> */
@@ -210,6 +223,113 @@ final class Example extends CMSPlugin implements SubscriberInterface
             $event->argument('locationId'),
             $event->argument('quantityDelta'),
         ), Log::INFO, 'plg_alfa_example');
+
+        // The product's stock moved: check it in 15 minutes. Every change of the same product in those minutes joins
+        // this one waiting job, so a busy product is checked once, and no running check is restarted.
+        $itemId = (int) $event->argument('itemId');
+
+        BackgroundWork::of($this)
+            ->job('stock.check')
+            ->scope((string) $itemId)
+            ->with(['item' => $itemId])
+            ->notBefore(new \DateTimeImmutable('+15 minutes'))
+            ->enqueue();
+    }
+
+    public function onAlfaDeclareWork(DeclareWorkEvent $work): void
+    {
+        $work->job('stock.check')
+            ->label('PLG_ALFA_EXAMPLE_JOB_STOCK_CHECK')
+            ->covers('PLG_ALFA_EXAMPLE_JOB_STOCK_CHECK_COVERS');
+    }
+
+    public function onAlfaRunJob(RunJobEvent $job): void
+    {
+        match ($job->getWorkName()) {
+            'stock.check' => $this->checkStock($job),
+        };
+    }
+
+    /**
+     * One step of a product's check: the product alone when it has no variants, else its published variants from the
+     * bookmark on. The bookmark holds the last variant read and the count so far.
+     */
+    private function checkStock(RunJobEvent $job): void
+    {
+        $db = $this->getDatabase();
+        $itemId = (int) $job->getData()['item'];
+        $after = (int) ($job->getCheckpoint()['after'] ?? 0);
+        $low = (int) ($job->getCheckpoint()['low'] ?? 0);
+
+        $product = $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName(['state', 'manage_stock', 'stock_low', 'available_quantity']))
+                ->from($db->quoteName('#__alfa_items'))
+                ->where($db->quoteName('id') . ' = :id')
+                ->bind(':id', $itemId, ParameterType::INTEGER),
+        )->loadObject();
+
+        if ($product === null || (int) $product->state !== 1) {
+            $job->walked(0)->finished(['low' => 0]);
+
+            return;
+        }
+
+        $variants = $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName(['id', 'manage_stock', 'stock_low', 'available_quantity']))
+                ->from($db->quoteName('#__alfa_item_combinations'))
+                ->where($db->quoteName('item_id') . ' = :item')
+                ->where($db->quoteName('state') . ' = 1')
+                ->where($db->quoteName('id') . ' > :after')
+                ->bind(':item', $itemId, ParameterType::INTEGER)
+                ->bind(':after', $after, ParameterType::INTEGER)
+                ->order($db->quoteName('id'))
+                ->setLimit($job->getUnits()),
+        )->loadObjectList();
+
+        if ($after === 0 && $variants === []) {
+            $job->total(1)->walked(1)->finished(['low' => self::isLow($product, null) ? 1 : 0]);
+
+            return;
+        }
+
+        if ($after === 0) {
+            $job->total((int) $db->setQuery(
+                $db->getQuery(true)
+                    ->select('COUNT(*)')
+                    ->from($db->quoteName('#__alfa_item_combinations'))
+                    ->where($db->quoteName('item_id') . ' = :item')
+                    ->where($db->quoteName('state') . ' = 1')
+                    ->bind(':item', $itemId, ParameterType::INTEGER),
+            )->loadResult());
+        }
+
+        foreach ($variants as $variant) {
+            $low += self::isLow($product, $variant) ? 1 : 0;
+        }
+
+        if (\count($variants) < $job->getUnits()) {
+            $job->walked(\count($variants))->finished(['low' => $low]);
+        } else {
+            $job->walked(\count($variants))->next(['after' => (int) end($variants)->id, 'low' => $low]);
+        }
+    }
+
+    /**
+     * Whether a unit is low as core decides it: its stock managed, a threshold above zero (the variant's own, else the
+     * product's, else the shop's), and a salable quantity above zero and at or below it.
+     */
+    private static function isLow(object $product, ?object $variant): bool
+    {
+        $managed = (int) ($variant?->manage_stock ?? $product->manage_stock);
+        $threshold = InventoryAvailabilityService::lowStockThreshold(
+            combination: $variant?->stock_low !== null ? (float) $variant->stock_low : null,
+            item: $product->stock_low !== null ? (float) $product->stock_low : null,
+        );
+        $salable = (float) ($variant?->available_quantity ?? $product->available_quantity);
+
+        return $managed === 1 && $threshold > 0 && $salable > 0 && $salable <= $threshold;
     }
 }
 ```
@@ -226,7 +346,10 @@ What each part does:
 - **`onAlfaApiRequest`** (targeted) answers it. The shop's name is Alfa Commerce, Options, General, Store name:
   `ComponentHelper::getParams('com_alfa')->get('store_name', '')`, empty while it is not set.
 - **`onInventoryAdjusted`** (broadcast) is a stock adjustment, announced once it is committed. The stock events'
-  names carry no `onAlfa` prefix.
+  names carry no `onAlfa` prefix. It logs the adjustment and asks for the product's check, 15 minutes ahead.
+- **`onAlfaDeclareWork`** and **`onAlfaRunJob`** (targeted) declare the job `stock.check` and run its steps;
+  `checkStock()` and `isLow()` are the job's own code. See
+  [Background work of a plugin](./background-work-plugins.md#the-example-plugins-job-line-by-line).
 
 ### Calling it
 
@@ -378,68 +501,5 @@ Login and is in the token groups, the accounts in them with an enabled token, an
 
 ## Background work of a plugin
 
-A plugin of an `alfa` group that must tell another system of a change, or do work outside the request, declares that
-work and asks for it through `BackgroundWork`. Alfa Commerce's task runner runs it and lists it in Tools, Tasks under
-the plugin's own label. The work is of one of two kinds:
-
-- a **task**, short work done in one go. It is written with the save that asks for it and runs right after that save
-  is final, in the same request; with no transaction open it runs before `enqueue()` returns.
-- a **job**, long work done in steps, each step keeping a bookmark. The runner's next turn runs it: never before the
-  request that asked for it has answered, and for a REST API request possibly in that request's own turn after its
-  answer is sent.
-
-The plugin declares its work and runs it with public methods named as the events, addressed to it alone and never
-listed in `getSubscribedEvents()`:
-
-```php
-use Alfa\Component\Alfa\Administrator\Event\Background\DeclareWorkEvent;
-use Alfa\Component\Alfa\Administrator\Event\Background\RunJobEvent;
-
-public function onAlfaDeclareWork(DeclareWorkEvent $work): void
-{
-    $work->job('stock.tell')->label('PLG_ALFA_EXAMPLE_JOB_STOCK_TELL')->callsOtherSystems();
-}
-
-public function onAlfaRunJob(RunJobEvent $job): void
-{
-    // $job->getData() holds the item and the combination: read their stock now and send it.
-
-    $job->walked(1)->finished();
-}
-```
-
-Where the work is owed, for example in `onInventoryAdjusted`, the plugin hands itself and asks for it:
-
-```php
-use Alfa\Component\Alfa\Administrator\Background\BackgroundWork;
-
-$item = (int) $event->argument('itemId');
-$combination = (int) $event->argument('combinationId');
-
-BackgroundWork::of($this)->job('stock.tell')->scope($item . ':' . $combination)
-    ->with(['item' => $item, 'combination' => $combination])->enqueue();
-```
-
-- **`onAlfaDeclareWork`** names each task (`task()`) and job (`job()`): lower-case words of letters, digits and `_`
-  joined by dots, at most 64 characters, each with a `label()`, a key of the plugin's own language file. Alfa
-  Commerce reads the declarations when the plugin is installed, updated, saved or enabled, and keeps a copy. A
-  declaration without a label, or of a kind the plugin has no method to run (`onAlfaRunTask()` for a task,
-  `onAlfaRunJob()` for a job), is left out and logged. A job may also say `covers()`, `heavy()`,
-  `callsOtherSystems()` (its steps run outside the runner's transaction, so they may call another system) and
-  `every()` (the runner owes it by itself, every 5 minutes to 30 days); a task may say `repeatable()`; either may
-  say `urgent()`.
-- **`BackgroundWork::of($this)`** takes the plugin as Joomla booted it, installed and enabled, and reaches that
-  plugin's own work only. `task()` and `job()` refuse a name the plugin does not declare as that kind. `with()` takes
-  JSON-safe data of at most 16 KiB.
-- There is one waiting or running job a plugin, name and scope: a request while it waits joins it, its data
-  unchanged, and one made while it runs makes it run once more from the start, so the job reads the latest values
-  when it runs. A task's `once()` keeps one waiting or running task of its name and key.
-- The work runs as nobody (an empty user), not as the visitor whose request ran the runner: the plugin is loaded for
-  it whatever its Access, as long as it is installed and enabled. While the plugin is disabled, its work waits.
-- A job's step ends with `next()` (more to do, from this bookmark) or `finished()`, after `walked()`. A task is done
-  when its method returns. `WorkFailure::retry()` tries the work again later, `WorkFailure::failed()` fails it at
-  once; any other exception retries a job or a `repeatable()` task and holds any other task for staff. After the
-  last try the work waits for staff in Tools, Tasks. `find()` and `cancel()` read and cancel the plugin's own work,
-  and a public `onAlfaWorkSettled()` method is told when one of its tasks or jobs ends.
-
-The engine, its retries and what staff can do are on [Background work](../architecture/background-work.md).
+A plugin of an `alfa` group declares tasks and jobs of its own and asks for them with `BackgroundWork::of($this)`: see
+[Background work of a plugin](./background-work-plugins.md).

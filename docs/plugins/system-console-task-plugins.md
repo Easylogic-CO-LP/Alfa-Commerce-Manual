@@ -333,7 +333,8 @@ as `php cli/joomla.php` followed by the command.
 
 ### alfa:tasks:run
 
-**What it does.** Runs the shop's waiting background work for up to 25 seconds, or until nothing is due.
+**What it does.** Runs the shop's waiting background work for up to 25 seconds, or until nothing is due: Alfa's own
+work and the work of every plugin alike.
 
 **When it is used.** From the server's cron, every minute, on a shop that should not depend on visits to run its
 background work.
@@ -395,13 +396,21 @@ Alfa has background work of its own: tasks and jobs, run by its task runner and 
 of an `alfa` group declares tasks and jobs of its own in `onAlfaDeclareWork`, asks for them through
 `BackgroundWork::of($this)` and runs them in `onAlfaRunTask` and `onAlfaRunJob`; a job declared with `every()` is
 owed by the runner itself, every 5 minutes to 30 days. See
-[Background work of a plugin](./api-route-plugins.md#background-work-of-a-plugin). A plugin of a group that Joomla
-loads itself (`system`, `task` and the others) cannot: `BackgroundWork::of()` takes only a plugin of an `alfa` group.
+[Background work of a plugin](./background-work-plugins.md). A plugin of a group that Joomla loads itself
+(`system`, `task` and the others) owns no work: `BackgroundWork::of()` takes only a plugin of an `alfa` group.
 
-So the timed work of a plugin of another group, and work at a fixed time of day, which Alfa's runner does not offer
-because it runs on visits and on cron, use Joomla's Scheduled Tasks: a plugin of the `task` group, written and set up
-the way Joomla's documentation describes. That is Joomla's feature, not Alfa's. If such a plugin also handles a
-targeted Alfa event, it handles it with a public method of the event's name and no Alfa interface, as shown above.
+Work at a fixed time of day, which Alfa's runner does not offer because it runs on visits and on cron, uses Joomla's
+Scheduled Tasks where the shop runs Joomla's scheduler from cron: a plugin of the `task` group, written and set up the
+way Joomla's documentation describes. That is Joomla's feature, not Alfa's. Its routine's whole run is one line that
+asks for the job of your `alfa` plugin, handing the plugin Joomla boots for it:
+
+```php
+BackgroundWork::of($this->getApplication()->bootPlugin('example', 'alfa'))->job('report.nightly')->enqueue();
+```
+
+Joomla's scheduler says when; the job runs, is tried again and shows in Tools > Tasks as any other. If such a plugin
+also handles a targeted Alfa event, it handles it with a public method of the event's name and no Alfa interface, as
+shown above.
 
 A plugin's code can still run inside work that Alfa queues, without queuing anything itself. The clearest case is a
 listener of `onOrderStatusChange`: Alfa records each listener's run as part of a task, and staff can run a failed

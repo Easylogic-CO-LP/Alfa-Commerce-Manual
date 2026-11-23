@@ -296,7 +296,8 @@ Work that runs after a save or in the background. See [Background work](backgrou
 
 | Table | What it holds |
 |---|---|
-| `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps |
+| `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps. Each row has its owner: `com_alfa`, or the plugin that declared the work |
+| `#__alfa_work_declarations` | The background work each owner declares: Alfa's own from its classes, a plugin's from its `onAlfaDeclareWork`, with its kind, label, Covers text, weight, schedule and whether the plugin is enabled. Written by Alfa only. See [Background work of a plugin](../plugins/background-work-plugins.md) |
 | `#__alfa_task_slots` | Named slots that limit how many jobs run at once (one heavy job at a time) |
 | `#__alfa_work_declarations` | The work each owner (Alfa Commerce or a plugin) declares, as core last read it (key: the owner and the name) |
 | `#__alfa_api_keys` | The idempotency keys of REST API writes, kept 30 days (key: the user, the scope and the key's hash) |
