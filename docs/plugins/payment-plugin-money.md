@@ -124,8 +124,10 @@ $refusal = $gate::rangeRefusal(name: 'My gateway', route: (string) $type, manife
 | `deletePayment(int $id, int $orderId): bool` | Deletes a payment row | Rarely | Only your own rows | Another plugin's row, or one that records no plugin |
 | `orderTransition(int $orderId)` | Moves the order to a status, in your plugin's name: `->to($statusId)->save()` | Only for a moment the method's status settings cannot express | The same steps as any status change | |
 
-Every call above that changes or deletes a row acts only on a row your plugin wrote. Every call of the base class,
-with what it guarantees, is listed on [Calling core from an extension](./calling-core.md).
+Every call above that changes or deletes a row acts only on a row your plugin wrote. Every call of the base class
+that carries the contract's `@api` line is listed, with what it guarantees, on
+[Calling core from an extension](./calling-core.md); `deletePayment()`, `orderTransition()`, `findOwnRowByReference()`
+and `firstMethodRow()` carry none.
 
 When the books refuse to write a payment row (`create`, a change, or a
 change that expects a status), for example a payment that would take the order past what it is owed, `save()`
