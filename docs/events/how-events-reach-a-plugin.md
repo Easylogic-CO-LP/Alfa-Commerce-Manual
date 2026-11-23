@@ -249,7 +249,7 @@ Alfa never falls back to another plugin. What the person sees depends on what wa
 | An order page that shows the plugin's part | Shows a neutral line in its place and changes nothing |
 | A staff action on a payment or shipment | Refuses it, names the plugin as Extensions: Plugins does, and says how to restore it |
 | A provider's or carrier's callback | Answers "503 Service Unavailable" with Retry-After, so the provider tries again, and raises one alert per plugin in the notification bell |
-| A run of the plugin's own background work | Leaves the task or job waiting, with no try counted, until the plugin is enabled again. Access is not asked: background work runs as nobody, and the plugin is loaded for it whatever its Access. |
+| A run of the plugin's own background work | A plugin disabled or missing leaves the task or job waiting, with no try counted, until it is enabled again. One that fails while starting counts a failed try, and one with no public method for the run fails the task or job at once. Access is not asked: background work runs as nobody, and the plugin is loaded for it whatever its Access. |
 
 :::warning Callbacks need Access Public
 A payment provider or a carrier calls your plugin as a guest. A payment or shipping plugin whose Access (Extensions:
