@@ -16,8 +16,8 @@ description: "Every event a payment plugin receives: when it fires, what it is g
 - [Payments, refunds and webhooks](./payment-plugin-money.md)
 - [A complete payment plugin](./payment-plugin-example.md)
 
-All seventeen events on this page are addressed to one plugin, each to its public method of the event's name. Which plugin depends on the
-event: the plugin of an offered method, the plugin recorded on the order, the plugin recorded on the payment row, or
+The nineteen events under this page's headings are each addressed to one plugin, on its public method of the event's
+name. Which plugin depends on the event: the plugin of an offered method, the plugin recorded on the order, the plugin recorded on the payment row, or
 the plugin named in the address. If that plugin cannot be used, Alfa never asks another one:
 
 | What was asked | What Alfa does when your plugin is unavailable |
@@ -577,6 +577,41 @@ same attempt may be sent again). Charge nothing and write nothing.
 **What happens next.** The caller acts on your answer: a charge your provider holds is not sent again.
 
 **If you are missing or you fail.** A thrown error leaves the attempt to staff.
+
+## onAlfaDisputeRefresh and onAlfaDisputeAccept
+
+Event classes: `DisputeRefreshEvent` and `DisputeAcceptEvent` (their `NAME` is `onAlfaDisputeRefresh` and
+`onAlfaDisputeAccept`). Optional.
+
+**When they fire.** When staff press **Ask the provider again** (refresh) or **Accept at the provider** (accept) on a
+dispute's card on the order screen. Both are offered only for a case that carries the provider's dispute id. Accept is
+offered while the case is an inquiry or open, and is sent once staff have typed that id to confirm.
+
+**Who receives them.** One plugin: the plugin recorded on the disputed payment. A plugin without the method takes no
+part, and the card offers no button for it.
+
+**What you are given.**
+
+| Getter or setter | Meaning |
+|---|---|
+| `getDispute()` | The record: `id`, `id_order`, `id_payment`, `reference`, `state`, `stage`, `amount`, `stated_amount`, `stated_currency`, `evidence_due_by` |
+| `getReference()`, `getPaymentId()`, `getOrderId()` | The provider's dispute id, the disputed payment, its order |
+| `setVerdict(DisputeVerdict $verdict)` | Your answer: the verdict your own `$this->dispute(...)->...->save()` answered |
+| `setError(string $sentence)` | Your answer when the provider could not be asked or refused, in your own words for staff |
+
+**What you are expected to do.** Refresh: read the case at your provider and apply it with
+`$this->dispute($paymentId, $reference)`. Accept: tell your provider the shop accepts and, once it confirms, record
+the loss yourself with `->lost()->save()`; your provider's later notification of the same loss is then a repeat and
+writes nothing new. Answer with one of the two setters.
+
+**What happens next.** Staff read that the dispute was saved, or why your verdict was refused, or your sentence. Alfa
+records in the User Actions Log that staff asked. It writes nothing of the dispute itself on Accept: the money moves
+only when the loss is recorded.
+
+**If you are missing or you fail.** Without the method, or while your plugin is unavailable, the card offers no
+button for it. A thrown error tells staff that the provider could not be asked and nothing was saved, with the error's
+text beside it; a handler that answers neither shows "The payment provider gave no answer; nothing was saved." Nothing
+of the dispute is written in either case.
 
 ## onClearData
 
