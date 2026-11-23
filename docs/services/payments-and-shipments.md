@@ -128,7 +128,7 @@ on the order changes.
 
 The message is the order e-mail's layout (the one every order e-mail reads, and the administrator template's override
 of it) with the Pay now block, the order's lines, totals and payments. Its subject and its opening are its own, in the
-order's language: `COM_ALFA_ORDEREMAIL_PAYLINK_SUBJECT` ("Pay for your order {order_number}") and
+order's language: `COM_ALFA_ORDEREMAIL_PAYLINK_SUBJECT` (`Pay for your order {order_number}`) and
 `COM_ALFA_ORDEREMAIL_PAYLINK_INTRO`; a shop changes them with Joomla's language overrides (Administrator). The other
 positions of the layout keep their default texts. It goes to the customer alone, at once, not as a task; it carries no
 download link.
