@@ -489,7 +489,7 @@ View. Each answers 200 with the whole order. Amounts are decimal text; dates are
 | 200 | Written, or already as asked: the same close again books nothing |
 | 404 | The order does not exist, or the dispute or payment is another order's |
 | 409 | A rule refused it: `errors[0].title` says why and `meta.code` is the stable code (`dispute_transition`, `dispute_closed`, `dispute_amount`, `dispute_follows_provider`, `dispute_not_collected`, `dispute_wallet` and the others of [Card disputes for payment plugins](../plugins/payment-plugin-disputes.md#the-answer-and-the-status-to-give-the-provider)). Branch on the code, never on the sentence. |
-| 422 | A field: the title is led by the field's name and `errors[0].source.pointer` points at it. A key the route does not take is refused, a language-suffixed one included. |
+| 422 | A field: the title is led by the field's name and `errors[0].source.pointer` points at it. A key the route does not take is refused, a language-suffixed one included. An `amount` in the order's currency is read exactly, with a point: finer than the order's money or larger than an amount holds is refused in the money reader's words. |
 | 503 | Another operation held the order, or the write failed: nothing was written; send it again after `Retry-After` |
 
 **Record.** `state` (`inquiry` or `open`, a chargeback) and `amount` are required; `currency` (the order's when left

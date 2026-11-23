@@ -62,7 +62,8 @@ the books hold for it, and the question to answer when the record waits for staf
 | Ask the provider again, Accept at the provider | When the payment's plugin offers them | Asks the provider; the plugin applies its answer |
 
 Each action opens the action page of the disputed payment (right: Orders: Edit). A refused submission comes back with
-what was typed and the reason. Every staff act is in Joomla's User Actions Log; every step, staff's and the provider's,
+what was typed and the reason. An amount is read as every money field is: exactly, in the order's money, a comma taken
+as the decimal point; "5,000" on a two-place order is refused as a thousands separator, never read as 5,00. Every staff act is in Joomla's User Actions Log; every step, staff's and the provider's,
 is on the order's History.
 
 The orders list has a **Dispute** filter (undecided, a state, an answer due within seven days) and a **Disputed**
