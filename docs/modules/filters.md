@@ -15,7 +15,9 @@ shopper narrows the catalogue: categories, manufacturers, price, availability, s
 as filterable (a colour, a size). On a wide screen it is a **column** beside the products. Below the module's
 breakpoint (**Responsive Change**, 800 pixels by default), or always when **Fixed Positioning** is on, it is a panel that
 **lies over the page**: the module's own button opens it, and so can any button or link of yours (see
-[Opening the filters from your own button](#opening-the-filters-from-your-own-button)).
+[Opening the filters from your own button](#opening-the-filters-from-your-own-button)). In a shop that shows its
+catalogue only, the panel has no price, sale or discount filters (see
+[Online sales](../getting-started/store-setup.md#online-sales)).
 
 ## How the filters apply
 
@@ -24,8 +26,8 @@ When the **results** change depends on the module's setting **Dynamic Filtering*
 
 | Dynamic Filtering | Where | The results |
 |---|---|---|
-| Yes | On the shop's listing | Change at once with every tick. The listing is swapped in place, the address bar follows, and the new results are brought into view. |
-| No (the default), or any page that is not the listing | Anywhere | Change when the shopper presses the panel's results button (the form is sent and the listing page opens). |
+| Enabled | On the shop's listing | Change at once with every tick. The listing is swapped in place, the address bar follows, and the new results are brought into view. |
+| Disabled (the default), or any page that is not the listing | Anywhere | Change when the shopper presses the panel's results button (the form is sent and the listing page opens). |
 
 ## The option groups
 
@@ -35,27 +37,28 @@ module's **Filter groups** tab:
 - **Its heading opens and shuts it.** The heading is a button; groups start open, and a group the shopper shut stays
   shut while the panel refreshes. **Group opener icon** picks the icon beside the heading: chevron, caret, plus or
   none (with none, the heading still opens and shuts the group). **Icon turns when open** turns it while the group is
-  open (a plus becomes a cross); off, it stays still. Nothing moves for a shopper who asked the device for reduced
-  motion.
+  open (a plus becomes a cross); off, it stays still. For a shopper who asked the device for reduced motion, it turns
+  at once, without movement.
 - **A search box at the top of a long group.** **Search box in a group** (on by default) and **From how many options**
-  (8): a group with at least that many options gets a box that narrows it as the shopper types. Letters are compared
-  without their case and their accents, so "cafe" finds "Café" and "καφε" finds "Καφές". In the category tree a match
-  keeps the categories above it in view. When nothing is left, the group says "Nothing found". The box is no filter:
-  what is typed is never sent with the form, and Enter in it sends nothing. A group shown as a dropdown has its own
-  search instead.
+  (8): a group with at least that many options (the category tree counts every category at every level) gets a box
+  that narrows it as the shopper types. Letters are compared without their case and their accents, so "cafe" finds
+  "Café" and "καφε" finds "Καφές". In the category tree a match keeps the categories above it in view. When nothing is
+  left, the group says "Nothing found". The box is no filter: what is typed is never sent with the form, and Enter in
+  it sends nothing. A group shown as a dropdown has its own search instead.
 - **Show more / Show less.** **Options shown before Show more** (8) is how many options a group shows; the rest wait
   behind one button that says how many ("Show 4 more") and then "Show less". **Per group** sets a different number for
   a group of your choice (a row of group and number). 0 shows every option. A group with just one option past the
   number shows it. A ticked option is never hidden, nor is a category with a ticked one under it. In the category
-  tree the number counts the top level. A searched group shows every match and no button.
+  tree the number counts the top level. A searched group shows every match and no button. A dropdown keeps every
+  value in its list.
 
 ## The panel's foot
 
 At the bottom of the panel, in view while the panel scrolls, the foot answers what the shopper does after ticking:
 
 - **Show N results**, where N is the number of products the ticks leave (the listing's own count, redrawn with every
-  refresh). With Dynamic Filtering on the listing, the results are already in place behind the panel, so the button
-  closes the panel. Otherwise the button sends the form, and the listing opens with the filters applied.
+  refresh). With Dynamic Filtering enabled, on the listing, the results are already in place behind the panel, so the
+  button closes the panel. Otherwise the button sends the form, and the listing opens with the filters applied.
 - **Clear all**, beside it while any filter is in effect. It clears every filter and empties the groups' search
   boxes.
 
@@ -84,8 +87,8 @@ What happens next:
 
 - While the panel is open, every opener of the module carries `aria-expanded="true"`, and `false` once it closes.
 - Opening puts the focus on the panel's close button. The backdrop, the close button and Escape close it and give the
-  focus back to the element that opened it. Escape first clears a group's search box that holds text, or shuts an
-  open dropdown.
+  focus back to the element that opened it. Escape pressed in a group's search box that holds text, or while a
+  dropdown is open, is left to the box or the dropdown and does not close the panel.
 - Where the panel is a column beside the products, an opener brings the panel into view and puts the focus in it.
 - An opener added to the page later (by a script, or a module loaded afterwards) works too: the module finds openers
   when they are pressed.
@@ -103,12 +106,25 @@ gets one of each.
 
 ## For a template override
 
-The markup comes from the module's layouts (`tmpl/default.php`, `default_form_content.php`, `default_filters.php`,
-`default_field.php`, `default_group_icon.php`), so a template override changes any of it. The script reads and writes
-only these attributes; an override that keeps them keeps the behaviour:
+The markup comes from the module's layouts in `tmpl/`: `default.php` (the module's button, the panel, its header, the
+column's Clear all bar and the loading image), `default_form_content.php` (the sections in their order, the price,
+availability, ordering, number of items, sale and discount sections, and the foot), `default_filters.php` (the option
+groups, with the categories' and the manufacturers' options), `default_field.php` (an item field's options:
+checkboxes, buttons, swatches or a dropdown), `default_group_icon.php` (a group's opener icon) and `default_arrow.php`
+(the arrow of the subcategory toggles and of the apply buttons).
+
+A template override (`html/mod_alfa_filters/` in the template) replaces `default.php`, `default_filters.php`,
+`default_group_icon.php` and `default_arrow.php`. It replaces `default_form_content.php` only as the page loads: every
+refresh of the panel draws the module's own file. `default_field.php` is always the module's own, drawn from the
+module's folder.
+
+The script and the stylesheet work through the module's class names and these attributes; an override that keeps them
+keeps the behaviour. A group's search reads an option's name from `.af-item > .af-option > .af-label`, or from
+`.af-item > .af-chip > .af-chip-name` for a chip.
 
 | Attribute | On | Meaning |
 |---|---|---|
+| `data-af-icon`, `data-af-icon-turn` | the module's outer element | Printed by the layout: the opener icon (chevron, caret, plus or none) and whether it turns. |
 | `data-af-group="category"`, `"manufacturer"`, `"field-<id>"` | each group | The group, as the script remembers it across a refresh. |
 | `.af-group-toggle` with `aria-expanded`, `aria-controls` | the heading's button | Opens and shuts the group. |
 | `data-af-closed` | the group | Written by the script: the group is shut. |
@@ -125,8 +141,8 @@ only these attributes; an override that keeps them keeps the behaviour:
 An item field's ShowOn state name (`data-showon-name`) sits on the group's options (`.af-group-options`), not on the
 group: the ShowOn engine reads every input inside it as the field's value, and the search box is not one.
 
-The stylesheet (`media/mod_alfa_filters/css/filters.css`) keys every look on these attributes with plain class
-selectors, so a template's own CSS can restyle any of it.
+The stylesheet (`media/mod_alfa_filters/css/filters.css`) keys these states on the same attributes, with class and
+attribute selectors and no ids, so a template's own CSS can restyle any of it.
 
 ## What can go wrong
 
@@ -134,7 +150,7 @@ selectors, so a template's own CSS can restyle any of it.
 |---|---|
 | A button with the attribute does nothing | The number is not this module's, or the module is not on that page. |
 | A group shows no search box | It has fewer options than **From how many options**, or it is shown as a dropdown. |
-| A group shows no Show more | It holds at most one option more than its number, or its number is 0. |
+| A group shows no Show more | It holds at most one option more than its number, its number is 0, or it is shown as a dropdown. |
 
 ## Not documented yet
 
