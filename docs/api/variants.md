@@ -206,8 +206,9 @@ curl -X POST -H "X-Joomla-Token: YOUR_TOKEN" -H "Content-Type: application/json"
   }'
 ```
 
-- `field_values`: each `{"field": ..., "code": ..., "state": ..., "ordering": ..., "params": {...}, "translations":
-  {...}}`, `field` an item field's id or `field_name`. A value the field already has with that code is changed; any
+- `field_values`: each
+  `{"field": ..., "code": ..., "state": ..., "ordering": ..., "params": {...}, "translations": {...}}`, `field` an
+  item field's id or `field_name`. A value the field already has with that code is changed; any
   other is created.
 - `options`: each `{"value_id": 71}` or `{"value": {"field": "warranty", "code": "2y"}}` with `operation`, `amount`
   and `apply_on`. A value the product already offers has its price change set; any other is added.
