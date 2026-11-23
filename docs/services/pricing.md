@@ -406,6 +406,40 @@ unit yourself, use `Currency::formatLineUnit()` (see [Money and Currency](#money
 Keep the attribute `data-item-prices` on the element that wraps the prices. Alfa's scripts use it to refresh the
 price when the quantity or an option changes.
 
+### A price of zero and a product with no price: PriceDisplay
+
+`Alfa\Component\Alfa\Site\Helper\PriceDisplay` prints a price the way the shop's Options print it for the customer.
+**Zero price display** (`zero_price_display`) decides a price of zero: its amount, nothing, or the text of
+`COM_ALFA_PRICE_ON_REQUEST`. **Products without a price show** (`unpriced_display`) decides what a product with no price
+shows where its price would be: that text, or nothing. The figure itself never changes: the cart, the order and the
+REST API carry the zero. See [A catalogue with requests for offer](../getting-started/requests-for-offer.md).
+
+| Method | What it answers |
+|---|---|
+| `PriceDisplay::price(Money $price): string` | The price as the customer reads it: its formatted amount, or for a zero what the Options say (`''` when hidden) |
+| `PriceDisplay::figure(string $formatted, bool $zero): string` | The same for a figure already formatted: a unit by the one unit rule, a document's amount at its frozen scale |
+| `PriceDisplay::zero(): ?string` | What a zero prints instead of its figure: `null` for the figure, `''` for nothing, or the text |
+| `PriceDisplay::unpriced(): string` | What a product with no price shows: the text, or `''` |
+| `PriceDisplay::summary(array $rows): array` | Summary rows without a zero subtotal or total when the Options hide a zero |
+
+The rule covers a product's price, a line's unit and total, the subtotal and the total, on the storefront, in the cart
+module, in the order e-mails and in the printed documents. Tax, shipping, fees and discounts print their amounts as
+they are.
+
+The price layout (`item/price.php`) draws, for a price of zero the Options do not show, its element with
+`data-item-prices` and, inside it, `<div class="item-price-request">` with the text, or nothing, so a quantity or an
+option that prices the product swaps it. For a product with no price it draws `<div class="item-price-request">` with
+the text, or nothing: such a product is not bought. An override of the price layout, of the cart's lines, of the cart summary, of the cart module, of the e-mail
+partials or of the document partials prints a zero the shop's way when it prints the price through
+`PriceDisplay::price()` or `PriceDisplay::figure()`.
+
+```php
+use Alfa\Component\Alfa\Site\Helper\PriceDisplay;
+
+// A line's total in an override of the cart's lines.
+echo PriceDisplay::price(price: $cartItem->data->price->getTotal());
+```
+
 Each product the storefront draws carries `$item->sellsOnline`: false in catalogue-only mode, when an override of the
 product page or the card draws no buy form and asks for none of its scripts; the product's fields then arrive in the
 buy form's slot as plain lists (the layout `item.fields_readonly`).

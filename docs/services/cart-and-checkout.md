@@ -151,6 +151,36 @@ is not documented.
 
 `CartService` checks no user right. `ambient()` always works on the current visitor's own cart.
 
+### Which amounts the cart shows: CartShows
+
+`Alfa\Component\Alfa\Site\Helper\CartShows::options()` reads the shop's **Options**, **Cart**, **The cart shows**: five
+switches for the amounts and one for the coupon field, each on unless the shop hides it. The cart page with its
+checkout summary, the cart module and the added-to-cart card read them; `CartSummary::rows()` gives only the rows the
+switches show.
+
+| Property | When true |
+|---|---|
+| `linePrice` | Each line's price, discount and total |
+| `subtotal` | The subtotal row and the discount row under it, and a cart rule's amount goal |
+| `shipping` | The shipping row |
+| `tax` | Each line's tax and the tax row |
+| `total` | The total row, with the fee and cart rule rows |
+| `coupon` | The coupon field; when false, the storefront's `cart.applyCoupon` refuses every code |
+
+`rows(array $rows)` keeps the summary rows the switches show; `shows(SummaryRow $row)` answers for one row. Only the
+showing changes: the cart's totals, the placement and the order carry every amount. An override of the cart's lines,
+of the cart module or of the added-to-cart card shows what the shop chose when it reads `CartShows::options()`.
+
+```php
+use Alfa\Component\Alfa\Site\Helper\CartShows;
+
+$shows = CartShows::options();
+
+if ($shows->total) {
+    // the total row
+}
+```
+
 ### Reading the cart in a module
 
 This is how the shipped cart module reads the cart (`modules/mod_alfa_cart/src/Dispatcher/Dispatcher.php`):
@@ -347,12 +377,22 @@ drawn one by one.
 | 5 | The order and its lines are written by `OrderCreator`, the same class every other source of orders uses. See [Orders](./orders.md#ordercreator). |
 | 6 | If the stock cannot be set aside, the placement fails and everything is undone. |
 | 7 | The plugin charges and the cart rules used are stored with the order. If one of them cannot be written, the placement fails: an order is never saved with money rows that disagree with its total. |
-| 7 | Two steps are recorded as [background work](../reference/glossary.md#background-work): download access and the confirmation e-mail. |
+| 7 | Two steps are recorded as [background work](../reference/glossary.md#background-work): download access and the confirmation e-mail, both for the status the order landed in. |
 | 7 | The cart is deleted **inside** the save. Cart and order never exist together. |
 | The line | The save is final (the commit, `OrderPlacement.php` line 554). The order exists, and nothing after this line can make that untrue. |
 | 9 | The payment plugin writes its row. Alfa records the order's parcel, with the shipping charge and every item, and the shipping plugin completes it. Each is a save of its own. |
 | 10 | The two recorded steps run after both plugins are done, so the confirmation e-mail shows the order with its payment and its parcel. |
 | 11 | `onAlfaOrderPlaced` is announced last, so a listener sees the order as the shopper completed it. |
+
+### The status an order is placed in
+
+An order lands in the store's initial status. An operator placing it in the administrator may name another. An order
+whose total is zero lands in the status the shop names in **Options**, **Cart**, **Order status when nothing is to be
+collected** (`zero_total_status`), when it names one: a request for offer in a catalogue priced at zero (see
+[A catalogue with requests for offer](../getting-started/requests-for-offer.md)). An order the customer's credit pays
+in full is not such an order: its total is not zero. The confirmation e-mail is that status's own, and the download
+access is that status's. `OrderCreator` checks the status: one that is not published lands the order in the initial
+status with a notice to staff, and one that requires payment refuses the placement.
 
 ### What happens to the cart
 
