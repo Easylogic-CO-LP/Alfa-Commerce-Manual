@@ -15090,6 +15090,466 @@
 			]
 		},
 		{
+			"name": "Options, values and a product with its graph",
+			"description": "An item field's values, a product's options and specifications, and a product written with its whole graph in one request (Variants and stock).",
+			"item": [
+				{
+					"name": "Value: create with a code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"itemfields",
+								"{{erpFieldId}}",
+								"values"
+							]
+						},
+						"description": "A value of the item field erpFieldId (set it to a choice field of your shop) with its code, its machine key in the field.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"erp-{{run}}\",\n  \"state\": 1,\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP value {{run}}\"\n    }\n  }\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 201', () => pm.expect(pm.response.code).to.eql(201));",
+									"if (pm.response.code === 201) { pm.collectionVariables.set('erpValueId', String(pm.response.json().data.id)); }"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Values: find one by its code",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values?filter[code]=erp-{{run}}&include=translations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"itemfields",
+								"{{erpFieldId}}",
+								"values"
+							],
+							"query": [
+								{
+									"key": "filter[code]",
+									"value": "erp-{{run}}"
+								},
+								{
+									"key": "include",
+									"value": "translations"
+								}
+							]
+						},
+						"description": "filter[code] is exact; include=translations adds every language's name and alias."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));",
+									"pm.test('One value', () => pm.expect(pm.response.json().data.length).to.eql(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Value: rename and move it first",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpValueId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"itemfields",
+								"{{erpFieldId}}",
+								"values",
+								"{{erpValueId}}"
+							]
+						},
+						"description": "A change of the keys sent; the alias is made again from the name.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ordering\": 0,\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP value {{run}} renamed\"\n    }\n  }\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Option: add the value to the product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}",
+								"options"
+							]
+						},
+						"description": "The value made an option of the product of the setup (Variants and stock), with a price change. Refused 422 at /value_id when its field is one of the product's variant fields or not available in its categories.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value_id\": {{erpValueId}},\n  \"operation\": \"+\",\n  \"amount\": \"49.00\",\n  \"apply_on\": \"final\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 201', () => pm.expect(pm.response.code).to.eql(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Option: change the amount",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpValueId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}",
+								"options",
+								"{{erpValueId}}"
+							]
+						},
+						"description": "The parts sent change; the operation and apply_on keep what the option holds.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": \"59.00\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));",
+									"pm.test('Operation kept', () => pm.expect(pm.response.json().data.attributes.operation).to.eql('+'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Specifications: replace",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/informational",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}",
+								"informational"
+							]
+						},
+						"description": "The product's specifications, in order (set erpSpecValueId to a value of an informational field of your shop); [] for none.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value_ids\": [\n    {{erpSpecValueId}}\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Option: remove",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpValueId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}",
+								"options",
+								"{{erpValueId}}"
+							]
+						},
+						"description": "200 with removed true and meta.cart_selections_removed."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 200', () => pm.expect(pm.response.code).to.eql(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Value: remove",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpValueId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"itemfields",
+								"{{erpFieldId}}",
+								"values",
+								"{{erpValueId}}"
+							]
+						},
+						"description": "204; a value a product uses answers 409 saying how many products use it."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 204', () => pm.expect(pm.response.code).to.eql(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "A product with its graph",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items"
+							]
+						},
+						"description": "One request: values made by code, the product, an option and a variant named by those codes, the variant's stock; one transaction, in the order values, product, options and specifications, variants, stock. Set erpVariantField to the field_name of a variant field of your shop and erpCategoryId to a category. meta.written names each part.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"ERP-{{run}}-G\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ],\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP graph {{run}}\"\n    }\n  },\n  \"field_values\": [\n    {\n      \"field\": \"{{erpVariantField}}\",\n      \"code\": \"g-{{run}}\",\n      \"translations\": {\n        \"en_gb\": {\n          \"name\": \"Graph {{run}}\"\n        }\n      }\n    }\n  ],\n  \"combinations\": [\n    {\n      \"values\": {\n        \"{{erpVariantField}}\": \"g-{{run}}\"\n      },\n      \"sku\": \"ERP-{{run}}-G1\",\n      \"stock\": [\n        {\n          \"location_id\": 1,\n          \"quantity\": \"5\"\n        }\n      ]\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 201', () => pm.expect(pm.response.code).to.eql(201));",
+									"pm.test('meta.written names the variant', () => pm.expect(pm.response.json().meta.written.combinations[0].created).to.eql(true));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "A product with its graph: an unknown code (refused, nothing written)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"alfa",
+								"items",
+								"{{erpItemId}}"
+							]
+						},
+						"description": "A variant naming a code its field does not have: 422 at its pointer, and nothing of the request is written, the product's own fields included.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"ERP-{{run}}-CHANGED\",\n  \"combinations\": [\n    {\n      \"values\": {\n        \"{{erpVariantField}}\": \"no-such-code\"\n      }\n    }\n  ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status 422', () => pm.expect(pm.response.code).to.eql(422));",
+									"pm.test('Pointer', () => pm.expect(pm.response.json().errors[0].source.pointer).to.include('/combinations/0/values'));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Documents",
 			"item": [
 				{
@@ -16323,6 +16783,14 @@
 			"key": "erpCombinationId",
 			"value": "",
 			"type": "string"
+		},
+		{
+			"key": "erpSpecValueId",
+			"value": ""
+		},
+		{
+			"key": "erpVariantField",
+			"value": ""
 		}
 	]
 }
