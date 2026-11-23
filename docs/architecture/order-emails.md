@@ -153,7 +153,8 @@ Each entry reads in the language of the administrator who reads it.
 
 An e-mail is written in **the order's language**: the language the order was placed in. If the order has no
 language, it is written in the **default content language**. It is never the language of the administrator who
-happens to change the status. The staff copy uses the same language as the customer's.
+happens to change the status. The staff copy uses the same language as the customer's. The dispute e-mail is the one
+exception: it goes to the shop alone, in the shop's default administrator language (see above).
 
 Each of the status's texts is taken on its own from the default content language when the order's language has none
 stored: its name, the customer's e-mail and the staff e-mail. Its name for the customer is the customer-facing name
