@@ -245,7 +245,7 @@ final class Example extends CMSPlugin implements SubscriberInterface, DatabaseAw
 
     public function onAlfaRunJob(RunJobEvent $job): void
     {
-        match ($job->getName()) {
+        match ($job->getWorkName()) {
             'stock.check' => $this->checkStock($job),
         };
     }

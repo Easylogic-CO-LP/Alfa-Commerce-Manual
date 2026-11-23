@@ -39,7 +39,7 @@ BackgroundWork::of($this)
 // 3. Do it, a step at a time: a public method named as the event, answering by name.
 public function onAlfaRunJob(RunJobEvent $job): void
 {
-    match ($job->getName()) {
+    match ($job->getWorkName()) {
         'stock.check' => $this->checkStock($job),
     };
 }
@@ -180,7 +180,7 @@ work runs, is tried again and shows in Alfa's engine.
 ```php
 public function onAlfaRunTask(RunTaskEvent $task): void
 {
-    match ($task->getName()) {
+    match ($task->getWorkName()) {
         'invoice.submit' => $this->submitInvoice($task),
     };
 }
@@ -209,7 +209,8 @@ private function submitInvoice(RunTaskEvent $task): void
 }
 ```
 
-- `getData()`, `getSubjectType()` and `getSubjectId()` read what the request gave.
+- `getWorkName()` is the task's declared name (`getName()` is the event's name, `onAlfaRunTask`, as on every Joomla
+  event); `getData()`, `getSubjectType()` and `getSubjectId()` read what the request gave.
 - `part($name)` is one named part (a recipient, a call to another system). Ask `isDone()` first, then record `done()`,
   `failed($why)` or `unknown($why)` as soon as the outcome is known. A part done is never done again: a retry and
   staff's Run again skip it. `unknown()` holds the task for staff at once.
@@ -229,6 +230,7 @@ $job->walked(\count($rows))->finished(['done' => $count]);
 
 | Call | Meaning |
 |---|---|
+| `getWorkName()` | The job's declared name. `getName()` is the event's name, `onAlfaRunJob`, as on every Joomla event. |
 | `getScope()`, `getData()` | What the request gave |
 | `getCheckpoint()` | The bookmark the last step gave to `next()`; `[]` on the first step and when the job runs again from the start |
 | `getUnits()` | Walk at most this many units now: the engine sizes the steps from the time they take, aiming at about 100 milliseconds |
@@ -395,7 +397,7 @@ waiting job.
 ```php
     public function onAlfaRunJob(RunJobEvent $job): void
     {
-        match ($job->getName()) {
+        match ($job->getWorkName()) {
             'stock.check' => $this->checkStock($job),
         };
     }
