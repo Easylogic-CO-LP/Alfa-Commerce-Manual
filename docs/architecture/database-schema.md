@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 120 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
+description: The 122 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -17,11 +17,11 @@ Its comments explain most columns. When a line below says "see the SQL", read th
 
 ## What it does
 
-The install file creates **120 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
+The install file creates **122 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh site with one content language (English) holds 135 tables: these 120, fourteen more language tables and the
+A fresh site with one content language (English) holds 137 tables: these 122, fourteen more language tables and the
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
@@ -189,6 +189,7 @@ where it is offered.
 |---|---|
 | `#__alfa_payments` | The payment methods: plugin type, settings, colours |
 | `#__alfa_payment_categories` | Scope of a payment method by category (pair key) |
+| `#__alfa_payment_fee_taxes` | The tax rules a payment method's fee is taxed with (pair key). No row means the fee is untaxed |
 | `#__alfa_payment_manufacturers` | Scope of a payment method by manufacturer (pair key) |
 | `#__alfa_payment_places` | Scope of a payment method by place (pair key) |
 | `#__alfa_payment_shipments` | Links a payment method to shipping methods (pair key) |
@@ -197,6 +198,7 @@ where it is offered.
 | `#__alfa_payments_standard_logs` | The log table of the standard payment plugin |
 | `#__alfa_shipments` | The shipping methods: plugin type, settings, colours, and whether an entered price includes tax |
 | `#__alfa_shipment_categories` | Scope of a shipping method by category (pair key) |
+| `#__alfa_shipment_excluded_categories` | The categories a shipping method does not deliver, each with the categories below it (pair key). No row means none |
 | `#__alfa_shipment_manufacturers` | Scope of a shipping method by manufacturer (pair key) |
 | `#__alfa_shipment_places` | Scope of a shipping method by place (pair key) |
 | `#__alfa_shipment_usergroups` | Scope of a shipping method by user group (pair key) |
@@ -359,7 +361,7 @@ that the fields and statuses it creates have English names from the first minute
 ### A plugin's log table
 
 A payment or shipping plugin may keep a log table named `#__alfa_{family}_{name}_logs`. The standard payment
-plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 120. The
+plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 122. The
 standard shipping plugin makes its own, `#__alfa_shipments_standard_logs`, from
 `plugins/alfa-shipments/standard/sql/install.mysql.utf8.sql`. It is the one table a shipped plugin creates itself.
 A plugin declares the columns of its log in its `params/logs.xml` file. The plugin types are introduced in
@@ -370,7 +372,7 @@ A plugin declares the columns of its log in its `params/logs.xml` file. The plug
 ### Pair keys on the link tables
 
 A link table has two id columns and one row per link. The primary key of every link table is the pair of ids, so the
-database itself refuses the same link twice. The 38 tables above marked "pair key" are these tables.
+database itself refuses the same link twice. The 40 tables above marked "pair key" are these tables.
 An insert of a pair that is already there is refused by the database.
 
 ### One collation
