@@ -77,10 +77,11 @@ given to the next visitor.
 **Who this concerns.** Only a shop that has switched on Joomla's plugin "System - Page Cache". Joomla installs that
 plugin disabled. A shop that does not use it stores no whole pages, and nothing in this section applies to it.
 
-The cart page, and every page of a visitor whose browser holds a cart with items, whose session holds typed checkout
-details, or who has a currency or a place of their own (the session keys `alfa.currency_id` and `alfa.location_id`,
-which the storefront's prices follow), are never stored. Such a visitor is also never given a stored page. Every other
-page is cached.
+The cart page (and with it the order completed page), the customer's own orders (My orders, an order's page and an
+order's document; see [The customer's account](../services/customer-account.md)), and every page of a visitor whose
+browser holds a cart with items, whose session holds typed checkout details, or who has a currency or a place of their
+own (the session keys `alfa.currency_id` and `alfa.location_id`, which the storefront's prices follow), are never
+stored. Such a visitor is also never given a stored page. Every other page is cached.
 
 Alfa answers two questions that Joomla's page cache asks. Joomla's page cache works only on a GET request of a
 visitor who is not logged in, and only while no message is waiting to be shown:

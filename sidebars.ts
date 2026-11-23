@@ -116,6 +116,7 @@ const sidebars: SidebarsConfig = {
         'services/overview',
         'services/cart-and-checkout',
         'services/orders',
+        'services/customer-account',
         'services/payments-and-shipments',
         'services/documents',
         'services/pricing',

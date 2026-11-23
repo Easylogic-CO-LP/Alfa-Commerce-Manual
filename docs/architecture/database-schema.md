@@ -167,7 +167,7 @@ flowchart TB
 | `#__alfa_order_cart_rule` | The cart rules applied to an order, frozen with their amounts |
 | `#__alfa_order_item_cart_rule` | Each cart rule's share of each order line, frozen at placement (one row per line and rule). Removed with its order line (foreign key on `id_order_item`) |
 | `#__alfa_order_contributions` | The amounts that plugins added to the order's totals, frozen |
-| `#__alfa_orders_statuses` | The order statuses: colours, what the status does to stock, flags (initial, cancelled, completed), e-mail layouts, document and payment rules |
+| `#__alfa_orders_statuses` | The order statuses: colours, what the status does to stock, flags (initial, cancelled, completed), whether customers may cancel in it (`customer_can_cancel`), e-mail layouts, document and payment rules |
 | `#__alfa_orders_statuses_en_gb` | The English names and e-mail texts of the statuses the installation creates. The other language table the install file makes itself |
 | `#__alfa_orderstatus_recipients` | Which users receive the staff e-mail when an order enters a status (pair key) |
 | `#__alfa_order_activity_log` | The order's history: one row per event, with who did it, the status at that moment and a summary |

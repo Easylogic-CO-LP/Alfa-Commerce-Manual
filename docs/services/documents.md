@@ -318,6 +318,13 @@ print view (`DocumentRenderer::render(int $documentId): string`) and hands it to
 
 Both renderers are core's own. They read; they change nothing.
 
+A customer downloads the PDF of their own invoices, receipts and credit notes from the order's page in their account,
+and a guest from the order's keyed page. Each link carries `DocumentToken::for($documentId, $secureKey)`, an HMAC of the
+document's id keyed with the order's secret (`administrator/src/Helper/DocumentToken.php`, beside `PaymentToken`), so
+the order's secret never appears in the page. Only the current version is offered (a replaced document is not), a
+voided one marked Voided, never a delivery note. When the PDF cannot be made, the customer is sent back with a sentence
+and the reason goes to the documents log. See [The customer's account](./customer-account.md#documents).
+
 ## Numbers in the document's language
 
 A document writes every number the way its own language writes them: the amounts, the quantities and the tax rates.

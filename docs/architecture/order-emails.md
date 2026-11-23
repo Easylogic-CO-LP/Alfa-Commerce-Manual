@@ -170,7 +170,13 @@ A status picks two layouts: one for the customer's e-mail (`email_layout_custome
 | Checkout fields | `{field_<name>}`, one for each active form field. The field's own plugin draws its value. |
 | Site | `{site_name}`, `{site_url}` |
 
-`{order_number}` is the order's id.
+`{order_number}` is the order's id. `{status}` is the status's internal name; `{status_customer}` is the name customers
+read: the status's customer-facing name in the e-mail's language, else its internal name in that language (see [The
+customer's account](../services/customer-account.md#the-name-of-a-status)).
+
+On the customer's own e-mail (never a staff e-mail, a preview or a test) the layout is also given `$orderUrl`, the
+order's page: an account's order in the customer's account, a guest's order on its keyed page. The shipped layout
+prints it as **View your order**; a layout of your own prints it where it likes.
 
 Tokens are replaced once, over the whole finished e-mail, so they work in staff's text, in the blocks and in the
 layout's own text. In the body the customer's name, address and username are made safe for HTML, and a
