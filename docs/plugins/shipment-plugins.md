@@ -94,6 +94,22 @@ All twelve events of a shipping plugin, in the order a parcel meets them:
 
 All twelve are **addressed to one plugin** (targeted). No other plugin sees them.
 
+### One answer per cart state per request
+
+`onCalculateShippingCost` is asked of every method the checkout would list, the chosen one included, and the cart is
+read several times in one request: the cart module and the cart page, the method list and the totals, placement's test
+of the chosen method and its pricing. Alfa asks your plugin **once per cart state in a request** and every later reading
+in that request uses the same answer (`CarrierAnswers`). The state is everything the `Cart` reader gives you and your
+method: the method's settings and `isSelected()`, the payable lines (product, combination, quantity, measurements, line
+totals), `getSubtotal()`, the currency, the customer, the chosen shipping and payment methods, and the delivery and
+invoice details as saved and as the checkout submitted them. When any of them changes you are asked again; a new
+request always asks again, since nothing is kept between requests.
+
+What is kept is your answer (the price, the amounts you stated, your refusal, your silence or the error you threw); the
+method's entry mode and taxes are applied to it on every reading. So your answer must follow from the cart you are
+handed: a carrier that reads state of its own (a session value, a table of its own) and changes it within the request
+reads the change on the next request. A remote price call is made once per state, so a carrier with an outside
+service costs one call per listed method per state, not one per reading.
 
 ## What you must provide
 
