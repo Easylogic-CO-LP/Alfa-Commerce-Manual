@@ -84,7 +84,7 @@ Alfa creates tasks at these moments:
 Alfa creates jobs for: preparing the list prices of a pricing context that is new to the shop, or its next generation
 (`price.set.prepare`, one job a context, its scope `price.set.prepare:<context id>`), removing the generations of the
 price index that a newer one replaced and the periods that ended (`price.index.tidy`, once a day and after each
-switch), rebuilding catalogue entries of items, rebuilding the search index, applying stock movements that are still
+switch; it also switches live the prepared generations that wait for nothing), rebuilding catalogue entries of items, rebuilding the search index, applying stock movements that are still
 owed, recreating thumbnails, deleting finished tasks, fetching the images a REST API write gave by their address
 (`media.fetch`, one job a write; see [Catalogue](../api/catalogue.md#images-given-by-their-address)), and telling each
 consumer of the shop's changes what it is owed (`outbound.deliver`, one job a consumer; see
