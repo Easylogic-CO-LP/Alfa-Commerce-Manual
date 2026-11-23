@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
 title: The customer's account
-description: My orders, the order page, a guest's one order, cancelling, documents and ordering again: what each shows, who may open it, the settings, and what a template or an extension can change.
+description: "My orders, the order page, a guest's one order, cancelling, documents and ordering again: what each shows, who may open it, the settings, and what a template or an extension can change."
 ---
 
 # The customer's account
