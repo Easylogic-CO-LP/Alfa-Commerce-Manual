@@ -212,7 +212,7 @@ row's `params` column. The fields come from your plugin's `params/params.xml`, i
 
 | Where you are | What you hold | How you read a setting |
 |---|---|---|
-| `onCartView`, `onCartViewAssets` | A `Method` object | `$event->getMethod()->param('api_key', '')`, or `->params()` for the array |
+| `onCartView`, `onCartViewAssets` | A `Method` object: `$event->getMethod()` in `onCartView`, one for each of your methods in `$event->getMethods()` in `onCartViewAssets` | `$method->param('api_key', '')`, or `$method->params()` for the array |
 | `onItemView`, `onOrderProcessView`, `onOrderCompleteView`, and anywhere through `getPaymentMethod()` | The method record | `$method->params['api_key'] ?? ''` |
 | `onExecuteAction` | The payment row, whose `params` is the method record | `$payment->params->params['api_key'] ?? ''` |
 
