@@ -528,8 +528,9 @@ discount of a list read that table.
 
 The prices are stored by pricing context. A pricing context (`#__alfa_price_contexts`) is a currency, a place class
 and a set of customer groups, and, for a customer with prices of their own, that customer. A context holds one
-generation of rows that the lists read; a change that reaches the whole context writes the next generation beside it
-and switches them whole once it is complete.
+generation of rows that the lists read; a change that reaches the whole context writes the next generation beside it.
+The next generations of one change switch together, in one step, once the last of them is complete, so every group of
+shoppers reads the change from the same moment.
 
 One stored row is the price of:
 
@@ -543,8 +544,11 @@ One stored row is the price of:
 Each row stores the same figures the price settings name: `base_price`, `discount_amount`,
 `base_price_with_discounts`, `tax_amount`, `base_price_with_tax`, `final_price` and `discount_percent`. They are the
 price of one piece at the quantity the item opens with, its minimum quantity, as its card prints it. A unit with no
-valid price (no price row applies) has empty figures; an explicit price of 0 is the figure 0. The saving filters and
-the saving sort read the tax-included saving of one piece, as the price beside them is.
+valid price (no price row applies) has empty figures; an explicit price of 0 is the figure 0. The "save at least"
+filter and the sort by saving compare the saving each shopper's card shows first: the saving before tax
+(`base_price` less `base_price_with_discounts`) when the card shows the prices before tax (the base price or the
+subtotal), otherwise the saving with tax (`discount_amount`). The shopper's price display settings decide, as they
+decide the card. The "on sale" filter reads `discount_amount` above zero, which holds on either basis.
 
 The product list reads, by key, the row of `#__alfa_items.price_combination_id`: the combination the product's card
 opens on (`#__alfa_items.opening_combination_id`, the default combination when it can be bought, else the first that
@@ -590,7 +594,9 @@ Core rebuilds the rows that a change touches, in the same request:
 
 Prices for every period a price, a discount or a tax defines are prepared ahead, so a promotion starts and ends by
 the clock; the background job `price.index.tidy` removes the periods that ended, and the generations a newer one
-replaced, once a day and after each switch.
+replaced, once a day and after each switch. If a write of a rule cannot start (its pricing contexts cannot be brought
+in line, or the items it reaches cannot be read), every item is owed to the background job `catalogue.rebuild`, which
+writes the rule's prices; Tools > Database Sync, Rebuild catalogue projections, shows it.
 
 A pricing context that is new to the shop (a customer group set that customers hold for the first time, a currency a
 price row names or a place a price row or a rule names for the first time, a customer given prices of their own) is
@@ -598,9 +604,10 @@ not written by the request that brought it. The background job `price.set.prepar
 at a time, its scope `price.set.prepare:<context id>`. A shop's first pricing contexts, and those new while the index
 is built after an update, are read at once, and the background job `catalogue.rebuild` writes their rows. A discount
 or a tax that reaches more than fifty products and at least half the catalogue, and a place moved, published or
-unpublished, are prepared beside the prices the list reads, as the context's next generation, and
-replace them whole once complete: until then the list filters and sorts by the prices from before the change, but for
-a product saved meanwhile, which it reads with the change at once. A rule that reaches fewer products is written
+unpublished, are prepared beside the prices the list reads, as each context's next generation, and
+replace them together once the last is complete: until then the list filters and sorts by the prices from before the
+change, but for a product saved meanwhile, which it reads with the change at once. A second such change before the
+switch starts the preparation again, so the switch carries both. A rule that reaches fewer products is written
 product by product. A shopper whose customer groups, place or own prices change reads, until their new prices
 are prepared, the prices of the nearest prepared group of shoppers (the guest's, the place above, the prices of
 everyone); the product page and the cart charge their own prices throughout.

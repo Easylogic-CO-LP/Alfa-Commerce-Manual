@@ -272,7 +272,7 @@ A **write** is one piece of work that rewrote stored prices. Why it was done is 
 | `tax` | `CAUSE_TAX` | A tax was saved, published, unpublished or deleted | The tax, 0 when several were deleted |
 | `category` | `CAUSE_CATEGORY` | A category was saved, renamed, changed state or was deleted | The category, 0 for several |
 | `manufacturer` | `CAUSE_MANUFACTURER` | A manufacturer was saved, renamed, changed state or was deleted | The manufacturer, 0 for several |
-| `set` | `CAUSE_SET` | A pricing context is being prepared (see below) | The pricing context |
+| `set` | `CAUSE_SET` | Prepared prices went live (see below) | The pricing context whose last part made the switch, 0 when the background tidy made it |
 | `rebuild` | `CAUSE_REBUILD` | The index was rebuilt | 0 |
 | `window` | `CAUSE_WINDOW` | A stored price period began (see above) | 0 |
 
@@ -281,8 +281,11 @@ discounts or taxes name and that some customers hold together (table `#__alfa_pr
 for each **pricing context**, not for each customer: a currency, a place class and a customer group set, and, for a
 customer with prices of their own, that customer (table `#__alfa_price_contexts`). Every customer of the same context
 reads the same rows. A context that is new to the shop, or the next generation of one that a large change reaches, is
-prepared a part of the items at a time. Each part its background job prepares is a write with the cause `set`; the
-parts that the save of a discount or a tax prepares itself, in its first seconds, belong to that save's write.
+prepared a part of the items at a time, where no shopper reads it yet, and none of those parts is announced. Its switch
+is: once it has gone live (the next generations of one change go live together), one change for each row that differs
+from the rows shoppers read before (each row of a context new to the shop), announced with the cause `set`, or with
+the cause of the discount's or the tax's save when the save switched it in its own request. A large switch is
+announced as several events, each exact. So you hear a price when shoppers can read it, not before.
 
 **Who receives it.** Announced to everyone: every loaded plugin that lists it in `getSubscribedEvents()`, a `system`
 plugin included. Alfa loads the `alfa` group first.
