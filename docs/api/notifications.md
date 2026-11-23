@@ -11,7 +11,7 @@ description: "How the shop tells another system of its changes: webhooks, the si
 The REST API answers a program that asks. Outgoing notifications go the other way: the shop tells another system
 of its changes as they happen, so that system does not have to read the whole catalogue again and again.
 
-The shop tells of four kinds of change, called **topics**:
+The shop tells of five kinds of change, called **topics**:
 
 | Topic | Told when |
 |---|---|
