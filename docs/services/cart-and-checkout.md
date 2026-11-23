@@ -209,8 +209,10 @@ of the shipped module's layouts reads no offers.
 browser), reading nothing. A module shown on every page asks it before it reads the cart, as the shipped cart module does, so
 a first-time visitor costs it no query. The shipped module then hands
 its layouts no reading (`$snapshot` is `null`): a template override of `tmpl/default.php` or `tmpl/default_items.php`
-must accept `null`. An override of `default_items.php` that returns early on `null` opens the drawer with no header,
-no close button and no "Your cart is empty": take the shipped file's first lines into it.
+must accept `null`. An override of `default_items.php` is drawn only when the page loads: every refresh of the cart
+draws the module's own `default_items.php`. Keep the element with `data-cart-items` in what it draws: without it the
+module's script stops before it binds the cart button, and the drawer never opens. See
+[The cart module](../modules/cart.md).
 
 ### The methods
 
