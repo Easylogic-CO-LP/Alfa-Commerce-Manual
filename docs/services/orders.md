@@ -48,8 +48,9 @@ The checkout itself uses it: [`OrderPlacement`](./cart-and-checkout.md#placing-a
 cart and calls `create()`. The back office's order model uses it for a manual order and for an order the REST API
 creates.
 
-It is deliberately narrow. It sends **no e-mail**, announces **no event**, and writes **no payment row and no
-parcel**. `onAlfaOrderPlaced` is announced by the checkout, not by `OrderCreator`.
+It is deliberately narrow. It sends **no e-mail**, announces **no order event**, and writes **no payment row and no
+parcel**. `onAlfaOrderPlaced` is announced by the checkout, not by `OrderCreator`. Its stock claim announces the
+[stock events](../events/stock-events.md) that any claim announces (`onInventoryBeforeReserve` and the others).
 
 ### When it is used
 
