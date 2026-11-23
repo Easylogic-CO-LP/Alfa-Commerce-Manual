@@ -118,6 +118,40 @@ order's lock, and again just before the provider is asked:
 The gateway decides what the attempt is: it opens a new one or carries the earlier one on (see
 [Payment plugins](../plugins/payment-plugins.md)).
 
+## A payment method's fee
+
+A payment method can charge a fee, such as a cash on delivery fee. Its **Fee** tab (and the REST resource
+`v1/alfa/paymentmethods`) holds four settings:
+
+| Setting | What it means |
+|---|---|
+| Fixed fee (`fee_amount`) | An amount in the order's currency. `0` for none. |
+| Fee percentage (`fee_percent`) | A percentage of the order total before the fee: the goods after their discounts, the shipping after its rules and the other charges. `0` for none, at most 100. |
+| Fee entered (`fee_entry_mode`) | Tax included (the customer pays the figures with the tax inside; the percentage is taken of the total with tax) or tax excluded (the tax is added on top; the percentage is taken of the total without tax). Tax included by default. |
+| Fee taxes (`fee_taxes`) | The tax rules the fee is taxed with. Each rule's places, customer groups and dates decide whether it applies, at the delivery destination, as for a shipping method's taxes. None: the fee is untaxed. |
+
+The fee is the fixed amount plus the percentage, the percentage rounded once to the currency's decimals. It is
+worked out like a shipping method's price: read through the entry mode and taxed with the rules, so its net, its tax
+and its gross are exact and add up. Fixed 2.00 with tax included at 24% is 1.61 + 0.39; 3% of a total of 25.00
+without tax, plus 1.50, entered without tax at 24%, is 2.25 + 0.54 = 2.79.
+
+Where the fee appears:
+
+- **Before the choice.** The checkout's payment list and the order builder print each method's fee beside its name
+  ("Fee: 2,00 €"), the figure the totals would carry.
+- **In the totals.** The chosen method's fee is its own line, "Payment fee (method name)", after the plugins' charges.
+  It is a charge like theirs (code `payment_fee`; see [How the cart is added up](./cart-and-checkout.md#how-the-cart-is-added-up)),
+  so the shopper pays it and the gateway is asked for a total that includes it.
+- **On the order.** Placement totals the order with the fee of the method the submission names and freezes it in
+  `#__alfa_order_contributions`. A later change of the order's lines by staff does not work it out again.
+- **On the documents and in the e-mails**, as the order's other charges: its own line at its rate.
+- **In the REST API**, in the order's `contributions` with its code, amounts, tax and rate. See
+  [Orders](../api/orders.md).
+
+An order with nothing to pay before the fee is charged none, so a free order or a request for an offer stays free.
+Orders made without the cart (a renewal, an order created over the REST API in one call) carry no fee: they state
+their amounts themselves.
+
 ## What can go wrong
 
 | What you see | The usual cause |

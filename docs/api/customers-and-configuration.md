@@ -225,13 +225,26 @@ the payment plugin that does the work. See [Payment plugins](../plugins/payment-
 
 A create without `color` and `bg_color` takes the colours the method's edit form sets by default.
 
-**A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `ordering`, `state`.
+**A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `fee_amount`, `fee_percent`,
+`ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `medias`, and with
-`include=translations` its `translations`.
+**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `fee_entry_mode`,
+`fee_taxes`, `medias`, and with `include=translations` its `translations`.
 
 **Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`. They limit where
 the method is offered.
+
+**The method's fee.** `fee_amount` is a fixed amount in the order's currency and `fee_percent` a percentage of the
+order total before the fee; the fee is both added together, and `0` for both means no fee. `fee_entry_mode` says what
+the figures mean: `tax_included` (the customer pays them with the tax inside, and the percentage is taken of the
+total with tax) or `tax_excluded` (the tax is added on top, and the percentage is taken of the total without tax).
+`fee_taxes` lists the tax rules the fee is taxed with (none: no tax on it). A figure below 0, or a percentage above 100,
+is refused with the reason and nothing is saved; a `PATCH` that does not send `fee_taxes` keeps them. See
+[A payment method's fee](../services/payments-and-shipments.md#a-payment-methods-fee).
+
+```json
+{"fee_amount": "2.00", "fee_percent": "0", "fee_entry_mode": "tax_included", "fee_taxes": [3]}
+```
 
 Deleting a method that an order used is refused with 409 and the reason, and nothing is deleted. See
 [Status codes](./overview.md#status-codes) for the cases.

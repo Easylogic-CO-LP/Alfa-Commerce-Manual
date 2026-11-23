@@ -165,6 +165,23 @@ them to the replacement's method; with no such payment or parcel the order keeps
 The lists `payments` and `shipments` are where a program reads an order's payments and parcels. The routes under
 [Operations on an order](#operations-on-an-order) write them; none of them reads.
 
+Each entry of `contributions` is a charge the order carries beside its goods and its shipping, frozen when the order
+was placed: `id`, `code` (what the charge is: a plugin's own code, or `payment_fee` for the
+[payment method's fee](../services/payments-and-shipments.md#a-payment-methods-fee)), `name`, `amount_tax_incl`,
+`amount_tax_excl`, `tax_amount` and `tax_rate`. `contributions_total` is their sum with tax.
+
+```json
+{
+  "id": 41,
+  "code": "payment_fee",
+  "name": "Payment fee (Cash on delivery)",
+  "amount_tax_incl": {"amount": "2.00", "formatted": "2,00 €", "minor_units": 200},
+  "amount_tax_excl": {"amount": "1.61", "formatted": "1,61 €", "minor_units": 161},
+  "tax_amount": {"amount": "0.39", "formatted": "0,39 €", "minor_units": 39},
+  "tax_rate": "24"
+}
+```
+
 **Change.** `PATCH v1/alfa/orders/:id` changes the customer's details. It does not change the status:
 
 ```json
@@ -538,7 +555,7 @@ last role of its kind cannot be moved to the trash, so its delete answers 409.
 
 ## Not documented yet
 
-- The entries of `contributions`, `history`, `delivery_address` and `invoice_address` field by field.
+- The entries of `history`, `delivery_address` and `invoice_address` field by field.
 - The allowed values of `transaction_status` and `payment_type`.
 - `overpaid`, `excess` and `still_held` one by one. See [Orders](../services/orders.md) for the money terms.
 - An example of a parcel with tax.
