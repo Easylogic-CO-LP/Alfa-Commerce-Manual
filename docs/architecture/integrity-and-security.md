@@ -6,7 +6,7 @@ description: How Alfa Commerce compares its installed files with the signed list
 
 # Integrity check and Tools > Security
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce can tell whether its files on a site are the files of the official release. It compares them with a
 list that is published for every release and signed by the publisher. The result is shown under **Tools > Security**
@@ -41,10 +41,10 @@ The comparison finds three kinds of difference:
 ### Which folders are searched for extra files
 
 Only the folders of the extensions the list itself names: Alfa's component folders (site, administrator and API),
-its `media` folder, and the folder of each module and plugin that ships with Alfa Commerce. Hidden files such as
-`.htaccess` and `.user.ini` are reported. A few names that desktop systems leave behind are ignored: `.DS_Store`,
-`Thumbs.db`, `desktop.ini` and files starting with `._`, unless such a name contains an extension a web server may
-run.
+its `media` folder, and the folder and the `media` folder of each module and plugin that ships with Alfa Commerce.
+Hidden files such as `.htaccess` and `.user.ini` are reported. A few names that desktop systems leave behind are
+ignored: `.DS_Store`, `Thumbs.db`, `desktop.ini` and files starting with `._`, unless such a name contains an
+extension a web server may run.
 
 Folders shared with other extensions, such as Joomla's `language` and `libraries` folders, are never searched for
 extra files. This is how the two language rules below come about.
@@ -100,7 +100,7 @@ A difference against the list of **exactly the installed version** is `modified`
 |---|---|
 | Tools > Security | The card, the three lists, the time of the last check and the button **Recheck now** |
 | The notification bell | A notification "File integrity" for every outcome except `official`: danger for `modified` and `bad_signature`, information for `ahead` and `unreachable`. It cannot be dismissed and goes away when the files match again. Everyone sees it; only users with the Tools permission get the link to Tools. |
-| Every Alfa Commerce administrator page | A red banner, while the last recorded outcome is `modified` or `bad_signature`. Its words say whether files were changed, how many extra files there are, or that the list could not be verified or fetched. |
+| Every Alfa Commerce administrator page | A red banner, while the last recorded outcome is `modified` or `bad_signature`. Its words say whether files were changed, how many extra files there are, or that the list could not be verified. |
 
 The card is drawn from one fixed file (`administrator/src/View/Tools/_integrity.php`), not through Joomla's layout
 overrides, so a template override cannot change it. Its sentences are ordinary language strings. The banner's words
@@ -126,7 +126,7 @@ The check never changes, removes or disables a file. It only reports.
 
 | Do | Do not |
 |---|---|
-| Put your code in your own plugin, module or template | Edit a file under `components/com_alfa`, `administrator/components/com_alfa`, `api/components/com_alfa`, `media/com_alfa`, or the folder of a module or plugin that ships with Alfa |
+| Put your code in your own plugin, module or template | Edit a file under `components/com_alfa`, `administrator/components/com_alfa`, `api/components/com_alfa`, `media/com_alfa`, or the folder or `media` folder of a module or plugin that ships with Alfa |
 | Change how something looks with a template or layout override | Add a file of your own inside those folders |
 | Ship your translations as a language pack in Joomla's language folders | Put language files inside Alfa's own folders |
 
@@ -156,12 +156,14 @@ The Security tab has a second card, **REST API endpoints and who may call them**
 endpoint of the REST API: the ones of Alfa Commerce and the ones its enabled extensions add. Joomla's own REST
 endpoints (articles, users and the others) are not in it.
 
-A line at the top counts the endpoints, how many of them extensions add, the accounts with an enabled token and how
-many of them are Super Users. Under it, Joomla's search tools filter by who adds the endpoint and by permission, and
-search the endpoints in any case. Like the filters of a Joomla list, they are remembered for you: Tools opens with
-your last choice until you clear it. While a filter is set, a line says how many endpoints are shown of all.
+A line at the top counts the endpoints, how many of them extensions add, the accounts with an enabled token that
+hold the permission at least one endpoint asks, and how many of them are Super Users. Under it, Joomla's search tools
+filter by who adds the endpoint and by permission, and search the endpoints in any case. Like the filters of a Joomla
+list, they are remembered for you: Tools opens with your last choice until you clear it. While a filter is set, a line
+says how many endpoints are shown of all.
 
-The rest of the card is in sections you open when you need them, each with a count in its title:
+The rest of the card is in sections you open when you need them. The two sections of endpoints carry their count in
+the title:
 
 | Section | What it holds |
 |---|---|
@@ -225,15 +227,15 @@ keeps it safe:
 
 ## The other tabs of Tools
 
-Tools is one screen (`administrator/tmpl/tools/default.php`) with these tabs. Every card on them is drawn from one
-registry of tool actions, so a plugin's own tool looks and behaves like core's. How a plugin adds a tool is on
+Tools is one screen (`administrator/tmpl/tools/default.php`) with these tabs. Every action card on them is drawn from
+one registry of tool actions, so a plugin's own tool looks and behaves like core's. How a plugin adds a tool is on
 [Admin screen plugins](../plugins/admin-screen-plugins.md).
 
 | Tab | What it is for | The code behind it |
 |---|---|---|
-| Media | Find and delete media entries whose record or file no longer exists, and create missing or all thumbnails. A thumbnail fits the thumbnail size and is never larger than its image. A row whose image is not a file a thumbnail may be made from gets no thumbnail, and the job's report names it; the report also counts the thumbnails Alfa wrote again because a media plugin made them too large, and names the images stored smaller than the thumbnail size. | The view `toolsmedia`; the thumbnail actions in `administrator/src/Service/Tools/CoreToolProvider.php` |
-| Database Sync | Actions listed in the order to run them: users and groups, language tables, backfill of empty translations, catalogue projections, the price index check, list prices for customer groups, outstanding stock movements, the search index | `administrator/src/Service/Tools/CoreToolProvider.php` |
-| Tasks | Failed and held tasks, the jobs, the deletion of finished tasks, and how background work runs. See [Background work](./background-work.md). | `administrator/src/Controller/TasksController.php`, `administrator/src/Service/Task/TaskStaff.php` |
+| Media | Find and delete media entries whose record or file no longer exists, and uploaded files that no entry names; create missing or all thumbnails. A thumbnail fits the thumbnail size and is never larger than its image. A row whose image is not a file a thumbnail may be made from gets no thumbnail, and the job's report names it; the report also counts the thumbnails Alfa wrote again because a media plugin made them too large, and names the images stored smaller than the thumbnail size. | The view `toolsmedia`; the thumbnail actions in `administrator/src/Service/Tools/CoreToolProvider.php` |
+| Database Sync | Actions listed in the order to run them: users and groups, language tables, backfill of empty translations, catalogue projections, the price index check, list prices for customer groups, the search index (when the search engine set in Options can be rebuilt), outstanding stock movements | `administrator/src/Service/Tools/CoreToolProvider.php` |
+| Tasks | Failed and held tasks, the jobs, the outgoing notifications, the deletion of finished tasks, and how background work runs. See [Background work](./background-work.md). | `administrator/src/Controller/TasksController.php`, `administrator/src/Service/Task/TaskStaff.php` |
 | GitHub - Commit & Pull Request | A guide for contributing, and two downloads: the whole package, or only the files the integrity check reports as changed. Neither download carries the files of the bundled libraries, so a changed library file is shown on the Security tab only. | `ToolsController::exportPackage()` in `administrator/src/Controller/ToolsController.php`, `administrator/src/Helper/PackageHelper.php` |
 | Security | The integrity check of this page, and every Alfa Commerce endpoint of the REST API and who may call it | `administrator/src/Helper/IntegrityHelper.php`, `administrator/src/View/Tools/_integrity.php`; `administrator/src/Service/Api/ApiAddressListing.php`, `administrator/src/View/Tools/_apiroutes.php` |
 | Reset and clear | **Reset to default** gives Alfa's Options back their installation values. **Clear everything** removes the shop's data and makes a fresh installation. Each opens its own page that lists what would change before anything changes. | `administrator/src/Service/Maintenance/ResetToDefault.php`, `administrator/src/Service/Maintenance/FactoryReset.php` |
@@ -288,10 +290,10 @@ state cannot be read it answers yes, because a half cleared shop must never be s
 
 ## The installer gate
 
-Every Alfa extension passes one gate when it is installed or updated: it is refused when Alfa Commerce is missing
-or older than the version the extension needs. The gate never refuses anything because the shop is in maintenance,
-and it never refuses an uninstall. It is documented on [Plugin overview](../plugins/overview.md), under "The
-installer gate".
+Every Alfa extension installed on its own passes one gate when it is installed or updated: it is refused when Alfa
+Commerce is missing or older than the version the extension needs, or outside the lines of Alfa Commerce its manifest
+says it is built for. The gate never refuses anything because the shop is in maintenance, and it never refuses an
+uninstall. It is documented on [Plugin overview](../plugins/overview.md), under "The installer gate".
 
 ## The error log
 
@@ -309,7 +311,8 @@ recorded. Nothing is retried and nothing is hidden: the page still fails, and th
 
 ### What the line holds
 
-Joomla writes the date and time, the priority and the visitor's address. Alfa Commerce adds, separated by `|`:
+Joomla writes the date and time, the priority, the visitor's address and the category (`com_alfa.errors`). Alfa
+Commerce adds, separated by `|`:
 
 | Part | What it is |
 |---|---|
@@ -320,7 +323,7 @@ Joomla writes the date and time, the priority and the visitor's address. Alfa Co
 | `agent` | The browser's user agent, at most 200 characters. |
 | `session` | The first 12 characters of a SHA-256 hash of the session id. The id itself is never written. |
 | `user` | The user id, 0 for a guest. |
-| `error`, then `cause` | The error and up to four of its causes: the class, the code, for a database error its error number (and SQLSTATE when the database gives one), the message, and the first place in Alfa Commerce's code it passed through. The database's user, host, name and password, and the site's folder, are taken out of the message (`<user>`, `<host>`, `<schema>`, `<password>`). A message is cut at 500 characters. |
+| `error`, then `cause` | The error and up to four of its causes: the class, the code, for a database error its error number (and SQLSTATE when the database gives one), the message, and the first place in Alfa Commerce's code it passed through. The database's user, host, name and password, and the site's folder, are taken out of the message (`<user>`, `<host>`, `<schema>`, `<password>`). A message is cut at 500 bytes. |
 | `memory`, `time` | The request's peak memory and how long it ran. |
 
 ### When it is used
@@ -345,7 +348,7 @@ The rules are in the file `SECURITY.md` in the repository:
 [SECURITY.md on GitHub](https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/SECURITY.md). In short:
 
 - **Do not open a public GitHub issue** for a security problem.
-- Send an e-mail to **info@alfacommerce.gr** with the subject `[SECURITY] Alfa Commerce Vulnerability Report`.
+- Send an e-mail to **info@easylogic.gr** with the subject `[SECURITY] Alfa Commerce Vulnerability Report`.
 - Include a description, the steps to reproduce it, the possible impact, and a suggested fix if you have one.
 
 What the file promises in return:
