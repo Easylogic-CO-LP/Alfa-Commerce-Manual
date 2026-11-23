@@ -211,20 +211,20 @@ each one. They fire while a record is being saved. A media event does not tell y
 ## Stock
 
 All nine are sent from `administrator/src/Service/Inventory/InventoryService.php`. The classes are in `Inventory/`.
-The first eight are announced after the plugins of `alfa` are loaded: the "before" events at line 5385, the "after"
-events at line 5400. The column gives the line of each command.
+The first eight are announced after the plugins of `alfa` are loaded: the "before" events at line 5387, the "after"
+events at line 5402. The column gives the line of each command.
 
 | Event | Class | Delivered | Can refuse | Fires | Sent in | Documented on |
 |---|---|---|---|---|---|---|
-| `onInventoryBeforeReserve` | `InventoryBeforeReserveEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the stock is set aside | `InventoryService.php:464` | [Stock events](./stock-events.md) |
-| `onInventoryBeforeCommit` | `InventoryBeforeCommitEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before goods are taken from stock | `InventoryService.php:1936` | [Stock events](./stock-events.md) |
-| `onInventoryBeforeRelease` | `InventoryBeforeReleaseEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the reservations of an order are let go | `InventoryService.php:751` | [Stock events](./stock-events.md) |
-| `onInventoryReserved` | `InventoryReservedEvent` | Announced | No | After the save is final | `InventoryService.php:641` | [Stock events](./stock-events.md) |
-| `onInventoryCommitted` | `InventoryCommittedEvent` | Announced | No | After the save is final | `InventoryService.php:2337` | [Stock events](./stock-events.md) |
-| `onInventoryReleased` | `InventoryReleasedEvent` | Announced | No | After the save is final | `InventoryService.php:814` | [Stock events](./stock-events.md) |
-| `onInventoryAdjusted` | `InventoryAdjustedEvent` | Announced | No | After the save is final | `InventoryService.php:3575`, `:3725` and `:7517` | [Stock events](./stock-events.md) |
-| `onInventoryRestored` | `InventoryRestoredEvent` | Announced | No | After stock was put back, or taken off again when a credit note is voided, and the save is final | `InventoryService.php:3105` | [Stock events](./stock-events.md#oninventoryrestored) |
-| `onCollectStockAllocationProviders` | `CollectStockAllocationProvidersEvent` | Announced, after `alfa-inventory` is loaded | No | On request, once per request | `InventoryService.php:5345` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeReserve` | `InventoryBeforeReserveEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the stock is set aside | `InventoryService.php:465` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeCommit` | `InventoryBeforeCommitEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before goods are taken from stock | `InventoryService.php:1938` | [Stock events](./stock-events.md) |
+| `onInventoryBeforeRelease` | `InventoryBeforeReleaseEvent` | Announced | Yes: `InventoryRefusedException` refuses; another error is a failure that is tried again. | Before the reservations of an order are let go | `InventoryService.php:752` | [Stock events](./stock-events.md) |
+| `onInventoryReserved` | `InventoryReservedEvent` | Announced | No | After the save is final | `InventoryService.php:642` | [Stock events](./stock-events.md) |
+| `onInventoryCommitted` | `InventoryCommittedEvent` | Announced | No | After the save is final | `InventoryService.php:2339` | [Stock events](./stock-events.md) |
+| `onInventoryReleased` | `InventoryReleasedEvent` | Announced | No | After the save is final | `InventoryService.php:815` | [Stock events](./stock-events.md) |
+| `onInventoryAdjusted` | `InventoryAdjustedEvent` | Announced | No | After the save is final | `InventoryService.php:3577`, `:3727` and `:7517` | [Stock events](./stock-events.md) |
+| `onInventoryRestored` | `InventoryRestoredEvent` | Announced | No | After stock was put back, or taken off again when a credit note is voided, and the save is final | `InventoryService.php:3107` | [Stock events](./stock-events.md#oninventoryrestored) |
+| `onCollectStockAllocationProviders` | `CollectStockAllocationProvidersEvent` | Announced, after `alfa-inventory` is loaded | No | On request, once per request | `InventoryService.php:5347` | [Stock events](./stock-events.md) |
 
 ## Documents
 
