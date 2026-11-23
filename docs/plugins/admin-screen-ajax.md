@@ -7,7 +7,7 @@ description: "How a script on an administrator screen asks a plugin for an answe
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -18,8 +18,9 @@ description: "How a script on an administrator screen asks a plugin for an answe
 
 Sometimes a script on an admin screen needs a small answer from your plugin without loading a page: is this row
 kept, what does this code look up to. Joomla has an entry point for that, the component `com_ajax`. It is part of
-Joomla, not of Alfa Commerce, and Alfa Commerce adds no entry point of its own for feature plugins. With it your
-plugin answers a request without a controller, a view or a route of its own.
+Joomla, not of Alfa Commerce. Alfa Commerce adds no entry point of its own for a plugin that extends its screens;
+only a panel has tasks of its own ([Creating an Admin Panel](./admin-panels.md#tasks-arrive-by-post)). With
+`com_ajax` your plugin answers a request without a controller, a view or a route of its own.
 
 ## How the request reaches your plugin
 
@@ -33,7 +34,7 @@ administrator/index.php?option=com_ajax&group=alfa&plugin=keeplist&format=json
 |---|---|
 | `group` | The plugin group Joomla loads for the request. Without it Joomla loads the group `ajax`, and your plugin is never asked. |
 | `plugin` | The second half of the event's name. Joomla announces `onAjax` followed by this value with a capital first letter: `onAjaxKeeplist`. |
-| `format` | `json` wraps the answer as shown below. `raw` prints it as plain text. Leave it out and Joomla draws a whole admin page around the answer. |
+| `format` | `json` wraps the answer as shown below. `raw` prints the answers one after the other as plain text, so it suits a text answer (an array prints as `Array`). Leave it out and Joomla does not ask your plugin: it answers, inside a whole admin page, that a response format is missing (status 404). |
 
 Joomla then loads every enabled plugin of the group and announces the event. Your plugin hears it only if the event
 is in its `getSubscribedEvents()`. A method with the right name that is not listed there is never called.
@@ -134,7 +135,7 @@ work on does not carry it, `HTMLHelper::_('form.csrf')` adds it.
 
 ## What comes back
 
-With `format=json` the answer is always this envelope:
+With `format=json` the answer is this envelope:
 
 ```json
 {"success":true,"message":null,"messages":null,"data":[{"kept":[1]}]}
@@ -156,6 +157,8 @@ Three things to know about errors:
 - **A request nobody answered looks like a success.** If the event is not in `getSubscribedEvents()`, the plugin is
   disabled, or the `plugin` value is misspelled, the answer is `{"success":true,"message":null,"messages":null,"data":[]}`.
   An empty `data` list means your handler did not run.
-- **While the shop is paused, Alfa Commerce answers for you.** During **Tools**, **Reset and clear**, "Clear
-  everything", a `com_ajax` request whose `group` starts with `alfa` is refused with status 503 before it reaches
-  any plugin.
+- **While the shop is in maintenance, Alfa Commerce answers for you.** From the start of **Tools**, **Reset and
+  clear**, "Clear everything" until it has finished, also while it is paused or after it failed, a `com_ajax` request
+  whose `group` starts with `alfa` is refused with status 503 before it reaches any plugin. The body is then Joomla's
+  error object, not the envelope:
+  `{"error":true,"code":503,"message":"The shop is being maintained. Please try again in a few minutes."}`.
