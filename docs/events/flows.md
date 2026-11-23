@@ -391,7 +391,7 @@ What the two pictures mean:
 ## Stock
 
 Stock moves when an order is placed, when an order's status changes, when a document that moves stock is issued, and
-when staff correct a figure. Each movement is one command of `InventoryService`
+when staff, the REST API or an extension set or correct a figure. Each movement is one command of `InventoryService`
 (`administrator/src/Service/Inventory/InventoryService.php`). What an order's status asks of the stock is decided by
 `StockPolicy::claimFor()` (`administrator/src/Service/Order/StockPolicy.php`). Every command follows the same
 order.
@@ -420,8 +420,8 @@ Which events a command announces:
 | Stock is set aside for an order | `reserve()` | `onInventoryBeforeReserve` | `onInventoryReserved` |
 | Goods are taken from stock | `commitReservation()` | `onInventoryBeforeCommit` | `onInventoryCommitted` |
 | All reservations of an order are let go | `release()` | `onInventoryBeforeRelease` | `onInventoryReleased` |
-| Staff correct a figure | `adjustTo()` | None | `onInventoryAdjusted` |
-| An extension moves stock by a signed amount | `adjust()` | None | `onInventoryAdjusted` |
+| Staff, the REST API or an extension set a figure (an extension with a set line of `InventoryCommands`) | `adjustTo()` | None | `onInventoryAdjusted` |
+| The REST API or an extension changes stock by a signed amount (a delta line of `InventoryCommands`) | `adjust()` | None | `onInventoryAdjusted` |
 | Stock is put back, or taken off again when a credit note is voided | `restore()`, `reverseRestores()` | None | `onInventoryRestored` |
 
 What the picture means:
