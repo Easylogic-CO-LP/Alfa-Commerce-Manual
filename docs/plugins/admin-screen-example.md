@@ -7,7 +7,7 @@ description: "A complete small plugin of the alfa group for Alfa Commerce, file 
 
 <CreatePluginButton type="adminscreen" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
