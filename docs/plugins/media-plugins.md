@@ -8,10 +8,11 @@ description: How a plugin of the alfa-media group checks, converts and resizes t
 
 <CreatePluginButton type="media" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
-A **media plugin** takes part when staff add an image to an item, a category, a manufacturer or a combination. It can
-refuse a file, write the image in another format or size, write the thumbnail, and tidy up its own files.
+A **media plugin** takes part when staff add an image to an item, a category, a manufacturer, a combination, a payment
+method or a shipping method. It can refuse a file, write the image in another format or size, write the thumbnail,
+and tidy up its own files.
 
 No media plugin ships with Alfa Commerce. Everything on this page, the sample included, is taken from the event
 classes and from the code that raises them.
@@ -45,14 +46,15 @@ thumbnail is what shoppers see, so write it in a format and quality fit for disp
 
 - When staff save a record with a **new** image that is a file: one dropped on the page, or one picked from Joomla's
   media library. An image given as a web address (`"type": "url"`) is stored as that address and no media event is
-  raised for it.
+  raised for the address itself; only a thumbnail picture named on its tile goes through `onAlfaMediaThumbnail`.
 - When a REST API client gives an image by its address for the shop to fetch (`{"type": "image", "url": "..."}`):
   once the file has arrived and its content is an image of a type the shop takes, it goes through the same events as
-  a dropped file, the fetched file being the source. One or two images are fetched with the request; more are fetched
-  by the background job `media.fetch`, whose events run in that job.
+  a dropped file, the fetched file being the source. A request that gives one or two such images fetches them itself;
+  when it gives more, all of them are fetched by the background job `media.fetch`, whose events run in that job.
 - When a thumbnail is made: for a new image, when staff pick another picture as an image's thumbnail, and when the
   background work started from Tools > Media makes thumbnails again.
-- When staff delete rows on Tools > Media.
+- When images are deleted: rows on Tools > Media, an image removed in a form or through the REST API, and the images of
+  a deleted record.
 
 ## Who receives the events
 
@@ -66,7 +68,8 @@ The listeners are called one after the other with the **same event object**. Wha
 reads. If two media plugins are enabled, the second can see that the first already wrote the file.
 
 A listener that throws an error does not stop the save. The error is written to Joomla's log (category
-`com_alfa.plugins`) and the next listener runs.
+`com_alfa.plugins`) and the next listener runs. The one error thrown on is a deadlock that ended the transaction the
+listener ran in.
 
 ## The order of events for a new image
 
@@ -83,7 +86,7 @@ sequenceDiagram
     Alfa->>P: onAlfaMediaBeforeProcess
     P->>Alfa: Wrote the file, or did nothing
     Alfa->>Alfa: Stores the original if nobody wrote it, then reads the main colour
-    Alfa->>P: onAlfaMediaThumbnail (if no thumbnail was made yet)
+    Alfa->>P: onAlfaMediaThumbnail, for the image's thumbnail
     P->>Alfa: Wrote the thumbnail, or did nothing
     Alfa->>P: onAlfaMediaAfterProcess
     Alfa->>Alfa: Saves the image's row
@@ -92,25 +95,25 @@ sequenceDiagram
 
 Two things differ from what many expect:
 
-- Alfa's own check comes **before** `onAlfaMediaValidate`. A file that is not an image of an allowed type never
-  reaches `onAlfaMediaValidate`, `onAlfaMediaBeforeProcess` or `onAlfaMediaAfterProcess`.
-- For a dropped file, and for any new image that arrives without a thumbnail picture, the thumbnail is made
-  **after** the main image is stored, from the file as staff gave it (the dropped file, or the picked library file),
-  not from the stored image, so its detail never depends on what a plugin did to the stored image. This is the order
-  in the diagram. When the image arrives
-  with a thumbnail picture named (a file picked from the media library names itself, or staff chose another picture
-  on the image's tile), `onAlfaMediaThumbnail` fires first, before `onAlfaMediaValidate`, and not again afterwards.
-  In that case it also fires before Alfa's own check of the file, so check the source yourself before you read it.
-  The thumbnail of a named picture is made only after the image passed
-  Alfa's check and `onAlfaMediaValidate` and was stored, so a refused image fires no `onAlfaMediaThumbnail`.
+- Alfa's own check comes **before** `onAlfaMediaValidate`. A file that is not an image of an allowed type reaches no
+  media event: not `onAlfaMediaValidate`, `onAlfaMediaBeforeProcess`, `onAlfaMediaThumbnail` or
+  `onAlfaMediaAfterProcess`.
+- The thumbnail is made **after** the main image is stored and its colour read, and before `onAlfaMediaAfterProcess`.
+  This is the order in the diagram. For a dropped file, and for any new image that arrives without a thumbnail picture,
+  it is made from the file as staff gave it (the dropped file, or the picked library file), not from the stored image,
+  so its detail never depends on what a plugin did to the stored image. When the image arrives with a thumbnail picture
+  named (a file picked from the media library names itself, or staff chose another picture on the image's tile), it is
+  made from that picture, at the same point. An image that Alfa's check or `onAlfaMediaValidate` refused, or that was
+  not stored, fires no `onAlfaMediaThumbnail`.
 
-Alfa checks a thumbnail's source before it hands it to
+Alfa checks a named thumbnail picture, and the stored image the thumbnail jobs read, before it hands it to
 `onAlfaMediaThumbnail`, resizes it or copies it. The source must lie inside one of the Media folders (Joomla's
 Media file and image paths, and Alfa's own save folder, `images/commerce` unless Options say otherwise), carry one of
 Media's image extensions, and be an image of that type. A source that fails never reaches the event. This rule is
-not the main image's check, which uses the types allowed in Alfa's Options. A save of an item, category,
-manufacturer or variant that names such a thumbnail is refused before anything is written, and the REST API answers
-400 with the reason.
+not the main image's check, which uses the types allowed in Alfa's Options; the file as staff gave it, used when no
+thumbnail picture is named, is held to the main image's check instead. A save of an item, category, manufacturer,
+variant, payment method or shipping method that names such a thumbnail is refused before anything is written, and the
+REST API answers 400 with the reason.
 
 The events run while the record is being saved. A media event does not tell you whether the record's own save is
 final.
@@ -130,7 +133,7 @@ Four of the five events share these getters (`MediaEvent`). `onAlfaMediaBeforeDe
 |---|---|
 | `getSource()` | The full path of the file to read. For a dropped file it is PHP's temporary upload file. |
 | `getDest()` | The full path Alfa proposes for the stored file. Read it, never change it. Empty on `onAlfaMediaValidate`. |
-| `getOrigin()` | What the image belongs to: `item`, `category`, `manufacturer` or `combination`. On the thumbnail event it is `thumbnail`. |
+| `getOrigin()` | What the image belongs to: `item`, `category`, `manufacturer`, `combination`, `payment` (a payment method) or `shipment` (a shipping method). On the thumbnail event it is `thumbnail`. |
 | `getField()` | `image` for the main image, `thumbnail` for the thumbnail event. |
 
 ## onAlfaMediaValidate
@@ -187,7 +190,7 @@ Call `setProcessed(true)` only after your file exists.
 
 **What happens next.** When a listener set `processed`, Alfa does not copy the original. It stores the path from
 `getFinalPath()` on the image's row and reads the main colour from that file. When no listener did, Alfa copies the
-original to `getDest()` unchanged.
+original unchanged to `getFinalPath()`, which is `getDest()` unless a listener set another path.
 
 **If you are missing or you fail.** The original is stored unchanged. A
 main image that a listener marked processed while no file exists at its final path is refused with a message
@@ -218,8 +221,10 @@ image.
 
 **What happens next.** When a listener set `processed`, Alfa uses the file at `getFinalPath()` if that file exists.
 If it does not exist, the image gets no thumbnail. A file wider or taller than the box, or than its image, is written
-again by Alfa from the image, in your format at your path. When no listener did, Alfa resizes the image itself, in the
-source's own format, and falls back to a plain copy only when the server cannot resize it. The plain copy is made only of a source that passed the thumbnail check above.
+again by Alfa from the image, in your format at your path (in the image's own format at `getDest()` when the server
+cannot write yours, your file then removed). When no listener did, Alfa resizes the image itself, in the source's own
+format, and falls back to a plain copy only when the server cannot resize it. The plain copy is made only of a source
+that passed one of the checks above.
 
 **If you are missing or you fail.** Alfa's own resize makes the thumbnail.
 
@@ -228,8 +233,10 @@ it, and works out what decoding it and drawing its thumbnail take: about 4.7 byt
 a WebP, 8.7 for a PNG and 1.1 for a GIF, the thumbnail's own pixels at 4 bytes, and 4 MB more, with a quarter added
 as a margin. When that is more than PHP's `memory_limit` less what the request already uses, the event does not fire
 and Alfa does not resize the image: it keeps no thumbnail, staff are told which image, its size and the memory it
-needs, and the media log has the line. A 1600 by 1200 JPEG needs about 17 MB with the thumbnail size of 500 by 500,
-and about 25 MB with 2000 by 2000; a 5000 by 5000 JPEG about 146 MB at 500 by 500 and about 264 MB at 5000 by 5000.
+needs, and the media log has the line. In the thumbnail jobs such an image is not opened either: its row keeps the
+thumbnail it has, and the job's report counts it as failed for memory. A 1600 by 1200 JPEG needs about 17 MB with the
+thumbnail size of 500 by 500, and about 25 MB with 2000 by 2000; a 5000 by 5000 JPEG about 146 MB at 500 by 500 and
+about 264 MB at 5000 by 5000.
 Your listener is only given images that fit, so it can decode them as Alfa does.
 Each thumbnail Alfa writes, or fails to, is one line of the media log (`com_alfa_media.php`, written at debug
 priority): the source and its size, the box, the result and its size, and how it was written.
@@ -259,9 +266,9 @@ priority): the source and its size, the box, the result and its size, and how it
 
 **When it fires.** On every delete path, just before the files are removed: when staff delete image rows on Tools >
 Media (up to 500 rows are announced at a time, before the rows go), when staff remove an image in an item, category,
-manufacturer or variant form, when the REST API removes one, and when a record is deleted with its gallery. Inside a
-save it fires once the save is final: the rows are already gone, the files not yet. A save that is undone fires
-nothing and keeps the files.
+manufacturer, variant, payment method or shipping method form, when the REST API removes one, and when a record is
+deleted with its gallery. Inside a save it fires once the save is final: the rows are already gone, the files not
+yet. A save that is undone fires nothing and keeps the files.
 
 **Who receives it.** Announced to everyone.
 
@@ -275,7 +282,8 @@ nothing and keeps the files.
 **What you are expected to do.** Remove the extra files your plugin made for these images. Leave the image file and
 its thumbnail alone: Alfa deletes them itself, and only when no other image uses the same file.
 
-**What happens next.** Alfa deletes the files and the rows.
+**What happens next.** Alfa deletes the files, and on Tools > Media the rows. In a form, through the REST API and with
+a deleted record, the files go only while Complete Media Deletion (Options, Images) is on, as it is by default.
 
 **If you are missing or you fail.** The rows and files are deleted all the same.
 
@@ -287,7 +295,7 @@ its thumbnail alone: Alfa deletes them itself, and only when no other image uses
 | An image with no thumbnail | The plugin called `setProcessed(true)` on `onAlfaMediaThumbnail` and the file at `getFinalPath()` does not exist. |
 | A thumbnail smaller than the plugin wrote it | The plugin enlarged the image or ignored the box; Alfa wrote it again within the rule. The media log names it. |
 | Images of 0 by 0 pixels, or an error while resizing | The plugin sized the main image by `getMaxWidth()` and `getMaxHeight()`, which are 0 there. |
-| The path on the row looks wrong | `setFinalPath()` was given a path that is not a full path inside the site. |
+| An image is refused as if the plugin wrote no file, though it wrote one | `setFinalPath()` was given a path that is not a full path inside the site. Alfa looks for the file under the site's root. |
 | The plugin seems to do nothing, without any message | Its listener threw an error. Look in Joomla's log, category `com_alfa.plugins`. |
 
 ## A complete media plugin
