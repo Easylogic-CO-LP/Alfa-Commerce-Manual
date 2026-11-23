@@ -6,7 +6,7 @@ description: How an extension raises, updates and clears a notification for staf
 
 # Notifications
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 A **notification** is a line for staff in the bell at the top of Alfa Commerce's administrator screens: a new
 order, low stock, a plugin that cannot be used. This page is about the helper that writes and clears them,
@@ -18,7 +18,7 @@ of the order of steps.
 
 ## What it does
 
-All notifications live in one table, `#__alfa_notifications`, and one class writes it:
+All notifications live in one table, `#__alfa_notifications`, and every producer writes it through one class:
 `Alfa\Component\Alfa\Administrator\Helper\NotificationHelper` (`administrator/src/Helper/NotificationHelper.php`).
 Every method is static.
 
@@ -34,12 +34,13 @@ notification: pushing the same key again updates it and never makes a second one
 | `markRead()`, `dismiss()`, `find()`, `canView()`, `canChangeState()`, `canSee()`, `canUseLink()`, `summary()`, `toolbarBadge()`, `renderBadge()`, `safeUrl()` | Core's own screens: the bell, its panel and the Notifications list. Described so that you understand who sees what. |
 | `applyJournal()`, `purge()`, `purgeThrottled()`, `pluginUnavailable()`, `unexpired()`, `visiblePairs()`, `visibilityCondition()` | Core's own. Do not call them. |
 
-What this rests on: the changelog names `push()`, `NotificationText` and `NotificationText::from()` under "For
-plugins", and the class comment says that any code pushes and that plain text is kept for third parties. The
-comments of `clear()`, `exists()`, `isOpen()` and `keys()` address "a producer", which is whoever pushed the key.
-The value builders of `NotificationText` are not named in the changelog. The comment of `key()` covers a key of
-another extension, and the comments of the others do not say who may use them. No shipped plugin calls any of
-these.
+What this rests on: `push()`, `clear()`, `exists()` and `isOpen()` each carry an `@api` line, so they are calls of
+the contract on [Calling core](../plugins/calling-core.md#the-orders-history-and-the-notification-bell). `keys()` and
+`NotificationText` carry none. The changelog names `push()`, `NotificationText` and `NotificationText::from()` under
+"For plugins", and the class comment says that any code pushes and that plain text is kept for third parties. The
+comments of `exists()`, `isOpen()` and `keys()` address "a producer", which is whoever pushed the key. The value
+builders of `NotificationText` are not named in the changelog. The comment of `key()` covers a key of another
+extension, and the comments of the others do not say who may use them. No shipped plugin calls any of these.
 
 ## When it is used
 
@@ -97,7 +98,7 @@ A plugin does the same with its own key and its own language file. Use `Notifica
 | What `push()` guarantees | What it refuses |
 |---|---|
 | One key is one notification, also when two requests push the same key at the same moment | A title and a message that are keys of two different extensions: `InvalidArgumentException`, raised when the notification is written. For a push inside a save that is after the save, not at your call. |
-| Pushing a key that is already there updates its text, severity and link, and keeps whether it was read or dismissed | A `NotificationText` whose extension name is not made of `a` to `z`, `0` to `9`, `_`, `.` and `-`: `InvalidArgumentException` |
+| Pushing a key that is already there updates its text, severity and link, and keeps whether it was read or dismissed | A `NotificationText` whose extension name is not made of `a` to `z`, `0` to `9`, `_`, `.` and `-`, or holds `..`: `InvalidArgumentException` |
 | A push made inside a save that is later undone writes nothing | |
 | An error while writing reaches your code. An error in a plugin that listens to the notification never does. | |
 
@@ -124,7 +125,7 @@ An extension may use one of them, a language key of its own, or plain text.
 ### The words: NotificationText
 
 A notification's title and message are stored as a **language key with its values**, not as finished
-text. Each member of staff then reads the notification in their own language. Plain text is still accepted, and is
+text. Each member of staff then reads the notification in their own language. Plain text is accepted too, and is
 shown as written to every reader.
 
 `Alfa\Component\Alfa\Administrator\Helper\NotificationText` (`administrator/src/Helper/NotificationText.php`):
@@ -145,7 +146,7 @@ a name) or one of these, so that it too is shown in the reader's language:
 | `NotificationText::number(int\|float $number, int $decimals = 0): array` | A number, grouped as the reader's language groups it |
 | `NotificationText::date(string $utc): array` | A date and time given in UTC (`Y-m-d H:i:s`), shown in the reader's time zone. |
 | `NotificationText::content(array $byLanguage): array` | A text that exists in several content languages, such as an item's name: `['en_gb' => 'Shirt']` |
-| `NotificationText::join(array $items, string $separator = ' ', ?string $and = null): array` | Several values joined, with an optional word before the last |
+| `NotificationText::join(array $items, string $separator = ' ', ?string $and = null): array` | Several values joined. `$and` is a language key whose text, such as "and", stands before the last value. |
 
 ```php
 $message = NotificationText::from(
@@ -210,9 +211,8 @@ Plugins hear `onAlfaNotificationPushed` only after the notification is written a
 | History | In the Notifications list only | Staff dismiss it, or `clear()` without `$hard` |
 | Gone | Nowhere | Its `expires` time has passed, or `clear()` with `$hard = true` |
 
-The Notifications list names these two scopes "Not dismissed" and "All,
-dismissed ones included" (its default), and the bell's figure counts the unread notifications that are not
-dismissed. The numbers are unchanged.
+The Notifications list names these two scopes "Not dismissed" and "All, dismissed ones included" (its default), and
+the bell's figure counts the unread notifications that are not dismissed.
 
 - A dismissed or cleared notification is kept as history for 7 days by default. The shop owner changes that in the
   component's options (`notifications_history_days`, 1 to 365), and `$historyDays` of `clear()` sets it for one
@@ -232,18 +232,19 @@ dismissed until something new or worse holds.
 
 | Notification | When |
 |---|---|
-| Joomla page cache | System - Page Cache is enabled. A note while System - Alfa Commerce Sync runs for visitors who are not logged in, a warning while it does not. It comes back unread only when the state gets worse (the plugin disabled, missing, or its Access changed); put right, the note replaces the warning in place. |
+| Joomla page cache | System - Page Cache is enabled. A note while System - Alfa Commerce Sync runs for visitors who are not logged in, a warning while it does not: the plugin is disabled or missing, or visitors who are not logged in do not hold its Access. It comes back unread when it turns into a warning, or from one of these warnings into the other; put right, the note replaces the warning in place. |
 | PDF library for sales documents | dompdf, or a library it needs, is missing or disabled. Sales documents are not made into PDFs until it is back. |
 | Phone number library | libphonenumber is missing or disabled. Until it is back, phone numbers are refused at the checkout, at sign-up, in the account forms and in the telephone fields of the back office's settings (a shipping method's contact phone). |
-| Alfa Commerce extensions to update | An installed Alfa extension is not built for this version. It opens Tools > Extensions. |
+| Alfa Commerce extensions to update | An installed Alfa extension needs a build for this version of Alfa Commerce, or does not say which versions it works with. It names them, comes back unread when an extension is newly named or another line of Alfa Commerce is installed, and opens Tools > Extensions. |
 | Online sales | The shop shows its catalogue only (Options, Cart, Online sales). A note; it opens the Options. |
 | Products priced at the quantity they sell from | Published products sell from a minimum quantity no price covers for every shopper of a currency. It names how many and the first ten, which show no price at the quantity they sell from; raise their minimum or add a price from it. |
 
 ### The bell and the Notifications list
 
-The dashboard and the list screens of Alfa Commerce show the bell in their toolbar. Its number is the count of unread notifications the
-member of staff may see. Its panel lists the first 10 (`NotificationHelper::PANEL_LIMIT`), the most urgent and
-newest first, with a link to the full list. The Notifications list shows the active ones and the history.
+The dashboard and the list screens of Alfa Commerce show the bell in their toolbar. Its number is the count of
+unread notifications the member of staff may see. Its panel lists the first 10 (`NotificationHelper::PANEL_LIMIT`),
+the most urgent and newest first, with a link to the full list. The Notifications list shows the active ones and the
+history.
 
 ### Who sees a notification
 
