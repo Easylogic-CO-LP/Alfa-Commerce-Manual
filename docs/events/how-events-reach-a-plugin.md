@@ -6,7 +6,7 @@ description: The two ways Alfa Commerce calls a plugin, what each asks of the pl
 
 # How events reach a plugin
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 An **event** is Alfa Commerce telling plugins that something is happening: an order changed status, a page is being
 drawn, a payment provider called back. A plugin that wants to take part names the events it handles, and Alfa calls it
@@ -24,7 +24,7 @@ Alfa calls plugins in one of two ways, and every event uses exactly one of them.
 | In plain words | "This happened. Anyone who cares may react." | "This job is yours. Please do it." |
 | Who is called | Every enabled plugin that asked to hear the event, whatever its group | One named plugin, and nobody else |
 | Typical use | An order changed status, a list is being drawn, stock moved | Take this payment, price this parcel, draw your own panel |
-| If the plugin is missing | Nothing special. The others still hear it. | The request is refused and staff are told. No other plugin is asked instead. |
+| If the plugin is missing | Nothing special. The others still hear it. | No other plugin is asked instead. What follows depends on the request: see [What can go wrong](#what-can-go-wrong). |
 | Where the plugin names the event | `getSubscribedEvents()` | Nowhere: its public method with the event's name is the handler (see below) |
 
 Both ways go through one class, `AlfaPluginHelper` (`administrator/src/Plugin/AlfaPluginHelper.php`). A plugin never
@@ -66,9 +66,9 @@ its plugin group.
 
 | Plugin group | When it is loaded |
 |---|---|
-| `alfa` (feature plugins) | By Alfa Commerce, every time the component runs, on the storefront and in the administrator |
+| `alfa` (feature plugins) | By Alfa Commerce, every time the component starts: on the storefront, in the administrator, in the REST API and on the command line. Not while Clear everything holds the shop in maintenance. |
 | `system` | By Joomla, on every request |
-| The Alfa families (`alfa-payments`, `alfa-shipments`, `alfa-item-fields`, `alfa-form-fields`, `alfa-search`, `alfa-media`, `alfa-inventory`) | By Alfa Commerce, when the work at hand needs that family |
+| The Alfa families (`alfa-payments`, `alfa-shipments`, `alfa-item-fields`, `alfa-form-fields`, `alfa-search`, `alfa-media`, `alfa-inventory`) | By Alfa Commerce, when the work at hand needs that family: the whole group, or the one plugin of it that the work names |
 | Other Joomla groups (`content`, `user`, `task` and the others) | By Joomla, when Joomla itself needs them |
 
 If your plugin exists to react to shop events, put it in the `alfa` group: it is loaded whenever the shop runs and
@@ -116,7 +116,7 @@ It depends on what the event is for.
 | The event | If your listener throws an error |
 |---|---|
 | **Asks whether something may happen** (a "before" event) | The operation stops and the error reaches the person. This is how a plugin refuses something. |
-| **Reports what already happened, or collects what a page shows** (an "after" or display event) | The error is written to Joomla's log (category `com_alfa.plugins`) with the event and your listener's name. The next listener still runs, and the page is still shown. |
+| **Reports what already happened, or collects what a page shows** (an "after" or display event) | The error is written to Joomla's log with the event and your listener's name, in the category `com_alfa.plugins`. For `onOrderStatusChange` it is written in `com_alfa.orders`, and the background work that announced it stands failed in Tools > Tasks, where Run again calls the listeners that failed. The next listener still runs, and the page is still shown. |
 
 So a broken plugin cannot blank a screen or silence the plugins after it. It also means that an error in an "after"
 listener is easy to miss: look in the log.
@@ -154,7 +154,9 @@ For work that belongs to one plugin:
   callback, and its staff actions;
 - an item field's part of the item page, the cart line and the price;
 - a search engine's own input;
-- a panel a plugin owns, a tool it runs, and clearing the data it owns.
+- a panel a plugin owns, a tool it runs, and clearing the data it owns;
+- the plugin's own background work: the tasks and jobs it declares (`onAlfaDeclareWork`), each run of them, and the
+  news that one ended.
 
 ### What you must provide
 
@@ -221,7 +223,8 @@ Three rules apply to all of them:
 
 Whatever your method does is your plugin's answer: Alfa passes it on (to the provider, to the page, to the member of
 staff). An error that leaves your method is treated as your plugin's failure, and what follows depends on the
-request, as the next table shows.
+request: a provider's callback, for example, is answered "500 Internal Server Error", so that the provider tries
+again.
 
 ### What can go wrong
 
@@ -236,6 +239,7 @@ Before calling a targeted handler Alfa checks that the plugin can be used. These
 | `unloadable` | Enabled, but it failed while starting |
 | `wrong_family` | It does not extend the base class its group requires |
 | `no_handler` | Its class has no public method with the event's name |
+| `no_application` | No Joomla application runs in this process, so no plugin can be started |
 
 Alfa never falls back to another plugin. What the person sees depends on what was asked:
 
@@ -248,13 +252,15 @@ Alfa never falls back to another plugin. What the person sees depends on what wa
 
 :::warning Callbacks need Access Public
 A payment provider or a carrier calls your plugin as a guest. A payment or shipping plugin whose Access (Extensions:
-Plugins) is anything but Public is not loaded for those calls, and they are answered "try again later".
+Plugins) is a level a guest does not hold (anything but Public or Guest) is not loaded for those calls, and they are
+answered "try again later".
 :::
 
 ## Addressed to several plugins in turn
 
-Three events about the cart are handed to each feature plugin in turn, on one event for the whole cart:
-`onCartTotals` (add a charge), `onOrderPlaceValidate` (check the order before it is placed) and `onCartItemDisplay`.
+Three events about the cart are handed to each feature plugin in turn, the same event object to each:
+`onCartTotals` (add a charge, one event for the whole cart), `onOrderPlaceValidate` (check the order before it is
+placed, one event for the placement) and `onCartItemDisplay` (one event for each cart line).
 
 - They go to the enabled plugins of the `alfa` group that the **customer's** access levels admit, in their order,
   each once.
@@ -299,10 +305,10 @@ These events are announced only after the save is final: `onAlfaAdminAfterSave`,
 `onOrderStatusChange`, `onAlfaNotificationPushed` and `onAlfaPricesChanged`.
 
 :::note What "saved" covers for an item, a discount and a tax
-`onAlfaAdminAfterSave` is announced when the record's own row is saved. For an item, a discount and a tax, Alfa writes
-the rest afterwards (an item's prices, images and categories, the scope of a discount or a tax, and the stored
-prices). For an item, a listener that needs those uses `onItemAfterSave`. A discount and a tax have no later event
-of their own: `onAlfaPricesChanged` follows only when a stored price changed. See
+`onAlfaAdminAfterSave` is announced once the whole save is final. For an item, a discount and a tax that save holds
+the rest of the record too (an item's prices, images and categories, the scope of a discount or a tax). The stored
+prices are worked out afterwards. For an item, a listener that needs those uses `onItemAfterSave`. A discount and a
+tax have no later event of their own: `onAlfaPricesChanged` follows only when a stored price changed. See
 [Item and catalogue events](./item-and-catalogue-events.md).
 :::
 
@@ -323,7 +329,7 @@ contribution without it is refused.
 | What you see | The usual cause |
 |---|---|
 | Your method is never called | The event is not listed in `getSubscribedEvents()` (broadcast), or the method of a targeted event is not public or its name is not the event's |
-| A targeted event never arrives | It was listed in `getSubscribedEvents()`. A targeted event is never delivered from there. |
+| The log says your plugin "lists" an event "both as a targeted handler and on the shared dispatcher" | The targeted event is also listed in `getSubscribedEvents()`. Alfa still calls your method for it and logs an ERROR (category `com_alfa.plugins`), and the method also hears any announced event of that name. Remove it from the list. |
 | It works for you and not for guests or providers | The plugin's Access is not Public |
 | A page shows without your part and without an error | Your listener threw an error in an "after" or display event. Look in Joomla's log, category `com_alfa.plugins`. |
 | An order page shows a neutral line where your part was | Your plugin is disabled, missing or failed to start |
