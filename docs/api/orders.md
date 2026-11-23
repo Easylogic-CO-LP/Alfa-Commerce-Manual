@@ -6,7 +6,7 @@ description: "The REST API routes for orders and order statuses of Alfa Commerce
 
 # Orders
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Read [the overview](./overview.md) first. It has the rules every route follows.
 
@@ -79,10 +79,10 @@ when the status has `notify_customer`, and to the status's administrator recipie
 created and sends no e-mail; its lines, parcels, payments and status are then added with the operations below.
 
 A create sent twice without `external_source` and `external_reference` creates two orders: when an answer is lost,
-look the order up (`filter[search]`, or your own reference in `customer_note`) before you send it again. With the
-pair, the second create is answered 409 and creates nothing (see
-[Where an order comes from](#where-an-order-comes-from)). `payments`, `shipments` and `items` are not parts of a
-create and are refused with 422: send `payment`, `shipment` and `lines`.
+look the order up before you send it again (`filter[search]` matches the customer's name and e-mail and the order's
+reference; your own reference in `customer_note` is in the read of one order). With the pair, the second create is
+answered 409 and creates nothing (see [Where an order comes from](#where-an-order-comes-from)). `payments`,
+`shipments` and `items` are not parts of a create and are refused with 422: send `payment`, `shipment` and `lines`.
 
 Give it a status and the customer's details, and if it is not to be in the shop's default currency, `id_currency`:
 the id of a currency the shop publishes. An `id_currency` the shop does not publish (unpublished, unknown, or not an
@@ -174,12 +174,13 @@ The lists `payments` and `shipments` are where a program reads an order's paymen
 `customer_note` in a `PATCH` is written. The order edit screen neither shows nor changes it.
 
 `state` is the order's trash flag, not its status. A `PATCH` with `"state": -2` moves the order to the trash and one
-with `"state": 1` takes it out, as the Orders list's Trash and Restore do. Send `state` on its own: with other
-attributes, or with another value, it is refused with 422. It needs the permission to change states. An order another
-user has open in the administrator keeps its state and the answer is 409. Moving an order to the trash changes nothing
-else: its stock, payments, shipments and documents stay as they are. A trashed order is left out of the list unless
-`filter[show_trashed]` is 1, and the storefront no longer shows it: its confirmation page and its downloads answer as
-for an order that is not there.
+with `"state": 1` takes it out, as the Orders list's Trash and Untrash do. Send `state` on its own: with other
+attributes, or with another value, it is refused with 422. It needs Orders: Edit and Orders: Change State. An order
+another user has open in the administrator keeps its state and the answer is 409. A trashed order whose status keeps
+stock reserved stays in the trash, also with 409, when the item of one of its lines stopped tracking stock meanwhile.
+Moving an order to the trash changes nothing else: its stock, payments, shipments and documents stay as they are. A
+trashed order is left out of the list unless `filter[show_trashed]` is 1, and the storefront does not show it: its
+confirmation page and its downloads answer as for an order that is not there.
 
 ```json
 {"errors":[{"title":"state takes -2 (moves the order to the trash) or 1 (takes it out of the trash).","code":422}]}
@@ -189,9 +190,8 @@ A `PATCH` writes the order's `customer_note`, its delivery and invoice details (
 `alfa_form_fields_billing` with `invoice_differs`) and, once, `external_source` with `external_reference`, and
 nothing else. Each details section is an object of field name to value: a field left out keeps its value, and
 `{}` changes nothing. A section sent as `null`, a string or a number is answered 400 naming it, and nothing is
-saved. A body that
-carries any other field the order publishes, such as `customer_email`, `id_address_delivery`, `created` or
-`order_total`, is refused with 422 before anything is saved, and the answer names the fields:
+saved. A body that carries any other field the order publishes, such as `customer_email`, `id_address_delivery`,
+`created` or `order_total`, is refused with 422 before anything is saved, and the answer names the fields:
 
 ```json
 {"errors":[{"title":"customer_email cannot be written through the API: an order's update writes its customer_note and its delivery and invoice details (alfa_form_fields, and alfa_form_fields_billing with invoice_differs); its status changes through POST v1/alfa/orders/:id/status, its lines, payments and shipments through the order operations, and the other fields are worked out from them or fixed when the order is placed. Nothing was saved.","code":422}]}
@@ -403,9 +403,9 @@ the reason. The order's `history` records the removal.
 
 ### Shipments
 
-**Add a parcel.** `id_shipment_method` is needed. Optional: `tracking_number`, `carrier` (the carrier company's name,
-read back as `carrier_name`), `status`, `weight`, the charge, and `items`, the order lines in the parcel with their
-quantities.
+**Add a parcel.** Send `id_shipment_method`, the parcel's shipping method: the route does not refuse a parcel without
+one. Optional: `tracking_number`, `carrier` (the carrier company's name, read back as `carrier_name`), `status`,
+`weight`, the charge, and `items`, the order lines in the parcel with their quantities.
 
 ```json
 {
@@ -436,8 +436,8 @@ The order after it, shortened. The parcel's charge is now part of the order's to
 }
 ```
 
-An order is charged shipping once. A parcel added while another open parcel of the order carries a charge goes out
-at 0.00, and the answer says so:
+An order is charged shipping once. A parcel added while another parcel of the order that is not cancelled or returned
+carries a charge goes out at 0.00, and the answer says so:
 
 ```json
 {"meta": {"warnings": [{"code": "shipping_charged_once", "detail": "Shipping is charged once per order: another parcel of order #1234 already carries the charge, so this parcel's cost was set to 0.", "pointer": "/shipping_cost_tax_incl"}]}}
@@ -468,8 +468,8 @@ What a single order carries:
   `items` (the order lines in the parcel, each `{"id_order_item": 1, "quantity": 1}`), `added` (when the parcel was
   recorded), `shipping_charge_basis` (what its costs were worked out from: `tax_included`, `tax_excluded` or
   `carrier_stated`) and `shipping_tax_chain` (the tax rates its charge was calculated with, in the order they apply,
-  each `{"rate": "24", "name": "VAT"}`, the rate as exact decimal text; an older chain may carry the rates with empty
-  names).
+  each `{"rate": "24", "name": "VAT"}`, the rate as exact decimal text; a chain stored as its rates alone gives each
+  an empty name).
 
 
 ### The status
