@@ -119,6 +119,11 @@ See [The light list of stock and prices](./catalogue.md#the-light-list-of-stock-
 - **Many prices and stock figures in one request.** `PATCH v1/alfa/items/units` writes up to 100 units, each in a
   transaction of its own and answered on its own, so a refused unit leaves the others written. A stock figure is the
   unit's whole stock, not a change. See [Many units in one request](./catalogue.md#many-units-in-one-request).
+- **Stock and variants the system keeps.** `POST v1/alfa/inventory/adjustments` sets or corrects stock by SKU or by
+  id, a figure or a signed change, every line or none. Each adjustment carries an `Idempotency-Key` header, and the
+  same key when it is sent again: a request sent twice is applied once, and the second answer says `meta.replayed`.
+  A 409 with `Retry-After` asks for the same request again after those seconds. A product's variants are created,
+  changed and removed under `v1/alfa/items/:id/combinations`. See [Variants and stock](./variants.md).
 - **Texts.** Texts in several languages go in `translations`, keyed by language (`en_gb`, `el_gr`), as a read with
   `include=translations` gives them. A key with a language suffix (`name_el_gr`) is refused with 422. See
   [Writing](./overview.md#writing).
