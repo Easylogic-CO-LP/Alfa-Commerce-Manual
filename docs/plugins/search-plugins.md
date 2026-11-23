@@ -6,7 +6,7 @@ description: What a plugin of the alfa-search group must provide so that its own
 
 # Search engine plugins
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 Alfa Commerce always has a working search. It reads the item tables directly and needs nothing installed. Options
 calls it "Database search (built into Alfa Commerce)".
@@ -53,7 +53,7 @@ Installing or enabling an engine plugin never switches the shop to it. Staff cho
 | A class that implements `SearchProviderInterface` | The reader |
 | A class that implements `SearchIndexerInterface` | The writer |
 
-All four contract types are in `administrator/src/Service/Search`. The base class is
+The three interfaces are in `administrator/src/Service/Search`. The base class is
 `administrator/src/Plugin/SearchEnginePlugin.php`.
 
 The base class does the registration for you. It listens to `onCollectSearchEngines` and hands Alfa your engine
@@ -120,7 +120,7 @@ engine understands) and `active` (whether it is the one answering searches).
 | `activateGeneration(IndexGeneration $generation): void` | Make this generation the one that answers searches. |
 | `dropGeneration(IndexGeneration $generation): void` | Delete this generation and its storage. |
 | `await(IndexGeneration $generation, float $timeoutSeconds = 30.0): IndexWriteResult` | Wait until everything written to this generation is stored and searchable, and return any documents that failed late. An engine that writes at once returns an empty result. Throw a `RuntimeException` when the wait runs out. |
-| `preferredBatchSize(): int` | How many documents you want in one `write()` call during a rebuild. |
+| `preferredBatchSize(): int` | How many items a rebuild hands you in one `write()` call. Each item comes in every content language, so one call holds up to that many documents times the number of languages. |
 
 `IndexWriteResult` has two properties: `written`, the number of documents accepted, and `failures`, a list of
 document key to reason for each document refused. The document key is `DocumentId::key()`.
@@ -171,13 +171,16 @@ steps 7 and 8 and searches the live tables itself. Alfa never falls back to a di
 
 ### One item changes
 
-When staff save, unpublish or delete an item, Alfa rebuilds what it keeps about that item. As part of that it builds
-the item's `SearchDocument` in every content language and calls the **configured** engine's writer, ready or not:
+When staff save, unpublish or delete an item, Alfa rebuilds what it keeps about that item. For a save it builds the
+item's `SearchDocument` in every content language and calls the **configured** engine's writer, ready or not:
 
 1. `writeTargets()`, to learn where to write.
 2. `write()` on each generation returned, with the item's documents.
 3. `delete()` on each generation, for a language in which the item must not be found (unpublished, or nothing to
    search).
+
+An item unpublished, trashed, archived or deleted is only removed: `writeTargets()`, then `delete()` on each generation
+for its documents in every language.
 
 Your writer needs no event for this: Alfa calls it. The same save also announces `onCatalogVisibilityChanged` and
 `onCollectCatalogProjections`, described below, for an engine that keeps more than the item's document. A failure in
@@ -205,9 +208,9 @@ sequenceDiagram
 ```
 
 The walk is background work (the job `search.rebuild`), done a part at a time, so it survives a closed browser. The
-size of a batch is your `preferredBatchSize()`. Alfa refuses to switch (step 9) when any document was refused, when
-the items saved during the walk could not be written again, or when `await()` reports a late failure or throws. The
-old generation then keeps answering.
+size of a batch is your `preferredBatchSize()`, in items. Alfa refuses to switch (step 9) when any document was
+refused, when the items saved during the walk could not be written again, or when `await()` reports a late failure or
+throws. The old generation then keeps answering.
 
 ## Events an engine plugin can handle
 
@@ -312,7 +315,8 @@ public static function getSubscribedEvents(): array
 ### onAlfaCatalogEntityChanged
 
 **When it fires.** After categories or manufacturers were created, renamed, changed, published, unpublished or
-deleted. Items are not announced here: they reach your writer directly, as described above. For a category's save, after the save is final and its items were rebuilt.
+deleted. Items are not announced here: they reach your writer directly, as described above. For a category's save,
+after the save is final and its items were rebuilt.
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 
@@ -333,8 +337,10 @@ not listen.
 
 ### onCatalogVisibilityChanged
 
-**When it fires.** After the list of users or user groups allowed to see an item or a category was changed. For an item's or a category's save, after the save is final (for a category, after
-its items were rebuilt).
+**When it fires.** After anything that may change who can see an item: every save of an item or a category, whether
+or not its list of allowed users and user groups changed, a batch that sets those lists or the items' categories, and
+categories moved under another parent. For an item's or a category's save, after the save is final (for a category,
+after its items were rebuilt).
 
 **Who receives it.** Announced to everyone (broadcast), after the plugins of `alfa-search` and `alfa` are loaded.
 
@@ -343,9 +349,9 @@ its items were rebuilt).
 | Method | Meaning |
 |---|---|
 | `changeType()` | The kind of change. Always `VisibilityChangedEvent::AUDIENCE_CHANGED`. |
-| `itemIds()` | Items whose own list changed. |
-| `categoryIds()` | Categories whose list changed. |
-| `affectedItemIds()` | Every item whose visibility changed as a result, worked out by Alfa. |
+| `itemIds()` | The items the change names: the item saved, or the items of the batch. |
+| `categoryIds()` | The categories the change names: the category saved, or the categories moved. |
+| `affectedItemIds()` | Every item whose visibility the change can touch, worked out by Alfa: the items named, and the items whose default category is named and that take their users or their user groups from it. |
 
 **What you are expected to do.** Only an engine that stores who may see each item needs this: update the stored
 copy for `affectedItemIds()`. An engine that returns ids and lets Alfa filter them does not listen.
@@ -395,7 +401,9 @@ you, without reading it:
    `data-alfa-search-order`. Each item card gets `data-position`, its place in the whole result set counted across
    pages, starting at 1.
 3. With no `eventId`, none of the three attributes is printed.
-4. The list's JSON answer and the search endpoint's JSON answer carry the same values.
+4. The list's JSON answer carries the same values: `event`, `order`, and each item's `position`. The search
+   endpoint's JSON answer carries `event` and `order`; a product's position there is its place in `sections.products`,
+   counted from 1.
 
 Your scripts, loaded on `onAlfaResultSetRender`, read these attributes. When a filter change swaps the list, the
 browser event `alfa:results:updated` is sent on the element `#alfa-app[data-view="items"]`.
@@ -414,7 +422,7 @@ rebuild button is shown, the standard search box is drawn, and item saves write 
 | Items found by the old search are missing | The reader returned ids in the wrong entity, or the index was never rebuilt after the engine was chosen. |
 | A rebuild ends with "Refusing to activate" | The writer reported failures in `write()` or `await()`. |
 | Your search box is not drawn | The plugin is not the one that registered the configured engine, or its handler threw. |
-| An engine is listed in Options as not ready | Its `label()` or `isReady()` threw; the error is logged. |
+| An engine is listed in Options as not ready | Its `isReady()` answered `false`, or its `label()` or `isReady()` threw; the error is logged. |
 | The rebuild job says the engine changed | The engine named when the job started is no longer the configured one, or it does not implement `RebuildableEngine`. |
 
 ## The plugin's files
