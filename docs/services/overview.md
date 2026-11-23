@@ -25,7 +25,7 @@ The services live in two folders:
 
 | Folder | What is in it |
 |---|---|
-| `administrator/src/Service` | 24 folders and the file `PriceIndexSyncService.php`. The services that write: orders, payments, shipments, documents, stock, background work. |
+| `administrator/src/Service` | 24 folders and the files `PriceIndexSyncService.php` and `Refusal.php`. The services that write: orders, payments, shipments, documents, stock, background work. |
 | `site/src/Service` | 14 folders and the file `Router.php`. The storefront's services: the cart, the checkout, prices, and the readers that plugins receive. |
 
 The column **For extensions?** in the tables below has three answers:
