@@ -14572,7 +14572,7 @@
 		},
 		{
 			"name": "Variants and stock",
-			"description": "A product's variants and its stock through the same services the administrator's screens use (CombinationService, InventoryCommands). See the Manual, Variants and stock.",
+			"description": "A product's variants and its stock through the same services the administrator's variant window and stock editors use (CombinationService, InventoryCommands). See the Manual, Variants and stock. The folder leaves on record its product, with the stock its adjustments set, and the variant it makes on the product you name, which keeps its opening stock and so answers 409 to its removal.",
 			"item": [
 				{
 					"name": "Setup: a product tracking stock",
@@ -14602,7 +14602,7 @@
 						"description": "A product of the run, tracking stock, for the adjustments below (set erpCategoryId to a category of your shop).",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_en_gb\": \"ERP product {{run}}\",\n  \"sku\": \"ERP-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ]\n}"
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν ERP {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"ERP product {{run}}\"\n    }\n  },\n  \"sku\": \"ERP-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ]\n}"
 						}
 					},
 					"event": [
@@ -14758,7 +14758,7 @@
 								"adjustments"
 							]
 						},
-						"description": "A figure below zero answers 409 pointing at its line; nothing changes.",
+						"description": "A figure below zero answers 409 pointing at its line while Options, Stock, Allow negative physical stock is off, as it ships; nothing changes.",
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"lines\": [\n    {\n      \"item_id\": \"{{erpItemId}}\",\n      \"set\": \"-1\"\n    }\n  ]\n}"
@@ -14935,7 +14935,7 @@
 								"combinations"
 							]
 						},
-						"description": "A new variant by one value of each of the product's variant fields (set erpVariantItemId, erpFieldId and erpValueId to a product with variants of your shop and one of its fields and values).",
+						"description": "A new variant by one value of each of the product's variant fields (set erpVariantItemId to a product of your shop whose variants are built from one field, erpFieldId to that field and erpValueId to one of its published values; values the product already has answer 409).",
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"values\": {\n    \"{{erpFieldId}}\": \"{{erpValueId}}\"\n  },\n  \"sku\": \"ERP-{{run}}-V\",\n  \"state\": 1,\n  \"opening_stock\": [\n    {\n      \"location_id\": 1,\n      \"quantity\": \"5\"\n    }\n  ]\n}"
@@ -14982,7 +14982,7 @@
 								"{{erpCombinationId}}"
 							]
 						},
-						"description": "A change of a variant's fields; its values never change (values here answer 422).",
+						"description": "A change of a variant's fields; its values never change (values here answer 422). sku, gtin and mpn are written on every change: one left out is saved empty.",
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"sku\": \"ERP-{{run}}-V2\",\n  \"state\": 0\n}"
