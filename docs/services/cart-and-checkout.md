@@ -280,7 +280,9 @@ What an extension author needs to know:
 | Within a class the rule that gives the shopper most wins. Others join only when both rules allow combining. | You cannot predict the discount from one rule alone |
 | Amounts are tax included | |
 | The rules used are stored with the order when it is placed (table `#__alfa_order_cart_rule`) | An order keeps its discounts whatever happens to the rule later |
-| How often a rule was used is counted from those stored rows | There is no counter to update |
+| An item or order rule is stored with its share of each line it lowered (table `#__alfa_order_item_cart_rule`), as the engine shared it out, tax included and excluded; the rule's row is the sum of its shares | The order's documents state each line's share, and a change to a line's quantity moves its shares with it ([Documents](documents.md#discounts-line-by-line)) |
+| How often a rule was used is counted from those stored rows; a code removed from an order is not counted | There is no counter to update |
+| Staff can add a code to a placed order, put one in place of another, or remove one | The engine decides as it does for a cart, on what the order's lines have left after its discounts ([Orders](orders.md#coupons-on-a-placed-order)) |
 
 A plugin cannot add a cart rule or lower a total through an event. A charge added in `onCartTotals` only adds.
 
