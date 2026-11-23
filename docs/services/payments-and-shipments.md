@@ -100,8 +100,8 @@ move's own follow-up work runs: stock, documents, the status e-mail, `onOrderSta
 ### Paying an order again
 
 A payment that failed, that the buyer cancelled at the provider, or that the shop released leaves the order owing
-money. While it does, the order's confirmation page and the customer's order e-mail show **Pay now**, and staff can
-e-mail the same link from the order screen (below). The link carries
+money. While it does, the order's confirmation page, its page in the customer's account and the customer's order
+e-mail show **Pay now**, and staff can e-mail the same link from the order screen (below). The link carries
 the order's id and its payment token (`PaymentToken`, an HMAC of the order id keyed with the order's secret; the secret
 itself never travels) and opens the existing payment step of the same order: nothing is placed again, so there is no
 second order, stock movement or order e-mail. For an order of a customer account, the customer logs in first.

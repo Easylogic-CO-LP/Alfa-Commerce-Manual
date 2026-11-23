@@ -11,10 +11,11 @@ description: The cart module's button and drawer, how the drawer opens over the 
 ## What it does
 
 The cart module (`mod_alfa_cart`, shipped with Alfa Commerce) is the cart's button, usually in the page's header, with
-a counter of the items or the quantity, and the **drawer** it opens: the cart's lines, their quantities and the total,
-with the way to the checkout. How it reads the cart is on [Cart and checkout](../services/cart-and-checkout.md). In a
-shop that shows its catalogue only, the module draws nothing (see
-[Online sales](../getting-started/store-setup.md#online-sales)).
+a counter of the items or the quantity, and the **drawer** it opens: the cart's lines, their quantities and the total
+(as the Options' The cart shows and Zero price display let them show), with the way to the checkout. How it reads the
+cart is on [Cart and checkout](../services/cart-and-checkout.md). In a shop that shows its catalogue only, the module
+draws nothing (see [Online sales](../getting-started/store-setup.md#online-sales)).
+
 
 ## The button and the drawer
 

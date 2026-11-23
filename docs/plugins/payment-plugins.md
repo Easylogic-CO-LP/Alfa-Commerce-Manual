@@ -172,9 +172,11 @@ let `onOrderAfterPlace` write the pending row only.
 
 **Declare it with `supportsPayAgain()`.** Core cannot look inside your process view, so it asks your plugin: override
 `public function supportsPayAgain(): bool` and return `true` only when your `onOrderProcessView` meets the contract
-above. The base class answers `false`, and a gateway that answers `false`, or fails while answering, gets no Pay now on
-its orders' confirmation page and e-mail and no Send payment link on the order screen. An offline method, which takes
-no payment on the process page, keeps the default; so does core's Standard method.
+above. The base class answers `false`, and a gateway that answers `false`, or fails while answering, gets no Pay now
+on its orders' confirmation page, their page in the customer's account and the e-mail, and no Send payment link on the
+order screen. An offline method, which takes no payment on the process page, keeps the default; so does core's
+Standard method.
+
 
 ```php
 public function supportsPayAgain(): bool
@@ -184,10 +186,11 @@ public function supportsPayAgain(): bool
 ```
 
 Core offers Pay now, and lets staff send the payment link, only while the order is there and not in the trash, still
-owes money (`amountToCollect()`), is neither in the cancelled nor in the completed family of statuses, holds no payment
-authorised at a provider, no refund that is not settled and no dispute the bank has not decided, its payment method is
-published, and its gateway is available and answers `supportsPayAgain()` with `true`. This is checked again on every use of the link and just
-before your process view is asked.
+owes money (`amountToCollect()`), is neither in the cancelled nor in the completed family of statuses, holds no
+payment authorised at a provider, no refund that is not settled and no dispute the bank has not decided, its payment
+method is published, and its gateway is available and answers `supportsPayAgain()` with `true`. This is checked again
+on every use of the link and just before your process view is asked.
+
 
 Before you close an earlier attempt, make sure your provider can no longer take money on it: expire or cancel its page
 there, or ask the provider first and settle the attempt when it was paid.
