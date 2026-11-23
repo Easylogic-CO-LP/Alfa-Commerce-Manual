@@ -100,7 +100,7 @@ All of them are announced to everyone (broadcast). Alfa loads the `alfa` plugin 
 | `onInventoryCommitted` | After goods were taken from stock and the save is final | No | Logged, the others still run |
 | `onInventoryReleased` | After reservations were let go and the save is final | No | Logged, the others still run |
 | `onInventoryAdjusted` | After a manual adjustment and the save is final | No | Logged, the others still run |
-| `onInventoryTransferred` | After a transfer and the save is final | No | Logged, the others still run |
+| `onInventoryTransferred` | Never: no command moves stock between locations | No | Logged, the others still run |
 | `onInventoryRestored` | After stock was put back, or taken off again when a credit note is voided, and the save is final | No | Logged, the others still run |
 | `onCollectStockAllocationProviders` | When Alfa needs to know where a reservation's stock comes from | No | Logged, the others still run |
 
