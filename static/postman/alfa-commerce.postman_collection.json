@@ -14572,7 +14572,7 @@
 		},
 		{
 			"name": "Variants and stock",
-			"description": "A product's variants and its stock through the same services the administrator's variant window and stock editors use (CombinationService, InventoryCommands). See the Manual, Variants and stock. The folder leaves on record its product, with the stock its adjustments set, and the variant it makes on the product you name, which keeps its opening stock and so answers 409 to its removal.",
+			"description": "A product's variants and its stock through the same services the administrator's variant window and stock editors use (CombinationService, InventoryCommands). See the Manual, Variants and stock. The folder leaves on record its product, with the stock its adjustments set, and the variant it makes on the product you name, which, when it tracks stock, keeps its opening stock and so answers 409 to its removal.",
 			"item": [
 				{
 					"name": "Setup: a product tracking stock",
@@ -14613,6 +14613,7 @@
 								"exec": [
 									"const run = (Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36)).toUpperCase();",
 									"pm.collectionVariables.set('run', run);",
+									"pm.collectionVariables.set('runLower', run.toLowerCase());",
 									"pm.collectionVariables.set('erpKey', 'erp-' + run);"
 								]
 							}
@@ -15120,10 +15121,10 @@
 								"values"
 							]
 						},
-						"description": "A value of the item field erpFieldId (set it to a choice field of your shop) with its code, its machine key in the field.",
+						"description": "A value of the item field erpFieldId (set it to a choice field of your shop) with its code, its machine key in the field (a to z, 0 to 9, - and _, so the run in lower case).",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"code\": \"erp-{{run}}\",\n  \"state\": 1,\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP value {{run}}\"\n    }\n  }\n}"
+							"raw": "{\n  \"code\": \"erp-{{runLower}}\",\n  \"state\": 1,\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP value {{run}}\"\n    }\n  }\n}"
 						}
 					},
 					"event": [
@@ -15133,7 +15134,7 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('Status 201', () => pm.expect(pm.response.code).to.eql(201));",
-									"if (pm.response.code === 201) { pm.collectionVariables.set('erpValueId', String(pm.response.json().data.id)); }"
+									"if (pm.response.code === 201) { pm.collectionVariables.set('erpOptionValueId', String(pm.response.json().data.id)); }"
 								]
 							}
 						}
@@ -15154,7 +15155,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values?filter[code]=erp-{{run}}&include=translations",
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values?filter[code]=erp-{{runLower}}&include=translations",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -15168,7 +15169,7 @@
 							"query": [
 								{
 									"key": "filter[code]",
-									"value": "erp-{{run}}"
+									"value": "erp-{{runLower}}"
 								},
 								{
 									"key": "include",
@@ -15206,7 +15207,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpValueId}}",
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpOptionValueId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -15216,7 +15217,7 @@
 								"itemfields",
 								"{{erpFieldId}}",
 								"values",
-								"{{erpValueId}}"
+								"{{erpOptionValueId}}"
 							]
 						},
 						"description": "A change of the keys sent; the alias is made again from the name.",
@@ -15267,7 +15268,7 @@
 						"description": "The value made an option of the product of the setup (Variants and stock), with a price change. Refused 422 at /value_id when its field is one of the product's variant fields or not available in its categories.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"value_id\": {{erpValueId}},\n  \"operation\": \"+\",\n  \"amount\": \"49.00\",\n  \"apply_on\": \"final\"\n}"
+							"raw": "{\n  \"value_id\": {{erpOptionValueId}},\n  \"operation\": \"+\",\n  \"amount\": \"49.00\",\n  \"apply_on\": \"final\"\n}"
 						}
 					},
 					"event": [
@@ -15297,7 +15298,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpValueId}}",
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpOptionValueId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -15307,7 +15308,7 @@
 								"items",
 								"{{erpItemId}}",
 								"options",
-								"{{erpValueId}}"
+								"{{erpOptionValueId}}"
 							]
 						},
 						"description": "The parts sent change; the operation and apply_on keep what the option holds.",
@@ -15389,7 +15390,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpValueId}}",
+							"raw": "{{baseUrl}}/v1/alfa/items/{{erpItemId}}/options/{{erpOptionValueId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -15399,7 +15400,7 @@
 								"items",
 								"{{erpItemId}}",
 								"options",
-								"{{erpValueId}}"
+								"{{erpOptionValueId}}"
 							]
 						},
 						"description": "200 with removed true and meta.cart_selections_removed."
@@ -15431,7 +15432,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpValueId}}",
+							"raw": "{{baseUrl}}/v1/alfa/itemfields/{{erpFieldId}}/values/{{erpOptionValueId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -15441,7 +15442,7 @@
 								"itemfields",
 								"{{erpFieldId}}",
 								"values",
-								"{{erpValueId}}"
+								"{{erpOptionValueId}}"
 							]
 						},
 						"description": "204; a value a product uses answers 409 saying how many products use it."
@@ -15483,10 +15484,10 @@
 								"items"
 							]
 						},
-						"description": "One request: values made by code, the product, an option and a variant named by those codes, the variant's stock; one transaction, in the order values, product, options and specifications, variants, stock. Set erpVariantField to the field_name of a variant field of your shop and erpCategoryId to a category. meta.written names each part.",
+						"description": "One request: a value made by its code, the product, a variant named by that code, the variant's stock; one transaction, in the order values, product, options and specifications, variants, stock. Set erpVariantField to the field_name of a variant field of your shop and erpCategoryId to a category. meta.written names each part.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"sku\": \"ERP-{{run}}-G\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ],\n  \"translations\": {\n    \"en_gb\": {\n      \"name\": \"ERP graph {{run}}\"\n    }\n  },\n  \"field_values\": [\n    {\n      \"field\": \"{{erpVariantField}}\",\n      \"code\": \"g-{{run}}\",\n      \"translations\": {\n        \"en_gb\": {\n          \"name\": \"Graph {{run}}\"\n        }\n      }\n    }\n  ],\n  \"combinations\": [\n    {\n      \"values\": {\n        \"{{erpVariantField}}\": \"g-{{run}}\"\n      },\n      \"sku\": \"ERP-{{run}}-G1\",\n      \"stock\": [\n        {\n          \"location_id\": 1,\n          \"quantity\": \"5\"\n        }\n      ]\n    }\n  ]\n}"
+							"raw": "{\n  \"sku\": \"ERP-{{run}}-G\",\n  \"state\": 1,\n  \"manage_stock\": 1,\n  \"id_category_default\": \"{{erpCategoryId}}\",\n  \"categories\": [\n    \"{{erpCategoryId}}\"\n  ],\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Γράφος ERP {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"ERP graph {{run}}\"\n    }\n  },\n  \"field_values\": [\n    {\n      \"field\": \"{{erpVariantField}}\",\n      \"code\": \"g-{{runLower}}\",\n      \"translations\": {\n        \"en_gb\": {\n          \"name\": \"Graph {{run}}\"\n        }\n      }\n    }\n  ],\n  \"combinations\": [\n    {\n      \"values\": {\n        \"{{erpVariantField}}\": \"g-{{runLower}}\"\n      },\n      \"sku\": \"ERP-{{run}}-G1\",\n      \"stock\": [\n        {\n          \"location_id\": 1,\n          \"quantity\": \"5\"\n        }\n      ]\n    }\n  ]\n}"
 						}
 					},
 					"event": [
@@ -16776,6 +16777,11 @@
 		},
 		{
 			"key": "erpValueId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "erpOptionValueId",
 			"value": "",
 			"type": "string"
 		},
