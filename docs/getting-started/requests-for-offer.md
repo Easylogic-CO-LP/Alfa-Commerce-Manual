@@ -120,7 +120,7 @@ its cost, if any, are part of the offer you write.
 
 At the checkout the customer still chooses a payment method; with nothing to collect, nothing is charged. Offer the
 online payment method you want the offer paid with. **Pay now** and **Send payment link** work only with a gateway
-that can open a new payment for an order that already exists; core's Standard method (cash on delivery, a bank
+that can open a new payment for an order that already exists, which its plugin declares; core's Standard method (cash on delivery, a bank
 transfer) is paid outside the shop and never shows **Pay now**: you record its payment by hand.
 
 ## What staff do next
