@@ -2,8 +2,8 @@
 	"info": {
 		"_postman_id": "52890a8d-95ce-4e63-95ea-3e07c58f11f8",
 		"name": "Alfa Commerce REST API",
-		"version": "2.2.1",
-		"description": "# Alfa Commerce REST API\n\nA Joomla JSON:API for Alfa Commerce. Every response is a JSON:API document: `data`, `links`, and `meta['total-pages']` on lists. The collection is generated from the published code (its route table, its controllers and its views) and carries a test on every request: run it with the Collection Runner or newman to check a shop's API route by route.\n\n**Run it against a test or demo shop, never a live one.** It creates its own records and removes them, and its Orders and Documents folders place one order, issue its invoice on the shop's default invoice series (the shop needs one) and void it. Each full run leaves on record what the shop's rules keep: that order, cancelled, with its voided invoice (an issued document is immutable), its product, archived (a product with order history is not deleted), and, in the trash, the product's category and the payment and shipment methods the order used.\n\n## Setup\n\nTwo collection variables, nothing else:\n\n| Variable | Value |\n|-|-|\n| `baseUrl` | `https://your-shop.example/api/index.php` |\n| `token` | your Joomla API token: **set this yourself** |\n\n`token` ships empty on purpose: this collection lives in a shared workspace, and a token pasted here would be a live credential in a public document. Create one per user under **Users, Manage, edit user, Joomla API Token**, then paste it into the variable (or, better, an Environment).\n\nAuthentication is set once at collection level as the header `X-Joomla-Token: {{token}}`. `Authorization: Bearer <token>` works identically if you prefer it. A request without a token answers 401.\n\nThe requests keep the ids they create in collection variables of their own (`itemId`, `opsOrderId`, `documentId` and so on), so a folder runs top to bottom. The Customers folder uses Joomla core's own Users routes to make and remove a test user and group; the Documents and Tasks folders read what Orders, operations made, so run the collection in order.\n\n## The two catalogue trees\n\nThe same product id answers differently depending on which tree you ask, and that is deliberate.\n\n| | **Catalogue (storefront)** | **Catalogue (back office)** |\n|-|-|-|\n| Route | `v1/alfa/catalog/items` | `v1/alfa/items` |\n| Served by | site models | administrator models |\n| Visibility | published, inside the publish window, access allowed | every row |\n| Unpublished product | `404` | `200` |\n| Payload | resolved translations, computed price, variants, fields, media | raw editable row |\n| Writes | none: read only | full CRUD |\n\nBuild storefronts and apps against the storefront tree; edit through the back office tree.\n\n## Reading\n\n- **Pagination**: `page[limit]` (default 20) and `page[offset]`. An offset past the end answers `404`.\n- **Sorting**: `list[ordering]` and `list[direction]`. A column outside the model's whitelist is *silently ignored* rather than rejected, and an invalid direction becomes `asc`.\n- **Filtering**: `filter[...]` per endpoint; see each List request. `filter[search]` also understands an `id:123` prefix for an exact match. The filters are the ones the back office's list screens offer and are applied the same way; a filter a list does not have is ignored, and one sent as a list (`filter[x][]=`) where one value is expected answers 400.\n- **Language**: `?lang=el-GR` (or `el_gr`) selects the language translatable fields resolve in. An unknown or unpublished tag silently falls back to the site default, so read the `Content-Language` response header to see what you got. This is a *content* selector only; error messages stay in the API's own language.\n- **Pricing context**: on the storefront tree, `?currency=` and `?place=` set the pricing dimensions. Without them prices use the shop default, which is wrong for a multi-currency shop rather than merely approximate.\n- **Money**: an order's and a document's money is an object `{amount, formatted, minor_units}` with `amount` as exact decimal text; rates and stored figures are exact decimal text too (\"24\", \"19.90\").\n\n## Writing\n\n**A create answers 201 Created** with the new record and a `Location` header that names it.\n\n**Multilingual fields.** Translatable text lives in per-language tables, never on the main row. Send either the flat per-language keys the admin form posts (`name_el_gr`, `name_en_gb`) or the nested map a GET returns:\n\n```json\n{ \"translations\": { \"el-GR\": { \"name\": \"Νέο\" }, \"en-GB\": { \"name\": \"New\" } } }\n```\n\nBoth spellings of the tag work, and an explicit flat key wins over the nested map. **The key for the default language of a required field is mandatory on a create**: validation reads `<field>_<default_lang>` straight from the request. A PATCH that leaves a required name out keeps the stored names; one that sends it empty is refused (400).\n\n**Relations are preserved, not replaced.** Omit `categories`, `manufacturers`, `allowedUsers`, `allowedUserGroups`, `prices` or `groups` and they are left exactly as they were. Send `[]` to clear one deliberately. A PATCH of one scalar can never quietly wipe a product's categories. An item's options, combinations, item field values and downloads, and an item field's `values`, are not written by the API (422 naming them).\n\n**Media.** Send a declarative list; `medias` is accepted as an alias for `media`:\n\n```json\n{ \"media\": [ { \"type\": \"image\", \"path\": \"images/x.jpg\", \"alt\": \"...\", \"ordering\": 1 },\n             { \"type\": \"url\",   \"url\": \"https://cdn.example.com/y.jpg\", \"alt\": \"...\" } ] }\n```\n\nSemantics are **merge**: a row you do not send stays, and removing one needs `\"delete\": 1`. Site-relative paths must already exist under a media root and are copied into the media zone. `type: \"url\"` accepts `http` and `https` only. An `alt` longer than 75 characters is refused (400). To upload new bytes, `POST` them to Joomla's own `v1/media/files` first and then reference the returned path.\n\n**Long work: meta.tasks.** A save keeps its own status and still says what it left to the shop's background work: the answer's `meta.tasks` lists the jobs the request queued or joined (and, on an order, the singles it wrote), each with its state and a self link under `v1/alfa/tasks`. See the Tasks folder.\n\n## Deleting, and the answers that refuse\n\n- A successful delete answers **204** with no body.\n- A product, a category, a manufacturer, an item field, a currency, a tax, a discount, a place, a payment or shipping method, a form field, a form field group or an order status is deleted only while it is in the trash (`state: -2`), as the back office deletes it: a DELETE of one in any other state answers **409** with the reason and deletes nothing; a PATCH of `state: -2` trashes it first. Cart rules, stock locations, customers, customer groups and orders are deleted in one call, as the back office deletes them; a cart rule and an order have no trash step over the API.\n- A product that order lines were sold as is archived instead of deleted: its DELETE answers **200** with the product, archived (`state: 2`), and `meta.note` saying why.\n- A delete the model refuses by its own rule (a category that still has children or is a product's default, an entity whose delete would widen a discount, tax or cart rule, an order with sales documents, an order whose payment or shipping plugin of record cannot be asked, an order status orders are in, a payment or shipping method, a currency or an item field still in use) answers **409** with the refusal's sentence.\n- An id that names no record answers **404**; so does the delete of an order already deleted.\n- The order operations answer **409** for a refused business rule (a refund through the payments route, a settle whose `from_status` does not match, a cancelled order reinstated without `force`) and **422** where the ledger refuses (a refund of a payment that is not completed, an unknown status), each with its sentence; **400** for input that is not usable (an amount finer than the order's currency, a JSON number that does not carry its digits exactly: send money as a string).\n- `PATCH v1/alfa/orders/:id` never writes `id_order_status` or `state` (**422**): `POST v1/alfa/orders/:id/status` is the one status entry point. It writes an order's `customer_note` and its delivery and invoice details (`alfa_form_fields`, `alfa_form_fields_billing` with `invoice_differs`); any other field the order publishes answers **422** naming it, and nothing is saved, `id_address_delivery` and `created` among them.\n\n## Permissions\n\nEvery route is gated on the `alfa.<entity>.<action>` permissions from the component's Options, Permissions (the order operations on the orders edit permission; the status change on Change State and view; a void on the documents Change State). Nothing Joomla's core rights grant counts: a Super User passes, everyone else needs what a Super User granted. A token whose user lacks the permission gets `403`, not an empty list.\n\n## Renamed and removed endpoints\n\n- `v1/alfa/payments` and `v1/alfa/shipments` are now `v1/alfa/paymentmethods` and `v1/alfa/shipmentmethods` (a payment or shipment METHOD is configuration); the old names answer 404. An order's own payments and shipments are `v1/alfa/orders/:id/payments` and `v1/alfa/orders/:id/shipments`.\n- `itemsprices`, `customs`, `coupons` and `settings` were removed: item prices are part of the item payload, custom fields became **item fields**, coupons became **cart rules**, and component settings are Joomla core's `v1/config/com_alfa`.\n\n## Behaviour worth knowing\n\n- A create answers 201 Created with a `Location` header.\n- A delete the model refuses answers 409 with the reason: an order status orders are in, a payment or shipping method, a currency or an item field still in use.\n- A tax, discount or cart rule that does not exist answers 404.\n- Without the dompdf library (lib_dompdf), a document's PDF answers 503 with a sentence that names the library.\n- A PATCH keeps what it leaves out: a required name, and the price display flags of a customer group it does not name.\n- A PATCH of an order's `state` answers 422 with the reason; `customer_note` is written.\n- A single order carries `fulfillment_status` and `fulfillment_percentage`; a payment carries `added` and `refund_reason`.\n- List filters, applied as the back office's lists apply them: orders by `payment`, `fulfilment`, `waiting`, `reconciliation`, `overpaid`, `date_start`, `date_end`, `item_id`, and by customer (`id_user`, 0 for the guests' orders; `email`); movements by `date_start`, `date_end` and `item_id`; documents by `date_start` and `date_end`; items by `stock` and `fields`. An empty value is no filter; an end date with no time is that whole day.\n- A POST or PATCH of an item that carries `fields`, `options`, `combinations` or `informational` (or the edit form's keys for them, `item_downloads` among them) answers 422 naming them. A POST or PATCH of an item field that carries `values` or `deleted_value_ids` answers 422 the same way.\n- An order's payments and shipments are read through `GET v1/alfa/orders/:id`: there are no GET routes for them.\n- A record of the resources the back office deletes only from its trash is deleted only while it is in the trash: a DELETE of one in any other state answers 409.\n- A DELETE of a product with order history answers 200 with the product, archived, and `meta.note`.\n- A PATCH of an order that carries a field its update does not write answers 422 naming it. `id_address_delivery` and `created` are refused too.\n- Each entry of an order's `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`.\n- `silent` on a status change leaves out the customer's e-mail only; the staff the status tells still receive theirs.\n",
+		"version": "2.3.0",
+		"description": "# Alfa Commerce REST API\n\nA Joomla JSON:API for Alfa Commerce. Every response is a JSON:API document: `data`, `links`, and `meta['total-pages']` on lists. The collection is generated from the published code (its route table, its controllers and its views) and carries a test on every request: run it with the Collection Runner or newman to check a shop's API route by route.\n\n**Run it against a test or demo shop, never a live one.** It creates its own records and removes them, and its Orders and Documents folders place one order, issue its invoice on the shop's default invoice series (the shop needs one) and void it. Each full run leaves on record what the shop's rules keep: that order, cancelled, with its voided invoice (an issued document is immutable), its product, archived (a product with order history is not deleted), and, in the trash, the product's category and the payment and shipment methods the order used.\n\n## Setup\n\nTwo collection variables, nothing else:\n\n| Variable | Value |\n|-|-|\n| `baseUrl` | `https://your-shop.example/api/index.php` |\n| `token` | your Joomla API token: **set this yourself** |\n\n`token` ships empty on purpose: this collection lives in a shared workspace, and a token pasted here would be a live credential in a public document. Create one per user under **Users, Manage, edit user, Joomla API Token**, then paste it into the variable (or, better, an Environment).\n\nAuthentication is set once at collection level as the header `X-Joomla-Token: {{token}}`. `Authorization: Bearer <token>` works identically if you prefer it. A request without a token answers 401.\n\nThe requests keep the ids they create in collection variables of their own (`itemId`, `opsOrderId`, `documentId` and so on), so a folder runs top to bottom. The Customers folder uses Joomla core's own Users routes to make and remove a test user and group; the Documents and Tasks folders read what Orders, operations made, so run the collection in order.\n\n## The two catalogue trees\n\nThe same product id answers differently depending on which tree you ask, and that is deliberate.\n\n| | **Catalogue (storefront)** | **Catalogue (back office)** |\n|-|-|-|\n| Route | `v1/alfa/catalog/items` | `v1/alfa/items` |\n| Served by | site models | administrator models |\n| Visibility | published, inside the publish window, access allowed | every row |\n| Unpublished product | `404` | `200` |\n| Payload | resolved translations, computed price, variants, fields, media | raw editable row |\n| Writes | none: read only | full CRUD |\n\nBuild storefronts and apps against the storefront tree; edit through the back office tree.\n\n## Reading\n\n- **Pagination**: `page[limit]` (default 20) and `page[offset]`. An offset past the end answers `404`. `stockprices` pages by key instead: `page[after]`, with `page[limit]` 100 when none is sent.\n- **Sorting**: `list[ordering]` and `list[direction]`. A column outside the model's whitelist is *silently ignored* rather than rejected, and an invalid direction becomes `asc`.\n- **Filtering**: `filter[...]` per endpoint; see each List request. `filter[search]` also understands an `id:123` prefix for an exact match. The filters the back office's list screens offer are applied the same way, and a few are the API's own (`sku`, `source`, `external_source`, `email`, `changed_since`); a filter a list does not have is ignored, and one sent as a list (`filter[x][]=`) where one value is expected answers 400.\n- **Language**: `?lang=el-GR` (or `el_gr`) selects the language translatable fields resolve in. An unknown or unpublished tag silently falls back to the site default, so read the `Content-Language` response header to see what you got. This is a *content* selector only; error messages stay in the API's own language.\n- **Pricing context**: on the storefront tree, `?currency=` and `?place=` set the pricing dimensions. Without them prices use the shop default, which is wrong for a multi-currency shop rather than merely approximate.\n- **Money**: an order's and a document's money is an object `{amount, formatted, minor_units}` with `amount` as exact decimal text; rates and stored figures are exact decimal text too (\"24\", \"19.90\").\n\n## Writing\n\n**A create answers 201 Created** with the new record and a `Location` header that names it.\n\n**Multilingual fields.** Translatable text lives in per-language tables, never on the main row. A write sends the texts of each language in the `translations` object a read with `include=translations` gives, so what you read you can send back:\n\n```json\n{ \"translations\": { \"el_gr\": { \"name\": \"Νέο\" }, \"en_gb\": { \"name\": \"New\" } } }\n```\n\nBoth spellings of the tag work (`el_gr`, `el-GR`). A key with a language suffix (`name_el_gr`, `name_en_gb`) is refused with 422 naming it, and nothing is saved. **The text of a required field in the shop's default content language is needed on a create.** A PATCH that leaves a required name out keeps the stored names; one that sends it empty is refused (400).\n\n**Relations are preserved, not replaced.** Omit `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`, `prices`, `groups`, `allowedUsers` or `allowedUserGroups` and they are left exactly as they were. Send `[]` to clear one deliberately. A PATCH of one scalar can never quietly wipe a product's categories. An item's options, combinations, item field values, downloads and related products, and an item field's `values`, are not written by the API (422 naming them). The prices and stock of many units are written in one request by `PATCH v1/alfa/items/units`.\n\n**Media.** Send a declarative list; `medias` is accepted as an alias for `media`:\n\n```json\n{ \"media\": [ { \"type\": \"image\", \"path\": \"images/x.jpg\", \"alt\": \"...\", \"ordering\": 1 },\n             { \"type\": \"url\",   \"url\": \"https://cdn.example.com/y.jpg\", \"alt\": \"...\" } ] }\n```\n\nSemantics are **merge**: a row you do not send stays, and removing one needs `\"delete\": 1`. Site-relative paths must already exist under a media root and are copied into the media zone. `type: \"url\"` accepts `http` and `https` only. An `alt` longer than 75 characters is refused (400). To upload new bytes, `POST` them to Joomla's own `v1/media/files` first and then reference the returned path, or give an image's address for the shop to fetch, `{\"type\": \"image\", \"url\": \"https://...\"}`.\n\n**Long work: meta.tasks.** A save keeps its own status and still says what it left to the shop's background work: the answer's `meta.tasks` lists the jobs the request queued or joined (and, on an order, the singles it wrote), each with its state and a self link under `v1/alfa/tasks`. See the Tasks folder.\n\n## Deleting, and the answers that refuse\n\n- A successful delete answers **204** with no body.\n- A product, a category, a manufacturer, an item field, a currency, a tax, a discount, a cart rule, a place, a payment or shipping method, a form field, a form field group, an order or an order status is deleted only while it is in the trash (`state: -2`), as the back office deletes it: a DELETE of one in any other state answers **409** with the reason and deletes nothing; a PATCH of `state: -2` trashes it first (an order's `state` is sent alone). An order's sales documents and a missing currency are refused in any state. Stock locations, customers and customer groups are deleted in one call.\n- A product that order lines were sold as is archived instead of deleted: its DELETE answers **200** with the product, archived (`state: 2`), and `meta.note` saying why.\n- A delete the model refuses by its own rule (a category that still has children or is a product's default, an entity whose delete would widen a discount, tax or cart rule, an order with sales documents, an order whose payment or shipping plugin of record cannot be asked, an order status orders are in, a payment or shipping method, a currency or an item field still in use) answers **409** with the refusal's sentence.\n- An id that names no record answers **404**; so does the delete of an order already deleted.\n- The order operations answer **409** for a refused business rule (a refund through the payments route, a settle whose `from_status` does not match, a cancelled order reinstated without `force`) and **422** where the ledger refuses (a refund of a payment that is not completed, an unknown status), each with its sentence; **400** for input that is not usable (an amount finer than the order's currency, a JSON number that does not carry its digits exactly: send money as a string).\n- `PATCH v1/alfa/orders/:id` never writes `id_order_status` (**422**): `POST v1/alfa/orders/:id/status` is the one status entry point. `state` alone moves the order to the trash (-2) and back (1); another value, or `state` with other attributes, answers **422**. It writes an order's `customer_note` and its delivery and invoice details (`alfa_form_fields`, `alfa_form_fields_billing` with `invoice_differs`); any other field the order publishes answers **422** naming it, and nothing is saved, `id_address_delivery` and `created` among them.\n\n## Permissions\n\nEvery route is gated on the `alfa.<entity>.<action>` permissions from the component's Options, Permissions (the order operations on the orders edit permission; an order's trash on edit and Change State; the lists of an order's payments and parcels on view; the status change on Change State and view; a void on the documents Change State). Nothing Joomla's core rights grant counts: a Super User passes, everyone else needs what a Super User granted. A token whose user lacks the permission gets `403`, not an empty list.\n\n## Behaviour worth knowing\n\n- A create answers 201 Created with a `Location` header.\n- A delete the model refuses answers 409 with the reason: an order status orders are in, a payment or shipping method, a currency or an item field still in use.\n- A tax, discount or cart rule that does not exist answers 404.\n- The dompdf library ships with Alfa Commerce: when it, or a library it needs, is missing or disabled, a document's PDF answers 503 with a sentence that names it.\n- A PATCH keeps what it leaves out: a required name, and the price display flags of a customer group it does not name.\n- A PATCH of an order's `state` alone moves it to the trash (-2) or back (1); another value answers 422 with the reason. `customer_note` is written.\n- A single order carries `fulfillment_status` and `fulfillment_percentage`; a payment carries `added` and `refund_reason`.\n- List filters, applied as the back office's lists apply them: orders by `payment`, `fulfilment`, `waiting`, `reconciliation`, `overpaid`, `date_start`, `date_end`, `item_id`, and by customer (`id_user`, 0 for the guests' orders; `email`); movements by `date_start`, `date_end` and `item_id`; documents by `date_start` and `date_end`; items by `sku` (exact), `stock` and `fields`. The date bounds are UTC. An empty value is no filter; an end date with no time is that whole day.\n- A POST or PATCH of an item that carries `fields`, `options`, `combinations`, `informational` or `related` (or the edit form's keys for them, `item_downloads` among them) answers 422 naming them. A POST or PATCH of an item field that carries `values` or `deleted_value_ids` answers 422 the same way.\n- An order's payments and parcels are read as lists of their own, `GET v1/alfa/orders/:id/payments` and `GET v1/alfa/orders/:id/shipments`, with the values `GET v1/alfa/orders/:id` gives them. The payment and shipment METHODS are `v1/alfa/paymentmethods` and `v1/alfa/shipmentmethods`.\n- A record of the resources the back office deletes only from its trash is deleted only while it is in the trash: a DELETE of one in any other state answers 409.\n- A DELETE of a product with order history answers 200 with the product, archived, and `meta.note`.\n- A PATCH of an order that carries a field its update does not write answers 422 naming it. `id_address_delivery` and `created` are refused too.\n- Each entry of an order's `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`.\n- `silent` on a status change leaves out the customer's e-mail only; the staff the status tells still receive theirs.\n",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -64,7 +64,7 @@
 						"description": "A category of the run's own, for the product below (a product needs a default category).",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"parent_id\": 0,\n  \"state\": 1\n}",
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"parent_id\": 0,\n  \"state\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -115,7 +115,7 @@
 						"description": "A published product of the run's own, priced in euro (currency id 47, the seeded euro), with stock management off so the run never moves stock.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_el_gr\": \"Προϊόν βιτρίνας συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection storefront product {{run}}\",\n  \"sku\": \"APIC-SF-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{sfCategoryId}},\n  \"categories\": [\n    {{sfCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"10.00\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν βιτρίνας συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection storefront product {{run}}\"\n    }\n  },\n  \"sku\": \"APIC-SF-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{sfCategoryId}},\n  \"categories\": [\n    {{sfCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"10.00\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -349,7 +349,7 @@
 						"description": "The same product, unpublished in the back office.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_el_gr\": \"Προϊόν βιτρίνας συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection storefront product {{run}}\",\n  \"state\": 0\n}",
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν βιτρίνας συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection storefront product {{run}}\"\n    }\n  },\n  \"state\": 0\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -449,7 +449,7 @@
 						"description": "The run's own product, trashed before its delete.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_el_gr\": \"Προϊόν βιτρίνας συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection storefront product {{run}}\",\n  \"state\": -2\n}",
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν βιτρίνας συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection storefront product {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -551,7 +551,7 @@
 						"description": "The run's own category, trashed before its delete.",
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"state\": -2\n}",
+							"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -669,7 +669,7 @@
 								"description": "A category of the run's own, for the product below (a product needs a default category).",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"parent_id\": 0,\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"parent_id\": 0,\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -722,10 +722,10 @@
 										"items"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nPrices are exact decimals: send them as strings (\"19.90\"). Stock is an instruction to the inventory service and counts only when the body carries `stock`.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, allowedUsers, allowedUserGroups, prices, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nPrices are exact decimals: send them as strings (\"19.90\"). Stock is an instruction to the inventory service and counts only when the body carries `stock`.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, allowedUsers, allowedUserGroups, prices, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέο προϊόν {{run}}\",\n  \"name_en_gb\": \"New product {{run}}\",\n  \"sku\": \"SKU-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{itemsCategoryId}},\n  \"categories\": [\n    {{itemsCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"19.90\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέο προϊόν {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"New product {{run}}\"\n    }\n  },\n  \"sku\": \"SKU-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{itemsCategoryId}},\n  \"categories\": [\n    {{itemsCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"19.90\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -842,7 +842,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, name, alias, sku, gtin, mpn, state, stock, available_quantity, manage_stock, stock_action, is_virtual, combination_count, id_category_default, category_ids, manufacturer_ids, publish_up, publish_down, modified, ordering\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
+								"description": "**Returns per row:** id, name, alias, sku, gtin, mpn, state, stock, available_quantity, manage_stock, stock_action, is_virtual, combination_count, id_category_default, category_ids, manufacturer_ids, publish_up, publish_down, modified, commerce_changed_at, ordering\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
 							}
 						},
 						{
@@ -1189,7 +1189,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, alias, short_desc, full_desc, meta_title, meta_desc, sku, gtin, mpn, id_category_default, state, stock, available_quantity, quantity_min, quantity_max, quantity_step, stock_action, stock_low, manage_stock, backorder, min_qty, is_virtual, width, height, depth, weight, meta_data, robots, prices, categories, manufacturers, medias, translations, fields, options, combinations, informational, publish_up, publish_down, created_by, modified, modified_by, ordering\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, alias, short_desc, full_desc, meta_title, meta_desc, sku, gtin, mpn, id_category_default, state, stock, available_quantity, quantity_min, quantity_max, quantity_step, stock_action, stock_low, manage_stock, backorder, min_qty, is_virtual, width, height, depth, weight, meta_data, robots, prices, prices_state, categories, manufacturers, related, medias, translations, fields, options, combinations, informational, publish_up, publish_down, created_by, modified, commerce_changed_at, modified_by, ordering\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -1245,10 +1245,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, allowedUsers, allowedUserGroups, prices, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, allowedUsers, allowedUserGroups, prices, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέο προϊόν {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"New product {{run}} (updated)\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέο προϊόν {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"New product {{run}} (updated)\"\n    }\n  },\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1380,6 +1380,221 @@
 							}
 						},
 						{
+							"name": "Get one (its prices_state)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    const state = pm.response.json().data.attributes.prices_state;",
+											"    pm.test('prices_state: 32 hexadecimal digits', () => pm.expect(state).to.match(/^[0-9a-f]{32}$/));",
+											"    pm.collectionVariables.set('itemPricesState', String(state));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{itemId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "The product as it stands now: its `prices_state`, the state its own prices are in, which a write of its prices sends back so that prices changed since are refused (409) instead of overwritten."
+							}
+						},
+						{
+							"name": "Units: prices and stock of many units",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    const u = pm.response.json().data[0];",
+											"    pm.test('One answer, of type units', () => { pm.expect(pm.response.json().data).to.have.lengthOf(1); pm.expect(u.type).to.eql('units'); });",
+											"    pm.test('The unit is written', () => { pm.expect(u.attributes.status).to.eql(200); pm.expect(u.attributes.pointer).to.eql('/units/0'); pm.expect(String(u.attributes.item_id)).to.eql(pm.collectionVariables.get('itemId')); });",
+											"    pm.test('Its new prices_state', () => pm.expect(u.attributes.prices_state).to.match(/^[0-9a-f]{32}$/));",
+											"    pm.collectionVariables.set('itemPricesState', String(u.attributes.prices_state));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										"units"
+									]
+								},
+								"description": "`PATCH v1/alfa/items/units` writes the prices and the stock of up to 100 units in one request: a unit is a product without combinations, or one combination of a product. Each unit takes `item_id` (required), `combination_id` (0 or left out for the product itself), `prices` (the unit's own price rows, all of them: a row with the `id` of one of the unit's rows changes it, a row without an `id` is added, the rows not sent are removed), `prices_state` (the state the prices were read in, sent only with `prices`), and `stock` (one figure, at the shop's default location) or `inventory_stock` (an object of location id to figure). Each unit is written whole or not at all, on its own, and the answer is 200 with one answer a unit, in the order of the request: `pointer`, `status`, `item_id`, `combination_id`, and for a unit written its new `prices_state`, `stock` and `available_quantity`, for a unit refused the `title` that says why. Asks the permission to edit items.\n\nHere the run's product gets a new price row, with the `prices_state` its read gave. It does not track stock, so no stock is sent.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"units\": [\n    {\n      \"item_id\": {{itemId}},\n      \"prices\": [\n        {\n          \"value\": \"21.00\",\n          \"currency_id\": 47,\n          \"quantity_start\": 1\n        }\n      ],\n      \"prices_state\": \"{{itemPricesState}}\"\n    }\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Units (a unit refused alone)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    const units = pm.response.json().data.map(x => x.attributes);",
+											"    pm.test('Prices changed since: 409', () => { pm.expect(units[0].status).to.eql(409); pm.expect(units[0].pointer).to.eql('/units/0/prices_state'); pm.expect(units[0].title).to.include('prices_state'); });",
+											"    pm.test('No such product: 404', () => { pm.expect(units[1].status).to.eql(404); pm.expect(units[1].pointer).to.eql('/units/1/item_id'); });",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										"units"
+									]
+								},
+								"description": "A unit that cannot be written is refused alone and the others are written; the answer is still 200, and each unit's answer carries the status it would have had alone and its `pointer` into the request. Here the run's product is sent with a `prices_state` its prices are not in (409, `/units/0/prices_state`: read them again), and a product that does not exist (404, `/units/1/item_id`).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"units\": [\n    {\n      \"item_id\": {{itemId}},\n      \"prices\": [\n        {\n          \"value\": \"22.00\",\n          \"currency_id\": 47,\n          \"quantity_start\": 1\n        }\n      ],\n      \"prices_state\": \"00000000000000000000000000000000\"\n    },\n    {\n      \"item_id\": 2147483647,\n      \"stock\": \"1\"\n    }\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Units (no units: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 422', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(422));",
+											"if (pm.response.code === 422) {",
+											"    pm.test('Answers the refusal in words', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.errors).to.be.an('array').that.is.not.empty;",
+											"        pm.expect(String(doc.errors[0].title)).to.not.be.empty;",
+											"    });",
+											"    pm.test('The reason names units', () => pm.expect(pm.response.json().errors[0].title).to.include('units: send'));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items/units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items",
+										"units"
+									]
+								},
+								"description": "A body that is not `{\"units\": [...]}` with 1 to 100 units is refused whole with 422, and nothing is written.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"units\": []\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
 							"name": "Delete (not in the trash: refused)",
 							"event": [
 								{
@@ -1483,10 +1698,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέο προϊόν {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"New product {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέο προϊόν {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"New product {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1631,7 +1846,7 @@
 								"description": "The run's own category, trashed before its delete.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1747,10 +1962,10 @@
 										"categories"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέα κατηγορία {{run}}\",\n  \"name_en_gb\": \"New category {{run}}\",\n  \"parent_id\": 0,\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέα κατηγορία {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"New category {{run}}\"\n    }\n  },\n  \"parent_id\": 0,\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1843,7 +2058,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, name, alias, parent_id, state, item_count, publish_up, publish_down, modified, ordering\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
+								"description": "**Returns per row:** id, name, alias, parent_id, state, item_count, item_count_descendants, publish_up, publish_down, modified, ordering, ancestors, level\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
 							}
 						},
 						{
@@ -1903,7 +2118,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, parent_id, name, alias, desc, meta_title, meta_desc, state, meta_data, robots, list_options, medias, publish_up, publish_down, ordering, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, parent_id, name, alias, desc, meta_title, meta_desc, state, meta_data, robots, list_options, medias, publish_up, publish_down, ordering, translations, ancestors, level, item_count, item_count_descendants\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -1958,10 +2173,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέα κατηγορία {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"New category {{run}} (updated)\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέα κατηγορία {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"New category {{run}} (updated)\"\n    }\n  },\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2139,10 +2354,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Νέα κατηγορία {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"New category {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Νέα κατηγορία {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"New category {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2301,10 +2516,10 @@
 										"manufacturers"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατασκευαστής {{run}}\",\n  \"name_en_gb\": \"Manufacturer {{run}}\",\n  \"website\": \"https://example.com\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατασκευαστής {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Manufacturer {{run}}\"\n    }\n  },\n  \"website\": \"https://example.com\",\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2456,7 +2671,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, alias, desc, meta_title, meta_desc, website, state, meta_data, robots, medias, ordering, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, alias, desc, meta_title, meta_desc, website, state, meta_data, robots, medias, ordering, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -2511,10 +2726,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (robots):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (robots):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατασκευαστής {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Manufacturer {{run}} (updated)\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατασκευαστής {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Manufacturer {{run}} (updated)\"\n    }\n  },\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2692,10 +2907,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατασκευαστής {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Manufacturer {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατασκευαστής {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Manufacturer {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2854,10 +3069,10 @@
 										"itemfields"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nA field's values are not written by the API: a write that carries `values` or `deleted_value_ids` answers 422 naming them. Edit them on the field's page in the administrator.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nA field's values are not written by the API: a write that carries `values` or `deleted_value_ids` answers 422 naming them. Edit them on the field's page in the administrator.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Χρώμα {{run}}\",\n  \"name_en_gb\": \"Colour {{run}}\",\n  \"field_name\": \"colour_{{runLower}}\",\n  \"type\": \"choice\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Χρώμα {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Colour {{run}}\"\n    }\n  },\n  \"field_name\": \"colour_{{runLower}}\",\n  \"type\": \"choice\",\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3021,7 +3236,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, field_name, name, description, type, informational, required, filterable, searchable, show_on_listing, state, ordering, categories, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, field_name, name, description, type, informational, required, filterable, searchable, show_on_listing, state, ordering, categories, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -3076,10 +3291,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Χρώμα {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Colour {{run}} (updated)\",\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Χρώμα {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Colour {{run}} (updated)\"\n    }\n  },\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3256,10 +3471,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Χρώμα {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Colour {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Χρώμα {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Colour {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4905,10 +5120,10 @@
 										"taxes"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nA rate is exact decimal text: send it as a string (\"24\"). A save that changes prices may queue the shop's price work: the answer then lists it in `meta.tasks`.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nA rate is exact decimal text: send it as a string (\"24\"). A save that changes prices may queue the shop's price work: the answer then lists it in `meta.tasks`.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"ΦΠΑ 24% {{run}}\",\n  \"name_en_gb\": \"VAT 24% {{run}}\",\n  \"value\": \"24\",\n  \"behavior\": \"0\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"ΦΠΑ 24% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"VAT 24% {{run}}\"\n    }\n  },\n  \"value\": \"24\",\n  \"behavior\": \"0\",\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5060,7 +5275,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, desc, value, behavior, state, categories, manufacturers, places, users, usergroups, publish_up, publish_down, ordering, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, desc, value, behavior, state, categories, manufacturers, places, users, usergroups, publish_up, publish_down, ordering, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -5115,10 +5330,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"ΦΠΑ 13% {{run}}\",\n  \"name_en_gb\": \"VAT 13% {{run}}\",\n  \"value\": \"13\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"ΦΠΑ 13% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"VAT 13% {{run}}\"\n    }\n  },\n  \"value\": \"13\",\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5231,10 +5446,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"ΦΠΑ 13% {{run}}\",\n  \"name_en_gb\": \"VAT 13% {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"ΦΠΑ 13% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"VAT 13% {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5393,10 +5608,10 @@
 										"discounts"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Έκπτωση 10% {{run}}\",\n  \"name_en_gb\": \"10% off {{run}}\",\n  \"value\": \"10\",\n  \"is_amount\": 0,\n  \"state\": 0,\n  \"behavior\": 0,\n  \"apply_before_tax\": 0,\n  \"operation\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Έκπτωση 10% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"10% off {{run}}\"\n    }\n  },\n  \"value\": \"10\",\n  \"is_amount\": 0,\n  \"state\": 0,\n  \"behavior\": 0,\n  \"apply_before_tax\": 0,\n  \"operation\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5548,7 +5763,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, name_customer, value, is_amount, behavior, apply_before_tax, state, categories, manufacturers, places, users, usergroups, publish_up, publish_down, ordering, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, name_customer, value, is_amount, behavior, apply_before_tax, state, categories, manufacturers, places, users, usergroups, publish_up, publish_down, ordering, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -5603,10 +5818,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Έκπτωση 15% {{run}}\",\n  \"name_en_gb\": \"15% off {{run}}\",\n  \"value\": \"15\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Έκπτωση 15% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"15% off {{run}}\"\n    }\n  },\n  \"value\": \"15\",\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5719,10 +5934,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Έκπτωση 15% {{run}}\",\n  \"name_en_gb\": \"15% off {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Έκπτωση 15% {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"15% off {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5881,10 +6096,10 @@
 										"cartrules"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`code` is unique per shop; a rule without a code applies automatically. A cart rule is published or unpublished and has no trash state: it is deleted directly, as the back office deletes it (a `state` of -2 answers 400).\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, groups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`code` is unique per shop; a rule without a code applies automatically. A cart rule is published (1), unpublished (0) or in the trash (-2), and is deleted only from the trash, as the back office deletes it.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, groups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Καλοκαιρινή προσφορά {{run}}\",\n  \"name_en_gb\": \"Summer offer {{run}}\",\n  \"code\": \"API{{run}}\",\n  \"discount_class\": \"order\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Καλοκαιρινή προσφορά {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Summer offer {{run}}\"\n    }\n  },\n  \"code\": \"API{{run}}\",\n  \"discount_class\": \"order\",\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6048,7 +6263,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, name_customer, description, code, discount_class, action, action_value, max_discount_amount, discount_base, exclude_discounted, overridden_lines, min_amount, min_amount_tax_incl, min_amount_base, combines_product, combines_order, combines_shipping, priority, usage_limit_total, usage_limit_per_user, highlight, publish_up, publish_down, state, created, modified, allowedUsers, allowedUserGroups, groups, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, name_customer, description, code, discount_class, action, action_value, max_discount_amount, discount_base, exclude_discounted, overridden_lines, min_amount, min_amount_tax_incl, min_amount_base, combines_product, combines_order, combines_shipping, priority, usage_limit_total, usage_limit_per_user, highlight, publish_up, publish_down, state, created, modified, allowedUsers, allowedUserGroups, groups, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -6103,10 +6318,126 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, groups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (allowedUsers, allowedUserGroups, groups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Καλοκαιρινή προσφορά {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Summer offer {{run}} (updated)\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Καλοκαιρινή προσφορά {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Summer offer {{run}} (updated)\"\n    }\n  },\n  \"state\": 0\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Delete (not in the trash: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 409', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(409));",
+											"if (pm.response.code === 409) {",
+											"    pm.test('Answers the refusal in words', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.errors).to.be.an('array').that.is.not.empty;",
+											"        pm.expect(String(doc.errors[0].title)).to.not.be.empty;",
+											"    });",
+											"    pm.test('The reason names the trash step', () => pm.expect(pm.response.json().errors[0].title).to.include('state -2'));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/cartrules/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"cartrules",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{cartruleId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "A record of this resource is deleted only while it is in the trash, as the back office deletes it: a DELETE of one in any other state answers 409 with the reason, and nothing is deleted."
+							}
+						},
+						{
+							"name": "Trash",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('JSON:API item of type cartrules', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.data.type).to.eql('cartrules');",
+											"        pm.expect(doc.data.attributes).to.be.an('object');",
+											"        pm.expect(String(doc.data.id)).to.eql(String(pm.collectionVariables.get('cartruleId')));",
+											"    });",
+											"    pm.test('Trashed', () => pm.expect(Number(pm.response.json().data.attributes.state)).to.eql(-2));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/cartrules/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"cartrules",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{cartruleId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Καλοκαιρινή προσφορά {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Summer offer {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6745,10 +7076,10 @@
 										"paymentmethods"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nRenamed from `v1/alfa/payments` (which now answers 404). `type` names the payment plugin. Without `color` and `bg_color` a method takes the colours its edit screen offers.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nRenamed from `v1/alfa/payments` (which now answers 404). `type` names the payment plugin. Without `color` and `bg_color` a method takes the colours its edit screen offers.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Αντικαταβολή {{run}}\",\n  \"name_en_gb\": \"Cash on delivery {{run}}\",\n  \"type\": \"standard\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Αντικαταβολή {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Cash on delivery {{run}}\"\n    }\n  },\n  \"type\": \"standard\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6900,7 +7231,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, type, color, bg_color, show_on_product, categories, manufacturers, places, users, usergroups, ordering, state, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, type, color, bg_color, show_on_product, categories, manufacturers, places, users, usergroups, ordering, state, translations, medias\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -6955,10 +7286,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Αντικαταβολή {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Cash on delivery {{run}} (updated)\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Αντικαταβολή {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Cash on delivery {{run}} (updated)\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7071,10 +7402,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Αντικαταβολή {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Cash on delivery {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Αντικαταβολή {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Cash on delivery {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7233,10 +7564,10 @@
 										"shipmentmethods"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nRenamed from `v1/alfa/shipments` (which now answers 404). `type` names the shipment plugin; `price_entry_mode` is tax_included or tax_excluded. Without `color` and `bg_color` a method takes the colours its edit screen offers.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\nRenamed from `v1/alfa/shipments` (which now answers 404). `type` names the shipment plugin; `price_entry_mode` is tax_included or tax_excluded. Without `color` and `bg_color` a method takes the colours its edit screen offers.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Παράδοση {{run}}\",\n  \"name_en_gb\": \"Standard delivery {{run}}\",\n  \"type\": \"standard\",\n  \"price_entry_mode\": \"tax_included\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Παράδοση {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Standard delivery {{run}}\"\n    }\n  },\n  \"type\": \"standard\",\n  \"price_entry_mode\": \"tax_included\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7388,7 +7719,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, type, color, bg_color, show_on_product, price_entry_mode, categories, manufacturers, places, users, usergroups, taxes, ordering, state, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, type, color, bg_color, show_on_product, price_entry_mode, categories, manufacturers, places, users, usergroups, taxes, ordering, state, translations, medias\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -7443,10 +7774,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (categories, manufacturers, places, users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Παράδοση {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Standard delivery {{run}} (updated)\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Παράδοση {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Standard delivery {{run}} (updated)\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7559,10 +7890,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Παράδοση {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Standard delivery {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Παράδοση {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"name\": \"Standard delivery {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7727,10 +8058,10 @@
 										"formfields"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`field_name` is unique per shop. `name` and `field_label` are both required translatable fields.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`field_name` is unique per shop. `name` and `field_label` are both required translatable fields.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Τηλέφωνο {{run}}\",\n  \"name_en_gb\": \"Phone {{run}}\",\n  \"field_label_el_gr\": \"Τηλέφωνο\",\n  \"field_label_en_gb\": \"Phone\",\n  \"field_name\": \"api_phone_{{runLower}}\",\n  \"type\": \"tel\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Τηλέφωνο {{run}}\",\n      \"field_label\": \"Τηλέφωνο\"\n    },\n    \"en_gb\": {\n      \"name\": \"Phone {{run}}\",\n      \"field_label\": \"Phone\"\n    }\n  },\n  \"field_name\": \"api_phone_{{runLower}}\",\n  \"type\": \"tel\",\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7888,7 +8219,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, group_id, field_name, name, field_label, field_description, type, required, registration, billing, shipping, unique, ordering, state, users, usergroups, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, group_id, field_name, name, field_label, field_description, type, required, registration, billing, shipping, unique, ordering, state, users, usergroups, translations, role, params\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -7943,10 +8274,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.\n\n**Relations (users, usergroups):** omit a key and it is left unchanged; send `[]` to clear it.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Τηλέφωνο {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Phone {{run}} (updated)\",\n  \"field_label_el_gr\": \"Τηλέφωνο\",\n  \"field_label_en_gb\": \"Phone\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Τηλέφωνο {{run}} (αλλαγή)\",\n      \"field_label\": \"Τηλέφωνο\"\n    },\n    \"en_gb\": {\n      \"name\": \"Phone {{run}} (updated)\",\n      \"field_label\": \"Phone\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8059,10 +8390,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Τηλέφωνο {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Phone {{run}} (updated)\",\n  \"field_label_el_gr\": \"Τηλέφωνο\",\n  \"field_label_en_gb\": \"Phone\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Τηλέφωνο {{run}} (αλλαγή)\",\n      \"field_label\": \"Τηλέφωνο\"\n    },\n    \"en_gb\": {\n      \"name\": \"Phone {{run}} (updated)\",\n      \"field_label\": \"Phone\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8221,10 +8552,10 @@
 										"formfieldgroups"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"title_el_gr\": \"Στοιχεία επικοινωνίας {{run}}\",\n  \"title_en_gb\": \"Contact details {{run}}\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"title\": \"Στοιχεία επικοινωνίας {{run}}\"\n    },\n    \"en_gb\": {\n      \"title\": \"Contact details {{run}}\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8376,7 +8707,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, title, description, ordering, state, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, title, description, ordering, state, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -8431,10 +8762,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"title_el_gr\": \"Στοιχεία επικοινωνίας {{run}} (αλλαγή)\",\n  \"title_en_gb\": \"Contact details {{run}} (updated)\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"title\": \"Στοιχεία επικοινωνίας {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"title\": \"Contact details {{run}} (updated)\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8547,10 +8878,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"title_el_gr\": \"Στοιχεία επικοινωνίας {{run}} (αλλαγή)\",\n  \"title_en_gb\": \"Contact details {{run}} (updated)\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"title\": \"Στοιχεία επικοινωνίας {{run}} (αλλαγή)\"\n    },\n    \"en_gb\": {\n      \"title\": \"Contact details {{run}} (updated)\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9151,7 +9482,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, reference, customer_name, customer_email, id_order_status, status_name, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, payment_status, payment_percentage, balance, overpaid, excess, still_held, fulfillment_status, fulfillment_percentage, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, total_paid_real, total_refunded_real, id_currency, currency, source, state, created, modified\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
+								"description": "**Returns per row:** id, reference, customer_name, customer_email, id_order_status, status_name, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, payment_status, payment_percentage, balance, overpaid, excess, still_held, fulfillment_status, fulfillment_percentage, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, total_paid_real, total_refunded_real, id_currency, currency, source, external_source, external_reference, state, created, modified\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
 							}
 						},
 						{
@@ -9210,7 +9541,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, reference, id_user, customer_name, customer_email, id_currency, currency, conversion_rate, delivery_date, id_address_delivery, id_address_invoice, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, id_order_status, status_name, payment_status, fulfillment_status, fulfillment_percentage, payment_percentage, balance, overpaid, excess, still_held, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, contributions_total, total_paid_real, total_refunded_real, customer_note, source, state, created, modified, lines, payments, shipments, contributions, history, delivery_address, invoice_address\n\nMoney is an object: `{amount, formatted, minor_units}`, `amount` exact decimal text.\n\nThis read is the way to an order's payments, shipments, lines and history: there are no GET routes for `orders/:id/payments` or `orders/:id/shipments` (their POST routes add one).\n\nEach entry of `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`."
+								"description": "**Returns:** id, reference, id_user, customer_name, customer_email, id_currency, currency, conversion_rate, delivery_date, id_address_delivery, id_address_invoice, id_payment_method, payment_method_name, id_shipment_method, shipment_method_name, id_order_status, status_name, payment_status, fulfillment_status, fulfillment_percentage, payment_percentage, balance, overpaid, excess, still_held, order_total, order_total_tax_excl, items_total, shipping_total, discount_total, contributions_total, total_paid_real, total_refunded_real, customer_note, source, external_source, external_reference, state, created, modified, lines, payments, shipments, contributions, history, delivery_address, invoice_address\n\nMoney is an object: `{amount, formatted, minor_units}`, `amount` exact decimal text.\n\nAn order's payments and parcels are also read as lists of their own, with the same values: `GET v1/alfa/orders/:id/payments` and `GET v1/alfa/orders/:id/shipments` (Orders, operations).\n\nEach entry of `shipments` carries `added`, `shipping_charge_basis` and `shipping_tax_chain`."
 							}
 						},
 						{
@@ -9266,7 +9597,7 @@
 										}
 									]
 								},
-								"description": "Partial update. A separate invoice address is kept unless the body says something about it. The status is not written here, and neither is `state` nor any field the update does not write (see the next requests); `customer_note` is written.",
+								"description": "Partial update. A separate invoice address is kept unless the body says something about it. The status is not written here, nor any field the update does not write (see the next requests); `state` moves the order to the trash and back, sent alone (see Trash); `customer_note` is written.",
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"alfa_form_fields\": {\n    \"name\": \"API Collection Customer {{run}} (updated)\",\n    \"email\": \"api-collection-{{runLower}}@example.invalid\",\n    \"country\": {{countryId}},\n    \"address\": \"1 Example Street\",\n    \"city\": \"Larisa\",\n    \"postcode\": \"412 22\"\n  }\n}",
@@ -9463,7 +9794,7 @@
 							}
 						},
 						{
-							"name": "Update (the state: refused)",
+							"name": "Update (a state other than -2 or 1: refused)",
 							"event": [
 								{
 									"listen": "test",
@@ -9477,7 +9808,7 @@
 											"        pm.expect(doc.errors).to.be.an('array').that.is.not.empty;",
 											"        pm.expect(String(doc.errors[0].title)).to.not.be.empty;",
 											"    });",
-											"    pm.test('The reason names the status operation', () => pm.expect(pm.response.json().errors[0].title).to.include('POST v1/alfa/orders/:id/status'));",
+											"    pm.test('The reason names the values state takes', () => pm.expect(pm.response.json().errors[0].title).to.include('state takes -2'));",
 											"}"
 										]
 									}
@@ -9514,10 +9845,74 @@
 										}
 									]
 								},
-								"description": "`state` is the order row's trash flag. Over the API an order has no trash step and is deleted in one call: a PATCH of it answers 422 with the reason, which names the status operation.",
+								"description": "`state` is the order row's trash flag: a PATCH of `state` -2 alone moves the order to the trash and one of 1 takes it out, as the Orders list's Trash and Untrash do (Orders: Edit and Orders: Change State). Any other value, or `state` with other attributes, answers 422 with the reason.",
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"state\": 0\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Clean up: trash the other system's order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('JSON:API item of type orders', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.data.type).to.eql('orders');",
+											"        pm.expect(String(doc.data.id)).to.eql(String(pm.collectionVariables.get('externalOrderId')));",
+											"    });",
+											"    pm.test('Trashed', () => pm.expect(Number(pm.response.json().data.attributes.state)).to.eql(-2));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{externalOrderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "The order of the other system the collection made, moved to the trash before its delete.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9570,7 +9965,171 @@
 										}
 									]
 								},
-								"description": "Removes the order of the other system the collection made."
+								"description": "Removes the order of the other system the collection made, from the trash."
+							}
+						},
+						{
+							"name": "Delete (not in the trash: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 409', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(409));",
+											"if (pm.response.code === 409) {",
+											"    pm.test('Answers the refusal in words', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.errors).to.be.an('array').that.is.not.empty;",
+											"        pm.expect(String(doc.errors[0].title)).to.not.be.empty;",
+											"    });",
+											"    pm.test('The reason names the trash step', () => pm.expect(pm.response.json().errors[0].title).to.include('state -2'));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{orderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "An order is deleted only while it is in the trash, as the back office deletes it: a DELETE of one in any other state answers 409 with the reason, and nothing is deleted."
+							}
+						},
+						{
+							"name": "Trash",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('JSON:API item of type orders', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.data.type).to.eql('orders');",
+											"        pm.expect(String(doc.data.id)).to.eql(String(pm.collectionVariables.get('orderId')));",
+											"    });",
+											"    pm.test('Trashed', () => pm.expect(Number(pm.response.json().data.attributes.state)).to.eql(-2));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{orderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "Moves the order to the trash (`state: -2`, sent alone), as the Orders list's Trash does: the step before its delete. Nothing else changes: its stock, payments, shipments and documents stay as they are, and a trashed order is left out of the list unless `filter[show_trashed]` is 1. Asks Orders: Edit and Orders: Change State.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"state\": -2\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "List (filter[show_trashed])",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('Listed: the run\\'s trashed order', () => pm.expect(pm.response.json().data.map(r => String(r.id))).to.include(pm.collectionVariables.get('orderId')));",
+											"    pm.test('Every order listed is in the trash', () => pm.response.json().data.forEach(r => pm.expect(Number(r.attributes.state)).to.eql(-2)));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders?filter[show_trashed]=1&filter[search]={{run}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders"
+									],
+									"query": [
+										{
+											"key": "filter[show_trashed]",
+											"value": "1"
+										},
+										{
+											"key": "filter[search]",
+											"value": "{{run}}"
+										}
+									]
+								},
+								"description": "The orders in the trash: a trashed order is listed only with `filter[show_trashed]` 1, and then only the trashed ones are. `filter[search]` keeps the list to the run's orders."
 							}
 						},
 						{
@@ -9616,7 +10175,7 @@
 										}
 									]
 								},
-								"description": "Deletes the order; answers 204 with no body. An order with sales documents is refused (409, naming the documents); so is an order that names no currency. Over the API an order has no trash step: it is deleted in one call (a PATCH of `state` answers 422)."
+								"description": "Deletes the order from the trash; answers 204 with no body. An order with sales documents is refused in any state (409, naming the documents); so is an order that names no currency, and an order whose payment or shipping plugin cannot be asked or with a refund not settled yet is refused with the reason."
 							}
 						},
 						{
@@ -9766,10 +10325,10 @@
 										"orderstatuses"
 									]
 								},
-								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`name` and `name_customer` are both required translatable fields. A status that issues sales documents carries `issues_doc_rules` (see Orders, operations).\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Creates a record and answers 201 Created with it, and a `Location` header that names it.\n\n`name` and `name_customer` are both required translatable fields. A status that issues sales documents carries `issues_doc_rules` (see Orders, operations).\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Σε επεξεργασία {{run}}\",\n  \"name_en_gb\": \"Processing {{run}}\",\n  \"name_customer_el_gr\": \"Σε επεξεργασία\",\n  \"name_customer_en_gb\": \"Processing\",\n  \"state\": 0,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Σε επεξεργασία {{run}}\",\n      \"name_customer\": \"Σε επεξεργασία\"\n    },\n    \"en_gb\": {\n      \"name\": \"Processing {{run}}\",\n      \"name_customer\": \"Processing\"\n    }\n  },\n  \"state\": 0,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9862,7 +10421,7 @@
 										}
 									]
 								},
-								"description": "**Returns per row:** id, name, color, bg_color, stock_operation, is_initial, is_cancelled, is_completed, ordering, state\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
+								"description": "**Returns per row:** id, name, color, bg_color, stock_operation, is_initial, is_cancelled, is_completed, notify_customer, notifies_staff, ordering, state\n\nJSON:API envelope: `data[]`, `links`, `meta['total-pages']`."
 							}
 						},
 						{
@@ -9921,7 +10480,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, name, name_customer, color, bg_color, stock_operation, is_initial, is_cancelled, is_completed, notify_customer, ordering, state, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, name, name_customer, color, bg_color, stock_operation, is_initial, is_cancelled, is_completed, notify_customer, notifies_staff, admin_recipient_ids, ordering, state, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -9976,10 +10535,10 @@
 										}
 									]
 								},
-								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Partial update: only the keys you send change.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Σε επεξεργασία {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Processing {{run}} (updated)\",\n  \"name_customer_el_gr\": \"Σε επεξεργασία\",\n  \"name_customer_en_gb\": \"Processing\",\n  \"state\": 0\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Σε επεξεργασία {{run}} (αλλαγή)\",\n      \"name_customer\": \"Σε επεξεργασία\"\n    },\n    \"en_gb\": {\n      \"name\": \"Processing {{run}} (updated)\",\n      \"name_customer\": \"Processing\"\n    }\n  },\n  \"state\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10092,10 +10651,10 @@
 										}
 									]
 								},
-								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send flat per-language keys (`name_el_gr`, `name_en_gb`) or a nested `translations` map; both work. The **default-language** key of every required translatable field is mandatory on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
+								"description": "Moves the record to the trash (`state: -2`), the back office's step before a delete. The API requires it for this resource.\n\n**Multilingual:** send the texts of each language in a `translations` object, `{\"translations\": {\"en_gb\": {\"name\": \"...\"}, \"el_gr\": {\"name\": \"...\"}}}`, as a read with `include=translations` gives them; a key with a language suffix (`name_el_gr`) is refused with 422. The text of every required translated field in the shop's default content language is needed on a create; a PATCH that leaves a required name out keeps the stored names, and one that sends it empty is refused.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Σε επεξεργασία {{run}} (αλλαγή)\",\n  \"name_en_gb\": \"Processing {{run}} (updated)\",\n  \"name_customer_el_gr\": \"Σε επεξεργασία\",\n  \"name_customer_en_gb\": \"Processing\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Σε επεξεργασία {{run}} (αλλαγή)\",\n      \"name_customer\": \"Σε επεξεργασία\"\n    },\n    \"en_gb\": {\n      \"name\": \"Processing {{run}} (updated)\",\n      \"name_customer\": \"Processing\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10360,7 +10919,7 @@
 								"description": "A category of the run's own, for the product below (a product needs a default category).",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"parent_id\": 0,\n  \"state\": 1\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"parent_id\": 0,\n  \"state\": 1\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10411,7 +10970,7 @@
 								"description": "A published product of the run's own, priced in euro (currency id 47, the seeded euro), with stock management off so the run never moves stock.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Προϊόν συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection product {{run}}\",\n  \"sku\": \"APIC-OP-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{opsCategoryId}},\n  \"categories\": [\n    {{opsCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"24.80\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection product {{run}}\"\n    }\n  },\n  \"sku\": \"APIC-OP-{{run}}\",\n  \"state\": 1,\n  \"manage_stock\": 0,\n  \"id_category_default\": {{opsCategoryId}},\n  \"categories\": [\n    {{opsCategoryId}}\n  ],\n  \"prices\": [\n    {\n      \"id\": 0,\n      \"value\": \"24.80\",\n      \"currency_id\": 47,\n      \"quantity_start\": 1\n    }\n  ]\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10462,7 +11021,7 @@
 								"description": "A payment method of the run's own (unpublished: never offered at checkout).",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Αντικαταβολή {{run}}\",\n  \"name_en_gb\": \"Cash on delivery {{run}}\",\n  \"type\": \"standard\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Αντικαταβολή {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Cash on delivery {{run}}\"\n    }\n  },\n  \"type\": \"standard\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10513,7 +11072,7 @@
 								"description": "A shipment method of the run's own (unpublished: never offered at checkout).",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Παράδοση {{run}}\",\n  \"name_en_gb\": \"Standard delivery {{run}}\",\n  \"type\": \"standard\",\n  \"price_entry_mode\": \"tax_included\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Παράδοση {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Standard delivery {{run}}\"\n    }\n  },\n  \"type\": \"standard\",\n  \"price_entry_mode\": \"tax_included\",\n  \"state\": 0,\n  \"show_on_product\": 1,\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10564,7 +11123,7 @@
 								"description": "A status of the run's own whose rule issues an invoice on the invoice type's default series to every customer (`usergroups` empty). The shop needs a default invoice series (Documents, Series) for the invoice to be issued.\n\nThe rules are stored whether or not the body carries `issues_delivery_note`.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Τιμολογήθηκε {{run}}\",\n  \"name_en_gb\": \"Invoiced {{run}}\",\n  \"name_customer_el_gr\": \"Τιμολογήθηκε\",\n  \"name_customer_en_gb\": \"Invoiced\",\n  \"state\": 1,\n  \"issues_delivery_note\": 0,\n  \"issues_doc_rules\": [\n    {\n      \"usergroups\": [],\n      \"series\": \"core.invoice\"\n    }\n  ],\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Τιμολογήθηκε {{run}}\",\n      \"name_customer\": \"Τιμολογήθηκε\"\n    },\n    \"en_gb\": {\n      \"name\": \"Invoiced {{run}}\",\n      \"name_customer\": \"Invoiced\"\n    }\n  },\n  \"state\": 1,\n  \"issues_delivery_note\": 0,\n  \"issues_doc_rules\": [\n    {\n      \"usergroups\": [],\n      \"series\": \"core.invoice\"\n    }\n  ],\n  \"color\": \"rgba(0, 0, 0, 1)\",\n  \"bg_color\": \"rgba(214, 214, 214, 1)\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11786,7 +12345,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"// Two days either side of today: outside today in any shop's time zone.",
+											"// Two days either side of today, in UTC as every date bound the API reads.",
 											"const day = (shift) => new Date(Date.now() + shift * 86400000).toISOString().slice(0, 10);",
 											"pm.collectionVariables.set('dayAhead', day(2));",
 											"pm.collectionVariables.set('dayBehind', day(-2));"
@@ -11843,7 +12402,7 @@
 										}
 									]
 								},
-								"description": "The orders placed from that date and time on, in the shop's time zone: two days ahead lists neither of the run's orders. `filter[search]` keeps the list to the run's orders. A filter a list does not have is ignored."
+								"description": "The orders placed from that date and time on, in UTC (a day alone is its first second): two days ahead lists neither of the run's orders. `filter[search]` keeps the list to the run's orders. A filter a list does not have is ignored."
 							}
 						},
 						{
@@ -11854,7 +12413,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"// Two days either side of today: outside today in any shop's time zone.",
+											"// Two days either side of today, in UTC as every date bound the API reads.",
 											"const day = (shift) => new Date(Date.now() + shift * 86400000).toISOString().slice(0, 10);",
 											"pm.collectionVariables.set('dayAhead', day(2));",
 											"pm.collectionVariables.set('dayBehind', day(-2));"
@@ -11911,7 +12470,7 @@
 										}
 									]
 								},
-								"description": "The orders placed up to that date and time, in the shop's time zone: two days ago lists neither of the run's orders. `filter[search]` keeps the list to the run's orders. A filter a list does not have is ignored."
+								"description": "The orders placed up to that date and time, in UTC (a day alone is the whole day): two days ago lists neither of the run's orders. `filter[search]` keeps the list to the run's orders. A filter a list does not have is ignored."
 							}
 						},
 						{
@@ -11966,7 +12525,7 @@
 										}
 									]
 								},
-								"description": "`POST v1/alfa/orders/:id/shipments` `{id_shipment_method, tracking_number?, status?, shipping_cost_tax_incl?, shipping_cost_tax_excl?, shipping_tax_rate?, items?: [{id_order_item, quantity}]}`.\n\n`shipping_cost_tax_incl` alone is an untaxed charge. A taxed charge sends all three, the rate as a string of at most three decimal places (\"24\"), exactly the shipping tax that applies to the order; the figures must be exactly what the method's entry mode makes of them. A charge basis in the body is not read.\n\nEach shipment of the answer carries `added` (when the parcel was recorded), `shipping_charge_basis` and `shipping_tax_chain` (the rates its charge was calculated with, in order, each `{rate, name}`).",
+								"description": "`POST v1/alfa/orders/:id/shipments` `{id_shipment_method, tracking_number?, carrier?, status?, weight?, shipping_cost_tax_incl?, shipping_cost_tax_excl?, shipping_tax_rate?, items?: [{id_order_item, quantity}]}`. Send `id_shipment_method`: the route does not refuse a parcel without one.\n\n`shipping_cost_tax_incl` alone is an untaxed charge. A taxed charge sends all three, the rate as a string of at most three decimal places (\"24\"), exactly the shipping tax that applies to the order; the figures must be exactly what the method's entry mode makes of them. A charge basis in the body is not read.\n\nEach shipment of the answer carries `added` (when the parcel was recorded), `shipping_charge_basis` and `shipping_tax_chain` (the rates its charge was calculated with, in order, each `{rate, name}`).",
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"id_shipment_method\": {{opsShipmentMethodId}},\n  \"tracking_number\": \"APIC-{{run}}\",\n  \"shipping_cost_tax_incl\": \"5.00\",\n  \"items\": [\n    {\n      \"id_order_item\": {{lineId}},\n      \"quantity\": 1\n    }\n  ]\n}",
@@ -12159,6 +12718,150 @@
 									]
 								},
 								"description": "`DELETE v1/alfa/orders/:id/shipments/:shipmentId` removes a parcel, as the order screen does: its lines are free again for another parcel and the order's history records the removal. The carrier is not told."
+							}
+						},
+						{
+							"name": "Read the order's payments",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    const doc = pm.response.json();",
+											"    pm.test('JSON:API list of type orderpayments', () => { pm.expect(doc.data).to.be.an('array'); doc.data.forEach(r => pm.expect(r.type).to.eql('orderpayments')); pm.expect(doc.meta).to.have.property('total-pages'); });",
+											"    pm.test('The payment, with its status and amount', () => { const p = doc.data.find(r => String(r.id) === pm.collectionVariables.get('paymentId')); pm.expect(p).to.be.an('object'); pm.expect(p.attributes.transaction_status).to.eql('completed'); pm.expect(p.attributes.amount).to.have.property('amount'); });",
+											"    pm.test('The refund too', () => pm.expect(doc.data.some(r => r.attributes.payment_type === 'refund')).to.eql(true));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/payments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"payments"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "`GET v1/alfa/orders/:id/payments`: the order's payments as a JSON:API list of type `orderpayments`, each with the values `GET v1/alfa/orders/:id` gives it under `payments` (the refund above among them). Takes `page[offset]` and `page[limit]`; asks Orders: View."
+							}
+						},
+						{
+							"name": "Read the order's parcels",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    const doc = pm.response.json();",
+											"    pm.test('JSON:API list of type ordershipments', () => { pm.expect(doc.data).to.be.an('array'); doc.data.forEach(r => pm.expect(r.type).to.eql('ordershipments')); });",
+											"    pm.test('The parcel, with its status and lines', () => { const s = doc.data.find(r => String(r.id) === pm.collectionVariables.get('shipmentId')); pm.expect(s).to.be.an('object'); pm.expect(s.attributes.status).to.eql('shipped'); pm.expect(s.attributes.items).to.be.an('array'); });",
+											"    pm.test('Not listed: the parcel removed', () => pm.expect(doc.data.map(r => String(r.id))).to.not.include(pm.collectionVariables.get('removedShipmentId')));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/shipments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"shipments"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "`GET v1/alfa/orders/:id/shipments`: the order's parcels as a JSON:API list of type `ordershipments`, each with the values `GET v1/alfa/orders/:id` gives it under `shipments`. The parcel removed above is not listed."
+							}
+						},
+						{
+							"name": "Read the payments (no such order)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 404', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(404));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id/payments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id",
+										"payments"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "999999999",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "An order that does not exist: 404."
 							}
 						},
 						{
@@ -12504,6 +13207,70 @@
 							}
 						},
 						{
+							"name": "Clean up: trash the second order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"if (pm.response.code === 200) {",
+											"    pm.test('JSON:API item of type orders', () => {",
+											"        const doc = pm.response.json();",
+											"        pm.expect(doc.data.type).to.eql('orders');",
+											"        pm.expect(String(doc.data.id)).to.eql(String(pm.collectionVariables.get('opsOrder2Id')));",
+											"    });",
+											"    pm.test('Trashed', () => pm.expect(Number(pm.response.json().data.attributes.state)).to.eql(-2));",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{opsOrder2Id}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "The run's second order, moved to the trash before its delete.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"state\": -2\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
 							"name": "Clean up: delete the second order",
 							"event": [
 								{
@@ -12546,7 +13313,7 @@
 										}
 									]
 								},
-								"description": "The run's second order, removed."
+								"description": "The run's second order, removed from the trash."
 							}
 						},
 						{
@@ -12642,7 +13409,7 @@
 								"description": "The run's own product, trashed before its delete.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Προϊόν συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection product {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Προϊόν συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection product {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12803,7 +13570,7 @@
 								"description": "The run's own category, trashed: the archived product keeps it as its default category.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Κατηγορία συλλογής API {{run}}\",\n  \"name_en_gb\": \"API collection category {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Κατηγορία συλλογής API {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"API collection category {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12909,7 +13676,7 @@
 								"description": "The run's own payment method, trashed before its delete.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Αντικαταβολή {{run}}\",\n  \"name_en_gb\": \"Cash on delivery {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Αντικαταβολή {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Cash on delivery {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -13016,7 +13783,7 @@
 								"description": "The run's own shipment method, trashed before its delete.",
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name_el_gr\": \"Παράδοση {{run}}\",\n  \"name_en_gb\": \"Standard delivery {{run}}\",\n  \"state\": -2\n}",
+									"raw": "{\n  \"translations\": {\n    \"el_gr\": {\n      \"name\": \"Παράδοση {{run}}\"\n    },\n    \"en_gb\": {\n      \"name\": \"Standard delivery {{run}}\"\n    }\n  },\n  \"state\": -2\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -13077,7 +13844,7 @@
 							}
 						}
 					],
-					"description": "Verbs on a placed order's sub-resources, never a fat PATCH of the order: each delegates to the service that owns the invariant (stock reconcile, the payment ledger's row lock and money caps, the shipment ledger's parcel quantities) and answers with the FULL updated order. They need the orders edit permission; the status change needs Change State and view. An `:id` that names no order, and a line, payment or shipment of another order, answer 404. The setup requests make the run's own product, methods, invoicing status and order. The run leaves on record its order (cancelled, with the invoice it issued: an issued document is immutable), the product (archived: a product with order history is not deleted), the product's category and the two methods the order used (in the trash)."
+					"description": "Verbs on a placed order's sub-resources, never a fat PATCH of the order: each delegates to the service that owns the invariant (stock reconcile, the payment ledger's row lock and money caps, the shipment ledger's parcel quantities) and answers with the FULL updated order. They need the orders edit permission; the status change needs Change State and view; the lists of an order's payments and parcels need the orders view permission. An `:id` that names no order, and a line, payment or shipment of another order, answer 404. The setup requests make the run's own product, methods, invoicing status and order. The run leaves on record its order (cancelled, with the invoice it issued: an issued document is immutable), the product (archived: a product with order history is not deleted), the product's category and the two methods the order used (in the trash)."
 				}
 			],
 			"description": "Orders, the order-status workflow and the operations on a placed order."
@@ -13297,7 +14064,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, title, name, location_type, capabilities, kind, owner_type, owner_id, is_default, state, ordering, created, created_by, modified, modified_by, translations\n\n`translations` is the full per-language map and can be sent straight back on a write."
+								"description": "**Returns:** id, title, name, location_type, capabilities, kind, owner_type, owner_id, is_default, state, ordering, created, created_by, modified, modified_by, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are."
 							}
 						},
 						{
@@ -13694,7 +14461,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"// Two days either side of today: outside today in any shop's time zone.",
+											"// Two days either side of today, in UTC as every date bound the API reads.",
 											"const day = (shift) => new Date(Date.now() + shift * 86400000).toISOString().slice(0, 10);",
 											"pm.collectionVariables.set('dayAhead', day(2));",
 											"pm.collectionVariables.set('dayBehind', day(-2));"
@@ -13745,7 +14512,7 @@
 										}
 									]
 								},
-								"description": "The movements from that date and time on, in the shop's time zone: two days ahead, none yet."
+								"description": "The movements from that date and time on, in UTC: two days ahead, none yet."
 							}
 						},
 						{
@@ -13795,7 +14562,7 @@
 										}
 									]
 								},
-								"description": "The movements up to that date and time, in the shop's time zone: none before the year 2000."
+								"description": "The movements up to that date and time, in UTC: none before the year 2000."
 							}
 						}
 					]
@@ -13930,7 +14697,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"// Two days either side of today: outside today in any shop's time zone.",
+											"// Two days either side of today, in UTC as every date bound the API reads.",
 											"const day = (shift) => new Date(Date.now() + shift * 86400000).toISOString().slice(0, 10);",
 											"pm.collectionVariables.set('dayAhead', day(2));",
 											"pm.collectionVariables.set('dayBehind', day(-2));"
@@ -13985,7 +14752,7 @@
 										}
 									]
 								},
-								"description": "The documents of that date and after, by their date in the shop's time zone (Y-m-d): the run's invoice, issued today, is not listed from two days ahead."
+								"description": "The documents issued from that date and time on, by their issue time in UTC (a day alone is its first second): the run's invoice, issued today, is not listed from two days ahead."
 							}
 						},
 						{
@@ -13996,7 +14763,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"// Two days either side of today: outside today in any shop's time zone.",
+											"// Two days either side of today, in UTC as every date bound the API reads.",
 											"const day = (shift) => new Date(Date.now() + shift * 86400000).toISOString().slice(0, 10);",
 											"pm.collectionVariables.set('dayAhead', day(2));",
 											"pm.collectionVariables.set('dayBehind', day(-2));"
@@ -14051,7 +14818,7 @@
 										}
 									]
 								},
-								"description": "The documents of that date and before: the run's invoice is not listed up to two days ago."
+								"description": "The documents issued up to that date and time, in UTC (a day alone is the whole day): the run's invoice is not listed up to two days ago."
 							}
 						},
 						{
@@ -14197,7 +14964,7 @@
 										}
 									]
 								},
-								"description": "The rendered document as a PDF (`application/pdf`, inline, with its file name). Needs the dompdf library (lib_dompdf) installed on the site: without it the route answers 503 with a sentence that names the library, and the setup checklist says where to get it."
+								"description": "The rendered document as a PDF (`application/pdf`, inline, with its file name). The dompdf library ships with Alfa Commerce: when it, or a library it needs, is missing or disabled, the route answers 503 with a sentence that names it."
 							}
 						},
 						{
@@ -14586,7 +15353,7 @@
 										}
 									]
 								},
-								"description": "**Returns:** id, alias, name, family, quantity_pool, shows_prices, movement_mode, requires_original, corrects, requires_buyer_tax_id, stock_effect, default_layout, icon, color, ordering, state, is_core, provider, provider_version, translations\n\n`translations` is the full per-language map and can be sent straight back on a write.\n\nA semantics registry: readable list and item, no writes."
+								"description": "**Returns:** id, alias, name, family, quantity_pool, shows_prices, movement_mode, requires_original, corrects, requires_buyer_tax_id, stock_effect, default_layout, icon, color, ordering, state, is_core, provider, provider_version, translations\n\nWith `include=translations` the record also carries `translations`, every language's texts, which a write takes back as they are.\n\nA semantics registry: readable list and item, no writes."
 							}
 						}
 					]
