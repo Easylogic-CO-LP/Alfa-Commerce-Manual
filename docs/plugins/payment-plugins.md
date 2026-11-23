@@ -401,7 +401,7 @@ Your plugin carries its own texts and loads them.
 | A setting is always empty in `onCartView` | You read `$method->params[...]`. There the method is an object: use `->param('key')`. |
 | A setting you added is never saved | Its field is outside `<fields name="paymentsparams">` |
 | `$order->id` is empty | The order is an `Order` object: use `$order->id()` |
-| `getOrder()` is `null` in `onPaymentResponse` or `onPaymentWebhook` | It always is. Find the order from your provider's data. |
+| `onPaymentResponse` or `onPaymentWebhook` stops with "Call to undefined method" on `getOrder()` | These two events carry no order and have no `getOrder()`. Find the order from your provider's data. |
 | A refund verb answers `OUTCOME_FAILED` and nothing is written | It was called inside a database transaction |
 | A refund button disappeared from a completed payment | The refund block holds: a provider reported a refund the books do not hold. Staff resolve that report first. |
 | `save()`, `settleAttempt()` or `deletePayment()` refuses a row | The row was written by another plugin. A plugin changes only its own rows. |
