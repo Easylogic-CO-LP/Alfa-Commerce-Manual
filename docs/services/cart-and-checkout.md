@@ -6,7 +6,7 @@ description: The services behind the cart and the placement of an order, what a 
 
 # Cart and checkout
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 A shopper's cart is calculated again on every request that shows it. When the shopper places the order, the cart is
 turned into an order as one unit and then deleted. This page explains the classes that do this, and says for each
@@ -82,6 +82,9 @@ These events hand it to you with `getCart()`:
 the shipping cost are what is being decided there. Use `getSubtotal()` in those two. In `onCartView` the total
 exists and `getTotal()` answers.
 
+In `onCartTotals` and `onCalculateShippingCost` the cart holds only the lines that are paid for: an unavailable line
+(see `isUnavailable()` below) is not in it and not in its counts.
+
 A cart line (`CartLine`):
 
 | Method | Returns | Meaning |
@@ -93,9 +96,9 @@ A cart line (`CartLine`):
 | `name()` | `string` | The item's name in the active language |
 | `width()`, `height()`, `depth()`, `weight()` | `float` | The measurements of one unit: the item's own, replaced by the combination's where the combination sets them. Plain numbers in the shop's units. |
 | `isVirtual()` | `bool` | Nothing here to carry |
-| `isUnavailable()` | `bool` | The line cannot be bought as it stands. It stays in the cart, named, the shopper can remove it, and the checkout refuses it by name. A line is unavailable when its item has left the catalogue (the line has no price); when a field the line carries, or a required field, has a plugin that cannot answer (no price); when no price applies at its quantity (in the order builder the line waits for its custom price); when its quantity is too small to be charged (the line says from which quantity it can be); and when its unit cannot be bought now (out of stock, or a stored combination that was removed or archived). |
+| `isUnavailable()` | `bool` | The line cannot be bought as it stands. It stays in the cart, named, the shopper can remove it, and the checkout refuses it by name. A line is unavailable when its item has left the catalogue (the line has no price); when a field the line carries, or a required field, has a plugin that cannot answer (no price); when no price applies at its quantity (in the order builder the line waits for its custom price); when its quantity is too small to be charged (the line says from which quantity it can be); and when its unit cannot be bought now (out of stock, a stored combination that was unpublished, archived or removed, or a line without a combination on an item that now has combinations). |
 
-The address reader (`AddressView`) gives the checkout fields. The examples in the class comment are:
+The address reader (`AddressView`) gives the checkout fields. Two of the examples in the comment of `Cart::delivery()`:
 
 ```php
 $postcode = $cart->delivery()->field($postcodeFieldId)->value();
@@ -120,7 +123,7 @@ and a full sample are on [Order and cart events](../events/order-and-cart-events
 | What it guarantees | What it refuses |
 |---|---|
 | A charge that reaches the totals is complete: it has a label and either an amount or a percentage | A blank code, an amount of 0 or less, a percentage of 0 or less or above 100, a tax rate outside 0 to 100, and `amount()` together with `percent()`. Each throws at the call. |
-| The charge is stored with the order when the order is placed | A charge without a label, or without `amount()` or `percent()`. It is dropped when Alfa collects the charges. |
+| The charge is stored with the order when the order is placed | A charge without a label, or without `amount()` or `percent()`. It is dropped when Alfa collects the charges, and so is every other charge of the same plugin. |
 
 ## CartService
 
@@ -215,16 +218,16 @@ Every method below is public. **Looks** never create a cart. **Changes** may cre
 | `currency` | `Currency` | The cart's currency |
 | `totals` | `CartTotalsView` | What it costs, see below |
 | `rules` | `CartRulesView` | The cart rules applied (`applied`), the codes held (`codes`), rules the shopper is close to (`progress`), and their sum (`total`) |
-| `offers` | `?CartOffersView` | The payment and shipping methods offered (a shipping method only when its plugin answers a price for the cart as the checkout stands), the chosen ones, and `shipmentNeeds` with `needsKey()`: what the checkout has not given yet that a withheld method waits for. Null on the cart module's reading, `CartService::summary()`, which reads the lines and the totals only. |
+| `offers` | `?CartOffersView` | The payment and shipping methods offered (on the storefront, a shipping method only when its plugin answers a price for the cart as the checkout stands), the chosen ones, and `shipmentNeeds` with `needsKey()`: what the checkout has not given yet that a withheld method waits for. Null on the cart module's reading, `CartService::summary()`, which reads the lines and the totals only. |
 | `customer` | `User` | Whose cart it is |
 | `placeId` | `?int` | The delivery place of this request, and the place the cart's goods are priced at. |
 | `shipmentId` | `int` | The chosen shipping method, or 0, on every reading. |
 
-A checkout form override wraps the delivery fields in an element with `data-cart-delivery-fields`, so a change to
-any of them reads the methods again.
-
 Its methods are `isEmpty()`, `exists()` and `shippingAwaitsChoice()`: the cart needs shipping and no
 shipping method is chosen yet, so the shipping cost is not known. It is not zero.
+
+A checkout form override wraps the delivery fields in an element with `data-cart-delivery-fields`, so a change to
+any of them reads the methods again.
 
 `CartTotalsView`, each amount a `Money` object:
 
@@ -289,7 +292,8 @@ A plugin cannot add a cart rule or lower a total through an event. A charge adde
 ### What it does
 
 `OrderPlacement` turns one cart into one order. It checks, asks the plugins that may refuse, saves the order as one
-unit, and then lets the payment and shipping plugins write their rows.
+unit, and then lets the payment plugin write its row, records the order's parcel and hands it to the shipping plugin
+to complete.
 
 It is core's own. Alfa calls it from the storefront's cart controller, and from the back office when staff place an
 order for a customer. An extension takes part through the events in the picture, and never calls it.
@@ -316,7 +320,7 @@ sequenceDiagram
     Alfa->>Alfa: Writes the charges, the cart rules used and the steps it owes, deletes the cart
     Note over Alfa: The save is final here
     Alfa->>Alfa: Reads the saved order, raises the new order alert, uses customer credit if asked
-    Alfa->>M: onOrderAfterPlace, to the payment plugin, then the shipping plugin
+    Alfa->>M: onOrderAfterPlace to the payment plugin, records the order's parcel, onOrderAfterPlace to the shipping plugin
     Alfa->>Alfa: Runs the steps it owes: download access, then the confirmation e-mail
     Alfa->>L: onAlfaOrderPlaced
     Alfa->>Shopper: Shows the next page
@@ -336,8 +340,8 @@ drawn one by one.
 | 7 | The plugin charges and the cart rules used are stored with the order. If one of them cannot be written, the placement fails: an order is never saved with money rows that disagree with its total. |
 | 7 | Two steps are recorded as [background work](../reference/glossary.md#background-work): download access and the confirmation e-mail. |
 | 7 | The cart is deleted **inside** the save. Cart and order never exist together. |
-| The line | The save is final (the commit, `OrderPlacement.php` line 528). The order exists, and nothing after this line can make that untrue. |
-| 9 | The payment plugin and the shipping plugin each write their row. Each row is a save of its own. |
+| The line | The save is final (the commit, `OrderPlacement.php` line 549). The order exists, and nothing after this line can make that untrue. |
+| 9 | The payment plugin writes its row. Alfa records the order's parcel, with the shipping charge and every item, and the shipping plugin completes it. Each is a save of its own. |
 | 10 | The two recorded steps run after both plugins are done, so the confirmation e-mail shows the order with its payment and its parcel. |
 | 11 | `onAlfaOrderPlaced` is announced last, so a listener sees the order as the shopper completed it. |
 
@@ -362,7 +366,8 @@ The save is final at one point, and what happens after it cannot undo it.
 | Anything before the line | No order. Nothing was written. The cart is as it was. | The reason, as a message |
 | Reading the saved order back | The order, without a payment row and without a parcel. `onAlfaOrderPlaced` is not announced. | A warning that part of the order could not be set up |
 | The payment plugin in step 9 | The order without a payment row. The shipping plugin is still called. | The same warning, naming what failed |
-| The shipping plugin in step 9 | The order without a parcel | The same warning |
+| Recording the parcel in step 9 | The order without a parcel. The shipping plugin is not called, and staff get a notice naming the charge to add by hand. | The same warning |
+| The shipping plugin in step 9 | The order with its parcel, without what the plugin adds to it | The same warning |
 | Customer credit could not be used | The order. The payment plugin is asked to collect the full total. | A warning that the credit was not used |
 | A listener of `onAlfaOrderPlaced` | The order, complete. The error is logged and the next listener runs. | Nothing |
 | Any other error after the line | The order | A warning. The placement still answers "placed". |
@@ -401,14 +406,16 @@ order an order is worked:
    Remove). The Add item button is in the section's heading. Under the lines, the goods before and after rules, each
    rule that applied (a coupon code with its remove button), tax, shipping, every plugin's charge and the total; under
    the table, the coupon box.
-3. **Shipment and payment.** The methods the engine offers this cart, as the storefront offers them.
+3. **Shipment and payment.** The methods the engine offers this cart. They differ from the storefront's in two ways:
+   only the payment methods whose plugin allows staff to place orders are listed, and the shipping methods are listed
+   without asking their plugins for a price (only the chosen one is priced).
 4. **Summary and placement.** The cart's state and activity, the codes it holds, and the placement card: the facts the
    order will carry, the checkout fields, the status the order lands in and whether the customer's credit is spent.
 
 A plugin's section follows these four (a fieldset added in `onAlfaAdminForm` for the target `cart`, see
 [Admin screen events](../plugins/admin-screen-events.md)). Each form on the page posts on its own and the page is drawn
-again from the cart. When the reply has nothing to say, the page opens again at the section the form belongs to; when
-it has a message, it opens at the top, where Joomla prints the message.
+again from the cart. When the reply to a form of the first three sections has nothing to say, the page opens again at
+that section; otherwise it opens at the top, where Joomla prints a message.
 
 The screen reads the administrator's language file. The checkout's notices and refusals it prints come from the
 storefront's file, which it loads first, with the administrator's loaded again over it: a key both files carry reads
