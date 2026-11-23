@@ -126,7 +126,7 @@ vouchers, a gateway's statements) go under `Storage::root()`, in a folder named 
 you create:
 
 ```php
-$folder = Storage::root() . '/plg_alfa-shipments_boxnow';   // a plugin: plg_<group>_<element>
+$folder = Storage::root() . '/plg_alfa-shipments_example';  // a plugin: plg_<group>_<element>
 $folder = Storage::root() . '/mod_alfa_example';            // a module: mod_<name>
 ```
 
