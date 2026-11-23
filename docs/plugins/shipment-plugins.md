@@ -370,9 +370,8 @@ is given one address and uses it for every parcel.
 The webhook address is always the plain form, the site root, `https`, and
 `index.php` with the query in the table above, with no language and no friendly path, whoever builds it. A POST to it
 reaches your plugin. A GET reaches it too, without a redirect, while "System - Alfa Commerce Sync" is enabled with its
-Access set to Public. An address a carrier already holds in Joomla's friendly form keeps reaching the same plugin.
-`ShipmentsPlugin::webhookUrlFor(element: 'flat')` builds the address of any shipping plugin by its element. The
-return address is routed by Joomla, like any link of the site. See
+Access set to Public. An address a carrier holds in Joomla's friendly form reaches the same plugin. The return
+address is routed by Joomla, like any link of the site. See
 [Return and webhook addresses](./payment-plugin-money.md#return-and-webhook-addresses) of the payment plugins.
 
 What the carrier's server is answered:

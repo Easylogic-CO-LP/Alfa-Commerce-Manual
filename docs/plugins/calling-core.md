@@ -52,7 +52,7 @@ Most are static calls. The classes are in these namespaces:
 | Class | Namespace |
 |---|---|
 | `ItemModel`, `OrderModel` | `Alfa\Component\Alfa\Administrator\Model` |
-| `ActionLogHelper`, `AlfaHelper`, `FieldsHelper`, `MultilingualHelper`, `MysqlError`, `NotificationHelper`, `PackageHelper`, `TransactionState` | `Alfa\Component\Alfa\Administrator\Helper` |
+| `ActionLogHelper`, `AlfaHelper`, `FieldsHelper`, `MultilingualHelper`, `MysqlError`, `NotificationHelper`, `PackageHelper`, `PaymentToken`, `TransactionState` | `Alfa\Component\Alfa\Administrator\Helper` |
 | `EmailService`, `InstalmentTiers`, `LinePricing`, `OrderCreateParts`, `OrderExternalReference`, `OrderMoneyLock`, `OrderSource`, `PaymentEnvironment`, `PaymentLedger`, `PaymentReferenceVault`, `PaymentWriteVerdict`, `RefundMark`, `ShipmentBookingLock`, `Transition` | `Alfa\Component\Alfa\Administrator\Service\Order` |
 | `CartResolution`, `OperatorCheckout` | `Alfa\Component\Alfa\Administrator\Service\Cart` |
 | `CommerceChange`, `ItemWriteService`, `PricesState`, `StockPriceList` | `Alfa\Component\Alfa\Administrator\Service\Catalog` |
@@ -104,6 +104,7 @@ Most are static calls. The classes are in these namespaces:
 | `InstalmentTiers::selected(int $max): int` | **READ ONLY.** The count to show as chosen: this request's choice, else the remembered one. |
 | `InstalmentTiers::remember(int $count): void` | **SESSION ONLY.** Keeps the buyer's choice for the visit to the gateway. |
 | `InstalmentTiers::take(): int` | **SESSION ONLY.** Reads the remembered choice and clears it; 1 when there is none. |
+| `PaymentToken::for(int $orderId, string $secureKey): string` | **READ ONLY.** The order's payment token, for a return address that names the order; `orderFromReturnLink()` checks it on the way back. |
 
 ### Installing an extension and keeping its files
 
@@ -129,7 +130,7 @@ Most are static calls. The classes are in these namespaces:
 | `PlaceTree::countryOf(int $placeId): ?array` | **READ ONLY.** The country a place belongs to: the place at the top of its chain, as `id`, `code2` and `code3`, its ISO 3166-1 codes in capitals, published or not; `null` for 0 or an id that does not exist. `code2` and `code3` are empty when the top place carries none (a chain cut from its country by a parent that no longer exists, or a top place stored without codes), and you then have no country. The first call in a PHP process (one request on the web) reads the place table once and keeps it, so a place changed later in the same process may not be seen. A failed read of the place table throws the database's exception: `null` only ever means no such place. |
 | `MultilingualHelper::resolveLangMap($map, string $lang = ''): string` | **READ ONLY.** One text from a `{language: text}` map, in the language given (an empty language is this request's), else the default language, else the first entry that is not empty. |
 | `PluginPayload::of(?string $json, string $source = ''): self` | **READ ONLY.** A plugin payload read from a stored column: empty for `NULL`, `''` or `'null'`; a column that holds anything else throws. |
-| `PluginId::of(string $id): self`, `PluginId::from(string $group, string $element): self` | **ANSWERS.** A plugin's identity, from its string form `group.element` (for example `alfa-payments.standard`) or from its group and element; `of()` throws `InvalidArgumentException` for a string that is not `group.element`. `ExtensionJob::enqueue()` and `OutboundConsumers::ofPlugin()` take it. |
+| `PluginId::of(string $id): self`, `PluginId::from(string $group, string $element): self` | **READ ONLY.** A plugin's identity, from its string form `group.element` (for example `alfa-payments.standard`) or from its group and element; `of()` throws `InvalidArgumentException` for a string that is not `group.element`. `ExtensionJob::enqueue()` and `OutboundConsumers::ofPlugin()` take it. |
 
 ### Products, their stock and their prices
 
@@ -141,7 +142,7 @@ Most are static calls. The classes are in these namespaces:
 | `StockPriceList::page(int $limit, int $afterItem = 0, int $afterCombination = 0, ?string $changedSince = null): array`, `key(string $key): ?array` | **READ ONLY.** One page of units in key order: a product without combinations, else each of its combinations, published or unpublished, with its codes, its stock figures and the price a guest pays at no place in the shop's currency. The answer holds `rows`, `next` (the key `<item>:<combination>` the next page starts after, when the page is full), `currency` and `priced`. A page holds 1 to `PAGE_MAX` (1000) units. `key()` reads a page key back, or `null`. |
 | `CommerceChange::COLUMN`, `now(): string`, `bound(string $bound): ?string` | **READ ONLY.** The time a product's stock or prices last changed is its `commerce_changed_at` (`COLUMN`), in UTC to the microsecond; `now()` gives now in that form. `bound()` reads a `changed_since` bound as the column compares it (a bound without a zone is UTC), or `null` when it is not a date and time. |
 | `MediaFetch::fetch(string $url, array $allowedMimes): array` on a `new MediaFetch()`, `MediaFetch::urlHash(string $url): string` | **READ ONLY.** An image fetched from an outside address into a temporary file you store and remove: `file`, `name` and `mime`. Only http and https, every address of the host public (`OutboundAddressGuard`), at most `MAX_REDIRECTS` (3) redirects, each vetted, the size and the seconds of the Options, the type read from the content. A refusal throws `MediaFetchRefused`. `urlHash()` is the hash a media row keeps of its address. |
-| `MediaUrls::prepare(array $rows, string $origin, int $recordId, ?MediaFetch $fetch = null): array`, `refusals(): array` | **READ ONLY.** The images a write gives as addresses, brought to the upload path: an address the record already holds an image from is dropped, up to `INLINE` (2) are fetched at once, more are left for the save to queue. `refusals()` names each refused image by its JSON pointer, once. |
+| `MediaUrls::prepare(array $rows, string $origin, int $recordId, ?MediaFetch $fetch = null): array`, `refusals(): array` | **WRITE.** The images a write gives as addresses, brought to the upload path: an address the record already holds an image from is dropped, up to `INLINE` (2) are fetched at once, more are left for the save to queue. `refusals()` names each refused image by its JSON pointer, once. |
 
 ### Orders, payments and statuses
 
@@ -225,6 +226,7 @@ a major version, is never used for anything else. Codes may be added, kinds neve
 | `webhookUrl(?string $environment = null): string` | **READ ONLY.** The absolute notification address, always https. Throws an `InvalidArgumentException` for an environment other than `sandbox` or `live`. |
 | `PaymentsPlugin::getProcessPageUrl()`, `getCompletePageUrl()` (public) | **READ ONLY.** The addresses of the process page and of the completion page. |
 | `PaymentsPlugin::authenticatedReturnFor(int $orderId)` (final, public) | **SESSION ONLY.** Points the visitor's session at the order and its mark. Idempotent; reads no table; outside a storefront request it sets nothing; an id below 1 throws an `InvalidArgumentException`. Call it from `onPaymentResponse` once the return is authenticated, for every authentic return whatever its result. |
+| `orderFromReturnLink(): ?Order` | **READ ONLY.** The order a browser-return link names when its payment token proves the browser may see it; never proof that a payment was made. |
 
 ### The plugin's own log
 
@@ -235,7 +237,7 @@ These come from the `Plugin` class, so every Alfa plugin has them.
 | `log(array $data): int` | **ANSWERS.** Inserts a row of your log table (no `id`), or changes one (an existing `id`, only the columns passed). The row's id, or 0 when it could not be written. |
 | `logForMethod(int $methodId, array $data): int` | **ANSWERS.** A row about a method and no order (`id_order` 0). The row's id, or 0. |
 | `loadLogs(int $orderId, int $identifierId = 0, array $filters = [], bool $asArray = true): ?array` | **READ ONLY.** The order's rows, or `null` when the table does not exist. |
-| `loadMethodLogs(int $methodId, array $filters = [], int $limit = 0): array` | **READ ONLY.** The method's own rows only, newest first; empty when there are none or the read failed. Its first call in a request creates or completes your log table when it lacks something, never inside a transaction. |
+| `loadMethodLogs(int $methodId, array $filters = [], int $limit = 0): array` | **WRITE.** The method's own rows only, newest first; empty when there are none or the read failed. Its first call in a request creates or completes your log table when it lacks something, never inside a transaction. |
 | `logCategory(): string` | **READ ONLY.** Your plugin's own Joomla Log category (`com_alfa.payments.<element>` for a payment plugin). |
 | `getLogTableName(int $prefix = 2): string`, `getLogsSchema(): ?SimpleXMLElement` | **READ ONLY.** Your log table's name; your parsed `logs.xml`, or `null`. For the layout that shows the rows. |
 

@@ -339,9 +339,6 @@ $order = $this->orderFromReturnLink();   // the order, or null when the link pro
   [System, console and task plugins](./system-console-task-plugins.md#the-system-plugin-that-ships-alfa-commerce-sync).
 - An address in the friendly form reaches the same plugin. If your plugin compares the address registered at the
   provider with the one it builds, the two differ in text for such a registration, although both reach your plugin.
-- `PaymentsPlugin::webhookUrlFor(element: 'offline', environment: 'live')` builds the same address for any payment
-  plugin by its element, and `PaymentsPlugin::webhookTask()` answers `payment.webhook`. `ShipmentsPlugin` has the same
-  two for `shipment.webhook`.
 
 ### Authenticating a callback
 
