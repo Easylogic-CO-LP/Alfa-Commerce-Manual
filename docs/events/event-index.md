@@ -76,11 +76,11 @@ The column below gives the line that raises each one.
 | `onAlfaAdminRender` | `AdminRenderEvent` | Announced | No | While a page is drawn | `administrator/src/View/HasAdminEvents.php:154` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminrender) |
 | `onAlfaAdminForm` | `AdminFormEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:272` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminform) |
 | `onAlfaAdminPrepareData` | `AdminPrepareDataEvent` | Announced | No | While a page is drawn | `administrator/src/Model/AlfaAdminModel.php:307` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminpreparedata) |
-| `onAlfaAdminValidate` | `AdminValidateEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:379` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminvalidate) |
-| `onAlfaAdminBeforeSave` | `AdminBeforeSaveEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:685` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforesave) |
+| `onAlfaAdminValidate` | `AdminValidateEvent` | Announced | Yes, with `addError()` or by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:379` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminvalidate) |
+| `onAlfaAdminBeforeSave` | `AdminBeforeSaveEvent` | Announced | Yes, with `addError()` or by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:685` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforesave) |
 | `onAlfaAdminAfterSave` | `AdminAfterSaveEvent` | Announced | No | After the save of the record's own row is final; for an item, a discount, a tax, a cart rule, a payment method and a shipping method, after the whole save is final | `administrator/src/Model/AlfaAdminModel.php:479` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminaftersave) |
-| `onAlfaAdminBeforeDelete` | `AdminBeforeDeleteEvent` | Announced | Yes, by throwing an error | Before the save | `administrator/src/Model/AlfaAdminModel.php:773` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforedelete) |
-| `onAlfaAdminAfterDelete` | `AdminAfterDeleteEvent` | Announced | No | After the save is final | `administrator/src/Model/AlfaAdminModel.php:566` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete) |
+| `onAlfaAdminBeforeDelete` | `AdminBeforeDeleteEvent` | Announced | Yes, with `addError()` or by throwing an error | Before the delete | `administrator/src/Model/AlfaAdminModel.php:773` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminbeforedelete) |
+| `onAlfaAdminAfterDelete` | `AdminAfterDeleteEvent` | Announced | No | After the delete is final | `administrator/src/Model/AlfaAdminModel.php:566` | [Extending Admin Screens](../plugins/admin-screen-events.md#onalfaadminafterdelete) |
 
 ## Menu, permissions, dashboard, setup and tools
 
