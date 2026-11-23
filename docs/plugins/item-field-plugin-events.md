@@ -7,7 +7,7 @@ description: "Every event an item field plugin receives: when it fires, what it 
 
 <CreatePluginButton type="itemfield" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -15,14 +15,15 @@ description: "Every event an item field plugin receives: when it fires, what it 
 - **Item field plugin events** (this page)
 - [A complete item field plugin](./item-field-plugin-example.md)
 
-In every card, "the field" is the field as staff defined it, with these properties among others: `id`, `type`,
-`field_name`, `display_name`, `informational`, `params_decoded` and `values` (the values of the pool, each with
-`id`, `display_name` and `params_decoded`).
+In the events of the item page, the cards, the cart and the price, "the field" is the field as staff defined it,
+with these properties among others: `id`, `type`, `field_name`, `display_name`, `informational`, `params_decoded`
+and `values` (the values of the pool, each with `id`, `display_name` and `params_decoded`). The events of the
+filters and of the buttons carry less, as their tables say.
 
 ## onItemView
 
 **When it fires.** When Alfa prepares an item page, once for each field of the item. Also when staff open the
-popup that configures an item for an order in the administrator.
+popup that configures an item for an order, or for a line of the order builder, in the administrator.
 
 **Who receives it.** One plugin (targeted): the plugin of the field's type.
 
@@ -30,10 +31,10 @@ popup that configures an item for an order in the administrator.
 
 | Getter | What it returns |
 |---|---|
-| `getItem()` | The item. Among its properties: `variant` (what the shopper's picks led to, see the sample), `options` (the values the item offers as extras), `selectedOptionValueIds`, `informational`. |
+| `getItem()` | The item. Among its properties: `variant` (what the shopper's picks led to, see [the complete example](./item-field-plugin-example.md)), `options` (the values the item offers as extras), `selectedOptionValueIds`, `informational`. |
 | `getField(): object` | The field |
 | `getConfig(): Registry` | The settings your plugin stored for this field on this item. Empty when none. |
-| `getCurrentValue()` | The composition already stored for this field, when the shopper or staff edit an existing line. `null` otherwise. |
+| `getCurrentValue()` | The composition for this field: the one the page sent while the shopper builds it, or the one stored on the line when the shopper or staff edit an existing line. `null` when there is none. |
 | `getSelections(): array` | What is chosen across all fields now: `['sel' => [field id => value id], 'opt' => [value ids]]` |
 | `getSelectedValueIds(): int[]` | The same, as one flat list of value ids |
 
@@ -93,12 +94,13 @@ layout by Alfa.
 | The plugin is disabled, missing or cannot be loaded | The field is not drawn. The page shows without it. |
 | The selector kind does not match the field's use | On a site in debug mode, an error. Otherwise a warning in Joomla's log, category `alfa-item-fields`. |
 | The layout file does not exist | Your layout is not drawn. Alfa falls back to a default layout of its own or to nothing. In debug mode a warning names the missing file. |
-| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an order's item. Whatever your method set or changed before the error is undone, the add to cart area included; the other fields keep theirs. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
+| Your method throws an error | The field is left out and the page shows without it, on the item page and in the back office window that configures an item for an order or the order builder. Whatever your method set or changed before the error is undone, the add to cart area included; the other fields keep theirs. The error is logged once per plugin and event in the request (category `com_alfa.plugins`). |
 
 ## onItemListPrepare
 
 **When it fires.** When Alfa builds a card of an item list, once for each field of the item that has "Show on
-listings" on. A card can be built twice in one request, so act only through the event.
+listings" on, less a field whose condition reads a field the card does not draw. A card can be built twice in one
+request, so act only through the event.
 
 **Who receives it.** One plugin (targeted): the plugin of the field's type.
 
@@ -134,14 +136,18 @@ not the list contains a field of your type.
 **What you are expected to do.** Change the items directly when you need something across cards. The event has
 no setters.
 
-**What happens next.** The list is rendered with the items as you left them.
+**What happens next.** The list is rendered with the items as you left them, except their surfaces: each card
+gets back the surfaces Alfa collected, so a change to `$item->surfaces` is not kept. In catalogue-only mode Alfa then
+draws each card's buy area as the mode wants it.
 
 **If you are missing or you fail.** An error you throw is written to Joomla's log (category `com_alfa.plugins`).
 The other listeners still run and the list is shown.
 
 ## onItemFieldValueFacetGroups
 
-**When it fires.** When Alfa builds the filters of an item list, once for each field, never once per value.
+**When it fires.** When Alfa builds the filters of an item list, once for each field with all its values, never once
+per value. It fires again for a field when Alfa filters or counts the list by the field's groups, then with every
+published value of the field.
 
 **Who receives it.** One plugin (targeted), and only when your class has this method.
 
@@ -149,12 +155,13 @@ The other listeners still run and the list is shown.
 
 | Getter | What it returns |
 |---|---|
-| `getField(): object` | The field |
-| `getValues(): array` | The field's values, keyed by value id. Each is an array with at least `id`, `name` and `params`. |
+| `getField(): object` | The field: `id`, `field_name`, `type`, `params` and `params_decoded`. When Alfa filters or counts by the groups, only `id`, `type` and an empty `params_decoded`. |
+| `getValues(): array` | The field's values, keyed by value id. Each is an array with at least `id` and `params`, and `name` when Alfa builds the filters. |
 
 **What you are expected to do.** Say which **groups** a value belongs to, when several values should be offered
-as one filter entry. The shipped `choice` plugin uses it to offer "Blue", "Navy Blue" and "Blue and Red" under
-one colour.
+as one filter entry. The shipped `choice` plugin groups the values by the colours staff set on them: a value
+"Blue" and a value "Blue and Red" that both carry the same blue are offered under one colour, and "Blue and Red"
+also under red.
 
 | Method | Meaning |
 |---|---|
@@ -282,7 +289,7 @@ breakdown.
 
 **If you are missing or you fail.** An error you throw is written to Joomla's log (category `com_alfa.pricing`)
 and the price is worked out without your lines. On a site in debug mode the error is shown instead. When the
-plugin is unavailable, see "When the plugin is unavailable" below.
+plugin is unavailable, see [When the plugin is unavailable](./item-field-plugins.md#when-the-plugin-is-unavailable).
 
 :::note
 `CalculateItemPriceEvent` cannot replace the final price outright. It changes the price only through the lines
@@ -316,7 +323,8 @@ and event in the request (category `com_alfa.plugins`).
 ## onGetFieldActions
 
 **When it fires.** When the administrator draws a row that your field belongs to: a combination or an option on
-the item's edit screen.
+the item's edit screen. Also before one of your actions runs on the action page, or is sent without a POST, so that
+Alfa knows whether the row offers it and whether it changes data.
 
 **Who receives it.** One plugin (targeted).
 
@@ -327,7 +335,7 @@ the item's edit screen.
 | `getScope(): string` | Which kind of row: `item`, `combination`, `option` or `order` |
 | `getScopeId(): int` | The row's id |
 | `getItemId(): int` | The item |
-| `getField(): object` | The field |
+| `getField(): object` | The field. On a combination row, and when Alfa checks an action before it runs, it is only the field's row of `#__alfa_item_fields`: `params` as JSON text, no `display_name`, `params_decoded` or `values`. |
 
 **What you are expected to do.** Offer buttons:
 
@@ -337,7 +345,7 @@ $event->add('configure', 'Configure')->icon('cog')->readOnly();
 
 `add(string $id, string $label)` returns the button. Its methods include `icon()`, `css()`, `confirm()`,
 `tooltip()`, `priority()`, `disabled()`, `readOnly()` and `mutating()`. A button changes data unless you mark it
-`readOnly()`. A button that only opens a popup is read only.
+`readOnly()`. Mark a button that only opens a popup `readOnly()`.
 
 **What happens next.** Alfa draws the buttons on the row. A click runs `onExecuteFieldAction`.
 
@@ -356,7 +364,7 @@ permission to edit orders.
 | Getter | What it returns |
 |---|---|
 | `getAction(): string` | The id of the action |
-| `getScope()`, `getScopeId()`, `getItemId()`, `getField()` | The row, as in `onGetFieldActions` |
+| `getScope()`, `getScopeId()`, `getItemId()`, `getField()` | The row, as in `onGetFieldActions`. `getField()` is the field's row of `#__alfa_item_fields`. |
 | `getData(): array` | What the browser sent with the click, for example the values of your popup's form |
 
 **What you are expected to do.** Produce an outcome on the event:
