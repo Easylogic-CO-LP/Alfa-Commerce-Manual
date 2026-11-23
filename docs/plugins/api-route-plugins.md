@@ -384,8 +384,9 @@ the plugin's own label. The work is of one of two kinds:
 
 - a **task**, short work done in one go. It is written with the save that asks for it and runs right after that save
   is final, in the same request; with no transaction open it runs before `enqueue()` returns.
-- a **job**, long work done in steps, each step keeping a bookmark. It never runs in the request that asked for it:
-  the runner's next turn runs it.
+- a **job**, long work done in steps, each step keeping a bookmark. The runner's next turn runs it: never before the
+  request that asked for it has answered, and for a REST API request possibly in that request's own turn after its
+  answer is sent.
 
 The plugin declares its work and runs it with public methods named as the events, addressed to it alone and never
 listed in `getSubscribedEvents()`:

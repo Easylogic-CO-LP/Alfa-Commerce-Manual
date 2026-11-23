@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Database Schema
-description: The 115 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
+description: The 119 tables of Alfa Commerce, grouped by area, with what each holds and how the schema changes between releases.
 ---
 
 # Database Schema
@@ -17,15 +17,15 @@ Its comments explain most columns. When a line below says "see the SQL", read th
 
 ## What it does
 
-The install file creates **115 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
+The install file creates **119 tables**. Every name starts with `#__alfa_` (Joomla replaces `#__` with the site's
 table prefix). On top of these come the per-language tables, made at run time, and one log table that a shipped
 plugin makes for itself. Both are described after the groups.
 
-A fresh site with one content language (English) holds 130 tables: these 115, fourteen more language tables and the
+A fresh site with one content language (English) holds 134 tables: these 119, fourteen more language tables and the
 standard shipping plugin's log table.
 
 How to read the diagrams: an arrow goes from a record to the rows that belong to it, and the label names the column
-that holds the link. The database enforces only four of these links with a foreign key (they are marked "foreign
+that holds the link. The database enforces only five of these links with a foreign key (they are marked "foreign
 key" in the text). All the others are id columns that the code keeps in step.
 
 ## Catalogue
@@ -51,6 +51,7 @@ flowchart TB
 | `#__alfa_items_categories` | Which categories an item is in (pair key) |
 | `#__alfa_items_manufacturers` | Which manufacturers an item has (pair key) |
 | `#__alfa_items_links` | Which products a product page shows as related, in order. A row from A to B shows B on A's page only. `link_type` names the kind of link: related is the one kind Alfa Commerce writes and reads (key: the pair and the kind) |
+| `#__alfa_skus` | Every SKU in use, once (key: the SKU): the SKU of each product and each combination, archived ones included. One row per unit |
 | `#__alfa_items_usergroups` | The user groups allowed to see an item (pair key) |
 | `#__alfa_items_users` | The users allowed to see an item (pair key) |
 | `#__alfa_categories` | The category tree (`parent_id`), with layouts, listing options and a publish window |
@@ -164,6 +165,7 @@ flowchart TB
 | `#__alfa_order_items` | The order lines, with the name, SKU, prices, discount and tax frozen on the line, and the quantities refunded and returned |
 | `#__alfa_order_item_fields` | The field choices of an order line, copied at purchase so that they survive later changes to fields and values |
 | `#__alfa_order_cart_rule` | The cart rules applied to an order, frozen with their amounts |
+| `#__alfa_order_item_cart_rule` | Each cart rule's share of each order line, frozen at placement (one row per line and rule). Removed with its order line (foreign key on `id_order_item`) |
 | `#__alfa_order_contributions` | The amounts that plugins added to the order's totals, frozen |
 | `#__alfa_orders_statuses` | The order statuses: colours, what the status does to stock, flags (initial, cancelled, completed), e-mail layouts, document and payment rules |
 | `#__alfa_orders_statuses_en_gb` | The English names and e-mail texts of the statuses the installation creates. The other language table the install file makes itself |
@@ -294,6 +296,8 @@ Work that runs after a save or in the background. See [Background work](backgrou
 |---|---|
 | `#__alfa_tasks` | Tasks of two kinds. A single is one thing a change owes after its commit (an e-mail, a plugin's reaction, a notice). A job is long work done in steps |
 | `#__alfa_task_slots` | Named slots that limit how many jobs run at once (one heavy job at a time) |
+| `#__alfa_work_declarations` | The work each owner (Alfa Commerce or a plugin) declares, as core last read it (key: the owner and the name) |
+| `#__alfa_api_keys` | The idempotency keys of REST API writes, kept 30 days (key: the user, the scope and the key's hash) |
 | `#__alfa_outbound_consumers` | Who the shop tells of its changes: a webhook (an https address, its signing secret, its topics) or a plugin consumer, delivering or paused, with its last delivery and the answer. See [Outgoing notifications](../api/notifications.md) |
 | `#__alfa_outbound_deliveries` | What each consumer is owed: one row a change, written in the transaction of the change; a stock or price change waits once per unit; pending, sent, taken by no consumer (a plugin with no delivery), given up or discarded, with its attempts and the last error |
 
@@ -352,7 +356,7 @@ that the fields and statuses it creates have English names from the first minute
 ### A plugin's log table
 
 A payment or shipping plugin may keep a log table named `#__alfa_{family}_{name}_logs`. The standard payment
-plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 115. The
+plugin's table, `#__alfa_payments_standard_logs`, is in the component's install file and is counted in the 119. The
 standard shipping plugin makes its own, `#__alfa_shipments_standard_logs`, from
 `plugins/alfa-shipments/standard/sql/install.mysql.utf8.sql`. It is the one table a shipped plugin creates itself.
 A plugin declares the columns of its log in its `params/logs.xml` file. The plugin types are introduced in

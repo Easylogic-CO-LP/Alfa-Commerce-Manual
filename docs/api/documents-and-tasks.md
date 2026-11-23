@@ -127,7 +127,7 @@ records.
 | Method and address | What it does | Who may |
 |---|---|---|
 | `GET v1/alfa/tasks` | Lists tasks. Filters: `filter[state]`, `filter[type]`, `filter[owner]`. `page[limit]` is 100 at most. | Users with the Tools permission |
-| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it; for a single of an order, a user with Orders: View; for any other task, a user with the Tools permission |
+| `GET v1/alfa/tasks/:id` | Reads one task | The user who caused it; for a single of an order that Alfa Commerce owes, a user with Orders: View; for any other task, a user with the Tools permission |
 | `POST v1/alfa/tasks/:id/process` | Works on a job for up to 2 seconds | Users with the Tools permission |
 
 A task you may not read answers 404, the same as a task that does not exist, so the API never reveals that a
