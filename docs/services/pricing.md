@@ -413,9 +413,10 @@ The rule covers a product's price, a line's unit and total, the subtotal and the
 module, in the order e-mails and in the printed documents. Tax, shipping, fees and discounts print their amounts as
 they are.
 
-The price layout (`item/price.php`) draws, for a price of zero the Options do not show and for a product with no
-price, its element with `data-item-prices` and, inside it, `<div class="item-price-request">` with the text, or
-nothing. An override of the price layout, of the cart's lines, of the cart summary, of the cart module, of the e-mail
+The price layout (`item/price.php`) draws, for a price of zero the Options do not show, its element with
+`data-item-prices` and, inside it, `<div class="item-price-request">` with the text, or nothing, so a quantity or an
+option that prices the product swaps it. For a product with no price it draws `<div class="item-price-request">` with
+the text, or nothing: such a product is not bought. An override of the price layout, of the cart's lines, of the cart summary, of the cart module, of the e-mail
 partials or of the document partials prints a zero the shop's way when it prints the price through
 `PriceDisplay::price()` or `PriceDisplay::figure()`.
 
