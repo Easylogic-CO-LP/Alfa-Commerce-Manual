@@ -75,6 +75,10 @@ While the shop shows its catalogue only, the notification centre says so, with t
 site's own Cart menu item stays where you put it: unpublish it while the shop shows its catalogue only, and publish it
 again when it sells.
 
+A shop whose customers ask for an offer instead of paying a listed price sells online, with prices of zero shown its
+own way, a cart without amounts and a status for the requests: see
+[A catalogue with requests for offer](requests-for-offer.md).
+
 ## Currencies
 
 **Options**, **Currency**, **Default Currency** is the currency your prices are in. The list shows the published
