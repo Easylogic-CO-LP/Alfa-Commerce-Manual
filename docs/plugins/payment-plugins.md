@@ -64,7 +64,7 @@ offline method that ships with Alfa Commerce) does not cover. Use the Standard p
 
 | You provide | Where | Notes |
 |---|---|---|
-| A manifest | `<element>.xml` | `group="alfa-payments"`, a `<namespace>` for `src` |
+| A manifest | `<element>.xml` | `group="alfa-payments"`, a `<namespace>` for `src`, `<alfacore min="2.3" max="2.3"/>` (see [The Alfa Commerce lines your extension is built for](./overview.md#the-alfa-commerce-lines-your-extension-is-built-for)) |
 | A service provider | `services/provider.php` | Builds your class from `PluginHelper::getPlugin('alfa-payments', '<element>')` |
 | The plugin class | `src/Extension/<Name>.php` | Extends `PaymentsPlugin` |
 | Layouts | `tmpl/*.php` | What your plugin draws |
@@ -143,8 +143,8 @@ What the picture means:
   (see [The order's status](./payment-plugin-money.md#the-orders-status)).
 
 The other events are not part of this timeline: `onItemView` (the item page), `onGetActions` and `onExecuteAction`
-(staff), `onAdminOrderDelete`, `onPaymentCheckup` (the method's settings page), `onClearData` (Tools), and the two
-stored credential events.
+(staff), `onAdminOrderDelete`, `onPaymentCheckup` (the method's settings page), `onClearData` (Tools), the stored
+credential events, and `onAlfaDisputeRefresh` and `onAlfaDisputeAccept` (staff's buttons on a dispute's card).
 
 ### Paying an order again
 
@@ -179,8 +179,8 @@ public function supportsPayAgain(): bool
 
 Core offers Pay now, and lets staff send the payment link, only while the order is there and not in the trash, still
 owes money (`amountToCollect()`), is neither in the cancelled nor in the completed family of statuses, holds no payment
-authorised at a provider and no refund that is not settled, its payment method is published, and its gateway is
-available and answers `supportsPayAgain()` with `true`. This is checked again on every use of the link and just
+authorised at a provider, no refund that is not settled and no dispute the bank has not decided, its payment method is
+published, and its gateway is available and answers `supportsPayAgain()` with `true`. This is checked again on every use of the link and just
 before your process view is asked.
 
 Before you close an earlier attempt, make sure your provider can no longer take money on it: expire or cancel its page
@@ -392,9 +392,7 @@ reads `.`); any `'name'@'host'` account becomes `'<user>'@'<host>'`; the user an
 or more given to `password`, `passwd`, `pwd`, `secret`, `client_secret`, `api_key`, `apikey`, `access_token`,
 `refresh_token` or `token` (as `name=value` or `name: value`), become `<secret>`; line breaks and other control
 characters become spaces; the text is cut at 1,000 characters (`ErrorText::LIMIT`) and ends with `...` when cut.
-Everything else is kept as it is. It never throws. Alfa Commerce itself writes every exception's text it shows or logs
-through it: its own logs, its staff messages and notices, its REST API answers, its error log (the reference a visitor
-is shown and the line it names), its bundled plugins and its modules.
+Everything else is kept as it is. It never throws.
 
 **The log table**, for the merchant, shown by your own "Logs" action. Describe its columns in `params/logs.xml`,
 inside `<fields name="paymentslogs">` and one `<fieldset>` within it, as the Standard plugin does (Alfa reads the
