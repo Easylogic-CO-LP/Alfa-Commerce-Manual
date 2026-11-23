@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Contributing
 
-<AlfaVersion verified="2.2.2" />
+<AlfaVersion verified="2.3.0" />
 
 This page is the contribution guide of Alfa Commerce. The file `CONTRIBUTING.md` in the code repository only points
 here. For how the code is organised, see [Project Structure](./project-structure).
@@ -93,7 +93,7 @@ Make the change in two places:
 
 1. `administrator/sql/install.mysql.utf8.sql`, the complete schema that a fresh installation creates.
 2. A new file `administrator/sql/updates/mysql/<new-version>.sql`, named by the version that ships the change, for
-   the sites that already run Alfa Commerce. There is one such file for each release that changes the database.
+   the sites that already run Alfa Commerce. Each release that changes the database adds its own file there.
 
 Joomla records the schema version when the component is installed. On an update it runs every update file newer than
 that version, in version order.
@@ -126,43 +126,44 @@ Why step 2 matters: an update does not remove the old file from sites that alrea
 folders over the old ones and leaves every other file where it was. The release that ships your change therefore
 lists each removed file in `script.php`, and the update deletes it from the sites.
 
-The two lists are constants of the installer class in `script.php`, each grouped by the version that first removes
-the paths.
+The lists are constants of the installer class in `script.php`, each grouped by the version that first removes the
+paths.
 
 | List | What one entry is |
 |---|---|
 | `OBSOLETE_FILES` | The path of the removed file as it is on an installed site, relative to the site root, with the content hashes of every copy of that file a release installed. |
 | `OBSOLETE_FOLDERS` | The path of a folder that the removed files leave empty, written deepest first. |
+| `OBSOLETE_LANGUAGE_FILES` | The path of a removed language file in Joomla's language folders, relative to the site root, with the SHA-256 of the exact bytes the last release that shipped it installed. |
 
-This is one release's group of `OBSOLETE_FILES`, shortened to two of its entries:
+This is one release's group of `OBSOLETE_FILES`, shortened to two of its entries and without their comments:
 
 ```php
-'2.2.0' => [
-    // Its events go through the plugin helper (src/Plugin/AlfaPluginHelper.php).
-    'administrator/components/com_alfa/src/Event/Admin/AlfaAdminDispatcher.php' => [
-        'cc0cd06974294fb3856f05e4c1b3c54d8231cab2b5bc3ba9c55096aac534b3d4',
-        'eca4a3b0575420a1cc78ed69e4c63f601f21d8872ae4ce226261a9a441b35c46',
+'2.2.2' => [
+    'plugins/alfa-payments/standard/tmpl/default_item_view.php' => ['031d61b4d1714c3dd1a10bed3325a62f31987a41d4dedc422b1e43d1b725d203'],
+    'administrator/components/com_alfa/tmpl/cart/default_items.php' => [
+        '7a50f5b9ab44059ac470c04d6c75d55e6966cc91e221e6df07161c661de52601',
+        '5188c66fcf94f28d0fc5e523246827a31ef6e9531b017fc339fde9fc05a98b2a',
     ],
-    'administrator/components/com_alfa/forms/price.xml' => ['74af1fca867e1535090b791e348a19700ca2fcadda1de7f0c6dc093475dd3b4f'],
 ],
 ```
 
 What an entry must respect, and what the update does with it:
 
 - The path is exact: no wildcard, and no `.` or `..` part.
-- The path is inside an extension's own folder: a component folder (site, administrator or API), a folder under
-  `media`, a module folder or a plugin folder. A language folder other than `en-GB` is never accepted, because it
-  belongs to the site's language packs.
+- A path of `OBSOLETE_FILES` or `OBSOLETE_FOLDERS` is inside an extension's own folder: a component folder (site,
+  administrator or API), a folder under `media`, a module folder or a plugin folder. A language folder other than
+  `en-GB` is never accepted, because it belongs to the site's language packs.
 - The hash is the one `PackageHelper::contentHash()` gives. For a text file it ignores differences in spaces, tabs
   and line endings, so it is not the plain SHA-256 of the file.
 - On every update, a listed file is deleted only when it is a regular file, the new package does not install it, and
   its content matches one of the listed hashes. A file whose content was changed on the site is kept and named.
 - A listed folder is removed only when this update removed something inside it and it is now empty.
+- A listed language file is removed on an update from a version older than the release it is listed under, and on
+  uninstall, only when its bytes are the listed ones and no installed language pack lists its path. Its folder stays.
 - Every removal, every file kept and every failure is named on the installation page and in the log
   `com_alfa_maintenance.php`.
 
-Removed files are declared in these two lists only. The installer reads no `files/removed/<version>.json` file,
-although the reviewer rulebook still names one.
+Removed files are declared in these three lists only.
 
 #### You added or changed a text people read
 
@@ -199,8 +200,8 @@ for every source that changed or has no twin yet:
 
 Commit what it wrote together with your change. A second run changes nothing.
 
-- **Never edit a `.min` file.** When a `.min` file no longer matches what the build made while its source still does,
-  the build refuses and writes nothing: carry the change into the source, or delete the `.min` file, and build again.
+- **Never edit a `.min` file.** When a `.min` file is not the one the build made while its source is unchanged, the
+  build refuses and writes nothing: carry the change into the source, or delete the `.min` file, and build again.
 - **A new style or script.** Put the source in its media folder, build, and register it by its `.min` name, in
   `joomla.asset.json` (`"uri": "com_alfa/site/cart/cart.min.js"`) or in PHP
   (`$wa->registerAndUseScript('com_alfa.x', 'media/com_alfa/js/admin/x.min.js')`). Joomla loads the source under
@@ -214,7 +215,7 @@ Commit what it wrote together with your change. A second run changes nothing.
 
 - Set `<version>` in `alfa.xml` to the new number.
 - Set the same number as `"version"` in `media/joomla.asset.json` (on an installed site this file is
-  `media/com_alfa/joomla.asset.json`). Browsers fetch the CSS and JavaScript again only when this number changes.
+  `media/com_alfa/joomla.asset.json`). The tab **GitHub - Commit & Pull Request** warns while the two differ.
 - Add your change to `changelog.xml`, in the entry of that version. The download carries the file as it is and
   never writes it for you.
 - Never change a version that is already published. Its files are signed, and a change breaks the check under
@@ -257,8 +258,8 @@ values. Code itself is never judged.
 In `.json` and `.txt` files only the characters of R2 and R3 are looked for.
 
 An exception is one entry in `scripts/copy-clean/copy-clean-allow.json`: the file, the rule, and the exact string
-or the exact line, with a class and a reason. A whole file can never be excepted. An entry that no longer matches
-anything fails the check too.
+or the exact line, with a class and a reason. A whole file can never be excepted. An entry that matches nothing fails
+the check too.
 
 How to run it yourself is on [Automated checks](../tooling/workflows#copy-clean).
 
@@ -269,7 +270,7 @@ a method or an entity the code does not have. Run it from the root of the reposi
 #### JavaScript
 
 No formatter or linter checks the JavaScript. This is the rule for every new or changed script. Good models to
-read first are `media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.js` and
+read first are `media/js/admin/integrity-check.js`, `media/js/admin/action-page.js` and
 `media/js/site/cart/addtocart.js`.
 
 - **Plain JavaScript.** No framework and no library, no jQuery, no bundler and no modules: the file you write is the
@@ -294,8 +295,6 @@ read first are `media/js/admin/integrity-check.js`, `media/js/admin/runner-kick.
   (`$wa->useScript()`). The asset version is
   the component's version and moves with a release: see
   [Every change: the version and the changelog](#every-change-the-version-and-the-changelog).
-
-A linter is added when the JavaScript grows.
 
 ## The steps
 
@@ -412,9 +411,8 @@ What the screen checks for you before you download:
 | Files on disk are not declared in any manifest | These files will not be packaged or installed. Declare them if they are needed. |
 | No manifest drift | Every declared path exists and nothing required is undeclared. |
 | The asset file still declares another version | `joomla.asset.json` and `alfa.xml` carry different version numbers. Set them to the same number. |
-| The package would install files the source does not have | Your site still carries a file that the source moved or deleted. Remove it from the site. |
 | You have verified file changes but the version is still the released one | Raise the version, see above. |
-| Version already bumped | Your files differ from the official release and the version is no longer the released one. Nothing to do. |
+| Version already bumped | Your files differ from the official release and the version is not a released one. Nothing to do. |
 | Remember to record this version's changes in `changelog.xml` | Always shown. |
 
 The two buttons:
@@ -439,8 +437,8 @@ What the zip is, and is not:
 - It holds nothing under `libraries/`. If you changed a bundled library, copy those files into the repository's
   `libraries/` folder by hand and commit them, or they are missing from your pull request.
 - It cannot be installed as it is. To install or test it, first copy each library folder from the repository into
-  the extracted package and zip it again. Without them the component installs, but the phone number features do not
-  work.
+  the extracted package and zip it again. Without them the component installs, but a phone number is refused as
+  unchecked and a sales document makes no PDF.
 
 :::caution Extracting never deletes
 Extracting the zip only adds and overwrites. Delete only what you removed on purpose. Do not delete a file just
@@ -527,14 +525,13 @@ Before you open it, also confirm:
 | A file you deleted is still in the pull request's branch | Extracting never deletes. | Delete it in the repository and commit. |
 | Copy-clean fails | A comment or a text breaks one of the rules above. The run names the file, the line and the rule. | Reword it, or add an exception with its reason if the text must stay. |
 | Your branch has a commit you did not make | PHP CS Fixer formatted your code. | Pull, then continue. |
-| Browsers still show the old CSS or JavaScript | The version in `joomla.asset.json` was not raised. | Set it to the version in `alfa.xml`. |
-| Media forms fails: a source "changed since its .min was made", or "its .min is missing" | The build did not run after the change. | Run `php build/media-min/build.php` and commit what it wrote. |
+| Media forms fails: `[MF2] every source has its .min`, or a source "changed since its .min was made" | The build did not run after the change. | Run `php build/media-min/build.php` and commit what it wrote. |
 | The build refuses: a `.min` "was changed after the build made it" | Someone edited the `.min` file. | Carry the change into the source, or delete the `.min` file, and build again. |
 | Your change to a style or a script does not show on your development site | Debug System is off, so Joomla loads the `.min` file. | Switch Debug System on while you work. |
 
 ## Reporting a security problem
 
-Do not open a public issue. Send an email to **info@alfacommerce.gr** with the subject
+Do not open a public issue. Send an email to **info@easylogic.gr** with the subject
 `[SECURITY] Alfa Commerce Vulnerability Report`. Describe the problem, the steps to reproduce it, what it could
 lead to, and a fix if you have one. The security policy
 ([SECURITY.md](https://github.com/Easylogic-CO-LP/Alfa-Commerce/blob/main/SECURITY.md)) promises an acknowledgement
