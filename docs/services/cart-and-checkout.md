@@ -263,7 +263,8 @@ The charges are the plugins' charges and then the chosen payment method's fee
 ([A payment method's fee](./payments-and-shipments.md#a-payment-methods-fee)); they and the cart rules are part of the
 total, not only the items and the shipping. The fee's percentage is taken of everything before it. The offers reading
 (`CartOffersView`) gives each offered payment method's fee before it is chosen: `feeFor($methodId)` answers it as a
-`Money` with tax, or `null` for none.
+`Money` with tax, or `null` for none. Its `shipmentRefusals` holds, by method id, why the cart's goods keep a shipping method off the list
+([Shipping restrictions per category](./payments-and-shipments.md#shipping-restrictions-per-category)).
 
 ## CartRepository
 

@@ -152,6 +152,34 @@ An order with nothing to pay before the fee is charged none, so a free order or 
 Orders made without the cart (a renewal, an order created over the REST API in one call) carry no fee: they state
 their amounts themselves.
 
+## Shipping restrictions per category
+
+A shipping method has two lists of categories on its edit screen (and in `v1/alfa/shipmentmethods`):
+
+| List | What it means |
+|---|---|
+| Categories (`categories`) | The categories the method serves only. "Every category" (`0`) is no limit. |
+| Categories not delivered (`excluded_categories`) | The categories the method does not deliver. None by default. |
+
+A category on either list covers its subcategories, at every depth; a payment method's Categories list reads the same
+way. A line of the cart is refused by a method when none of its product's categories lies inside the first list, or
+when any of them lies inside the second: the exclusion wins, so "only Furniture, except Outdoor furniture" is two
+lists. A product to download is not shipped and is not judged. A method that refuses one line is not offered.
+
+The rule is read in one place, `MethodCategoryScope` (`site/src/Service/Cart/`), so every path agrees:
+
+- **The checkout** does not offer the method and says why under the offered methods: "Courier X does not deliver
+  Sofa A, Lamp B." It says so only for a method that the customer group, the user and the destination would have
+  offered, so the shopper is never told about a method they could not have had. `CartOffersView::shipmentRefusals`
+  holds the sentences by method id.
+- **The order builder** shows the same sentences in its shipping section.
+- **Placement** refuses a method that is not offered, as it always does.
+- **The shipments ledger** refuses a parcel of such a method that carries such a line: on the order screen, through
+  `POST v1/alfa/orders/:id/shipments` with its `items`, and when a parcel is moved to another method or given other
+  lines (`PATCH v1/alfa/orders/:id/shipments/:shipmentId`). The reason is "Courier X does not deliver Sofa A; nothing
+  was written." Parcels already written are not judged again, and a parcel that carries no lines is not judged: the
+  parcel of an order created over the REST API in one call names no lines.
+
 ## What can go wrong
 
 | What you see | The usual cause |

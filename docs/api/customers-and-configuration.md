@@ -273,10 +273,14 @@ taxed with (none: no tax on it).
 **A list row holds:** `id`, `name`, `type`, `color`, `bg_color`, `show_on_product`, `price_entry_mode`,
 `ordering`, `state`.
 
-**One record holds also:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`, `medias`, and
-with `include=translations` its `translations`.
+**One record holds also:** `categories`, `excluded_categories`, `manufacturers`, `places`, `users`, `usergroups`,
+`taxes`, `medias`, and with `include=translations` its `translations`.
 
-**Related lists you can send:** `categories`, `manufacturers`, `places`, `users`, `usergroups`, `taxes`.
+**Related lists you can send:** `categories`, `excluded_categories`, `manufacturers`, `places`, `users`,
+`usergroups`, `taxes`. `categories` are the categories the method serves only (`0`: every category) and
+`excluded_categories` the ones it does not deliver (none by default); each covers its subcategories. A `PATCH` that
+does not send `excluded_categories` keeps them. See
+[Shipping restrictions per category](../services/payments-and-shipments.md#shipping-restrictions-per-category).
 
 ## Form fields
 
