@@ -119,7 +119,33 @@ Most are static calls. The classes are in these namespaces:
 | `PluginLogTable::ofPlugin(DatabaseDriver $db, string $type, string $name): ?self` | **READ ONLY.** Your plugin's log table as its `logs.xml` declares it, or `null` when it declares none. |
 | `PluginLogTable::complete(Closure $report): bool` | **ANSWERS.** Creates the table, or adds the columns and the index it lacks. Each failure is told to `$report` and the others go on; `false` only when the table cannot be created. Run it outside any transaction: inside one it refuses. For your install and update script. |
 | `PackageHelper::contentHash(string $path): string\|false` | **READ ONLY.** A file's content hash as Alfa's removal of obsolete files compares it (runs of whitespace collapsed in a text file), or `false` when the file cannot be read. |
-| `Storage::root(): string` | **ANSWERS.** The download store's absolute root, provisioned with deny-all guards. A path the Options name is recorded and answered. Throws when neither a recorded root nor the Options name one (install Alfa Commerce again), or when the root cannot be created or written. Keep your own files only in a folder named after your plugin's element under it, never a folder named with two hex characters, which is the shape of Alfa's own folders there, and clear them in your `onClearData`. Moving the store moves none of your files: they stay at the old root. |
+| `Storage::root(): string` | **ANSWERS.** The download store's absolute root, provisioned with deny-all guards. A path the Options name is recorded and answered. Throws when neither a recorded root nor the Options name one (install Alfa Commerce again), or when the root cannot be created or written. It is the one place for your extension's own files: see below. |
+
+**Keeping your extension's files.** Files of your extension that the web must not serve (a carrier's labels and
+vouchers, a gateway's statements) go under `Storage::root()`, in a folder named as Joomla names your extension, which
+you create:
+
+```php
+$folder = Storage::root() . '/plg_alfa-shipments_boxnow';   // a plugin: plg_<group>_<element>
+$folder = Storage::root() . '/mod_alfa_example';            // a module: mod_<name>
+```
+
+- The element alone is not enough: two plugins of different groups can share one (`standard` is both a payment and a
+  shipment plugin).
+- Never a folder named with two hex characters (`3f`): that is the shape of Alfa's own folders there.
+- The root's guard files cover every folder under it, so the web server serves none of your files: your own code
+  serves them, as Alfa serves a purchased file.
+- Clear everything removes Alfa's own files only. Remove your folder in your `onClearData`; a folder left there is
+  reported after the clear as not a file of Alfa.
+- A new storage path in the Options moves no file, Alfa's or yours: `Storage::root()` answers the new path from then
+  on and your files stay where you wrote them. Keep the full path of a file you must reach again.
+- `Storage::currentRoot()` is not for extensions: it creates nothing and answers `null` before a store exists.
+
+### A page of your own on the storefront
+
+| Call | What it guarantees |
+|---|---|
+| `PageCache::excludeResponse(): void` | **BEST EFFORT.** Keeps this request's response out of Joomla's page cache (System - Page Cache), and nothing more. Alfa's own views and modules call it; your extension calls it only for a response of its own (its view, module or plugin output) that holds one visitor's data at an address every visitor shares. It cannot keep a page stored earlier from being served, nor a server's, a CDN's or a browser's cache from keeping the response. Call it while the response is drawn, any number of times. A failure is logged in `com_alfa` and never thrown into your code. `Alfa\Component\Alfa\Site\Helper\PageCache`. |
 
 ### The shop's data
 

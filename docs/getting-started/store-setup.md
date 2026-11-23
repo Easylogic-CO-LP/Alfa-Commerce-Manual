@@ -92,6 +92,30 @@ Trash and Delete in the list refuse them, and so does the Status on a currency's
 currency by its name and code, such as Euro (EUR), and says why. To retire the default currency, choose another default
 first in **Options**, **Currency**.
 
+## Manufacturers and categories in a module
+
+Two site modules come with the package, for a sidebar or any template position (Content > Site Modules > New):
+
+| Module | What it shows | Its settings |
+|---|---|---|
+| Alfa Manufacturers (`mod_alfa_manufacturers`) | The shop's manufacturers as a grid of links, as many columns as the width holds (two on a phone) | Manufacturers (empty: every one the shop shows), Show (logo and name, logo, name; a manufacturer without a logo shows its name), Link to (its products, its page), Ordering (name, the Manufacturers list's order), How many (0: all) |
+| Alfa Categories (`mod_alfa_categories`) | The shop's categories as a nested list of links | Start from (top level or a category), Levels (1 to 10), Open (only the branch of the visitor's category, or all), Number of products |
+
+Both show what the shop's own pages show: published manufacturers and categories, the categories a visitor may see,
+names in the page's language. The categories module marks the visitor's category (`aria-current="page"`) on a
+product list or a product page reached through one. A module with nothing to show draws nothing.
+
+For a template author: each module reads the component's own data (the site Manufacturers model, and
+`CategoryHelper::getCategoryTree()` and `getCategoryPath()`), never a table. Each has its own stylesheet and class,
+`.mod-alfa-manufacturers` and `.mod-alfa-categories`, with one instance's class beside it
+(`.mod-alfa-manufacturers-<id>`, `.mod-alfa-categories-<id>`). The look is set by tokens declared on that class
+(`--mod-alfa-manufacturers-gap`, `-min`, `-logo-height`, `-padding`, `-surface`, `-color`, `-hairline`, `-radius`,
+`-accent`; `--mod-alfa-categories-indent`, `-padding`, `-color`, `-current`, `-muted`, `-hairline`), which take the
+storefront palette where it is loaded. Set a token on the class or on one instance's class in the template's CSS. The
+layouts are overridable as any module's: `html/mod_alfa_manufacturers/default.php`, and for the categories
+`html/mod_alfa_categories/default.php` and `default_level.php` (one level of the list, drawn again for each level
+below).
+
 ## Take the guided tours
 
 Alfa Commerce installs 33 guided tours. A tour walks through one screen step by step, on the screen itself:

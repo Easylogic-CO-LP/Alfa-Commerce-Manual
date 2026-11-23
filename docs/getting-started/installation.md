@@ -137,7 +137,7 @@ state it had (see [Updating](#updating)).
 | Form fields | `alfa-form-fields`: `text`, `textarea`, `tel`, `choice`, `country` |
 | Item fields | `alfa-item-fields/choice` |
 | Platform | `system/alfasync`, `webservices/alfa` (the REST API), `console/alfa` (the console commands) |
-| Modules | `mod_alfa_cart`, `mod_alfa_search`, `mod_alfa_filters`, `mod_alfa_items`, `mod_easy_articles` |
+| Modules | `mod_alfa_cart`, `mod_alfa_search`, `mod_alfa_filters`, `mod_alfa_items`, `mod_alfa_manufacturers`, `mod_alfa_categories`, `mod_easy_articles` |
 | Libraries | libphonenumber and its locale data; dompdf and the four libraries it needs (php-font-lib, php-svg-lib, masterminds/html5, sabberworm/php-css-parser) |
 
 Alfa Commerce ships in English. Every other language is a separate language pack.

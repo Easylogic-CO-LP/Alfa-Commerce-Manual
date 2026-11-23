@@ -67,6 +67,8 @@ Alfa-Commerce/
 │   ├── mod_alfa_search/        # Search
 │   ├── mod_alfa_filters/       # Filters
 │   ├── mod_alfa_items/         # Items
+│   ├── mod_alfa_manufacturers/ # Manufacturers
+│   ├── mod_alfa_categories/    # Categories
 │   └── mod_easy_articles/      # Joomla articles
 │
 ├── libraries/                  # Seven libraries: libphonenumber and giggsey/locale (phone numbers); dompdf and the

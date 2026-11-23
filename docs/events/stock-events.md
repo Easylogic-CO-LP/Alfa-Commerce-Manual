@@ -185,6 +185,21 @@ is no "refuse" method.
 Alfa has written nothing for the step when it asks. The step can still be part of a larger save, as when an order is
 placed. A refusal then undoes that larger save.
 
+**Where your listener runs.** Inside the transaction of the work that moves the stock, with the order's row locked:
+
+| The work | Its transaction | The events |
+|---|---|---|
+| An order is placed | The placement's own save | `onInventoryBeforeReserve`, and `onInventoryBeforeCommit` when the first status takes the goods |
+| The stock owed after a status change or a document | The stock step's save, which locks the order's row first (`SELECT ... FOR UPDATE`) | all three |
+| An order is deleted | The deletion's save | `onInventoryBeforeRelease` |
+
+So while your listener runs, every other request that touches the order waits for it. Read and write the database
+only: what you write joins the transaction and is undone with it. Never call another system (a web service, an
+e-mail, a file) and never wait on anything from a "before" event: the order stays locked while you wait, and what you
+sent stays sent if the save is undone. Do that work after the save, in the matching "after" event
+(`onInventoryReserved`, `onInventoryCommitted`, `onInventoryReleased`), which Alfa announces once the transaction is
+committed, or with `PostCommit::defer()`.
+
 A refusal on purpose is an exception of its own,
 `Alfa\Component\Alfa\Administrator\Service\Inventory\InventoryRefusedException`, thrown with the sentence people are
 to read. Any other exception is a failure, which is tried again.
