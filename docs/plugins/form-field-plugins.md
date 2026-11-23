@@ -263,7 +263,7 @@ left empty, it is made from the field's title by the same rule. Saving a field a
 | When staff | Alfa |
 |---|---|
 | Save a new field | Saves the field, then adds a column of the `sql_type` your settings name |
-| Rename a field | Saves the field, then renames the column |
+| Rename a field | Saves the field, then renames the column. A rename is refused while another field's condition (an operand `<field_name>.value`) or a status e-mail (`{field_<field_name>}`, in any language) names the field; the refusal lists each place, and staff take the field out of them, rename it, then name it there again |
 | Delete a field | Deletes the field. The column is dropped only when no placed order holds a value in it. Otherwise the column stays, so that old orders keep their data. |
 
 The column is added only after the field itself is saved, because a column change cannot be undone.

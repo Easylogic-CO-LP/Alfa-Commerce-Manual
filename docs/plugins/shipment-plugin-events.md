@@ -170,46 +170,36 @@ on nothing.
 
 | | |
 |---|---|
-| **When it fires** | Right after the order is saved for good (after the commit). |
+| **When it fires** | Right after the order is saved for good (after the commit), once per order. |
 | **Who receives it** | The plugin of the method the order was placed with. |
-| **What you are given** | `OrderAfterPlaceEvent`. `getOrder()` returns the saved order as an `Order` reader. |
-| **What you are expected to do** | Record the first parcel of the order (see [Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)). Take the charge from the order: `shipmentTotal()`, `shipmentTotalExcl()` and `shipmentTaxRate()`. |
-| **What happens next** | The order shows its parcel. The order's shipping total is the sum of its parcels' charges, so an order needs one. If the order has no parcel on its shipping method once your method has run (you recorded none, your `save()` was refused, you threw an error, or your plugin could not be used), Alfa records one, pending, with every item and the charge the order froze, marked `core_made` in its plugin data. A notification tells staff which method recorded nothing and that a pickup point or locker the customer chose must be chosen again on the order's page. A parcel you record, in any status, is never doubled, and this event fires once per order. |
-| **If you are missing or you fail** | The order stands, it cannot be undone. The failure is written to the log (category `com_alfa.orders`), as critical when your method threw an error and as an error when your plugin could not be used, and the shopper is told that part of the order could not be set up. A `save()` that returns `false` is not logged as such a failure; Alfa then records the parcel itself, as above. |
+| **What you are given** | `OrderAfterPlaceEvent`. `getOrder()` returns the saved order as an `Order` reader. `getShipmentId()` is the order's parcel: Alfa recorded it just before this event, pending, with the charge the customer accepted (with and without tax, its rate, its tax chain and how its figures were formed) and every item, on your method. |
+| **What you are expected to do** | Complete that parcel with what is yours, through `$this->shipmentUpdate($event->getShipmentId())`: a tracking number, a carrier name, a locker or pickup point and your other keys in its plugin data. Record no parcel of your own: the order has its parcel. A plugin with nothing to add writes no `onOrderAfterPlace()`. |
+| **What happens next** | The order shows its parcel, with what you added. The order's shipping total is the sum of its parcels' charges. A parcel you add later is charged 0: shipping is charged once per order. |
+| **If you are missing or you fail** | The order stands with its parcel, its charge and its items. A method that throws is written to the log (category `com_alfa.orders`, critical), and the shopper is told that part of the order could not be set up. If Alfa cannot record the parcel at all, it does not call you (there is nothing to complete): the log says so as critical, and staff get a notice naming your method and the charge to record by hand. |
 
-The standard plugin, as it ships (comments removed):
+A carrier that books a label writes, for example:
 
 ```php
-public function onOrderAfterPlace($event): void
+public function onOrderAfterPlace(OrderAfterPlaceEvent $event): void
 {
-    $order = $event->getOrder();
+    $label = $this->api()->createLabel($event->getOrder());
 
-    if (!$order || empty($order->id())) {
-        return;
-    }
-
-    $shippingCostIncl = $order->shipmentTotal();
-    $shippingCostExcl = $order->shipmentTotalExcl();
-    $shippingTaxRate = $order->shipmentTaxRate();
-
-    $shipmentId = $this->shipment($order)
-        ->pending()
-        ->withAllItems()
-        ->cost($shippingCostIncl, $shippingCostExcl, $shippingTaxRate)
+    $this->shipmentUpdate($event->getShipmentId())
+        ->trackingNumber($label->trackingNumber)
+        ->carrier('Carrier A')
+        ->pluginData(['label_id' => $label->id])
         ->save();
-
-    if (!$shipmentId) {
-        Log::add(
-            'Standard shipment: Failed to create initial shipment for order #' . $order->id(),
-            Log::ERROR,
-            $this->logCategory(),
-        );
-    }
 }
 ```
 
+`shipmentUpdate()` names your plugin as the writer, so it writes only a parcel of one of your methods. A carrier that
+splits the order keeps in the parcel what goes now, with `assignShipmentItems($event->getShipmentId(), $order->id(),
+$lines)`, and records the rest as further parcels with `$this->shipment($order)` (see
+[Recording and changing a parcel](./shipment-plugins.md#recording-and-changing-a-parcel)).
+
 **The tax chain.** A shipping charge can be taxed by several rules, one after the other. The ordered list of their
-rates is the charge's **tax chain**. During `onOrderAfterPlace` you can read it:
+rates is the charge's **tax chain**. Alfa copies it onto the parcel it records; during `onOrderAfterPlace` you can read
+it on the order too:
 
 ```php
 $chain = $order->shipmentTaxChain();
@@ -218,8 +208,8 @@ $chain = $order->shipmentTaxChain();
 // null                                      the order states none (it is read outside onOrderAfterPlace)
 ```
 
-Each entry holds the rate as exact decimal text and the name of the tax rule. You do not have to pass it on:
-`$this->shipment($order)` copies the chain, and how the figures were formed, from the order onto the parcel.
+Each entry holds the rate as exact decimal text and the name of the tax rule. You do not have to pass it on: the
+parcel carries it, and `$this->shipment($order)` copies it, and how the figures were formed, onto a further parcel.
 
 Each entry is `['rate' => ..., 'name' => ...]`.
 
@@ -232,7 +222,7 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 |---|---|
 | **When it fires** | When a shopper's browser comes back to the shop from a page of the carrier (a pickup point map, for example), at the return address of your plugin. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. `getOrder()` is `null`: Alfa does not know which order the return is about. Read the request yourself. `getOrder()` is deprecated: do not use it, it will be removed. |
+| **What you are given** | `ShipmentResponseEvent`. `getMethod()` is your plugin's element as text. There is no order on the event: Alfa does not know which order the return is about. Read the request yourself. |
 | **What you are expected to do** | Check that the return is genuine, find the order from what the carrier sent, do your work, and call `setRedirectUrl()`. Without a redirect the shopper is sent to the cart with the message that the choice could not be confirmed with the shipping service. Set a redirect all the same: only you know where the shopper belongs. |
 | **What happens next** | Alfa sends the shopper to the address you set. An address inside the shop written as `index.php?option=...` is turned into its friendly form for you. |
 | **If you are missing or you fail** | If the plugin cannot be used, the shopper is sent to the shop's home page with the message that the shipping method of the return could not be identified. If your class has no such method, the shopper is sent to the cart. An error you throw shows Joomla's error page. |
@@ -243,7 +233,7 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 |---|---|
 | **When it fires** | When the carrier's server calls your plugin's webhook address: picked up, delivered, returned, a label is ready. |
 | **Who receives it** | The plugin named in the address. |
-| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element, `getOrder()` is `null`. There is no shopper, no session and no token. Read the request yourself. `getOrder()` is deprecated: do not use it, it will be removed. |
+| **What you are given** | `ShipmentWebhookEvent`. `getMethod()` is your element. There is no order on the event, no shopper, no session and no token. Read the request yourself. |
 | **What you are expected to do** | Three duties. Check that the call is genuine (the carrier's signature or shared secret): Alfa checks nothing. Find the parcel yourself. Cope with the same call arriving twice, with `settleAttempt()` (see below). Then set the answer. |
 | **What happens next** | Alfa sends your answer to the carrier and ends the request. |
 | **If you are missing or you fail** | See [Return and webhook addresses](./shipment-plugins.md#return-and-webhook-addresses). |
@@ -274,7 +264,6 @@ Each entry is `['rate' => ..., 'name' => ...]`.
 | `confirm($message)` | Ask before running |
 | `readOnly()` | The action changes nothing (details, logs). It may be opened from a link. |
 | `mutating()` | The action changes something. This is the default: such an action runs only from a POST with a one-time key, so a reload cannot repeat it. |
-| `modal($layout, $title, $size)` | Records a layout, a title and a size on the action. Nothing reads them: every button opens the action popup, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. Deprecated, with `hasResponseLayout()`: do not use them, they will be removed. |
 | `data([...])` | Fields posted with the action. Read them from the request in `onExecuteAction`. |
 | `priority(200)` | Higher comes first. The default is 100. |
 | `tooltip($text)`, `meta($key, $value)`, `buttonLayout($layout)` | Hint, extra data, your own button layout |
@@ -306,8 +295,7 @@ $event->add('mark_shipped', Text::_('PLG_ALFA_SHIPMENTS_STANDARD_MARK_SHIPPED'))
 | `setError($text)` | The action failed, with this message |
 | `setRefresh(true)` | Reload the order page afterwards |
 | `setRedirectUrl($url)` | Send staff elsewhere. Wins over the reload. |
-| `setLayout($name)`, `setLayoutData([...])` | Draw a layout of your `tmpl` folder in the popup |
-| `setModalTitle($title)` | Read by nothing. The popup's title is the button's label. `setModalTitle()` and `getModalTitle()` are deprecated: do not use them, they will be removed. |
+| `setLayout($name)`, `setLayoutData([...])` | Draw a layout of your `tmpl` folder in the popup, under the button's label as its title |
 | `addButton($label, $opts)` | A button under the popup. `$opts` may hold `action` (run another action of this shipment), `data`, `reload`, `class`. |
 
 From the standard plugin, shortened to the writing part:

@@ -295,9 +295,11 @@ public function onGetActions($event): void
 | `readOnly()` | The action writes nothing whatever the request carries (details, logs). Only such an action may be opened by a plain link. |
 | `startsRefund()` | The action starts a new refund. Alfa hides it, and refuses it and its form's `_do` step, while the refund block holds. |
 | `data(array $fields)` | Fields posted with the action, such as the figure the confirmation showed |
-| `modal(string $layout, string $title = '', string $size = 'md')` | Deprecated, with `hasResponseLayout()`: do not use them, they will be removed. Records a layout, a title and a size on the action. Nothing reads them: every button opens the action page, its title is the button's label, and the layout drawn is the one your `onExecuteAction` sets with `setLayout()`. |
 | `disabled()` | Takes the action off the list: no button is drawn and the action cannot be run |
 | `meta(string $key, mixed $value)`, `buttonLayout(string $layout)` | Attach your own data, use your own button layout (a layout of your `tmpl` folder; the default is `action_button`) |
+
+An action carries no window layout, title or size of its own: its window shows the layout `onExecuteAction` sets with
+`setLayout()`, under the action's label.
 
 What Alfa does for you before `onExecuteAction` runs:
 
@@ -413,8 +415,8 @@ Your plugin carries its own texts and loads them.
   core repository contains no code that sends these events, so when they fire and what the shopper sees cannot be
   documented from it.
 - **The action page.** How a layout set in `onExecuteAction` is shown, and the script helper a form uses to submit
-  its `_do` step. The title and size given to `modal()` and `setModalTitle()` are read by nothing; both are deprecated and will
-  be removed.
+  its `_do` step. Every button opens the action page, its title is the button's label, and the layout drawn is the one
+  `onExecuteAction` sets with `setLayout()`.
 - **Locks for a capture.** `OrderMoneyLock` and when a gateway that captures an authorization should hold it.
 - **Deposits and instalments**: several payment rows for one order, written by one plugin.
 - **The texts shoppers and staff see** when a plugin is unavailable or an order is refused. This page describes

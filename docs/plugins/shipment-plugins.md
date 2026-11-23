@@ -8,7 +8,7 @@ description: How to write a shipping plugin for a carrier, the events it receive
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.3.0" />
+<AlfaVersion verified="2.2.1" />
 
 **The pages of this guide:**
 
@@ -64,8 +64,9 @@ sequenceDiagram
     Alfa->>P: onOrderBeforePlace: may this order be placed?
     Alfa->>Alfa: Saves the order
     Note over Alfa: The save is final here
-    Alfa->>P: onOrderAfterPlace: the order exists
-    P->>Alfa: Records the parcel, after booking it with the carrier if it books
+    Alfa->>Alfa: Records the order's parcel: the charge and every item
+    Alfa->>P: onOrderAfterPlace: the order exists, here is its parcel
+    P->>Alfa: Completes the parcel, after booking it with the carrier if it books
     C->>Alfa: Calls back: the parcel was delivered
     Alfa->>P: onShipmentWebhook
     P->>Alfa: Marks the parcel delivered and answers the carrier
@@ -83,7 +84,7 @@ All twelve events of a shipping plugin, in the order a parcel meets them:
 | `onCartView` | The cart is drawn or refreshed | Yes |
 | `onCalculateShippingCost` | The cart's totals are worked out | Yes |
 | `onOrderBeforePlace` | Just before an order is saved | No |
-| `onOrderAfterPlace` | Just after an order is saved | In practice yes: this is where the parcel is recorded |
+| `onOrderAfterPlace` | Just after an order is saved, with the parcel Alfa recorded | Only if you add to the parcel (a booking, a locker, your data) |
 | `onShipmentResponse` | The shopper comes back from the carrier's page | Only if you send shoppers away |
 | `onShipmentWebhook` | The carrier's server calls the shop | Only if the carrier calls back |
 | `onGetActions` | Staff open an order | No |
@@ -146,8 +147,11 @@ builder", and which writes nothing until you call `save()`.
 
 | Method | What it does | What it refuses |
 |---|---|---|
-| `$this->shipment($order)` | Starts a **new** parcel for the order. Fills in the order, the order's shipping method and the weight (weight times quantity of the order's lines). Returns a builder. | At `save()`: a method that is not a method of your plugin. Nothing is written. |
-| `$this->shipmentUpdate($shipmentId)` | Starts a **change** to an existing parcel. Only what you set is written. Returns a builder. | Throws an error if the row does not exist. At `save()`: a parcel that is not recorded as yours, or a move to another plugin's method. |
+| `$this->shipmentUpdate($shipmentId)` | Starts a **change** to an existing parcel: the one a new order was given (`$event->getShipmentId()` in `onOrderAfterPlace`), or one you recorded later. Only what you set is written. Returns a builder. | Throws an error if the row does not exist. At `save()`: a parcel that is not recorded as yours, or a move to another plugin's method. |
+| `$this->shipment($order)` | Starts a **further** parcel for the order (a split, a replacement). Fills in the order, the order's shipping method and the weight (weight times quantity of the order's lines). Returns a builder. Its charge is 0: the order's parcel carries the shipping. | At `save()`: a method that is not a method of your plugin. Nothing is written. |
+
+A new order's parcel is not yours to record: Alfa records it before `onOrderAfterPlace`, with the charge and every
+item, and your plugin completes it.
 
 ### What you chain on the builder
 
@@ -260,13 +264,9 @@ $data->getString(key: 'parcel_id', default: '');
 | `null` keeps the key, `removePluginData()` removes it | `has()` tells them apart |
 | A value that cannot be read as the type you ask for throws an error | A default answers only a missing or `null` key |
 
-Alfa writes one key itself, `core_made`, on a parcel it records for an
-order your plugin left without one (see [onOrderAfterPlace](./shipment-plugin-events.md#onorderafterplace)). The
-base class names it `self::CORE_MADE`. A plugin that looks for its own parcel afterwards recognises Alfa's:
-
-```php
-$coreMade = $shipment->pluginData()->getBool(self::CORE_MADE) === true;
-```
+Alfa writes no key of its own in a parcel's plugin data: every key there is yours. The parcel of a new order is the
+one Alfa records before [onOrderAfterPlace](./shipment-plugin-events.md#onorderafterplace) and hands you by
+`$event->getShipmentId()`.
 
 ### The amount to collect
 
@@ -463,9 +463,9 @@ Your plugin owns its texts. Alfa Commerce does not carry them.
 | The shopper sees a raw key such as `PLG_ALFA_SHIPMENTS_FLAT_NO_PRICE` | The key is missing from your language file |
 | Shipping is free although a price is configured | Your code answered `setShippingCost(0.0)`. Zero means free. Refuse with `setUnavailable()` instead. |
 | The shopper pays tax twice, or none | You added or removed tax in your price. Answer the price as configured and let the method's settings do the rest. |
-| The order has no shipping charge and no parcel | Your plugin recorded no parcel and Alfa could not record one either. Staff get a notice naming the carrier and the charge to add by hand on the order's page. Look in the log, categories `com_alfa.orders` and your own. |
-| A parcel marked `core_made` and a notification naming your method | `onOrderAfterPlace()` is missing, threw an error, or its `save()` returned `false`, so Alfa recorded the parcel itself. Look in the log, categories `com_alfa.orders` and your own. |
-| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, the rate is not the order's `shipmentTaxRate()` in `onOrderAfterPlace`, or the order's method is not a method of your plugin |
+| The order has no shipping charge and no parcel | Alfa could not record the parcel, and your `onOrderAfterPlace()` was not called. Staff get a notice naming the carrier and the charge to add by hand on the order's page. Look in the log, category `com_alfa.orders`. |
+| Two parcels after placement, the second charged 0 | Your `onOrderAfterPlace()` recorded a parcel of its own with `$this->shipment($order)`. Complete the one you are handed, `$this->shipmentUpdate($event->getShipmentId())`. |
+| `save()` returns `false` on a new parcel | The charge has tax but no rate, the net is above the gross, or the order's method is not a method of your plugin |
 | `save()` throws a `RuntimeException` on a new parcel | No status was set. Call `pending()` or another status before `save()`. |
 | `save()` returns `false` on a change | The parcel is not recorded as your plugin's. A plugin changes only its own parcels. |
 | A second parcel is saved with a charge of 0 | Shipping is charged once per order. The first parcel carries it. |

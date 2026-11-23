@@ -390,5 +390,6 @@ ExtensionJob::enqueue(PluginId::of('alfa.example'), 'stock:600:0', ['item' => 60
 with the same key while the job waits joins it, and one made while it runs makes it run again, so the job reads the
 latest values when it runs. The runner hands the job back to the plugin with the targeted `onAlfaExtensionJob`
 (`ExtensionJobEvent`: `getJobId()`, `getKey()`, `getData()`), outside its own transaction, so the handler may call
-another system. A handler that throws is retried on the runner's backoff; after the last retry the job waits for staff
+another system. The job runs as the shop, not as the visitor whose request ran the runner: the plugin is loaded for it
+whatever its Access, as long as it is installed and enabled. A handler that throws is retried on the runner's backoff; after the last retry the job waits for staff
 in Tools, Tasks, where every job is listed.

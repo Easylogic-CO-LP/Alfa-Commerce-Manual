@@ -296,7 +296,7 @@ many are waiting to be synced: a provider with no stored types, or one whose ver
 
 | Method | What it does |
 |---|---|
-| `addProvider(DocumentTypeProviderInterface $provider, string $contributor, string $version = ''): void` | Offers your provider. The provider comes first. `$contributor` comes second and is your plugin's name as group.element, for example `alfa.proforma`. `$version` is your plugin's version. |
+| `addProvider(string $contributor, DocumentTypeProviderInterface $provider, string $version = ''): static` | Offers your provider. `$contributor` comes first and is your plugin's name as group.element, for example `alfa.proforma`; then the provider; `$version` is your plugin's version. It answers the event, so a second provider chains on: `$event->addProvider('alfa.proforma', $a, '1.0.0')->addProvider('alfa.proforma', $b, '1.0.0')`. |
 | `getProviders(): array` | The providers offered so far. Alfa reads it; a plugin has no need to. |
 
 **What you are expected to do.** Call `addProvider()` once for each provider you offer. Pass your version: when it
@@ -397,8 +397,8 @@ final class Proforma extends CMSPlugin implements SubscriberInterface
 
     public function onCollectDocumentTypeProviders(CollectDocumentTypeProvidersEvent $event): void
     {
-        // The provider first, then this plugin's name, then its version.
-        $event->addProvider(new ProformaTypes(), 'alfa.proforma', '1.0.0');
+        // This plugin's name first, then the provider, then its version.
+        $event->addProvider('alfa.proforma', new ProformaTypes(), '1.0.0');
     }
 }
 ```

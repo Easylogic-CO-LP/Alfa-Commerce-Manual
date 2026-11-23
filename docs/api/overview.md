@@ -322,9 +322,10 @@ as on the screen.
 
 Three questions that come up often:
 
-- **The payments and the parcels of an order.** Read the order: `GET v1/alfa/orders/:id` holds the lists
-  `payments`, `shipments`, `lines` and `history`. There is no separate list of an order's payments or parcels:
-  `v1/alfa/orders/:id/payments` and `v1/alfa/orders/:id/shipments` take a `POST` only.
+- **The payments and the parcels of an order.** `GET v1/alfa/orders/:id/payments` and
+  `GET v1/alfa/orders/:id/shipments` list them, with the values the order's own read gives them under `payments` and
+  `shipments`; `GET v1/alfa/orders/:id` holds them too, beside `lines` and `history`. See
+  [Orders](./orders.md#reading-an-orders-payments-and-parcels).
 - **The stock movements of one item.** `GET v1/alfa/inventorymovements?filter[search]=id:123`, where 123 is the
   item's id. A text in `filter[search]` is matched against the item's SKU, the movement's note and its source.
   `filter[item_id]=123` does the same.

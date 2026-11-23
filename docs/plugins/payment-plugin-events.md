@@ -241,7 +241,6 @@ Event class: `PaymentResponseEvent`. Optional. Write it when your provider sends
 | Getter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element, as the address named it |
-| `getOrder()` | Always `null`: Alfa does not load an order from an untrusted address. Deprecated: do not use it, it will be removed. |
 
 Everything else you read from the request yourself. The request is untrusted: anyone can type the address.
 
@@ -292,7 +291,6 @@ page.
 | Getter or setter | Meaning |
 |---|---|
 | `getMethod()` | Your plugin's element |
-| `getOrder()` | Always `null`. Deprecated: do not use it, it will be removed. |
 | `setResponseCode(int)` | The HTTP status answered to the provider. Default 200. |
 | `setResponseBody(string)` | The body. Default `OK`. Plain machine text, never translated. |
 | `setContentType(string)` | Default `text/plain; charset=utf-8` |
