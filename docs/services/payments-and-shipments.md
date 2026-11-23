@@ -150,6 +150,69 @@ request without the form token sends nothing. What the operator reads:
 A sent link, and one handed over with no answer, is written to Joomla's User Actions Log under Alfa Commerce: who sent
 it, the order and the address.
 
+## A payment method's fee
+
+A payment method can charge a fee, such as a cash on delivery fee. Its **Fee** tab (and the REST resource
+`v1/alfa/paymentmethods`) holds four settings:
+
+| Setting | What it means |
+|---|---|
+| Fixed fee (`fee_amount`) | An amount in the order's currency. `0` for none. |
+| Fee percentage (`fee_percent`) | A percentage of the order total before the fee: the goods after their discounts, the shipping after its rules and the other charges. `0` for none, at most 100. |
+| Fee entered (`fee_entry_mode`) | Tax included (the customer pays the figures with the tax inside; the percentage is taken of the total with tax) or tax excluded (the tax is added on top; the percentage is taken of the total without tax). Tax included by default; a method with no fee needs none. |
+| Fee taxes (`fee_taxes`) | The tax rules the fee is taxed with. Each rule's places, customer groups and dates decide whether it applies, at the delivery destination, as for a shipping method's taxes. None: the fee is untaxed. |
+
+The fee is the fixed amount plus the percentage, the percentage rounded once to the currency's decimals. It is
+worked out like a shipping method's price: read through the entry mode and taxed with the rules, so its net, its tax
+and its gross are exact and add up. Fixed 2.00 with tax included at 24% is 1.61 + 0.39; 3% of a total of 25.00
+without tax, plus 1.50, entered without tax at 24%, is 2.25 + 0.54 = 2.79.
+
+Where the fee appears:
+
+- **Before the choice.** The checkout's payment list and the order builder print each method's fee beside its name
+  ("Fee: 2,00 €"), the figure the totals would carry.
+- **In the totals.** The chosen method's fee is its own line, "Payment fee (method name)", after the plugins' charges.
+  It is a charge like theirs (code `payment_fee`; see [How the cart is added up](./cart-and-checkout.md#how-the-cart-is-added-up)),
+  so the shopper pays it and the gateway is asked for a total that includes it.
+- **On the order.** Placement totals the order with the fee of the method the submission names and freezes it in
+  `#__alfa_order_contributions`. A later change of the order's lines by staff does not work it out again.
+- **On the documents and in the e-mails**, as the order's other charges: its own line at its rate.
+- **In the REST API**, in the order's `contributions` with its code, amounts, tax and rate. See
+  [Orders](../api/orders.md).
+
+An order with nothing to pay before the fee is charged none, so a free order or a request for an offer stays free.
+Orders made without the cart (a renewal, an order created over the REST API in one call) carry no fee: they state
+their amounts themselves.
+
+## Shipping restrictions per category
+
+A shipping method has two lists of categories on its edit screen (and in `v1/alfa/shipmentmethods`):
+
+| List | What it means |
+|---|---|
+| Categories (`categories`) | The categories the method serves only. "Every category" (`0`) is no limit. |
+| Categories not delivered (`excluded_categories`) | The categories the method does not deliver. None by default. |
+
+A category on either list covers its subcategories, at every depth; a payment method's Categories list reads the same
+way. A line of the cart is refused by a method when none of its product's categories lies inside the first list, or
+when any of them lies inside the second: the exclusion wins, so "only Furniture, except Outdoor furniture" is two
+lists. A product to download is not shipped and is not judged. A method that refuses one line is not offered.
+
+The rule is read in one place, `MethodCategoryScope` (`site/src/Service/Cart/`), so every path agrees:
+
+- **The checkout** does not offer the method and says why under the offered methods: "Courier X does not deliver
+  Sofa A, Lamp B." It says so only for a method that the customer group, the user and the destination would have
+  offered, so the shopper is never told about a method they could not have had. `CartOffersView::shipmentRefusals`
+  holds the sentences by method id.
+- **The order builder** shows the same sentences in its shipping section.
+- **Placement** refuses a method that is not offered, as it always does.
+- **The shipments ledger** refuses a parcel of such a method that carries such a line: on the order screen, through
+  `POST v1/alfa/orders/:id/shipments` with its `items`, in an order created over the REST API in one call (its parcel
+  carries the order's lines; the create answers 409 and no order is made), and when a parcel is moved to another
+  method or given other lines (`PATCH v1/alfa/orders/:id/shipments/:shipmentId`). The reason is "Courier X does not
+  deliver Sofa A; nothing was written." A product to download on the parcel is not judged, as at the checkout.
+  Parcels already written are not judged again, and a parcel that carries no lines is not judged.
+
 ## What can go wrong
 
 | What you see | The usual cause |

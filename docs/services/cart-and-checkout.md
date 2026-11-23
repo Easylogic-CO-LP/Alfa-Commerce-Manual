@@ -241,7 +241,7 @@ any of them reads the methods again.
 | `shipment` | The shipping cost as the cart pays it, after shipping rules |
 | `shipmentGross` | The shipping cost before shipping rules |
 | `shippingBenefit` | The shipping rule's own summary, as an object. Its properties are not documented here. |
-| `contributions` | The charges plugins added, as a list |
+| `contributions` | The charges the order carries beside its goods and shipping, as a list: the plugins' charges, then the chosen payment method's fee (code `payment_fee`) |
 | `grand`, `grandExcl` | What the shopper pays, with and without tax |
 | `contributionsNotLoaded` | The plugins whose charge is missing because Joomla did not load them for the current user. See [When staff operate a customer's cart](../events/order-and-cart-events.md#when-staff-operate-a-customers-cart). |
 
@@ -257,10 +257,15 @@ cart already held the available quantity: then they are what the cart holds.
 `CartTotals` holds the sum. An extension does not call it; the figures reach you in `CartTotalsView`.
 
 ```text
-grand total = line totals + shipping after shipping rules + plugin charges - cart rules
+grand total = line totals + shipping after shipping rules + charges - cart rules
 ```
 
-Plugin charges and cart rules are part of the total, not only the items and the shipping.
+The charges are the plugins' charges and then the chosen payment method's fee
+([A payment method's fee](./payments-and-shipments.md#a-payment-methods-fee)); they and the cart rules are part of the
+total, not only the items and the shipping. The fee's percentage is taken of everything before it. The offers reading
+(`CartOffersView`) gives each offered payment method's fee before it is chosen: `feeFor($methodId)` answers it as a
+`Money` with tax, or `null` for none. Its `shipmentRefusals` holds, by method id, why the cart's goods keep a shipping method off the list
+([Shipping restrictions per category](./payments-and-shipments.md#shipping-restrictions-per-category)).
 
 ## CartRepository
 

@@ -94,6 +94,23 @@ All twelve events of a shipping plugin, in the order a parcel meets them:
 
 All twelve are **addressed to one plugin** (targeted). No other plugin sees them.
 
+### One answer per cart state per request
+
+`onCalculateShippingCost` is asked of every method the checkout would list, the chosen one included, and the cart is
+read several times in one request: the cart module and the cart page, the method list and the totals, placement's test
+of the chosen method and its pricing. Alfa asks your plugin **once per cart state in a request** and every later reading
+in that request uses the same answer (`CarrierAnswers`). The state is everything the `Cart` reader gives you and your
+method: the method's settings and `isSelected()`, the payable lines (product, combination, quantity, measurements, line
+totals), `getSubtotal()`, the currency, the customer, the chosen shipping and payment methods, and the delivery and
+invoice details as saved and as the checkout submitted them. When any of them changes you are asked again; a new
+request always asks again, since nothing is kept between requests.
+
+What is kept is your answer (the price, the amounts you stated, your refusal, your silence or the error you threw); the
+method's entry mode and taxes are applied to it on every reading. So your answer must follow from the cart you are
+handed: a carrier that reads state of its own (a session value, a table of its own) and changes it within the request
+reads the change on the next request. A remote price call is made once per state, so a carrier with an outside
+service costs one call per listed method per state, not one per reading.
+
 ## What you must provide
 
 | File | What it is for |
@@ -190,6 +207,7 @@ repairs every old order.
 | **The order's taxes** | A parcel recorded in `onOrderAfterPlace` keeps the taxes the order's carriage was charged with, which `$this->shipment($order)` copies from the order. The rate you pass must be their combined rate, `$order->shipmentTaxRate()`. Another rate is refused, and so is `cost($taxIncl)` alone, or no `cost()` at all, on a taxed carriage: give a further parcel `cost(0, 0, $order->shipmentTaxRate())`. |
 | **The order's currency** | An amount in another currency is refused. For an order that names no currency, an error is thrown and nothing is written. |
 | **Parcels that do not count** | A cancelled or returned parcel does not count in the order's total. |
+| **The method's categories** | A parcel of a method that does not deliver one of the lines it carries is refused, on a new parcel and on a parcel moved to another method or given other lines: see [Shipping restrictions per category](../services/payments-and-shipments.md#shipping-restrictions-per-category). |
 | **When a write is refused** | `save()` returns `false` and the reason is written to the log (category `com_alfa.orders`). In the administrator and the API it is also shown as an error message. Check the return value. |
 
 ### Lines and several parcels
