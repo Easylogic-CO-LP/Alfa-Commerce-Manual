@@ -1,13 +1,13 @@
 ---
 title: A complete shipping plugin
-description: "A complete minimal shipping plugin for Alfa Commerce 2.2, file by file."
+description: "A complete minimal shipping plugin for Alfa Commerce 2.3.0, file by file."
 ---
 
 # A complete shipping plugin
 
 <CreatePluginButton type="shipping" />
 
-<AlfaVersion verified="2.2.1" />
+<AlfaVersion verified="2.3.0" />
 
 **The pages of this guide:**
 
@@ -16,8 +16,8 @@ description: "A complete minimal shipping plugin for Alfa Commerce 2.2, file by 
 - **A complete shipping plugin** (this page)
 
 This plugin is called `flat`. Each of its methods has one setting, a price, and it answers that price for every cart.
-It records one parcel when the order is placed. It is modelled on the standard plugin, without the zones, the staff
-buttons and the log table.
+When an order is placed, it names the carrier on the parcel Alfa recorded. It is modelled on the standard plugin,
+without the zones, the staff buttons and the log table.
 
 ```text
 plugins/alfa-shipments/flat/
@@ -191,5 +191,5 @@ PLG_ALFA_SHIPMENTS_FLAT="Flat price shipping"
 PLG_ALFA_SHIPMENTS_FLAT_XML_DESCRIPTION="Charges one price for every order."
 ```
 
-After installing: enable the plugin, leave its Access at Public, then create a shipping method, choose `flat` as its
-Type, type a price, and choose "Shipping prices entered" and the "Shipping taxes" on the same form.
+After installing: enable the plugin, leave its Access at Public, then create a shipping method, choose "Flat price
+shipping" as its Type, type a price, and choose "Shipping prices entered" and the "Shipping taxes" on the same form.
