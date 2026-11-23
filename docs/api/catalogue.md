@@ -131,6 +131,19 @@ nothing is saved; a change that leaves it out keeps the item's related products.
 The list also takes `filter[stock]`, `filter[fields]` and `filter[changed_since]`. See
 [The filters of each list](./overview.md#the-filters-of-each-list).
 
+**Find a product by its SKU.** `filter[sku]` finds the product whose own SKU equals the one sent; letter case does
+not count, and a part of a longer SKU finds nothing (`filter[search]` matches parts). A SKU that is empty, longer
+than 255 characters or carries a control character is answered 400.
+
+```bash
+curl -H "X-Joomla-Token: $TOKEN" "https://your-shop.example/api/index.php/v1/alfa/items?filter[sku]=SMX-128"
+```
+
+**A save applied with a remark.** When a create or an update is saved but part of it was not applied (a stock figure
+refused once the product was written, the variants' changes refused) or was applied with a remark (an address the
+product already shares with another), the answer is 200 or 201 with the product and `meta.warnings`, one sentence
+each. A save without such a part carries no `meta.warnings`.
+
 **What changed since your last read.** `commerce_changed_at` is when the item's stock, its prices or the item itself
 last changed: a stock move (an order's line, a stock count, a delivery), a price written on the item or on one of its
 combinations, a price period stored ahead of time that has begun (of its own prices, or of a discount or a tax that

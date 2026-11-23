@@ -187,7 +187,9 @@ for an order that is not there.
 
 A `PATCH` writes the order's `customer_note`, its delivery and invoice details (`alfa_form_fields`, and
 `alfa_form_fields_billing` with `invoice_differs`) and, once, `external_source` with `external_reference`, and
-nothing else. A body that
+nothing else. Each details section is an object of field name to value: a field left out keeps its value, and
+`{}` changes nothing. A section sent as `null`, a string or a number is answered 400 naming it, and nothing is
+saved. A body that
 carries any other field the order publishes, such as `customer_email`, `id_address_delivery`, `created` or
 `order_total`, is refused with 422 before anything is saved, and the answer names the fields:
 

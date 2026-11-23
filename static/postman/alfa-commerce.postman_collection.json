@@ -846,6 +846,48 @@
 							}
 						},
 						{
+							"name": "List by SKU (exact)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 200', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(200));",
+											"pm.test('Every product listed has that SKU', () => pm.response.json().data.forEach((row) => pm.expect(String(row.attributes.sku).toLowerCase()).to.eql(('SKU-' + pm.collectionVariables.get('run')).toLowerCase())));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/items?filter[sku]=SKU-{{run}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"items"
+									],
+									"query": [
+										{
+											"key": "filter[sku]",
+											"value": "SKU-{{run}}"
+										}
+									]
+								},
+								"description": "filter[sku] finds the product whose own SKU equals the one sent; letter case does not count, and a part of a longer SKU finds nothing (filter[search] matches parts). An empty SKU, one longer than 255 characters or one with a control character answers 400."
+							}
+						},
+						{
 							"name": "List (filter[stock])",
 							"event": [
 								{
@@ -9228,6 +9270,63 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"alfa_form_fields\": {\n    \"name\": \"API Collection Customer {{run}} (updated)\",\n    \"email\": \"api-collection-{{runLower}}@example.invalid\",\n    \"country\": {{countryId}},\n    \"address\": \"1 Example Street\",\n    \"city\": \"Larisa\",\n    \"postcode\": \"412 22\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Update (the delivery details sent as null: refused)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test('Status 400', () => pm.expect(pm.response.code, pm.response.text().slice(0, 400)).to.eql(400));",
+											"pm.test('The section is named', () => pm.expect(pm.response.json().errors[0].title).to.match(/^alfa_form_fields:/));"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.api+json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/v1/alfa/orders/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"alfa",
+										"orders",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{orderId}}",
+											"description": "Record id."
+										}
+									]
+								},
+								"description": "Each details section (alfa_form_fields, alfa_form_fields_billing) is an object of field name to value: a field left out keeps its value and {} changes nothing. A section sent as null, a string or a number answers 400 naming it, and nothing is saved.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"alfa_form_fields\": null\n}",
 									"options": {
 										"raw": {
 											"language": "json"
